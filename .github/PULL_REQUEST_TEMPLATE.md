@@ -11,10 +11,10 @@
 ## 🧪 테스트
 
 - Postman으로 API 호출 확인
-  - GET /reviews → 200 OK, 3개 리뷰 반환
-  - POST /reviews → 201 Created, 응답 schema 확인
+    - GET /reviews → 200 OK, 3개 리뷰 반환
+    - POST /reviews → 201 Created, 응답 schema 확인
 - Unit test
-  - review.service.spec.ts ✅ All passed
+    - review.service.spec.ts ✅ All passed
 
 ## 📎 기타 참고사항
 

@@ -22,3 +22,40 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# ===== IDEs =====
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.iml
+
+# ===== TypeScript =====
+*.tsbuildinfo
+
+# ===== Testing =====
+coverage/
+.nyc_output/
+junit.xml
+
+# ===== Logs / Runtime =====
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# ===== TypeORM (optional) =====
+# typeorm sometimes generates migration artifacts or caches
+typeorm.log
+
+# ===== Swagger (if you generate static docs) =====
+swagger.json
+swagger.yaml
+
+# ===== Docker (optional) =====
+.env.docker
+docker-compose.override.yml
+
+# ===== pnpm =====
+.pnpm-store/
+.pnpm-debug.log*
