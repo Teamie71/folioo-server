@@ -1,4 +1,4 @@
-import { BaseEntity } from 'src/common/entities/base.entity';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity } from 'typeorm';
 import { LoginType } from './enums/login-type.enum';
 
@@ -24,7 +24,6 @@ export class User extends BaseEntity {
     phoneNum: string;
 
     @Column({
-        unique: true,
         type: 'bigint',
     })
     loginId: string;

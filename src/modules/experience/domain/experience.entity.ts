@@ -1,7 +1,7 @@
-import { BaseEntity } from 'src/common/entities/base.entity';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { JobCategory } from './enums/job-category.enum';
-import { User } from 'src/modules/user/domain/user.entity';
+import { User } from '../../user/domain/user.entity';
 
 @Entity()
 export class Experience extends BaseEntity {

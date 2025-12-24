@@ -1,7 +1,7 @@
-import { BaseEntity } from 'src/common/entities/base.entity';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { CorrectionStatus } from './enums/correction-status.enum';
-import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
+import { Portfolio } from '../../portfolio/domain/portfolio.entity';
 
 @Entity()
 export class PortfolioCorrection extends BaseEntity {

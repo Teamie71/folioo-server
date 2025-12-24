@@ -1,7 +1,7 @@
-import { BaseEntity } from 'src/common/entities/base.entity';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { InsightCategory } from './enums/insight-category.enum';
-import { User } from 'src/modules/user/domain/user.entity';
+import { User } from '../../user/domain/user.entity';
 
 @Entity()
 export class Insight extends BaseEntity {

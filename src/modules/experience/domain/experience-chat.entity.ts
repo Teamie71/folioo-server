@@ -1,4 +1,4 @@
-import { BaseEntity } from 'src/common/entities/base.entity';
+import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 import { ChatStatus } from './enums/chat-status.enum';
 import { Experience } from './experience.entity';
