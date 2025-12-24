@@ -10,7 +10,7 @@ import { TypeOrmConfigService } from './config/typeorm-config';
             envFilePath: '.env',
         }),
         TypeOrmModule.forRootAsync({
-            useClass: TypeOrmConfigService
+            useClass: TypeOrmConfigService,
         }),
     ],
     providers: [],
