@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { CommonResponse, ErrorPayload } from '../dtos/common-response.dto';
+import { ErrorMap } from '../exceptions/error-code';
+import { ErrorCode } from '../exceptions/error-code.enum';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -28,7 +30,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         const path = httpAdapter.getRequestUrl(ctx.getRequest()) as string;
 
         let errorCode = 'UNKNOWN';
-        let reason = '서버 에러가 발생했습니다.';
+        let reason = 'Business Exception을 사용하세요.';
         let details: unknown = null;
 
         if (exception instanceof HttpException) {
@@ -36,7 +38,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
             if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
                 const res = exceptionResponse as ErrorPayload;
-                errorCode = res.errorCode ?? errorCode;
+                errorCode = res.errorCode ?? res.errorCode ?? String(httpStatus);
                 reason = res.reason ?? reason;
                 details = res.details ?? null;
             }
@@ -47,8 +49,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
                 exception instanceof Error ? exception.stack : String(exception)
             );
 
-            errorCode = 'INTERNAL_SERVER_ERROR';
-            reason = '잠시 후 다시 시도해주세요.';
+            errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+            reason = ErrorMap[errorCode].message;
         }
 
         const result = CommonResponse.fail(errorCode, reason, path, details);
