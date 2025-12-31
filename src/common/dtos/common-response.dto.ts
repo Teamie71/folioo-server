@@ -7,9 +7,9 @@ export class ErrorPayload {
 
 export class CommonResponse<T = any> {
     readonly timestamp: string;
-    isSuccess: boolean;
-    error: ErrorPayload | null;
-    result: T | null;
+    readonly isSuccess: boolean;
+    readonly error: ErrorPayload | null;
+    readonly result: T | null;
     // 로깅 시 사용
     // readonly traceId: string;
 

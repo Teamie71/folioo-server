@@ -38,7 +38,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
             if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
                 const res = exceptionResponse as ErrorPayload;
-                errorCode = res.errorCode ?? res.errorCode ?? String(httpStatus);
+                errorCode = res.errorCode ?? String(httpStatus);
                 reason = res.reason ?? reason;
                 details = res.details ?? null;
             }
@@ -50,7 +50,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             );
 
             errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-            reason = ErrorMap[errorCode].message;
+            reason = ErrorMap.COMMON500.message;
         }
 
         const result = CommonResponse.fail(errorCode, reason, path, details);
