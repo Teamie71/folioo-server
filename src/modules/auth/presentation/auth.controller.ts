@@ -1,8 +1,16 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+    ApiBody,
+    ApiOkResponse,
+    ApiOperation,
+    ApiQuery,
+    ApiResponse,
+    ApiTags,
+} from '@nestjs/swagger';
 import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { SendSmsReqDto, VerifySmsReqDto } from '../application/dtos/sms-auth.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -223,6 +231,7 @@ export class AuthController {
     @ApiOkResponse({
         schema: {
             example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
                 isSuccess: true,
                 error: null,
                 result: 'Logout from Server',
@@ -233,5 +242,50 @@ export class AuthController {
     @Post('logout')
     handleLogout() {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    }
+
+    @ApiOperation({
+        summary: '전화번호 인증번호 발송',
+        description: '전화번호 인증번호를 발송합니다.',
+    })
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: '인증번호가 성공적으로 발송되었습니다.',
+            },
+        },
+    })
+    @ApiBody({ type: SendSmsReqDto })
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(ErrorCode.ALREADY_VERIFY_USER)
+    @Post('sms/send')
+    handleSmsSend(@Body() body: SendSmsReqDto): string {
+        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    }
+
+    @ApiOperation({
+        summary: '전화번호 인증번호 검증',
+        description: '발송된 인증정보가 올바른지 확인합니다.',
+    })
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: '전화번호 인증이 완료되었습니다.',
+            },
+        },
+    })
+    @ApiBody({ type: VerifySmsReqDto })
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(ErrorCode.SMS_CODE_MISMATCH)
+    @ApiCommonErrorResponse(ErrorCode.SMS_CODE_NOT_FOUND)
+    @Post('sms/verify')
+    handleSmsVerify(@Body() body: VerifySmsReqDto): string {
+        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 }

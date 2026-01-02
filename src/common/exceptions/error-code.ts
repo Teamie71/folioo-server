@@ -23,4 +23,16 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '아직 구현되지 않은 기능입니다.',
         statusCode: HttpStatus.NOT_IMPLEMENTED,
     },
+    [ErrorCode.ALREADY_VERIFY_USER]: {
+        message: '이미 인증 이력이 있는 번호입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.SMS_CODE_MISMATCH]: {
+        message: '인증 번호가 일치하지 않습니다. 다시 확인해 주세요.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.SMS_CODE_NOT_FOUND]: {
+        message: '인증 시간이 만료되었습니다. 재전송 버튼을 눌러주세요.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
 };

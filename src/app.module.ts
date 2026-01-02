@@ -7,6 +7,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AppController } from './app.controller';
 import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from './modules/auth/auth.module';
             useClass: TypeOrmConfigService,
         }),
         AuthModule,
+        UserModule,
     ],
     providers: [
         {
