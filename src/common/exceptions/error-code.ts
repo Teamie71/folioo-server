@@ -11,6 +11,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '잘못된 요청입니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.UNAUTHORIZED]: {
+        message: '유효하지 않은 사용자입니다.',
+        statusCode: HttpStatus.UNAUTHORIZED,
+    },
     [ErrorCode.INTERNAL_SERVER_ERROR]: {
         message: '잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
