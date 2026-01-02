@@ -15,4 +15,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
+    [ErrorCode.NOT_IMPLEMENTED]: {
+        message: '아직 구현되지 않은 기능입니다.',
+        statusCode: HttpStatus.NOT_IMPLEMENTED,
+    },
 };
