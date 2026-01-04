@@ -1,3 +1,5 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 export class ErrorPayload {
     errorCode: string;
     reason: string;
@@ -9,6 +11,12 @@ export class CommonResponse<T = any> {
     readonly timestamp: string;
     readonly isSuccess: boolean;
     readonly error: ErrorPayload | null;
+
+    @ApiProperty({
+        description: '결과 데이터',
+        nullable: true,
+        type: () => Object,
+    })
     readonly result: T | null;
     // 로깅 시 사용
     // readonly traceId: string;

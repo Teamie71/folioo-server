@@ -6,6 +6,8 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AppController } from './app.controller';
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
     imports: [
@@ -16,6 +18,8 @@ import { AppController } from './app.controller';
         TypeOrmModule.forRootAsync({
             useClass: TypeOrmConfigService,
         }),
+        AuthModule,
+        UserModule,
     ],
     providers: [
         {
