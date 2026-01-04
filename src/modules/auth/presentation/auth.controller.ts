@@ -157,7 +157,7 @@ export class AuthController {
     })
     @ApiResponse({
         status: 302,
-        description: '구글 로그인 페이지로 리다이렉트됨.',
+        description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
     @Get('naver')
     naverLogin(

@@ -9,7 +9,7 @@ export async function setupSwagger(app: INestApplication): Promise<void> {
     const config = new DocumentBuilder()
         .setTitle(configService.get<string>('SWAGGER_TITLE') || 'Folioo API docs')
         .setDescription(
-            configService.get<string>('SWAGGER_DESCRIPTION') || 'API document of Folioo Devlopment'
+            configService.get<string>('SWAGGER_DESCRIPTION') || 'API document of Folioo Development'
         )
         .setVersion(configService.get<string>('SWAGGER_VERSION') || '1.0.0')
         .build();

@@ -49,8 +49,8 @@ export const ApiCommonResponseArray = <T extends Type<any>>(model: T) => {
 
 // 에러 응답
 export const ApiCommonErrorResponse = (errorCode: ErrorCode) => {
-    const status: HttpStatus = ErrorMap[errorCode].statusCode ?? HttpStatus.UNAUTHORIZED;
-    const reason: string = ErrorMap[errorCode].message ?? '서버 에러가 발생하였습니다.';
+    const status: HttpStatus = ErrorMap[errorCode].statusCode;
+    const reason: string = ErrorMap[errorCode].message;
 
     return applyDecorators(
         ApiExtraModels(CommonResponse, ErrorPayload),
@@ -74,7 +74,7 @@ export const ApiCommonErrorResponse = (errorCode: ErrorCode) => {
                                             errorCode: { example: errorCode },
                                             reason: { example: reason },
                                             details: { example: null },
-                                            path: { example: 'api/request/endpoint' },
+                                            path: { example: '/path/to/your/api' },
                                         },
                                     },
                                 ],
