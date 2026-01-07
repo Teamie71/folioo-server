@@ -43,6 +43,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 활동 분류 태그를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.EXPERIENCE_NOT_FOUND]: {
+        message: '해당하는 경험을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.PORTFOLIO_NOT_FOUND]: {
+        message: '해당하는 포트폴리오를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
     [ErrorCode.DUPLICATE_LOG_NAME]: {
         message: '인사이트 로그의 제목은 중복될 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
@@ -53,6 +61,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.FULL_ACTIVITY_NAME]: {
         message: '활동 분류 태그는 최대 10개까지 가질 수 있습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.DUPLICATE_EXPERIENCE_NAME]: {
+        message: '경험 정리 제목은 중복될 수 없습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
+        message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
 };
