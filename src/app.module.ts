@@ -8,6 +8,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { AppController } from './app.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { InsightModule } from './modules/insight/insight.module';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { UserModule } from './modules/user/user.module';
         }),
         AuthModule,
         UserModule,
+        InsightModule,
     ],
     providers: [
         {

@@ -1,4 +1,4 @@
-import { applyDecorators, HttpStatus, Type } from '@nestjs/common';
+import { applyDecorators, Type } from '@nestjs/common';
 import { ApiExtraModels, ApiOkResponse, ApiResponse, getSchemaPath } from '@nestjs/swagger';
 import { CommonResponse, ErrorPayload } from '../dtos/common-response.dto';
 import { ErrorMap } from '../exceptions/error-code';
@@ -47,42 +47,64 @@ export const ApiCommonResponseArray = <T extends Type<any>>(model: T) => {
     );
 };
 
+interface SwaggerExampleValue {
+    summary: string;
+    value: {
+        timestamp: string;
+        isSuccess: boolean;
+        result: null;
+        error: {
+            errorCode: ErrorCode;
+            reason: string;
+            details: null;
+            path: string;
+        };
+    };
+}
+
+type ErrorsByStatus = Record<number, Record<string, SwaggerExampleValue>>;
+
 // 에러 응답
-export const ApiCommonErrorResponse = (errorCode: ErrorCode) => {
-    const status: HttpStatus = ErrorMap[errorCode].statusCode;
-    const reason: string = ErrorMap[errorCode].message;
+export const ApiCommonErrorResponse = (...errorCodes: ErrorCode[]) => {
+    const errorsByStatus = errorCodes.reduce<ErrorsByStatus>((acc, errorCode) => {
+        const errorInfo = ErrorMap[errorCode];
+        const status = errorInfo.statusCode;
 
-    return applyDecorators(
-        ApiExtraModels(CommonResponse, ErrorPayload),
+        if (!acc[status]) {
+            acc[status] = {};
+        }
 
-        ApiResponse({
-            status,
-            description: reason,
-            schema: {
-                allOf: [
-                    { $ref: getSchemaPath(CommonResponse) },
-                    {
-                        properties: {
-                            timestamp: { type: 'string', example: '2024-01-02T12:34:56.000Z' },
-                            isSuccess: { example: false },
-                            result: { example: null },
-                            error: {
-                                allOf: [
-                                    { $ref: getSchemaPath(ErrorPayload) },
-                                    {
-                                        properties: {
-                                            errorCode: { example: errorCode },
-                                            reason: { example: reason },
-                                            details: { example: null },
-                                            path: { example: '/path/to/your/api' },
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                ],
+        acc[status][errorCode] = {
+            summary: errorInfo.message,
+            value: {
+                timestamp: '2024-01-02T12:34:56.000Z',
+                isSuccess: false,
+                result: null,
+                error: {
+                    errorCode: errorCode,
+                    reason: errorInfo.message,
+                    details: null,
+                    path: '/path/to/your/api',
+                },
             },
-        })
-    );
+        };
+        return acc;
+    }, {});
+
+    const decorators = Object.entries(errorsByStatus).map(([status, examples]) => {
+        return ApiResponse({
+            status: Number(status),
+            description: 'Error Response',
+            content: {
+                'application/json': {
+                    schema: {
+                        $ref: getSchemaPath(CommonResponse),
+                    },
+                    examples: examples,
+                },
+            },
+        });
+    });
+
+    return applyDecorators(ApiExtraModels(CommonResponse, ErrorPayload), ...decorators);
 };

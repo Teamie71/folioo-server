@@ -2,14 +2,12 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { InsightCategory } from './enums/insight-category.enum';
 import { User } from '../../user/domain/user.entity';
+import { Activity } from './activity.entity';
 
 @Entity()
 export class Insight extends BaseEntity {
     @Column({ length: 20 })
     title: string;
-
-    @Column({ length: 20 })
-    activityName: string;
 
     @Column({
         type: 'enum',
@@ -23,4 +21,7 @@ export class Insight extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     user: User;
+
+    @ManyToOne(() => Activity)
+    activity: Activity;
 }
