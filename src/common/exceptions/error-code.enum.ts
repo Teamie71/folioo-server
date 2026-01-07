@@ -7,8 +7,8 @@ export enum ErrorCode {
 
     //Auth
     ALREADY_VERIFY_USER = 'AUTH409',
-    SMS_CODE_NOT_FOUND = 'AUTH_CODE4041',
-    SMS_CODE_MISMATCH = 'AUTH_CODE4042',
+    SMS_CODE_NOT_FOUND = 'AUTH_CODE404',
+    SMS_CODE_MISMATCH = 'AUTH_CODE400',
 
     //Insight-Log
     LOG_NOT_FOUND = 'LOG404',

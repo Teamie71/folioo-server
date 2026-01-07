@@ -259,8 +259,7 @@ export class AuthController {
         },
     })
     @ApiBody({ type: SendSmsReqDto })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.ALREADY_VERIFY_USER)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ALREADY_VERIFY_USER)
     @Post('sms/send')
     handleSmsSend(@Body() body: SendSmsReqDto): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
@@ -281,9 +280,11 @@ export class AuthController {
         },
     })
     @ApiBody({ type: VerifySmsReqDto })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.SMS_CODE_MISMATCH)
-    @ApiCommonErrorResponse(ErrorCode.SMS_CODE_NOT_FOUND)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.SMS_CODE_MISMATCH,
+        ErrorCode.SMS_CODE_NOT_FOUND
+    )
     @Post('sms/verify')
     handleSmsVerify(@Body() body: VerifySmsReqDto): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);

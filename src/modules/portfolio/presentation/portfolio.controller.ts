@@ -17,8 +17,7 @@ export class PortfolioController {
         description: '경험 정리가 완료된 포트폴리오를 조회합니다.',
     })
     @ApiCommonResponse(PortfolioResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.PORTFOLIO_NOT_FOUND)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     @Get(':portfolioId')
     getPortfolio(@Param('portfolioId') portfolioId: number): PortfolioResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
@@ -29,8 +28,7 @@ export class PortfolioController {
         description: '경험 정리가 완료된 포트폴리오의 내용을 수정합니다.',
     })
     @ApiCommonResponse(PortfolioResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.PORTFOLIO_NOT_FOUND)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     @Patch(':portfolioId')
     updatePortfolio(
         @Param('portfolioId') portfolioId: number,
@@ -53,8 +51,7 @@ export class PortfolioController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.PORTFOLIO_NOT_FOUND)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     @Delete(':portfolioId')
     deletePortfolio(@Param('portfolioId') portfolioId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
@@ -65,8 +62,7 @@ export class PortfolioController {
         description: '경험 정리가 완료된 포트폴리오를 pdf로 내보냅니다.',
     })
     @ApiCommonResponse(ExportPortfolioResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.PORTFOLIO_NOT_FOUND)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     @Post(':portfolioId/export')
     exportPortfolio(@Param('portfolioId') portfolioId: number): ExportPortfolioResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);

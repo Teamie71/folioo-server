@@ -23,8 +23,7 @@ export class InsightController {
             '인사이트 로그를 생성하고, 텍스트를 임베딩으로 변환하여 메타데이터를 벡터DB에 저장합니다.',
     })
     @ApiCommonResponse(InsightLogResDTO)
-    @ApiCommonErrorResponse(ErrorCode.DUPLICATE_LOG_NAME)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(ErrorCode.DUPLICATE_LOG_NAME, ErrorCode.UNAUTHORIZED)
     @Post()
     createLog(@Body() body: CreateInsightLogReqDTO): InsightLogResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
@@ -47,11 +46,13 @@ export class InsightController {
             '인사이트 로그를 수정하고, 기존 벡터를 삭제 후 메타데이터를 벡터DB에 다시 저장합니다.',
     })
     @ApiCommonResponse(InsightLogResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.LOG_NOT_FOUND)
-    @ApiCommonErrorResponse(ErrorCode.DUPLICATE_LOG_NAME)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.LOG_NOT_FOUND,
+        ErrorCode.DUPLICATE_LOG_NAME
+    )
     @Patch(':insightId')
-    getLog(
+    updateLog(
         @Param('insightId') insightId: number,
         @Body() body: UpdateInsightLogReqDTO
     ): InsightLogResDTO {
@@ -72,8 +73,7 @@ export class InsightController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.LOG_NOT_FOUND)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.LOG_NOT_FOUND)
     @Delete(':insightId')
     deleteLog(@Param('insightId') insightId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { insightId });
@@ -89,7 +89,7 @@ export class InsightController {
     @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     @Get('search')
-    searchBector(
+    searchVector(
         @Query('keyword') keyword?: string,
         @Query('category') category?: string,
         @Query('activityName') activityName?: string
@@ -102,8 +102,11 @@ export class InsightController {
         description: '활동명을 생성합니다. 인당 10개 제한이 있으며, 활동명은 unique합니다.',
     })
     @ApiCommonResponse(ActivityNameResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.DUPLICATE_ACTIVITY_NAME, ErrorCode.FULL_ACTIVITY_NAME)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.DUPLICATE_ACTIVITY_NAME,
+        ErrorCode.FULL_ACTIVITY_NAME
+    )
     @Post('tags')
     createActivityTag(@Body() body: ActivityNameReqDTO): ActivityNameResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
@@ -135,8 +138,7 @@ export class InsightController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.ACTIVITY_NOT_FOUND)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ACTIVITY_NOT_FOUND)
     @Delete('tags/:tagId')
     deleteActivityTag(@Param('tagId') tagId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, tagId);

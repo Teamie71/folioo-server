@@ -15,7 +15,7 @@ export class CreateInsightLogReqDTO {
     title: string;
     description: string;
     category: InsightCategory;
-    activitId: number;
+    activityId: number;
 }
 
 export class UpdateInsightLogReqDTO {

@@ -22,10 +22,13 @@ export class ExperienceController {
             '새로운 경험 정리를 생성하고, AI와의 대화를 시작합니다. 30크레딧을 사용합니다. 인당 최대 15개의 경험을 저장할 수 있습니다.',
     })
     @ApiCommonResponse(ExperienceResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @ApiCommonErrorResponse(ErrorCode.EXPERIENCE_MAX_LIMIT, ErrorCode.DUPLICATE_EXPERIENCE_NAME)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EXPERIENCE_MAX_LIMIT,
+        ErrorCode.DUPLICATE_EXPERIENCE_NAME
+    )
     @Post()
-    createLog(@Body() body: CreateExperienceReqDTO): ExperienceResDTO {
+    createExperience(@Body() body: CreateExperienceReqDTO): ExperienceResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
