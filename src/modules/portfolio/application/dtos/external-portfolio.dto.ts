@@ -7,6 +7,10 @@ export class StructuredPortfolioResDTO {
     learnings: string;
 }
 
+export class CreateExternalPortfolioReqDTO {
+    correctionId: number;
+}
+
 export class UpdatePortfolioBlockReqDTO {
     name?: string;
     description?: string;
