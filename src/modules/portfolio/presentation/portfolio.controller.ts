@@ -5,7 +5,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     ExportPortfolioResDTO,
-    PortfolioResDTO,
+    PortfolioDetailResDTO,
     UpdatePortfolioReqDTO,
 } from '../application/dtos/portfolio.dto';
 
@@ -16,10 +16,10 @@ export class PortfolioController {
         summary: '개별 포트폴리오 조회',
         description: '경험 정리가 완료된 포트폴리오를 조회합니다.',
     })
-    @ApiCommonResponse(PortfolioResDTO)
+    @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     @Get(':portfolioId')
-    getPortfolio(@Param('portfolioId') portfolioId: number): PortfolioResDTO {
+    getPortfolio(@Param('portfolioId') portfolioId: number): PortfolioDetailResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 
@@ -27,13 +27,13 @@ export class PortfolioController {
         summary: '개별 포트폴리오 수정',
         description: '경험 정리가 완료된 포트폴리오의 내용을 수정합니다.',
     })
-    @ApiCommonResponse(PortfolioResDTO)
+    @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     @Patch(':portfolioId')
     updatePortfolio(
         @Param('portfolioId') portfolioId: number,
         @Body() body: UpdatePortfolioReqDTO
-    ): PortfolioResDTO {
+    ): PortfolioDetailResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
     }
 
