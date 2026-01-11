@@ -10,6 +10,9 @@ export enum ErrorCode {
     SMS_CODE_NOT_FOUND = 'AUTH_CODE404',
     SMS_CODE_MISMATCH = 'AUTH_CODE400',
 
+    //Credit
+    INSUFFICIENT_CREDITS = 'CREDIT402',
+
     //Insight-Log
     LOG_NOT_FOUND = 'LOG404',
     DUPLICATE_LOG_NAME = 'LOG409',
@@ -24,4 +27,9 @@ export enum ErrorCode {
 
     //Portfolio
     PORTFOLIO_NOT_FOUND = 'PORTFOLIO404',
+
+    //Portfolio-Correction
+    CORRECTION_NOT_FOUND = 'CORRECTION404',
+    CORRECTION_MAX_LIMIT = 'CORRECTION4091',
+    CORRECTION_BLOCK_LIMIT_EXCEEDED = 'CORRECTION4092',
 }

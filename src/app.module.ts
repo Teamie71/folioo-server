@@ -11,6 +11,7 @@ import { UserModule } from './modules/user/user.module';
 import { InsightModule } from './modules/insight/insight.module';
 import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
+import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import { PortfolioModule } from './modules/portfolio/portfolio.module';
         InsightModule,
         ExperienceModule,
         PortfolioModule,
+        PortfolioCorrectionModule,
     ],
     providers: [
         {
