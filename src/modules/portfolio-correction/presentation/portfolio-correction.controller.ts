@@ -12,7 +12,7 @@ import {
     CorrectionStatusResDTO,
     CreateCorrectionReqDTO,
     MapCorrectionWithPortfoliosReqDTO,
-    updateCorrectionTitleReqDTO,
+    UpdateCorrectionTitleReqDTO,
 } from '../application/dtos/portfolio-correction.dto';
 import {
     UpdateCompanyInsightReqDTO,
@@ -197,7 +197,7 @@ export class PortfolioCorrectionController {
     @Patch(':correctionId')
     updateCorrectionTitle(
         @Param('correctionId') correctionId: number,
-        @Body() body: updateCorrectionTitleReqDTO
+        @Body() body: UpdateCorrectionTitleReqDTO
     ): CorrectionResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
     }

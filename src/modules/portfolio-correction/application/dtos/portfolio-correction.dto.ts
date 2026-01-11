@@ -28,6 +28,6 @@ export class MapCorrectionWithPortfoliosReqDTO {
     portfolioIds: number[];
 }
 
-export class updateCorrectionTitleReqDTO {
+export class UpdateCorrectionTitleReqDTO {
     title: string;
 }
