@@ -23,6 +23,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '아직 구현되지 않은 기능입니다.',
         statusCode: HttpStatus.NOT_IMPLEMENTED,
     },
+    [ErrorCode.INSUFFICIENT_CREDITS]: {
+        message: '크레딧이 부족합니다.',
+        statusCode: HttpStatus.PAYMENT_REQUIRED,
+    },
     [ErrorCode.ALREADY_VERIFY_USER]: {
         message: '이미 인증 이력이 있는 번호입니다.',
         statusCode: HttpStatus.CONFLICT,
@@ -51,6 +55,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 포트폴리오를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.CORRECTION_NOT_FOUND]: {
+        message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
     [ErrorCode.DUPLICATE_LOG_NAME]: {
         message: '인사이트 로그의 제목은 중복될 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
@@ -69,6 +77,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
         message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.CORRECTION_MAX_LIMIT]: {
+        message: '포트폴리오 첨삭은 최대 15개까지 가질 수 있습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED]: {
+        message: '포트폴리오 첨삭은 최대 5개의 활동블록(포트폴리오)을 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
 };

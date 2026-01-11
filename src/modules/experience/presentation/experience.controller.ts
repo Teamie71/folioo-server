@@ -34,13 +34,15 @@ export class ExperienceController {
 
     @ApiOperation({
         summary: '경험 정리 목록 조회',
-        description: '사용자가 생성한 경험 정리 목록을 조회합니다.',
+        description:
+            '사용자가 생성한 경험 정리 목록을 조회합니다. 검색어를 입력하면 제목에 키워드를 포함하는 목록만 조회됩니다.',
     })
+    @ApiQuery({ name: 'keyword', required: false })
     @ApiCommonResponseArray(ExperienceResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     @Get()
-    getExperiences(): ExperienceResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    getExperiences(@Query('keyword') keyword?: string): ExperienceResDTO[] {
+        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, keyword);
     }
 
     @ApiOperation({
@@ -53,17 +55,5 @@ export class ExperienceController {
     @Get(':experienceId')
     getExperience(): ExperienceStateResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
-    }
-
-    @ApiOperation({
-        summary: '경험 정리 목록 검색',
-        description: '키워드로 관련된 경험 정리 목록을 검색합니다.',
-    })
-    @ApiQuery({ name: 'keyword', required: false })
-    @ApiCommonResponseArray(ExperienceResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Get('search')
-    searchExperiences(@Query('keyword') keyword?: string): ExperienceResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, keyword);
     }
 }

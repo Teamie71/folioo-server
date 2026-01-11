@@ -1,7 +1,6 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { CorrectionStatus } from './enums/correction-status.enum';
-import { Portfolio } from '../../portfolio/domain/portfolio.entity';
 
 @Entity()
 export class PortfolioCorrection extends BaseEntity {
@@ -29,37 +28,4 @@ export class PortfolioCorrection extends BaseEntity {
         default: CorrectionStatus.NOT_STARTED,
     })
     status: CorrectionStatus;
-
-    @Column({
-        type: 'jsonb',
-        nullable: true,
-    })
-    description: Record<string, any>;
-
-    @Column({
-        type: 'jsonb',
-        nullable: true,
-    })
-    responsibilities: Record<string, any>;
-
-    @Column({
-        type: 'jsonb',
-        nullable: true,
-    })
-    problemSolving: Record<string, any>;
-
-    @Column({
-        type: 'jsonb',
-        nullable: true,
-    })
-    learnings: Record<string, any>;
-
-    @Column({
-        type: 'jsonb',
-        nullable: true,
-    })
-    overallReview: Record<string, any>;
-
-    @ManyToOne(() => Portfolio, { onDelete: 'CASCADE' })
-    portfolio: Portfolio;
 }
