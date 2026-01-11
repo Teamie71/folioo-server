@@ -27,3 +27,7 @@ export class MapCorrectionWithPortfoliosReqDTO {
     @ApiProperty({ isArray: true, example: [1, 2, 3] })
     portfolioIds: number[];
 }
+
+export class UpdateCorrectionTitleReqDTO {
+    title: string;
+}

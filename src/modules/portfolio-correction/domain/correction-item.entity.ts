@@ -1,8 +1,9 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
-import { Column, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 import { PortfolioCorrection } from './portfolio-correction.entity';
 
+@Entity()
 export class CorrectionItem extends BaseEntity {
     @Column({
         type: 'jsonb',

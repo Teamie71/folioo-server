@@ -7,11 +7,19 @@ import {
     ParseFilePipeBuilder,
     Patch,
     Post,
+    Query,
     UploadedFile,
     UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+    ApiBody,
+    ApiConsumes,
+    ApiOkResponse,
+    ApiOperation,
+    ApiQuery,
+    ApiTags,
+} from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
     ApiCommonResponseArray,
@@ -19,6 +27,7 @@ import {
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
+    CreateExternalPortfolioReqDTO,
     StructuredPortfolioResDTO,
     UpdatePortfolioBlockReqDTO,
 } from '../application/dtos/external-portfolio.dto';
@@ -93,20 +102,21 @@ export class ExternalPortfolioController {
         ErrorCode.CORRECTION_NOT_FOUND,
         ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED
     )
-    @Post(':correctionId')
-    createExternalPortfolios(@Param('correctionId') correctionId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    @Post()
+    createExternalPortfolios(@Body() body: CreateExternalPortfolioReqDTO): string {
+        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 정리 결과 조회',
         description: 'AI가 구조화한 포트폴리오 정보를 조회합니다.',
     })
+    @ApiQuery({ name: 'correctionId', required: true })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    @Get(':correctionId')
+    @Get()
     getExternalPortfolios(
-        @Param('correctionId') correctionId: number
+        @Query('correctionId') correctionId: number
     ): StructuredPortfolioResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }

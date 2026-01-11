@@ -12,6 +12,7 @@ import {
     CorrectionStatusResDTO,
     CreateCorrectionReqDTO,
     MapCorrectionWithPortfoliosReqDTO,
+    UpdateCorrectionTitleReqDTO,
 } from '../application/dtos/portfolio-correction.dto';
 import {
     UpdateCompanyInsightReqDTO,
@@ -194,8 +195,11 @@ export class PortfolioCorrectionController {
     @ApiCommonResponse(CorrectionResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     @Patch(':correctionId')
-    updateCorrectionTitle(@Param('correctionId') correctionId: number): CorrectionResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    updateCorrectionTitle(
+        @Param('correctionId') correctionId: number,
+        @Body() body: UpdateCorrectionTitleReqDTO
+    ): CorrectionResDTO {
+        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
     }
 
     @ApiOperation({
