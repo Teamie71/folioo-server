@@ -41,9 +41,9 @@ ENV APP_PROFILE=prod
 # 포트 노출
 EXPOSE 3000
 
-# Health check
+# Health check (alpine에는 wget이 없으므로 curl 사용)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:3000/health || exit 1
 
 # 실행
 CMD ["node", "dist/main.js"]
