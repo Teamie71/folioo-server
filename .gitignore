@@ -3,7 +3,8 @@
 /node_modules
 /build
 /tmp
-# /src/metadata.ts  # Swagger 플러그인이 빌드 시 덮어씀
+# metadata.ts는 빌드 시 자동 생성되므로 gitignore에서 제외하지 않음
+# 빈 파일로 커밋해두고, 빌드 시 덮어써짐
 
 # Logs
 logs
