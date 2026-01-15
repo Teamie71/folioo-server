@@ -33,6 +33,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    # 리소스 제한 (Lightsail 인스턴스 보호)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    # 로깅 설정 (디스크 가득 참 방지)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   default:

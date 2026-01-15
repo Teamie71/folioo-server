@@ -73,9 +73,20 @@ jobs:
 
             cd ~/docker
 
-            # 최신 이미지 Pull & 재시작
+            # 최신 이미지 Pull & 재시작 (헬스체크 통과까지 대기)
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --wait
+
+            # 헬스체크 추가 확인
+            echo "🔍 Verifying health..."
+            sleep 5
+            if curl -sf http://localhost:3000/health > /dev/null; then
+              echo "✅ Health check passed!"
+            else
+              echo "❌ Health check failed!"
+              docker compose -f docker-compose.prod.yml logs --tail=50
+              exit 1
+            fi
 
             # 사용하지 않는 이미지 정리
             docker image prune -f
