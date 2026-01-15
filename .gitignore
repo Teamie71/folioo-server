@@ -3,7 +3,7 @@
 /node_modules
 /build
 /tmp
-/src/metadata.ts
+# /src/metadata.ts  # Swagger 플러그인이 빌드 시 덮어씀
 
 # Logs
 logs
