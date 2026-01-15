@@ -18,18 +18,19 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
 
+# 프로덕션 의존성만 남기기 (최적화)
+RUN pnpm prune --prod
+
 # ========================================
 # Stage 2: Production
 # ========================================
 FROM node:20-alpine AS production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 WORKDIR /app
 
-# 프로덕션 의존성만 설치
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+# 프로덕션 의존성 복사 (builder에서 prune된 node_modules)
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
 
 # 빌드 결과물 복사
 COPY --from=builder /app/dist ./dist
