@@ -1,8 +1,8 @@
 <!--
-PR 제목 형식: [TYPE] 설명 (#이슈번호)
-예시: [FEAT] 포트폴리오 CRUD API 구현 (#15)
+PR 제목 형식: TYPE: 설명 (#이슈번호)
+예시: Feat: 포트폴리오 CRUD API 구현 (#15)
 
-TYPE: FEAT, FIX, REFACTOR, CHORE, DOCS, TEST, STYLE
+TYPE: Feat, Fix, Refactor, Chore, Docs, Test, Style
 -->
 
 ## Summary

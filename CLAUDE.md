@@ -1,77 +1,122 @@
 # CLAUDE.md
 
-이 문서는 Claude가 이 프로젝트에서 작업할 때 따르기 위한 가이드입니다.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 프로젝트 개요
+## Project Overview
 
 Folioo Server는 포트폴리오 관리 플랫폼의 백엔드 서버입니다.
 
-- **Runtime**: Node.js 20 + pnpm 9
+- **Runtime**: Node.js 24 + pnpm 10
 - **Framework**: NestJS 11
 - **Language**: TypeScript 5.7
 - **ORM**: TypeORM 0.3
 - **Database**: PostgreSQL
 - **Build Tool**: SWC
 
-## 문서 참조
-
-코드 작성 및 개발 규칙은 다음 문서를 참고하세요:
-
-- 아키텍처: `docs/architecture/ARCHITECTURE.md`
-- Git 컨벤션: `docs/development/CONVENTIONS.md`
-- 코드 스타일: `docs/development/CODE_STYLE.md`
-- Issue/PR 템플릿: `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`
-
-## 주요 명령어
-
-### 로컬 개발
+## Commands
 
 ```bash
 # 의존성 설치
 pnpm install
 
-# 개발 서버 실행 (Docker DB 포함)
-docker compose up -d
-pnpm run start:dev
+# 개발 서버 실행 (Docker DB 필요)
+docker compose up -d && pnpm run start:dev
 
-# 개발 서버 실행 (watch 모드)
+# 디버그 모드
 pnpm run start:debug
-```
 
-### 빌드 및 테스트
-
-```bash
 # 빌드
 pnpm run build
 
-# 린트
+# 린트 & 포맷팅
 pnpm run lint
 pnpm run lint:fix
-
-# 포맷팅
 pnpm run format
 
 # 테스트
-pnpm run test                    # 단위 테스트
-pnpm run test:watch              # watch 모드
-pnpm run test:cov                # 커버리지
-pnpm run test:e2e                # E2E 테스트
+pnpm run test              # 단위 테스트
+pnpm run test:watch        # watch 모드
+pnpm run test:cov          # 커버리지
+pnpm run test:e2e          # E2E 테스트
+
+# 단일 테스트 파일 실행
+pnpm run test -- user.service.spec.ts
+
+# Docker
+docker compose up -d       # PostgreSQL 실행
+docker compose down        # 종료
+docker build -t folioo-server .  # 프로덕션 빌드
 ```
 
-### Docker
+## Architecture
 
-```bash
-# 개발 환경
-docker compose up -d             # PostgreSQL 실행
-docker compose down              # 종료
+DDD 기반 계층형 아키텍처 (Package by Feature + Layered Architecture)
 
-# 프로덕션 빌드
-docker build -t folioo-server .
+```
+src/
+├── common/                 # 공통 모듈 (decorators, filters, interceptors, exceptions)
+├── config/                 # 설정 (swagger, typeorm)
+└── modules/                # 비즈니스 도메인
+    └── {domain}/
+        ├── domain/         # 엔티티
+        ├── application/    # 서비스, DTO
+        ├── infrastructure/ # 리포지토리
+        └── presentation/   # 컨트롤러
 ```
 
-## 커밋 메시지 규칙
+### Domain Classification
 
-### 형식
+| 도메인 | 분류 | 설명 |
+|--------|------|------|
+| **Experience** | Core | 경험 정리 (AI 채팅 포함) |
+| **Portfolio** | Core | 포트폴리오 |
+| **Portfolio-Correction** | Core | 포트폴리오 첨삭 서비스 |
+| **Insight** | Supporting | 인사이트/팁 정리 |
+| **User** | Supporting | 사용자 도메인 |
+| **Auth** | Generic | 인증 (Kakao/Google/Apple OAuth) |
+| **Payment** | Generic | 결제 (예정) |
+
+### Layer Dependencies
+
+```
+Controller → Service → Repository → Entity
+    ↓           ↓           ↓
+   DTO         DTO       Entity
+```
+
+## Key Conventions
+
+### Error Handling
+
+`BusinessException`과 `ErrorCode`를 사용 (`common/exceptions/` 참조):
+
+```typescript
+throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+throw new BusinessException(ErrorCode.UNAUTHORIZED);
+```
+
+### Entity Relations
+
+순환참조 방지를 위해 **단방향 매핑(ManyToOne)만 사용**:
+
+```typescript
+@ManyToOne(() => User, { lazy: true, onDelete: 'CASCADE' })
+@JoinColumn({ name: 'user_id' })
+user: User;
+```
+
+### Swagger
+
+NestJS Swagger CLI Plugin 사용 중 - 기본 타입은 자동 추론됨.
+`@ApiProperty()`는 example, enum 등 자세한 명세가 필요한 경우에만 사용.
+
+### Code Style
+
+- **DTO**: `class-validator` 데코레이터 사용
+- **Entity**: `TypeORM` 데코레이터 사용
+- **DI**: 생성자 주입 사용 (`@Injectable()` + constructor)
+
+### Commit Messages
 
 ```
 <type>: <subject> (#<issue_number>)
@@ -79,22 +124,9 @@ docker build -t folioo-server .
 <body>
 ```
 
-### 타입
+**Type**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `rename`, `remove`
 
-| Type | 설명 |
-|------|------|
-| `feat` | 새로운 기능 추가 |
-| `fix` | 버그 수정 |
-| `docs` | 문서 수정 |
-| `style` | 코드 포맷팅, 세미콜론 등 |
-| `refactor` | 코드 리팩토링 |
-| `test` | 테스트 코드 |
-| `chore` | 빌드 설정, 패키지 매니저 등 |
-| `rename` | 파일/폴더 이름 변경 또는 이동 |
-| `remove` | 파일 삭제 |
-
-### 예시
-
+**예시**:
 ```bash
 git commit -m "feat: 포트폴리오 CRUD API 구현 (#15)
 
@@ -103,38 +135,23 @@ git commit -m "feat: 포트폴리오 CRUD API 구현 (#15)
 - Swagger 문서 업데이트"
 ```
 
-## 중요: AI 생성 표시 금지
+**CRITICAL**: AI 생성 표시 절대 금지 (Co-Authored-By, Generated by AI 등)
 
-커밋 메시지에 AI가 생성했다는 표시를 **절대 사용하지 마세요**:
+### Branch/Issue/PR Naming
 
-- ~~`Co-Authored-By: Claude`~~
-- ~~`Co-Authored-By: ... <noreply@anthropic.com>`~~
-- ~~`Generated by AI`~~
-- ~~`🤖 Generated with Claude Code`~~
+- **Branch**: `feat/portfolio-crud-#15`
+- **Issue**: `[Feat] 포트폴리오 CRUD API 구현`
+- **PR**: `Feat: 포트폴리오 CRUD API 구현 (#15)`
 
-커밋은 항상 **사람이 직접 작성한 것처럼** 작성합니다.
+## Documentation References
 
-## 프로젝트 구조
+상세한 내용은 아래 문서 참조:
 
-```
-src/
-├── common/              # 공통 모듈 (decorators, filters, interceptors)
-├── config/              # 설정 (swagger, typeorm)
-└── modules/             # 비즈니스 도메인
-    ├── auth/            # 인증
-    ├── user/            # 사용자
-    │   ├── domain/      # 엔티티, 리포지토리 인터페이스
-    │   ├── application/ # 서비스, DTO
-    │   └── presentation/# 컨트롤러
-    ├── portfolio/       # 포트폴리오
-    ├── experience/      # 경력
-    └── insight/         # 인사이트
-```
-
-## 코드 작성 시 주의사항
-
-1. **DTO는 class-validator 데코레이터 사용**
-2. **Entity는 TypeORM 데코레이터 사용**
-3. **DI는 생성자 주입 사용** (`@Injectable()` + constructor)
-4. **API 문서는 Swagger 데코레이터로 작성**
-5. **에러 처리는 NestJS 내장 예외 또는 커스텀 예외 사용**
+| 문서 | 경로 |
+|------|------|
+| 아키텍처 | `docs/architecture/ARCHITECTURE.md` |
+| ERD/DB 설계 | `docs/architecture/ERD.md` |
+| 코드 스타일 | `docs/development/CODE_STYLE.md` |
+| Git 컨벤션 | `docs/development/CONVENTIONS.md` |
+| PR 템플릿 | `.github/PULL_REQUEST_TEMPLATE.md` |
+| Issue 템플릿 | `.github/ISSUE_TEMPLATE/` |

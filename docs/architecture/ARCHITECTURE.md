@@ -90,11 +90,12 @@ src/
     ├── auth/                    # 인증 (Generic)
     ├── user/                    # 사용자 (Supporting)
     │   ├── domain/              # 도메인 계층
-    │   │   ├── entities/        # 엔티티
-    │   │   └── repositories/    # 리포지토리 인터페이스
+    │   │   └── entities/        # 엔티티
     │   ├── application/         # 애플리케이션 계층
     │   │   ├── services/        # 서비스
     │   │   └── dtos/            # DTO
+    │   ├── infrastructure/      # 인프라 계층
+    │   │   └── repositories/    # TypeORM 리포지토리 구현체
     │   └── presentation/        # 프레젠테이션 계층
     │       └── controllers/     # 컨트롤러
     ├── experience/              # 경험 정리 (Core)
@@ -147,7 +148,7 @@ export class UserService {
   async findOne(id: string): Promise<UserResponseDto> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
     return UserResponseDto.from(user);
   }
@@ -167,9 +168,6 @@ export class User extends BaseEntity {
 
   @Column()
   name: string;
-
-  @OneToMany(() => Portfolio, (portfolio) => portfolio.user)
-  portfolios: Portfolio[];
 }
 ```
 

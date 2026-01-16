@@ -27,25 +27,31 @@
 
 ## DTO 작성 규칙
 
+> **Note**: 프로젝트에서 [NestJS Swagger CLI Plugin](https://docs.nestjs.com/openapi/cli-plugin)을 사용 중이므로
+> `@ApiProperty()` 데코레이터는 **필수가 아닙니다**.
+> 다만, `example` 값이나 `enum` 타입 등 **자세한 명세가 필요한 경우**에만 사용합니다.
+
 ### Request DTO
 
 ```typescript
 // class-validator 데코레이터 사용
 export class CreateUserDto {
   @IsEmail()
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: 'user@example.com' })  // example 명시 필요한 경우
   email: string;
 
   @IsString()
   @MinLength(2)
   @MaxLength(20)
-  @ApiProperty({ example: '홍길동' })
-  name: string;
+  name: string;  // 기본 타입은 플러그인이 자동 추론
 
   @IsOptional()
   @IsString()
-  @ApiPropertyOptional()
   bio?: string;
+
+  @IsEnum(LoginType)
+  @ApiProperty({ enum: LoginType })  // enum 타입은 명시 필요
+  loginType: LoginType;
 }
 ```
 
@@ -53,13 +59,8 @@ export class CreateUserDto {
 
 ```typescript
 export class UserResponseDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
+  id: string;    // Swagger 플러그인이 자동 추론
   email: string;
-
-  @ApiProperty()
   name: string;
 
   // 정적 팩토리 메서드
@@ -97,29 +98,22 @@ export class User extends BaseEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
-
-  // 관계 정의
-  @OneToMany(() => Portfolio, (portfolio) => portfolio.user)
-  portfolios: Portfolio[];
 }
 ```
 
 ### 관계 매핑
 
+> **Note**: 모듈 간 순환참조 방지를 위해 **단방향 매핑(ManyToOne)만 사용**합니다.
+> 양방향 매핑(`OneToMany`)은 꼭 필요한 경우에만 사용합니다.
+
 ```typescript
-// 다대일 관계 - LAZY 필수
-@ManyToOne(() => User, (user) => user.portfolios, {
+// 다대일 관계 (단방향) - LAZY 필수
+@ManyToOne(() => User, {
   lazy: true,
   onDelete: 'CASCADE',
 })
 @JoinColumn({ name: 'user_id' })
 user: User;
-
-// 일대다 관계
-@OneToMany(() => Portfolio, (portfolio) => portfolio.user, {
-  cascade: true,
-})
-portfolios: Portfolio[];
 ```
 
 ## Service 작성 규칙
@@ -141,7 +135,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
 
     return UserResponseDto.from(user);
@@ -238,13 +232,28 @@ this.logger.log(`User created: ${user.id}`);
 
 ### 1. 일관된 에러 처리
 
+프로젝트에서 정의한 `BusinessException`과 `ErrorCode`를 사용하여 에러를 처리합니다.
+
 ```typescript
-// NestJS 내장 예외 사용
-throw new NotFoundException('사용자를 찾을 수 없습니다.');
-throw new BadRequestException('잘못된 요청입니다.');
-throw new UnauthorizedException('인증이 필요합니다.');
-throw new ForbiddenException('권한이 없습니다.');
+// error-code.enum.ts
+export enum ErrorCode {
+  // 공통
+  BAD_REQUEST = 'COMMON400',
+  UNAUTHORIZED = 'COMMON401',
+  INTERNAL_SERVER_ERROR = 'COMMON500',
+  NOT_IMPLEMENTED = 'COMMON501',
+
+  // 도메인별 에러 코드 추가
+  USER_NOT_FOUND = 'USER404',
+}
+
+// 서비스에서 사용
+throw new BusinessException(ErrorCode.BAD_REQUEST);
+throw new BusinessException(ErrorCode.UNAUTHORIZED);
+throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 ```
+
+> 참고: `common/exceptions/` 디렉토리의 `error-code.enum.ts`, `error-code.ts`, `business.exception.ts` 파일 참조
 
 ### 2. Optional Chaining 사용
 
