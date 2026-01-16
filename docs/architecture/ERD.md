@@ -116,7 +116,7 @@ CreditTransactionType: 'EARN' | 'USE' | 'REFUND'
 |------|------|------|
 | id | number | PK |
 | experience_id | number | FK → experience.id |
-| chat | JSON | 대화 내용 |
+| chat | jsonb | 대화 내용 |
 | status | ENUM | 진행 상태 |
 
 ### portfolio (포트폴리오)
