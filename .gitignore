@@ -4,6 +4,9 @@
 /build
 /tmp
 
+# metadata.ts는 빌드 시 자동 생성되므로 gitignore 처리
+src/metadata.ts
+
 # Logs
 logs
 *.log
@@ -15,10 +18,18 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
-.env.development
-.env.test
-.env.production
+.env.*
+!.env.example
 
 # temp directory
 .temp
 .tmp
+
+# macOS
+.DS_Store
+
+# docker (override는 개인 설정용)
+docker-compose.override.yml
+
+# SSH 키 (절대 커밋 금지)
+*.pem
