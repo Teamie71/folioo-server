@@ -8,4 +8,38 @@ code_review:
     summary: true
     code_review: true
     include_drafts: true
-ignore_patterns: []
+
+# 리뷰 제외 패턴
+ignore_patterns:
+  # GitHub 설정
+  - '.github/'
+
+  # 빌드 결과물
+  - 'dist/'
+  - 'build/'
+  - 'node_modules/'
+
+  # 문서
+  - 'docs/'
+  - '*.md'
+
+  # 설정 파일
+  - '*.config.js'
+  - '*.config.ts'
+  - 'tsconfig*.json'
+
+  # Docker
+  - 'docker/'
+  - 'Dockerfile'
+  - 'docker-compose*.yml'
+
+  # Lock 파일
+  - '*.lock'
+  - 'pnpm-lock.yaml'
+
+  # 환경 변수
+  - '.env*'
+
+  # 테스트 픽스처
+  - '**/__fixtures__/**'
+  - '**/__mocks__/**'
