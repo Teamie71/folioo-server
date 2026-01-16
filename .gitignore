@@ -28,6 +28,8 @@ lerna-debug.log*
 # macOS
 .DS_Store
 
-# docker (로컬 설정은 각자 다를 수 있으므로 무시, prod는 커밋)
-docker-compose.yml
+# docker (override는 개인 설정용)
 docker-compose.override.yml
+
+# SSH 키 (절대 커밋 금지)
+*.pem

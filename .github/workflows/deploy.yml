@@ -63,19 +63,25 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
+        env:
+          ENV_PROD: ${{ secrets.ENV_PROD }}
         with:
           host: ${{ secrets.LIGHTSAIL_HOST }}
           username: ${{ secrets.LIGHTSAIL_USERNAME }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           port: 22
+          envs: ENV_PROD
           script: |
             echo "🚀 Starting deployment..."
 
             cd ~/docker
 
+            # .env.prod 파일 생성 (GitHub Secrets에서)
+            echo "$ENV_PROD" > .env.prod
+
             # 최신 이미지 Pull & 재시작 (헬스체크 통과까지 대기)
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --force-recreate --wait
+            docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --force-recreate --wait
 
             # 헬스체크 추가 확인
             echo "🔍 Verifying health..."
@@ -84,7 +90,7 @@ jobs:
               echo "✅ Health check passed!"
             else
               echo "❌ Health check failed!"
-              docker compose -f docker-compose.prod.yml logs --tail=50
+              docker compose --env-file .env.prod -f docker-compose.prod.yml logs --tail=50
               exit 1
             fi
 
