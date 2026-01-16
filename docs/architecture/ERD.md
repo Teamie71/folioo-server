@@ -32,9 +32,9 @@
 user
    │
    ├── 1:N ─ experience ─┬─ 1:N ─ experience_source (OCR 추출)
-   │                     └─ 1:N ─ chat (AI 대화)
+   │                     └─ 1:1 ─ chat (AI 대화)
    │
-   ├── 1:N ─ portfolio ─── N:1 ─ experience (경험에서 생성)
+   ├── 1:N ─ portfolio ─── 1:1 ─ experience (경험에서 생성)
    │
    ├── 1:N ─ portfolio_correction ─── 1:N ─ correction_item
    │                                        └─── N:1 ─ portfolio
@@ -108,6 +108,7 @@ CreditTransactionType: 'EARN' | 'USE' | 'REFUND'
 | id | number | PK |
 | experience_id | number | FK → experience.id |
 | extracted_text | text | OCR 추출 텍스트 |
+| ocr_meta_data | jsonb | OCR 메타데이터 |
 
 ### chat (경험정리 대화)
 
@@ -151,13 +152,13 @@ CreditTransactionType: 'EARN' | 'USE' | 'REFUND'
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
 | id | number | PK |
-| description | int (nullable) | 상세정보 |
-| responsibilities | int (nullable) | 담당업무 |
-| problem_solving | int (nullable) | 문제해결 |
-| learnings | int (nullable) | 배운점 |
-| overall_review | int (nullable) | 총평 |
+| description | jsonb (nullable) | 상세정보 첨삭 |
+| responsibilities | jsonb (nullable) | 담당업무 첨삭 |
+| problem_solving | jsonb (nullable) | 문제해결 첨삭 |
+| learnings | jsonb (nullable) | 배운점 첨삭 |
+| overall_review | jsonb (nullable) | 총평 첨삭 |
 | portfolio_correction_id | number | FK → portfolio_correction.id |
-| portfolio_id | int | FK → portfolio.id |
+| portfolio_id | number | FK → portfolio.id |
 
 ### insight (인사이트)
 
