@@ -213,7 +213,7 @@ Dockerfile의 pnpm 버전은 로컬 개발 환경과 일치시켜야 합니다:
 
 ```dockerfile
 # package.json의 packageManager 필드 확인 후 동일한 버전 사용
-RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 ```
 
 ### npm scripts의 CI 환경 대응

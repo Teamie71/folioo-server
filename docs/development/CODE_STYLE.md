@@ -364,12 +364,12 @@ Git hooks 관리 도구(husky)는 `.git` 폴더가 필요하므로 존재 여부
 
 ```json
 {
-    "packageManager": "pnpm@10.11.0"
+    "packageManager": "pnpm@10.28.0"
 }
 ```
 
 Dockerfile에서 이 버전과 일치시켜야 합니다:
 
 ```dockerfile
-RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 ```
