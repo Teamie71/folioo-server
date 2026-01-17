@@ -4,7 +4,7 @@
 FROM node:20-alpine AS builder
 
 # pnpm 설치 (버전 고정으로 빌드 재현성 보장)
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 
 WORKDIR /app
 

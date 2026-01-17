@@ -10,14 +10,14 @@
 
 ### 타입
 
-| Type | 설명 | 예시 |
-|------|------|------|
-| `feat` | 새로운 기능 | `feat/portfolio-crud-#15` |
-| `fix` | 버그 수정 | `fix/auth-token-expire-#23` |
-| `refactor` | 리팩토링 | `refactor/user-service-#8` |
-| `hotfix` | 긴급 수정 | `hotfix/login-error-#45` |
-| `chore` | 빌드, 설정 | `chore/docker-setup-#5` |
-| `docs` | 문서 작업 | `docs/api-spec-#12` |
+| Type       | 설명        | 예시                        |
+| ---------- | ----------- | --------------------------- |
+| `feat`     | 새로운 기능 | `feat/portfolio-crud-#15`   |
+| `fix`      | 버그 수정   | `fix/auth-token-expire-#23` |
+| `refactor` | 리팩토링    | `refactor/user-service-#8`  |
+| `hotfix`   | 긴급 수정   | `hotfix/login-error-#45`    |
+| `chore`    | 빌드, 설정  | `chore/docker-setup-#5`     |
+| `docs`     | 문서 작업   | `docs/api-spec-#12`         |
 
 ### 규칙
 
@@ -37,17 +37,17 @@
 
 ### 타입
 
-| Type | 설명 |
-|------|------|
-| `feat` | 새로운 기능 추가 |
-| `fix` | 버그 수정 |
-| `docs` | 문서 수정 |
-| `style` | 코드 포맷팅, 세미콜론 누락 등 (기능 변경 X) |
-| `refactor` | 코드 리팩토링 |
-| `test` | 테스트 코드 추가/수정 |
-| `chore` | 빌드 설정, 패키지 매니저 등 |
-| `rename` | 파일/폴더 이름 변경 또는 이동 |
-| `remove` | 파일 삭제 |
+| Type       | 설명                                        |
+| ---------- | ------------------------------------------- |
+| `feat`     | 새로운 기능 추가                            |
+| `fix`      | 버그 수정                                   |
+| `docs`     | 문서 수정                                   |
+| `style`    | 코드 포맷팅, 세미콜론 누락 등 (기능 변경 X) |
+| `refactor` | 코드 리팩토링                               |
+| `test`     | 테스트 코드 추가/수정                       |
+| `chore`    | 빌드 설정, 패키지 매니저 등                 |
+| `rename`   | 파일/폴더 이름 변경 또는 이동               |
+| `remove`   | 파일 삭제                                   |
 
 ### 커밋 메시지 규칙
 
@@ -180,20 +180,20 @@ src/modules/user/           # 단수 (도메인)
 
 ### 규칙
 
-| 유형 | 형식 | 예시 |
-|------|------|------|
-| Controller | `*.controller.ts` | `user.controller.ts` |
-| Service | `*.service.ts` | `user.service.ts` |
-| Module | `*.module.ts` | `user.module.ts` |
-| Entity | `*.entity.ts` | `user.entity.ts` |
-| DTO | `*.dto.ts` | `create-user.dto.ts` |
-| Interface | `*.interface.ts` | `user.interface.ts` |
-| Guard | `*.guard.ts` | `jwt-auth.guard.ts` |
-| Decorator | `*.decorator.ts` | `current-user.decorator.ts` |
-| Filter | `*.filter.ts` | `http-exception.filter.ts` |
-| Interceptor | `*.interceptor.ts` | `transform.interceptor.ts` |
-| Spec | `*.spec.ts` | `user.service.spec.ts` |
-| E2E | `*.e2e-spec.ts` | `user.e2e-spec.ts` |
+| 유형        | 형식               | 예시                        |
+| ----------- | ------------------ | --------------------------- |
+| Controller  | `*.controller.ts`  | `user.controller.ts`        |
+| Service     | `*.service.ts`     | `user.service.ts`           |
+| Module      | `*.module.ts`      | `user.module.ts`            |
+| Entity      | `*.entity.ts`      | `user.entity.ts`            |
+| DTO         | `*.dto.ts`         | `create-user.dto.ts`        |
+| Interface   | `*.interface.ts`   | `user.interface.ts`         |
+| Guard       | `*.guard.ts`       | `jwt-auth.guard.ts`         |
+| Decorator   | `*.decorator.ts`   | `current-user.decorator.ts` |
+| Filter      | `*.filter.ts`      | `http-exception.filter.ts`  |
+| Interceptor | `*.interceptor.ts` | `transform.interceptor.ts`  |
+| Spec        | `*.spec.ts`        | `user.service.spec.ts`      |
+| E2E         | `*.e2e-spec.ts`    | `user.e2e-spec.ts`          |
 
 ### 복합어 파일명
 
@@ -205,6 +205,48 @@ jwt-auth.guard.ts
 http-exception.filter.ts
 ```
 
+## Docker 빌드 가이드
+
+### pnpm 버전 관리
+
+Dockerfile의 pnpm 버전은 로컬 개발 환경과 일치시켜야 합니다:
+
+```dockerfile
+# package.json의 packageManager 필드 확인 후 동일한 버전 사용
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+```
+
+### npm scripts의 CI 환경 대응
+
+Git hooks 관리 도구(husky 등)는 `.git` 폴더가 없는 CI/Docker 환경에서 실패할 수 있습니다.
+`prepare` 스크립트는 `.git` 폴더 존재 여부를 확인해야 합니다:
+
+```json
+{
+    "scripts": {
+        "prepare": "node -e \"if (require('fs').existsSync('.git')) { require('child_process').execSync('husky', {stdio: 'inherit'}) }\""
+    }
+}
+```
+
+**주의사항:**
+
+- `.dockerignore`에 `.git`이 포함되어 있어 Docker 컨테이너에는 Git 정보가 없음
+- `pnpm install` 실행 시 `prepare` 스크립트가 자동으로 실행되므로 조건부 처리 필수
+- `.git`이 있는 환경에서는 husky 실행 오류가 정상적으로 전파되어 설정 문제를 즉시 발견 가능
+
+### 로컬 Docker 빌드 테스트
+
+PR 생성 전 로컬에서 Docker 빌드를 테스트하세요:
+
+```bash
+# 빌드 테스트
+docker build -t folioo-server .
+
+# 전체 단계 테스트 (DB 포함)
+docker compose up -d
+```
+
 ## 코드 리뷰 체크리스트
 
 PR 생성 전 확인사항:
@@ -213,5 +255,6 @@ PR 생성 전 확인사항:
 - [ ] 커밋 메시지가 컨벤션을 따르는가?
 - [ ] 관련 Issue가 연결되어 있는가?
 - [ ] 로컬에서 빌드/테스트가 통과하는가?
+- [ ] Docker 빌드가 성공하는가? (Dockerfile 변경 시)
 - [ ] 불필요한 console.log가 없는가?
 - [ ] 코드 포맷팅이 적용되었는가?
