@@ -224,7 +224,7 @@ Git hooks 관리 도구(husky 등)는 `.git` 폴더가 없는 CI/Docker 환경�
 ```json
 {
     "scripts": {
-        "prepare": "node -e \"try { require('fs').statSync('.git') && require('child_process').execSync('husky', {stdio: 'inherit'}) } catch {}\""
+        "prepare": "node -e \"if (require('fs').existsSync('.git')) { require('child_process').execSync('husky', {stdio: 'inherit'}) }\""
     }
 }
 ```
@@ -233,6 +233,7 @@ Git hooks 관리 도구(husky 등)는 `.git` 폴더가 없는 CI/Docker 환경�
 
 - `.dockerignore`에 `.git`이 포함되어 있어 Docker 컨테이너에는 Git 정보가 없음
 - `pnpm install` 실행 시 `prepare` 스크립트가 자동으로 실행되므로 조건부 처리 필수
+- `.git`이 있는 환경에서는 husky 실행 오류가 정상적으로 전파되어 설정 문제를 즉시 발견 가능
 
 ### 로컬 Docker 빌드 테스트
 

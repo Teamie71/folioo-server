@@ -316,7 +316,7 @@ Git hooks 관리 도구(husky)는 `.git` 폴더가 필요하므로 존재 여부
 ```json
 {
     "scripts": {
-        "prepare": "node -e \"try { require('fs').statSync('.git') && require('child_process').execSync('husky', {stdio: 'inherit'}) } catch {}\""
+        "prepare": "node -e \"if (require('fs').existsSync('.git')) { require('child_process').execSync('husky', {stdio: 'inherit'}) }\""
     }
 }
 ```
@@ -325,7 +325,7 @@ Git hooks 관리 도구(husky)는 `.git` 폴더가 필요하므로 존재 여부
 
 - Docker 컨테이너 빌드 시 `.git` 폴더가 없어 husky 실행 실패
 - `pnpm install` 실행 시 `prepare` 스크립트가 자동으로 실행됨
-- try-catch로 감싸 에러가 발생해도 빌드가 중단되지 않도록 처리
+- `.git`이 있는 환경에서는 husky 실행 오류를 정상적으로 전파하여 설정 문제를 즉시 발견 가능
 
 #### 잘못된 예시
 
@@ -336,7 +336,10 @@ Git hooks 관리 도구(husky)는 `.git` 폴더가 필요하므로 존재 여부
         "prepare": "husky",
 
         // ❌ if 문법 사용 - Windows 환경에서 실행 불가
-        "prepare": "if [ -d .git ]; then husky; fi"
+        "prepare": "if [ -d .git ]; then husky; fi",
+
+        // ❌ try-catch로 모든 에러 무시 - husky 설정 오류도 숨겨짐
+        "prepare": "node -e \"try { require('fs').statSync('.git') && require('child_process').execSync('husky', {stdio: 'inherit'}) } catch {}\""
     }
 }
 ```
@@ -346,8 +349,8 @@ Git hooks 관리 도구(husky)는 `.git` 폴더가 필요하므로 존재 여부
 ```json
 {
     "scripts": {
-        // ✅ Node.js 코드로 크로스 플랫폼 지원
-        "prepare": "node -e \"try { require('fs').statSync('.git') && require('child_process').execSync('husky', {stdio: 'inherit'}) } catch {}\"",
+        // ✅ .git 체크만 하고 husky 오류는 정상 전파
+        "prepare": "node -e \"if (require('fs').existsSync('.git')) { require('child_process').execSync('husky', {stdio: 'inherit'}) }\"",
 
         // ✅ 환경 변수로 CI 환경 감지
         "postinstall": "node -e \"if (!process.env.CI) { require('child_process').execSync('some-command', {stdio: 'inherit'}) }\""
