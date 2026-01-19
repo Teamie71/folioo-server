@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy } from 'passport-kakao';
+import { Profile, Strategy } from 'passport-kakao';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { LoginType } from 'src/modules/user/domain/enums/login-type.enum';
+import { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy) {
@@ -16,30 +17,41 @@ export class KakaoStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    validate(_accessToken: string, _refreshToken: string, profile: KakaoProfile): Promise<any> {
+    validate(_accessToken: string, _refreshToken: string, profile: Profile): SocialUserAfterOAuth {
         try {
-            const user = {
-                id: String(profile.id),
-                nickname: profile.properties?.nickname,
-                email: profile.kakao_account?.email,
-                profileImage: profile.properties?.profile_image,
+            const raw = profile._json as unknown as KakaoRawData;
+            const user: SocialUserAfterOAuth = {
+                id: String(raw.id),
+                nickname: raw.kakao_account?.profile?.nickname || raw.properties?.nickname || '',
+                email: raw.kakao_account?.email || '',
+                profileImage:
+                    raw.kakao_account?.profile?.profile_image_url ||
+                    raw.properties?.profile_image ||
+                    '',
                 socialType: LoginType.KAKAO,
             };
-            return Promise.resolve(user);
+            return user;
         } catch (error) {
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, error);
         }
     }
 }
 
-interface KakaoProfile {
-    id: number | string;
-    username?: string;
+interface KakaoAccount {
+    profile?: {
+        nickname?: string;
+        profile_image_url?: string;
+        thumbnail_image_url?: string;
+    };
+    email?: string;
+}
+
+interface KakaoRawData {
+    id: number;
     properties?: {
         nickname?: string;
         profile_image?: string;
+        thumbnail_image?: string;
     };
-    kakao_account?: {
-        email?: string;
-    };
+    kakao_account?: KakaoAccount;
 }

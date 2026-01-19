@@ -12,3 +12,7 @@ export interface SocialUserAfterOAuth {
     profileImage: string;
     socialType: LoginType;
 }
+
+export type UserAfterAuth = JwtPayload & {
+    refreshToken?: string;
+};

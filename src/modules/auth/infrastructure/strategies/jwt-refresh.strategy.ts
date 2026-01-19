@@ -7,14 +7,14 @@ import { Request } from 'express';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
-    constructor(confingService: ConfigService) {
+    constructor(configService: ConfigService) {
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
                 (req: Request) => {
                     return req?.cookies?.['refreshToken'] as string | null;
                 },
             ]),
-            secretOrKey: confingService.getOrThrow<string>('JWT_REFRESH_TOKEN'),
+            secretOrKey: configService.getOrThrow<string>('JWT_REFRESH_TOKEN'),
             passReqToCallback: true,
         });
     }
@@ -22,6 +22,6 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     validate(req: Request, payload: JwtPayload) {
         const refreshToken = req.cookies?.refreshToken as string | null;
 
-        return { userId: payload.sub, email: payload.email, refreshToken };
+        return { sub: payload.sub, email: payload.email, refreshToken };
     }
 }

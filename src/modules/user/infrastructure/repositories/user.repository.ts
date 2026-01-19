@@ -21,8 +21,8 @@ export class UserRepository {
     ): Promise<User | null> {
         return await this.userRepository.findOne({
             where: {
-                socialId: socialId,
-                socialType: socialType,
+                socialId,
+                socialType,
             },
         });
     }

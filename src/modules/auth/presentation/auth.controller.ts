@@ -12,7 +12,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SendSmsReqDto, VerifySmsReqDto } from '../application/dtos/sms-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { SocialUser, User } from 'src/common/decorators/social-user.decorator';
+import { SocialUser } from 'src/common/decorators/social-user.decorator';
 import type { JwtPayload, SocialUserAfterOAuth } from '../domain/types/jwt-payload.type';
 import type { Response } from 'express';
 import { LoginUsecase } from '../application/usecases/login.usecase';
@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { Public } from 'src/common/decorators/public.decorator';
 import { JwtRefreshGuard } from '../infrastructure/guards/jwt-refresh.guard';
 import { TokenService } from '../infrastructure/services/token.service';
+import { User } from 'src/common/decorators/user.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
