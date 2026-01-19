@@ -26,13 +26,13 @@ export class User extends BaseEntity {
     @Column({
         type: 'bigint',
     })
-    loginId: string;
+    socialId: string;
 
     @Column({
         type: 'enum',
         enum: LoginType,
     })
-    loginType: LoginType;
+    socialType: LoginType;
 
     @Column({ default: 0 })
     credit: number;
@@ -42,4 +42,20 @@ export class User extends BaseEntity {
 
     @Column({ nullable: true })
     deactivatedAt: Date;
+
+    static createSocialUser(
+        name: string,
+        email: string,
+        profileImg: string,
+        socialId: string,
+        socialType: LoginType
+    ): User {
+        const user = new User();
+        user.name = name;
+        user.email = email;
+        user.imgUrl = profileImg;
+        user.socialId = socialId;
+        user.socialType = socialType;
+        return user;
+    }
 }
