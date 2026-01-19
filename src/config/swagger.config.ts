@@ -27,6 +27,7 @@ export async function setupSwagger(app: INestApplication): Promise<void> {
             configService.get<string>('SWAGGER_DESCRIPTION') || 'API document of Folioo Development'
         )
         .setVersion(configService.get<string>('SWAGGER_VERSION') || '1.0.0')
+        .addCookieAuth('accessToken')
         .build();
 
     await SwaggerModule.loadPluginMetadata(metadata);
