@@ -12,6 +12,8 @@ import { InsightModule } from './modules/insight/insight.module';
 import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
+import { addTransactionalDataSource } from 'typeorm-transactional';
+import { DataSource } from 'typeorm';
 
 @Module({
     imports: [
@@ -21,6 +23,12 @@ import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfo
         }),
         TypeOrmModule.forRootAsync({
             useClass: TypeOrmConfigService,
+            dataSourceFactory(options) {
+                if (!options) {
+                    throw new Error('Invalid options passed');
+                }
+                return Promise.resolve(addTransactionalDataSource(new DataSource(options)));
+            },
         }),
         AuthModule,
         UserModule,
