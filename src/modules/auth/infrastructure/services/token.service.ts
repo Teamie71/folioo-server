@@ -19,6 +19,10 @@ export class TokenService {
         return this.jwtService.signAsync(payload);
     }
 
+    async refreshAccessToken(payload: JwtPayload): Promise<string> {
+        return this.jwtService.signAsync(payload);
+    }
+
     async generateRefreshToken(user: User): Promise<string> {
         const payload: JwtPayload = {
             sub: user.id,

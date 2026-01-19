@@ -9,6 +9,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
+import { JwtRefreshGuard } from './infrastructure/guards/jwt-refresh.guard';
+import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.strategy';
 
 @Module({
     imports: [
@@ -26,7 +28,15 @@ import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
         UserModule,
     ],
     controllers: [AuthController],
-    providers: [LoginUsecase, KakaoStrategy, TokenService, JwtAuthGuard, JwtStrategy],
+    providers: [
+        LoginUsecase,
+        KakaoStrategy,
+        TokenService,
+        JwtAuthGuard,
+        JwtStrategy,
+        JwtRefreshGuard,
+        JwtRefreshStrategy,
+    ],
     exports: [JwtAuthGuard],
 })
 export class AuthModule {}

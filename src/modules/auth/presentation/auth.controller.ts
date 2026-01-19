@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Post, Query, Res, UseGuards } from '@nestjs/common';
 import {
     ApiBody,
     ApiOkResponse,
@@ -12,19 +12,22 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SendSmsReqDto, VerifySmsReqDto } from '../application/dtos/sms-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { SocialUser } from 'src/common/decorators/social-user.decorator';
-import type { SocialUserAfterOAuth } from '../domain/types/jwt-payload.type';
+import { SocialUser, User } from 'src/common/decorators/social-user.decorator';
+import type { JwtPayload, SocialUserAfterOAuth } from '../domain/types/jwt-payload.type';
 import type { Response } from 'express';
 import { LoginUsecase } from '../application/usecases/login.usecase';
 import { ConfigService } from '@nestjs/config';
 import { Public } from 'src/common/decorators/public.decorator';
+import { JwtRefreshGuard } from '../infrastructure/guards/jwt-refresh.guard';
+import { TokenService } from '../infrastructure/services/token.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
     constructor(
         private readonly configService: ConfigService,
-        private readonly loginUsecase: LoginUsecase
+        private readonly loginUsecase: LoginUsecase,
+        private readonly tokenService: TokenService
     ) {}
 
     @ApiOperation({
@@ -237,20 +240,26 @@ export class AuthController {
         summary: '토큰 재발급',
         description: '유효한 refreshToken을 사용해 accessToken을 재발급 받습니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Generate New AccessToken',
-            },
-        },
+    @ApiResponse({
+        status: HttpStatus.CREATED,
+        example: 'Generate New AccessToken',
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @Public()
+    @UseGuards(JwtRefreshGuard)
     @Post('refresh')
-    handleRefresh() {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async handleRefresh(@User() user: JwtPayload, @Res() res: Response) {
+        const newAccessToken = await this.tokenService.refreshAccessToken({
+            sub: user.sub,
+            email: user.email,
+        });
+        res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 1000 * (this.configService.get<number>('JWT_EXPIRES_IN') || 60 * 60), // 1시간
+        });
+        res.send('Generate New AccessToken');
     }
 
     @ApiOperation({
