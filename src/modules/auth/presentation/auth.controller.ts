@@ -17,6 +17,7 @@ import type { SocialUserAfterOAuth } from '../domain/types/jwt-payload.type';
 import type { Response } from 'express';
 import { LoginUsecase } from '../application/usecases/login.usecase';
 import { ConfigService } from '@nestjs/config';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -44,6 +45,7 @@ export class AuthController {
         status: 302,
         description: '카카오 로그인 페이지로 리다이렉트됨.',
     })
+    @Public()
     @UseGuards(AuthGuard('kakao'))
     @Get('kakao')
     async kakaoLogin() {}
@@ -57,6 +59,7 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
+    @Public()
     @UseGuards(AuthGuard('kakao'))
     @Get('kakao/callback')
     async kakaoCallback(
@@ -118,6 +121,7 @@ export class AuthController {
         status: 302,
         description: '구글 로그인 페이지로 리다이렉트됨.',
     })
+    @Public()
     @Get('google')
     googleLogin(
         @Query('redirect_url') redirect_url?: string,
@@ -138,6 +142,7 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
+    @Public()
     @Get('google/callback')
     googleCallback(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
@@ -181,6 +186,7 @@ export class AuthController {
         status: 302,
         description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
+    @Public()
     @Get('naver')
     naverLogin(
         @Query('redirect_url') redirect_url?: string,
@@ -201,6 +207,7 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
+    @Public()
     @Get('naver/callback')
     naverCallback(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
