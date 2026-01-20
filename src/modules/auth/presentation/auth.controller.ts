@@ -245,7 +245,11 @@ export class AuthController {
         status: HttpStatus.CREATED,
         example: 'Generate New AccessToken',
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(
+        ErrorCode.REFRESH_TOKEN_EXPIRED,
+        ErrorCode.REFRESH_TOKEN_MISSING,
+        ErrorCode.INVALID_REFRESH_TOKEN
+    )
     @Public()
     @UseGuards(JwtRefreshGuard)
     @Post('refresh')
