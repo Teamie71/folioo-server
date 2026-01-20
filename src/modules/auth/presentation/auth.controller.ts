@@ -13,7 +13,7 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SendSmsReqDto, VerifySmsReqDto } from '../application/dtos/sms-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { SocialUser } from 'src/common/decorators/social-user.decorator';
-import type { JwtPayload, SocialUserAfterOAuth } from '../domain/types/jwt-payload.type';
+import type { SocialUserAfterOAuth, UserAfterAuth } from '../domain/types/jwt-payload.type';
 import type { Response } from 'express';
 import { LoginUsecase } from '../application/usecases/login.usecase';
 import { ConfigService } from '@nestjs/config';
@@ -70,21 +70,17 @@ export class AuthController {
         @SocialUser() user: SocialUserAfterOAuth,
         @Res() res: Response
     ): Promise<void> {
-        const { accessToken, refreshToken } = await this.loginUsecase.execute(user);
-        res.cookie('accessToken', accessToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 1000 * (this.configService.get<number>('JWT_EXPIRES_IN') || 60 * 60), // 1시간
-        });
+        const refreshToken = await this.loginUsecase.execute(user);
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: false,
+            secure: this.configService.get<string>('APP_PROFILE') === 'prod',
             sameSite: 'lax',
             maxAge:
-                1000 * (this.configService.get<number>('JWT_REFRESH_EXPIRES_IN') || 60 * 60 * 24), // 1일
+                1000 *
+                (this.configService.get<number>('JWT_REFRESH_EXPIRES_IN') || 60 * 60 * 24 * 14), // 2주
         });
-        res.redirect(this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI'));
+        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
+        res.redirect(`${clientUrl}?status=success`);
     }
 
     @ApiOperation({
@@ -239,11 +235,18 @@ export class AuthController {
 
     @ApiOperation({
         summary: '토큰 재발급',
-        description: '유효한 refreshToken을 사용해 accessToken을 재발급 받습니다.',
+        description: '유효한 refreshToken을 사용해 accessToken을 발급 받습니다.',
     })
     @ApiResponse({
         status: HttpStatus.CREATED,
-        example: 'Generate New AccessToken',
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: 'new AccessToken',
+            },
+        },
     })
     @ApiCommonErrorResponse(
         ErrorCode.REFRESH_TOKEN_EXPIRED,
@@ -253,18 +256,12 @@ export class AuthController {
     @Public()
     @UseGuards(JwtRefreshGuard)
     @Post('refresh')
-    async handleRefresh(@User() user: JwtPayload, @Res() res: Response) {
-        const newAccessToken = await this.tokenService.refreshAccessToken({
+    async handleRefresh(@User() user: UserAfterAuth) {
+        const accessToken = await this.tokenService.generateAccessToken({
             sub: user.sub,
             email: user.email,
         });
-        res.cookie('accessToken', newAccessToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 1000 * (this.configService.get<number>('JWT_EXPIRES_IN') || 60 * 60), // 1시간
-        });
-        res.send('Generate New AccessToken');
+        return accessToken;
     }
 
     @ApiOperation({

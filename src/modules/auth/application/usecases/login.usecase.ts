@@ -13,7 +13,7 @@ export class LoginUsecase {
     ) {}
 
     @Transactional()
-    async execute(command: SocialUserAfterOAuth) {
+    async execute(command: SocialUserAfterOAuth): Promise<string> {
         // 1. DB에 사용자가 있는지 확인
         let existingUser = await this.userRepository.findBySocialIdAndSocialType(
             command.id,
@@ -31,8 +31,7 @@ export class LoginUsecase {
             existingUser = await this.userRepository.save(newUser);
         }
         // 3. JWT 토큰 발급
-        const accessToken = await this.tokenService.generateAccessToken(existingUser);
         const refreshToken = await this.tokenService.generateRefreshToken(existingUser);
-        return { accessToken, refreshToken };
+        return refreshToken;
     }
 }

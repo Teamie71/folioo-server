@@ -11,15 +11,7 @@ export class TokenService {
         private readonly configService: ConfigService
     ) {}
 
-    async generateAccessToken(user: User): Promise<string> {
-        const payload: JwtPayload = {
-            sub: user.id,
-            email: user.email,
-        };
-        return this.jwtService.signAsync(payload);
-    }
-
-    async refreshAccessToken(payload: JwtPayload): Promise<string> {
+    async generateAccessToken(payload: JwtPayload): Promise<string> {
         return this.jwtService.signAsync(payload);
     }
 
