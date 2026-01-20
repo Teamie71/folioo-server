@@ -21,6 +21,8 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { JwtRefreshGuard } from '../infrastructure/guards/jwt-refresh.guard';
 import { TokenService } from '../infrastructure/services/token.service';
 import { User } from 'src/common/decorators/user.decorator';
+import { StringValue } from 'ms';
+import { TimeUtil } from 'src/common/utills/time.util';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -71,13 +73,13 @@ export class AuthController {
         @Res() res: Response
     ): Promise<void> {
         const refreshToken = await this.loginUsecase.execute(user);
+        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+            '14d') as StringValue;
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: this.configService.get<string>('APP_PROFILE') === 'prod',
             sameSite: 'lax',
-            maxAge:
-                1000 *
-                (this.configService.get<number>('JWT_REFRESH_EXPIRES_IN') || 60 * 60 * 24 * 14), // 2주
+            maxAge: TimeUtil.toMs(expiresIn),
         });
         const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
         res.redirect(`${clientUrl}?status=success`);

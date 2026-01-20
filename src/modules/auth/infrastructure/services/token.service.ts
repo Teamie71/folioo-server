@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/modules/user/domain/user.entity';
 import { JwtPayload } from '../../domain/types/jwt-payload.type';
 import { ConfigService } from '@nestjs/config';
+import { StringValue } from 'ms';
 
 @Injectable()
 export class TokenService {
@@ -23,7 +24,8 @@ export class TokenService {
 
         return this.jwtService.signAsync(payload, {
             secret: this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN'),
-            expiresIn: this.configService.get<number>('JWT_REFRESH_EXPIRES_IN') || 60 * 60 * 24,
+            expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+                '14d') as StringValue,
         });
     }
 }

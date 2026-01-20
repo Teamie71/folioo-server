@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { JwtRefreshGuard } from './infrastructure/guards/jwt-refresh.guard';
 import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.strategy';
+import { StringValue } from 'ms';
 
 @Module({
     imports: [
@@ -20,7 +21,7 @@ import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.stra
             useFactory: (configService: ConfigService) => ({
                 secret: configService.getOrThrow<string>('JWT_SECRET_TOKEN'),
                 signOptions: {
-                    expiresIn: configService.get<number>('JWT_EXPIRES_IN') || 60 * 60,
+                    expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '1h') as StringValue,
                 },
             }),
             inject: [ConfigService],
