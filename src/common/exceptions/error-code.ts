@@ -23,6 +23,18 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '아직 구현되지 않은 기능입니다.',
         statusCode: HttpStatus.NOT_IMPLEMENTED,
     },
+    [ErrorCode.REFRESH_TOKEN_EXPIRED]: {
+        message: '리프레시 토큰이 만료되었습니다. 다시 로그인해주세요.',
+        statusCode: HttpStatus.UNAUTHORIZED,
+    },
+    [ErrorCode.REFRESH_TOKEN_MISSING]: {
+        message: '리프레시 토큰이 없습니다.',
+        statusCode: HttpStatus.UNAUTHORIZED,
+    },
+    [ErrorCode.INVALID_REFRESH_TOKEN]: {
+        message: '유효하지 않은 토큰입니다.',
+        statusCode: HttpStatus.UNAUTHORIZED,
+    },
     [ErrorCode.INSUFFICIENT_CREDITS]: {
         message: '크레딧이 부족합니다.',
         statusCode: HttpStatus.PAYMENT_REQUIRED,

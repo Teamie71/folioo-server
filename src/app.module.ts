@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmConfigService } from './config/typeorm-config';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AppController } from './app.controller';
@@ -12,6 +12,9 @@ import { InsightModule } from './modules/insight/insight.module';
 import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
+import { addTransactionalDataSource } from 'typeorm-transactional';
+import { DataSource } from 'typeorm';
+import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guard';
 
 @Module({
     imports: [
@@ -21,6 +24,12 @@ import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfo
         }),
         TypeOrmModule.forRootAsync({
             useClass: TypeOrmConfigService,
+            dataSourceFactory(options) {
+                if (!options) {
+                    throw new Error('Invalid options passed');
+                }
+                return Promise.resolve(addTransactionalDataSource(new DataSource(options)));
+            },
         }),
         AuthModule,
         UserModule,
@@ -33,6 +42,10 @@ import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfo
         {
             provide: APP_FILTER,
             useClass: GlobalExceptionFilter,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: JwtAuthGuard,
         },
         {
             provide: APP_INTERCEPTOR,

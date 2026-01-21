@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Post, Query, Res, UseGuards } from '@nestjs/common';
 import {
     ApiBody,
     ApiOkResponse,
@@ -11,10 +11,28 @@ import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator'
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SendSmsReqDto, VerifySmsReqDto } from '../application/dtos/sms-auth.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { SocialUser } from 'src/common/decorators/social-user.decorator';
+import type { SocialUserAfterOAuth, UserAfterAuth } from '../domain/types/jwt-payload.type';
+import type { Response } from 'express';
+import { LoginUsecase } from '../application/usecases/login.usecase';
+import { ConfigService } from '@nestjs/config';
+import { Public } from 'src/common/decorators/public.decorator';
+import { JwtRefreshGuard } from '../infrastructure/guards/jwt-refresh.guard';
+import { TokenService } from '../infrastructure/services/token.service';
+import { User } from 'src/common/decorators/user.decorator';
+import { StringValue } from 'ms';
+import { TimeUtil } from 'src/common/utills/time.util';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly loginUsecase: LoginUsecase,
+        private readonly tokenService: TokenService
+    ) {}
+
     @ApiOperation({
         summary: '카카오 로그인 트리거',
         description: '카카오 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -33,16 +51,10 @@ export class AuthController {
         status: 302,
         description: '카카오 로그인 페이지로 리다이렉트됨.',
     })
+    @Public()
+    @UseGuards(AuthGuard('kakao'))
     @Get('kakao')
-    kakaoLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    async kakaoLogin() {}
 
     @ApiOperation({
         summary: '카카오 로그인 콜백',
@@ -53,9 +65,24 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
+    @Public()
+    @UseGuards(AuthGuard('kakao'))
     @Get('kakao/callback')
-    kakaoCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async kakaoCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        const refreshToken = await this.loginUsecase.execute(user);
+        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+            '14d') as StringValue;
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: this.configService.get<string>('APP_PROFILE') === 'prod',
+            sameSite: 'lax',
+            maxAge: TimeUtil.toMs(expiresIn),
+        });
+        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
+        res.redirect(`${clientUrl}?status=success`);
     }
 
     @ApiOperation({
@@ -96,6 +123,7 @@ export class AuthController {
         status: 302,
         description: '구글 로그인 페이지로 리다이렉트됨.',
     })
+    @Public()
     @Get('google')
     googleLogin(
         @Query('redirect_url') redirect_url?: string,
@@ -116,6 +144,7 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
+    @Public()
     @Get('google/callback')
     googleCallback(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
@@ -159,6 +188,7 @@ export class AuthController {
         status: 302,
         description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
+    @Public()
     @Get('naver')
     naverLogin(
         @Query('redirect_url') redirect_url?: string,
@@ -179,6 +209,7 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
+    @Public()
     @Get('naver/callback')
     naverCallback(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
@@ -206,22 +237,33 @@ export class AuthController {
 
     @ApiOperation({
         summary: '토큰 재발급',
-        description: '유효한 refreshToken을 사용해 accessToken을 재발급 받습니다.',
+        description: '유효한 refreshToken을 사용해 accessToken을 발급 받습니다.',
     })
-    @ApiOkResponse({
+    @ApiResponse({
+        status: HttpStatus.CREATED,
         schema: {
             example: {
                 timestamp: '2026-01-02T14:56:23.295Z',
                 isSuccess: true,
                 error: null,
-                result: 'Generate New AccessToken',
+                result: 'new AccessToken',
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(
+        ErrorCode.REFRESH_TOKEN_EXPIRED,
+        ErrorCode.REFRESH_TOKEN_MISSING,
+        ErrorCode.INVALID_REFRESH_TOKEN
+    )
+    @Public()
+    @UseGuards(JwtRefreshGuard)
     @Post('refresh')
-    handleRefresh() {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async handleRefresh(@User() user: UserAfterAuth) {
+        const accessToken = await this.tokenService.generateAccessToken({
+            sub: user.sub,
+            email: user.email,
+        });
+        return accessToken;
     }
 
     @ApiOperation({
