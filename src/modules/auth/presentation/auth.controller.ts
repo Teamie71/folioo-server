@@ -79,6 +79,7 @@ export class AuthController {
             httpOnly: true,
             secure: this.configService.get<string>('APP_PROFILE') === 'prod',
             sameSite: 'lax',
+            path: '/',
             maxAge: TimeUtil.toMs(expiresIn),
         });
         const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
