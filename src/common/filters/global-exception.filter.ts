@@ -29,7 +29,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
                 : HttpStatus.INTERNAL_SERVER_ERROR;
 
         if (httpStatus >= 500) {
-            Sentry.captureException(exception);
+            Sentry.captureException(
+                exception instanceof Error ? exception : new Error(String(exception))
+            );
         }
 
         const path = httpAdapter.getRequestUrl(ctx.getRequest()) as string;

@@ -11,24 +11,24 @@ import * as Sentry from '@sentry/nestjs';
 const appProfile = process.env.APP_PROFILE || 'local';
 const isLocal = appProfile === 'local';
 
-// Local 환경에서는 Sentry 비활성화 (DSN 미설정과 동일한 효과)
-if (!isLocal && process.env.SENTRY_DSN) {
-    Sentry.init({
-        dsn: process.env.SENTRY_DSN,
+Sentry.init({
+    dsn: process.env.SENTRY_DSN,
 
-        // 환경 구분 (Finders BE의 environment 설정과 동일)
-        environment: appProfile,
+    // Local 환경에서는 Sentry 비활성화
+    enabled: !isLocal,
 
-        // 릴리스 버전 추적
-        release: `folioo-server@${process.env.npm_package_version || 'unknown'}`,
+    // 환경 구분 (Finders BE의 environment 설정과 동일)
+    environment: appProfile,
 
-        // Tracing 샘플링 (Finders BE 기준: dev 100%, prod 30%)
-        tracesSampleRate: appProfile === 'prod' ? 0.3 : 1.0,
+    // 릴리스 버전 추적
+    release: `folioo-server@${process.env.npm_package_version || 'unknown'}`,
 
-        // PII(개인식별정보) 전송 여부 (Finders BE: false)
-        sendDefaultPii: false,
+    // Tracing 샘플링 (Finders BE 기준: dev 100%, prod 30%)
+    tracesSampleRate: appProfile === 'prod' ? 0.3 : 1.0,
 
-        // 디버그 모드 (개발 환경에서만)
-        debug: appProfile === 'dev',
-    });
-}
+    // PII(개인식별정보) 전송 여부 (Finders BE: false)
+    sendDefaultPii: false,
+
+    // 디버그 모드 (개발 환경에서만)
+    debug: appProfile === 'dev',
+});
