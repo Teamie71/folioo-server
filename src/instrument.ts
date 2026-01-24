@@ -17,18 +17,15 @@ Sentry.init({
     // Local 환경에서는 Sentry 비활성화
     enabled: !isLocal,
 
-    // 환경 구분 (Finders BE의 environment 설정과 동일)
+    // 환경 구분
     environment: appProfile,
 
     // 릴리스 버전 추적
     release: `folioo-server@${process.env.npm_package_version || 'unknown'}`,
 
-    // Tracing 샘플링 (Finders BE 기준: dev 100%, prod 30%)
+    // Tracing 샘플링 (prod 30%)
     tracesSampleRate: appProfile === 'prod' ? 0.3 : 1.0,
 
-    // PII(개인식별정보) 전송 여부 (Finders BE: false)
+    // PII(개인식별정보) 전송 여부
     sendDefaultPii: false,
-
-    // 디버그 모드 (개발 환경에서만)
-    debug: appProfile === 'dev',
 });
