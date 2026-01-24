@@ -7,6 +7,7 @@
  * @see https://docs.sentry.io/platforms/javascript/guides/nestjs/
  */
 import * as Sentry from '@sentry/nestjs';
+import { version } from '../package.json';
 
 const appProfile = process.env.APP_PROFILE || 'local';
 const isLocal = appProfile === 'local';
@@ -21,7 +22,7 @@ Sentry.init({
     environment: appProfile,
 
     // 릴리스 버전 추적
-    release: `folioo-server@${process.env.npm_package_version || 'unknown'}`,
+    release: `folioo-server@${version}`,
 
     // Tracing 샘플링 (prod 30%)
     tracesSampleRate: appProfile === 'prod' ? 0.3 : 1.0,
