@@ -151,24 +151,54 @@ export class UserService {
 
 ## Controller 작성 규칙
 
+### 클래스 레벨 데코레이터 순서
+
+```typescript
+@ApiTags('User') // 1. Swagger 태그
+@Controller('users') // 2. 라우트 정의
+export class UserController {
+    constructor(private readonly userService: UserService) {}
+}
+```
+
+### 메서드 레벨 데코레이터 순서
+
+**순서: 라우팅 → 보안/권한 → 문서화 → 기능수정**
+
+| 순서 | 그룹          | 데코레이터 예시                                                                                           |
+| ---- | ------------- | --------------------------------------------------------------------------------------------------------- |
+| 1    | **라우팅**    | `@Get`, `@Post`, `@Patch`, `@Delete`, `@Put`                                                              |
+| 2    | **보안/권한** | `@Public`, `@UseGuards`, `@Roles`                                                                         |
+| 3    | **문서화**    | `@ApiOperation`, `@ApiBody`, `@ApiQuery`, `@ApiResponse`, `@ApiCommonResponse`, `@ApiCommonErrorResponse` |
+| 4    | **기능수정**  | `@HttpCode`, `@Header`, `@Redirect`, `@UseInterceptors`, `@UsePipes`                                      |
+
 ### 기본 구조
 
 ```typescript
-@Controller('users')
 @ApiTags('User')
+@Controller('users')
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
+    // 1. 라우팅
     @Get(':id')
+    // 2. 보안/권한 (필요시)
+    // @UseGuards(JwtAuthGuard)
+    // 3. 문서화
     @ApiOperation({ summary: '사용자 조회' })
-    @ApiResponse({ status: 200, type: UserResponseDto })
+    @ApiCommonResponse(UserResponseDto)
+    @ApiCommonErrorResponse(ErrorCode.USER_NOT_FOUND)
+    // 4. 기능수정 (필요시)
+    // @HttpCode(HttpStatus.OK)
     async findOne(@Param('id') id: string): Promise<UserResponseDto> {
         return this.userService.findOne(id);
     }
 
     @Post()
     @ApiOperation({ summary: '사용자 생성' })
-    @ApiResponse({ status: 201, type: UserResponseDto })
+    @ApiBody({ type: CreateUserDto })
+    @ApiCommonResponse(UserResponseDto)
+    @ApiCommonErrorResponse(ErrorCode.BAD_REQUEST)
     async create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
         return this.userService.create(dto);
     }

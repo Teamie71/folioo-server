@@ -35,6 +35,7 @@ import {
 @ApiTags('Portfolio')
 @Controller('external-portfolios')
 export class ExternalPortfolioController {
+    @Post('extract')
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 추출',
         description: '업로드한 포트폴리오 파일에서 텍스트를 추출합니다.',
@@ -63,7 +64,6 @@ export class ExternalPortfolioController {
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     @UseInterceptors(FileInterceptor('file'))
-    @Post('extract')
     extractPortfolios(
         @UploadedFile(
             new ParseFilePipeBuilder()
@@ -82,6 +82,7 @@ export class ExternalPortfolioController {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, file);
     }
 
+    @Post()
     @ApiOperation({
         summary: 'PDF 포트폴리오 활동 블록 추가',
         description:
@@ -102,11 +103,11 @@ export class ExternalPortfolioController {
         ErrorCode.CORRECTION_NOT_FOUND,
         ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED
     )
-    @Post()
     createExternalPortfolios(@Body() body: CreateExternalPortfolioReqDTO): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
+    @Get()
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 정리 결과 조회',
         description: 'AI가 구조화한 포트폴리오 정보를 조회합니다.',
@@ -114,20 +115,19 @@ export class ExternalPortfolioController {
     @ApiQuery({ name: 'correctionId', required: true })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    @Get()
     getExternalPortfolios(
         @Query('correctionId') correctionId: number
     ): StructuredPortfolioResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 
+    @Patch(':portfolioId')
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 정리 결과 수정',
         description: 'AI가 구조화한 포트폴리오 정보를 수정합니다.',
     })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    @Patch(':portfolioId')
     updateExternalPortfolios(
         @Param('portfolioId') portfolioId: number,
         @Body() body: UpdatePortfolioBlockReqDTO
@@ -135,6 +135,7 @@ export class ExternalPortfolioController {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
     }
 
+    @Delete(':portfolioId')
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 정리 결과 삭제',
         description:
@@ -142,7 +143,6 @@ export class ExternalPortfolioController {
     })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    @Delete(':portfolioId')
     deleteExternalPortfolios(
         @Param('portfolioId') portfolioId: number
     ): StructuredPortfolioResDTO[] {
