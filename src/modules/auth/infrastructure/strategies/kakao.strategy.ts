@@ -24,10 +24,6 @@ export class KakaoStrategy extends PassportStrategy(Strategy) {
                 id: String(raw.id),
                 nickname: raw.kakao_account?.profile?.nickname || raw.properties?.nickname || '',
                 email: raw.kakao_account?.email || '',
-                profileImage:
-                    raw.kakao_account?.profile?.profile_image_url ||
-                    raw.properties?.profile_image ||
-                    '',
                 socialType: LoginType.KAKAO,
             };
             return user;
@@ -40,8 +36,6 @@ export class KakaoStrategy extends PassportStrategy(Strategy) {
 interface KakaoAccount {
     profile?: {
         nickname?: string;
-        profile_image_url?: string;
-        thumbnail_image_url?: string;
     };
     email?: string;
 }
@@ -50,8 +44,6 @@ interface KakaoRawData {
     id: number;
     properties?: {
         nickname?: string;
-        profile_image?: string;
-        thumbnail_image?: string;
     };
     kakao_account?: KakaoAccount;
 }
