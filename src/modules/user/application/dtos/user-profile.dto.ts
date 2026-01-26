@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
+import { User } from '../../domain/user.entity';
 
 export class UserProfileResDto {
     name: string;
@@ -7,6 +8,15 @@ export class UserProfileResDto {
     phoneNum: string | null;
     //TODO: 마케팅 정보 수신 동의 여부 및 약관 관련 필드 추가 필요함
     isMarketingAgreed: boolean;
+
+    static from(user: User): UserProfileResDto {
+        const dto = new UserProfileResDto();
+        dto.name = user.name;
+        dto.email = user.email;
+        dto.phoneNum = user.phoneNum;
+        dto.isMarketingAgreed = true;
+        return dto;
+    }
 }
 
 export class UpdateUserNameReqDto {

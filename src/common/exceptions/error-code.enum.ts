@@ -13,6 +13,9 @@ export enum ErrorCode {
     REFRESH_TOKEN_MISSING = 'AUTH4012',
     INVALID_REFRESH_TOKEN = 'AUTH4013',
 
+    //User
+    USER_NOT_FOUND = 'USER404',
+
     //Credit
     INSUFFICIENT_CREDITS = 'CREDIT402',
 
