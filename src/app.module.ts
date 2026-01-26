@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SentryModule } from '@sentry/nestjs/setup';
 import { TypeOrmConfigService } from './config/typeorm-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guar
 
 @Module({
     imports: [
+        SentryModule.forRoot(),
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: '.env',

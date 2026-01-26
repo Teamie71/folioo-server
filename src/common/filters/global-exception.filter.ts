@@ -7,6 +7,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { captureException } from '@sentry/nestjs';
 import { CommonResponse, ErrorPayload } from '../dtos/common-response.dto';
 import { ErrorMap } from '../exceptions/error-code';
 import { ErrorCode } from '../exceptions/error-code.enum';
@@ -26,6 +27,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             exception instanceof HttpException
                 ? exception.getStatus()
                 : HttpStatus.INTERNAL_SERVER_ERROR;
+
+        if (httpStatus >= 500) {
+            captureException(exception instanceof Error ? exception : new Error(String(exception)));
+        }
 
         const path = httpAdapter.getRequestUrl(ctx.getRequest()) as string;
 
