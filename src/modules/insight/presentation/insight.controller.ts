@@ -17,6 +17,7 @@ import { ActivityNameReqDTO, ActivityNameResDTO } from '../application/dtos/acti
 @ApiTags('Insight')
 @Controller('insights')
 export class InsightController {
+    @Post()
     @ApiOperation({
         summary: '로그 생성 및 임베딩 저장',
         description:
@@ -24,22 +25,22 @@ export class InsightController {
     })
     @ApiCommonResponse(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.DUPLICATE_LOG_NAME, ErrorCode.UNAUTHORIZED)
-    @Post()
     createLog(@Body() body: CreateInsightLogReqDTO): InsightLogResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
+    @Get()
     @ApiOperation({
         summary: '로그 목록 조회',
         description: '사용자가 생성한 인사이트 로그 목록을 조회합니다.',
     })
     @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Get()
     getLogs(): InsightLogResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Patch(':insightId')
     @ApiOperation({
         summary: '인사이트 로그 수정',
         description:
@@ -51,7 +52,6 @@ export class InsightController {
         ErrorCode.LOG_NOT_FOUND,
         ErrorCode.DUPLICATE_LOG_NAME
     )
-    @Patch(':insightId')
     updateLog(
         @Param('insightId') insightId: number,
         @Body() body: UpdateInsightLogReqDTO
@@ -59,6 +59,7 @@ export class InsightController {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { insightId, body });
     }
 
+    @Delete(':insightId')
     @ApiOperation({
         summary: '인사이트 로그 삭제',
         description: '인사이트 로그 및 메타데이터를 삭제합니다.',
@@ -74,11 +75,11 @@ export class InsightController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.LOG_NOT_FOUND)
-    @Delete(':insightId')
     deleteLog(@Param('insightId') insightId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { insightId });
     }
 
+    @Get('search')
     @ApiOperation({
         summary: '인사이트 로그 유사도 검색',
         description: '키워드를 통해 인사이트 로그를 검색합니다.',
@@ -88,7 +89,6 @@ export class InsightController {
     @ApiQuery({ name: 'activityName', required: false })
     @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Get('search')
     searchVector(
         @Query('keyword') keyword?: string,
         @Query('category') category?: string,
@@ -97,6 +97,7 @@ export class InsightController {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { keyword, category, activityName });
     }
 
+    @Post('tags')
     @ApiOperation({
         summary: '활동 분류 태그 생성',
         description: '활동명을 생성합니다. 인당 10개 제한이 있으며, 활동명은 unique합니다.',
@@ -107,22 +108,22 @@ export class InsightController {
         ErrorCode.DUPLICATE_ACTIVITY_NAME,
         ErrorCode.FULL_ACTIVITY_NAME
     )
-    @Post('tags')
     createActivityTag(@Body() body: ActivityNameReqDTO): ActivityNameResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
+    @Get('tags')
     @ApiOperation({
         summary: '활동 분류 태그 목록 조회',
         description: '활동 분류 태그 목록을 조회합니다. 인당 10개 제한이 있습니다.',
     })
     @ApiCommonResponseArray(ActivityNameResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Get('tags')
     getActivityTags(): ActivityNameResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Delete('tags/:tagId')
     @ApiOperation({
         summary: '활동 분류 태그 삭제',
         description:
@@ -139,7 +140,6 @@ export class InsightController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ACTIVITY_NOT_FOUND)
-    @Delete('tags/:tagId')
     deleteActivityTag(@Param('tagId') tagId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, tagId);
     }
