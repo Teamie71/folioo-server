@@ -15,18 +15,19 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 - **Package Manager**: pnpm
 - **Language**: TypeScript (Strict Mode)
 
-## 문서 구조
+## 문서 경로
 
-```
-docs/
-├── development/
-│   ├── GIT_CONVENTIONS.md     # Git/브랜치/커밋 컨벤션
-│   ├── NAMING_CONVENTIONS.md  # 폴더/파일/클래스 네이밍 규칙
-│   └── CODE_STYLE.md          # 코드 스타일 + 에러 처리 패턴
-└── architecture/
-    ├── ARCHITECTURE.md        # 아키텍처 설계
-    └── ERD.md                 # 데이터베이스 설계
-```
+상세한 내용은 아래 문서 참조:
+
+| 문서          | 경로                                     |
+| ------------- | ---------------------------------------- |
+| 아키텍처      | `docs/architecture/ARCHITECTURE.md`      |
+| ERD/DB 설계   | `docs/architecture/ERD.md`               |
+| 코드 스타일   | `docs/development/CODE_STYLE.md`         |
+| Git 컨벤션    | `docs/development/GIT_CONVENTIONS.md`    |
+| 네이밍 컨벤션 | `docs/development/NAMING_CONVENTIONS.md` |
+| PR 템플릿     | `.github/PULL_REQUEST_TEMPLATE.md`       |
+| Issue 템플릿  | `.github/ISSUE_TEMPLATE/`                |
 
 ## 핵심 규칙
 
@@ -105,7 +106,12 @@ pnpm run test
 
 ## 주의사항
 
-1. **커밋 메시지에 AI 생성 표시 금지**
-2. **any 타입 사용 금지**
-3. **console.log 대신 Logger 사용**
-4. **Issue 번호 없이 브랜치/커밋 생성 금지**
+1. **any 타입 사용 금지**
+2. **console.log 대신 Logger 사용**
+3. **Issue 번호 없이 브랜치/커밋 생성 금지**
+
+**절대로 커밋 메시지에 다음을 포함하지 마세요:**
+
+- `🤖 Generated with Claude Code`
+- `Co-Authored-By: Claude`
+- AI가 생성했다는 어떤 표시도 금지
