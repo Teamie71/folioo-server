@@ -16,6 +16,7 @@ import {
 @ApiTags('Experience')
 @Controller('experiences')
 export class ExperienceController {
+    @Post()
     @ApiOperation({
         summary: '새로운 경험 정리 시작하기',
         description:
@@ -27,11 +28,11 @@ export class ExperienceController {
         ErrorCode.EXPERIENCE_MAX_LIMIT,
         ErrorCode.DUPLICATE_EXPERIENCE_NAME
     )
-    @Post()
     createExperience(@Body() body: CreateExperienceReqDTO): ExperienceResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
+    @Get()
     @ApiOperation({
         summary: '경험 정리 목록 조회',
         description:
@@ -40,11 +41,11 @@ export class ExperienceController {
     @ApiQuery({ name: 'keyword', required: false })
     @ApiCommonResponseArray(ExperienceResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Get()
     getExperiences(@Query('keyword') keyword?: string): ExperienceResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, keyword);
     }
 
+    @Get(':experienceId')
     @ApiOperation({
         summary: '경험 정리 개별 조회',
         description:
@@ -52,7 +53,6 @@ export class ExperienceController {
     })
     @ApiCommonResponse(ExperienceStateResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Get(':experienceId')
     getExperience(): ExperienceStateResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }

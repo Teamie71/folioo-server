@@ -33,6 +33,9 @@ export class AuthController {
         private readonly tokenService: TokenService
     ) {}
 
+    @Get('kakao')
+    @Public()
+    @UseGuards(AuthGuard('kakao'))
     @ApiOperation({
         summary: '카카오 로그인 트리거',
         description: '카카오 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -51,11 +54,11 @@ export class AuthController {
         status: 302,
         description: '카카오 로그인 페이지로 리다이렉트됨.',
     })
-    @Public()
-    @UseGuards(AuthGuard('kakao'))
-    @Get('kakao')
     async kakaoLogin() {}
 
+    @Get('kakao/callback')
+    @Public()
+    @UseGuards(AuthGuard('kakao'))
     @ApiOperation({
         summary: '카카오 로그인 콜백',
         description:
@@ -65,9 +68,6 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    @Public()
-    @UseGuards(AuthGuard('kakao'))
-    @Get('kakao/callback')
     async kakaoCallback(
         @SocialUser() user: SocialUserAfterOAuth,
         @Res() res: Response
@@ -86,6 +86,7 @@ export class AuthController {
         res.redirect(`${clientUrl}?status=success`);
     }
 
+    @Post('kakao/unlink')
     @ApiOperation({
         summary: '서비스 내 카카오 로그인 사용자 탈퇴',
         description: '카카오 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
@@ -101,11 +102,12 @@ export class AuthController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('kakao/unlink')
     kakaoUnlink(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Get('google')
+    @Public()
     @ApiOperation({
         summary: '구글 로그인 트리거',
         description: '구글 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -124,8 +126,6 @@ export class AuthController {
         status: 302,
         description: '구글 로그인 페이지로 리다이렉트됨.',
     })
-    @Public()
-    @Get('google')
     googleLogin(
         @Query('redirect_url') redirect_url?: string,
         @Query('redirect_path') redirect_path?: string
@@ -136,6 +136,8 @@ export class AuthController {
         });
     }
 
+    @Get('google/callback')
+    @Public()
     @ApiOperation({
         summary: '구글 로그인 콜백',
         description:
@@ -145,12 +147,11 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    @Public()
-    @Get('google/callback')
     googleCallback(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Post('google/unlink')
     @ApiOperation({
         summary: '서비스 내 구글 로그인 사용자 탈퇴',
         description: '구글 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
@@ -166,11 +167,12 @@ export class AuthController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('google/unlink')
     googleUnlink(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Get('naver')
+    @Public()
     @ApiOperation({
         summary: '네이버 로그인 트리거',
         description: '네이버 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -189,8 +191,6 @@ export class AuthController {
         status: 302,
         description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
-    @Public()
-    @Get('naver')
     naverLogin(
         @Query('redirect_url') redirect_url?: string,
         @Query('redirect_path') redirect_path?: string
@@ -201,6 +201,8 @@ export class AuthController {
         });
     }
 
+    @Get('naver/callback')
+    @Public()
     @ApiOperation({
         summary: '네이버 로그인 콜백',
         description:
@@ -210,12 +212,11 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    @Public()
-    @Get('naver/callback')
     naverCallback(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Post('naver/unlink')
     @ApiOperation({
         summary: '서비스 내 네이버 로그인 사용자 탈퇴',
         description: '네이버 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
@@ -231,11 +232,13 @@ export class AuthController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('naver/unlink')
     naverUnlink(): Promise<void> {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Post('refresh')
+    @Public()
+    @UseGuards(JwtRefreshGuard)
     @ApiOperation({
         summary: '토큰 재발급',
         description: '유효한 refreshToken을 사용해 accessToken을 발급 받습니다.',
@@ -256,9 +259,6 @@ export class AuthController {
         ErrorCode.REFRESH_TOKEN_MISSING,
         ErrorCode.INVALID_REFRESH_TOKEN
     )
-    @Public()
-    @UseGuards(JwtRefreshGuard)
-    @Post('refresh')
     async handleRefresh(@User() user: UserAfterAuth) {
         const accessToken = await this.tokenService.generateAccessToken({
             sub: user.sub,
@@ -267,6 +267,7 @@ export class AuthController {
         return accessToken;
     }
 
+    @Post('logout')
     @ApiOperation({
         summary: '로그아웃',
         description: 'JWT 토큰을 만료시키고 서버에서 로그아웃을 수행합니다.',
@@ -282,11 +283,11 @@ export class AuthController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('logout')
     handleLogout() {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
+    @Post('sms/send')
     @ApiOperation({
         summary: '전화번호 인증번호 발송',
         description: '전화번호 인증번호를 발송합니다.',
@@ -303,11 +304,11 @@ export class AuthController {
     })
     @ApiBody({ type: SendSmsReqDto })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ALREADY_VERIFY_USER)
-    @Post('sms/send')
     handleSmsSend(@Body() body: SendSmsReqDto): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
+    @Post('sms/verify')
     @ApiOperation({
         summary: '전화번호 인증번호 검증',
         description: '발송된 인증정보가 올바른지 확인합니다.',
@@ -328,7 +329,6 @@ export class AuthController {
         ErrorCode.SMS_CODE_MISMATCH,
         ErrorCode.SMS_CODE_NOT_FOUND
     )
-    @Post('sms/verify')
     handleSmsVerify(@Body() body: VerifySmsReqDto): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }

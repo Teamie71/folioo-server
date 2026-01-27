@@ -12,24 +12,24 @@ import {
 @ApiTags('Portfolio')
 @Controller('portfolios')
 export class PortfolioController {
+    @Get(':portfolioId')
     @ApiOperation({
         summary: '개별 포트폴리오 조회',
         description: '경험 정리가 완료된 포트폴리오를 조회합니다.',
     })
     @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    @Get(':portfolioId')
     getPortfolio(@Param('portfolioId') portfolioId: number): PortfolioDetailResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 
+    @Patch(':portfolioId')
     @ApiOperation({
         summary: '개별 포트폴리오 수정',
         description: '경험 정리가 완료된 포트폴리오의 내용을 수정합니다.',
     })
     @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    @Patch(':portfolioId')
     updatePortfolio(
         @Param('portfolioId') portfolioId: number,
         @Body() body: UpdatePortfolioReqDTO
@@ -37,6 +37,7 @@ export class PortfolioController {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
     }
 
+    @Delete(':portfolioId')
     @ApiOperation({
         summary: '개별 포트폴리오 삭제',
         description: '경험 정리가 완료된 포트폴리오의 내용을 삭제합니다.',
@@ -52,18 +53,17 @@ export class PortfolioController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    @Delete(':portfolioId')
     deletePortfolio(@Param('portfolioId') portfolioId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 
+    @Post(':portfolioId/export')
     @ApiOperation({
         summary: '포트폴리오 내보내기',
         description: '경험 정리가 완료된 포트폴리오를 pdf로 내보냅니다.',
     })
     @ApiCommonResponse(ExportPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    @Post(':portfolioId/export')
     exportPortfolio(@Param('portfolioId') portfolioId: number): ExportPortfolioResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }

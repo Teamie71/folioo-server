@@ -16,17 +16,18 @@ import { UserService } from '../application/services/user.service';
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
+    @Get('me')
     @ApiOperation({
         summary: '사용자 프로필 조회',
         description: '사용자의 프로필을 조회합니다.',
     })
     @ApiCommonResponse(UserProfileResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Get('profile')
     async getProfile(@User('sub') userId: number): Promise<UserProfileResDto> {
         return await this.userService.getProfile(userId);
     }
 
+    @Patch('me')
     @ApiOperation({
         summary: '사용자 이름/닉네임 변경',
         description: '사용자의 이름/닉네임을 변경합니다.',
@@ -34,11 +35,11 @@ export class UserController {
     @ApiBody({ type: UpdateUserNameReqDto })
     @ApiCommonResponse(UserProfileResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Patch('profile')
     updateProfile(@Body() body: UpdateUserNameReqDto): UserProfileResDto {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
+    @Patch('me/marketing-consent')
     @ApiOperation({
         summary: '마케팅 정보 수신 동의 여부 변경',
         description:
@@ -47,7 +48,6 @@ export class UserController {
     @ApiBody({ type: AgreeMarketingReqDto })
     @ApiCommonResponse(AgreeMarketingResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Patch('me/marketing-consent')
     updateMarketingConsent(@Body() body: AgreeMarketingReqDto): AgreeMarketingResDto {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
