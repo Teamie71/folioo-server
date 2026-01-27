@@ -180,16 +180,10 @@ export class UserController {
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    // 1. 라우팅
     @Get(':id')
-    // 2. 보안/권한 (필요시)
-    // @UseGuards(JwtAuthGuard)
-    // 3. 문서화
     @ApiOperation({ summary: '사용자 조회' })
     @ApiCommonResponse(UserResponseDto)
     @ApiCommonErrorResponse(ErrorCode.USER_NOT_FOUND)
-    // 4. 기능수정 (필요시)
-    // @HttpCode(HttpStatus.OK)
     async findOne(@Param('id') id: string): Promise<UserResponseDto> {
         return this.userService.findOne(id);
     }
