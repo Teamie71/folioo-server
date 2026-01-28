@@ -9,7 +9,6 @@ export interface SocialUserAfterOAuth {
     id: string;
     nickname: string;
     email: string;
-    profileImage: string;
     socialType: LoginType;
 }
 

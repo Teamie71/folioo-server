@@ -51,6 +51,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인증 시간이 만료되었습니다. 재전송 버튼을 눌러주세요.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.USER_NOT_FOUND]: {
+        message: '해당하는 사용자를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
     [ErrorCode.LOG_NOT_FOUND]: {
         message: '해당하는 인사이트 로그를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,

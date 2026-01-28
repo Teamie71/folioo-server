@@ -8,22 +8,26 @@ import {
     AgreeMarketingReqDto,
     AgreeMarketingResDto,
 } from '../application/dtos/marketing-agree.dto';
+import { User } from 'src/common/decorators/user.decorator';
+import { UserService } from '../application/services/user.service';
 
 @ApiTags('User')
 @Controller('users')
 export class UserController {
-    @Get('profile')
+    constructor(private readonly userService: UserService) {}
+
+    @Get('me')
     @ApiOperation({
         summary: '사용자 프로필 조회',
         description: '사용자의 프로필을 조회합니다.',
     })
     @ApiCommonResponse(UserProfileResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    getProfile(): UserProfileResDto {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async getProfile(@User('sub') userId: number): Promise<UserProfileResDto> {
+        return await this.userService.getProfile(userId);
     }
 
-    @Patch('profile')
+    @Patch('me')
     @ApiOperation({
         summary: '사용자 이름/닉네임 변경',
         description: '사용자의 이름/닉네임을 변경합니다.',

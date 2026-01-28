@@ -13,9 +13,6 @@ export class User extends BaseEntity {
     })
     email: string;
 
-    @Column({ length: 255 })
-    imgUrl: string;
-
     @Column({
         unique: true,
         nullable: true,
@@ -46,14 +43,12 @@ export class User extends BaseEntity {
     static createSocialUser(
         name: string,
         email: string,
-        profileImg: string,
         socialId: string,
         socialType: LoginType
     ): User {
         const user = new User();
         user.name = name;
         user.email = email;
-        user.imgUrl = profileImg;
         user.socialId = socialId;
         user.socialType = socialType;
         return user;

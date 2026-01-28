@@ -24,7 +24,6 @@ export class LoginUsecase {
             const newUser = User.createSocialUser(
                 command.nickname,
                 command.email,
-                command.profileImage,
                 command.id,
                 command.socialType
             );
