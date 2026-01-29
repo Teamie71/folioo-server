@@ -7,24 +7,6 @@
 3. **일관성** 있는 코드 작성
 4. **가독성** 우선
 
-## 클래스 명명 규칙
-
-| 유형        | 접미사        | 예시                   |
-| ----------- | ------------- | ---------------------- |
-| Controller  | `Controller`  | `UserController`       |
-| Service     | `Service`     | `UserService`          |
-| Module      | `Module`      | `UserModule`           |
-| Entity      | (없음)        | `User`                 |
-| Repository  | `Repository`  | `UserRepository`       |
-| DTO (생성)  | `CreateDto`   | `CreateUserDto`        |
-| DTO (수정)  | `UpdateDto`   | `UpdateUserDto`        |
-| DTO (응답)  | `ResponseDto` | `UserResponseDto`      |
-| Guard       | `Guard`       | `JwtAuthGuard`         |
-| Decorator   | `Decorator`   | `CurrentUserDecorator` |
-| Filter      | `Filter`      | `HttpExceptionFilter`  |
-| Interceptor | `Interceptor` | `TransformInterceptor` |
-| Interface   | (없음)        | `UserPayload`          |
-
 ## DTO 작성 규칙
 
 > **Note**: 프로젝트에서 [NestJS Swagger CLI Plugin](https://docs.nestjs.com/openapi/cli-plugin)을 사용 중이므로
@@ -35,7 +17,7 @@
 
 ```typescript
 // class-validator 데코레이터 사용
-export class CreateUserDto {
+export class CreateUserReqDto {
     @IsEmail()
     @ApiProperty({ example: 'user@example.com' }) // example 명시 필요한 경우
     email: string;
@@ -58,14 +40,14 @@ export class CreateUserDto {
 ### Response DTO
 
 ```typescript
-export class UserResponseDto {
+export class UserResDto {
     id: string; // Swagger 플러그인이 자동 추론
     email: string;
     name: string;
 
     // 정적 팩토리 메서드
-    static from(user: User): UserResponseDto {
-        const dto = new UserResponseDto();
+    static from(user: User): UserResDto {
+        const dto = new UserResDto();
         dto.id = user.id;
         dto.email = user.email;
         dto.name = user.name;
@@ -116,38 +98,85 @@ export class User extends BaseEntity {
 user: User;
 ```
 
-## Service 작성 규칙
+## 에러 처리 패턴 (계층별 책임)
 
-### 기본 구조
+### 원칙
+
+| 계층           | 책임          | 에러 처리 방식                    |
+| -------------- | ------------- | --------------------------------- |
+| **Repository** | 데이터 접근   | DB 관련 에러 throw (NOT_FOUND 등) |
+| **Service**    | 비즈니스 로직 | 비즈니스 로직 에러 throw          |
+| **Controller** | HTTP 처리     | 입력 검증만 (ValidationPipe)      |
+
+### Repository 계층
+
+Repository는 **데이터 접근과 DB 관련 에러 처리**를 담당합니다.
 
 ```typescript
+// ✅ 올바른 패턴
 @Injectable()
-export class UserService {
-    constructor(
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
-        private readonly configService: ConfigService
-    ) {}
-
-    async findOne(id: string): Promise<UserResponseDto> {
-        const user = await this.userRepository.findOne({
-            where: { id },
-        });
-
+export class UserRepository {
+    // 조회 실패 시 예외 throw (NOT_FOUND)
+    async findByIdOrThrow(id: number): Promise<User> {
+        const user = await this.userRepository.findOne({ where: { id } });
         if (!user) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
-
-        return UserResponseDto.from(user);
+        return user;
     }
 
-    async create(dto: CreateUserDto): Promise<UserResponseDto> {
-        const user = this.userRepository.create(dto);
-        const saved = await this.userRepository.save(user);
-        return UserResponseDto.from(saved);
+    // 존재 여부 확인용 (null 반환 허용)
+    async findByEmail(email: string): Promise<User | null> {
+        return await this.userRepository.findOne({ where: { email } });
     }
 }
 ```
+
+### Service 계층
+
+Service는 **비즈니스 로직**을 담당합니다. DB 조회 에러는 Repository에서 처리되므로 Service는 비즈니스 로직에 집중합니다.
+
+```typescript
+// ✅ 올바른 패턴
+@Injectable()
+export class UserService {
+    constructor(private readonly userRepository: UserRepository) {}
+
+    async getProfile(userId: number): Promise<UserResDto> {
+        // Repository에서 NOT_FOUND 처리
+        const user = await this.userRepository.findByIdOrThrow(userId);
+        return UserResDto.from(user);
+    }
+
+    async checkEmailExists(email: string): Promise<boolean> {
+        // 존재 여부 확인은 null 반환 메서드 사용
+        const user = await this.userRepository.findByEmail(email);
+        return user !== null;
+    }
+
+    async updateProfile(userId: number, dto: UpdateProfileReqDto): Promise<UserResDto> {
+        const user = await this.userRepository.findByIdOrThrow(userId);
+
+        // 비즈니스 로직 에러는 Service에서 처리
+        if (dto.email && dto.email !== user.email) {
+            const existing = await this.userRepository.findByEmail(dto.email);
+            if (existing) {
+                throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
+        }
+
+        // ... 업데이트 로직
+        return UserResDto.from(user);
+    }
+}
+```
+
+### Repository 메서드 네이밍 컨벤션
+
+| 메서드 패턴      | 반환 타입               | 설명                                |
+| ---------------- | ----------------------- | ----------------------------------- |
+| `findByXOrThrow` | `Promise<User>`         | 없으면 예외 throw                   |
+| `findByX`        | `Promise<User \| null>` | 없으면 null 반환 (존재 여부 확인용) |
 
 ## Controller 작성 규칙
 
@@ -182,18 +211,18 @@ export class UserController {
 
     @Get(':id')
     @ApiOperation({ summary: '사용자 조회' })
-    @ApiCommonResponse(UserResponseDto)
+    @ApiCommonResponse(UserResDto)
     @ApiCommonErrorResponse(ErrorCode.USER_NOT_FOUND)
-    async findOne(@Param('id') id: string): Promise<UserResponseDto> {
+    async findOne(@Param('id') id: string): Promise<UserResDto> {
         return this.userService.findOne(id);
     }
 
     @Post()
     @ApiOperation({ summary: '사용자 생성' })
-    @ApiBody({ type: CreateUserDto })
-    @ApiCommonResponse(UserResponseDto)
+    @ApiBody({ type: CreateUserReqDto })
+    @ApiCommonResponse(UserResDto)
     @ApiCommonErrorResponse(ErrorCode.BAD_REQUEST)
-    async create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
+    async create(@Body() dto: CreateUserReqDto): Promise<UserResDto> {
         return this.userService.create(dto);
     }
 }
@@ -204,10 +233,10 @@ export class UserController {
 ### 1. any 타입 사용 금지
 
 ```typescript
-// 나쁜 예
+// ❌ 나쁜 예
 function process(data: any) { ... }
 
-// 좋은 예
+// ✅ 좋은 예
 function process(data: UserData) { ... }
 function process<T>(data: T) { ... }
 ```
@@ -215,14 +244,14 @@ function process<T>(data: T) { ... }
 ### 2. 콜백 지옥 금지
 
 ```typescript
-// 나쁜 예
+// ❌ 나쁜 예
 getUser(id, (user) => {
     getPortfolios(user.id, (portfolios) => {
         // ...
     });
 });
 
-// 좋은 예
+// ✅ 좋은 예
 const user = await this.userService.findOne(id);
 const portfolios = await this.portfolioService.findByUserId(user.id);
 ```
@@ -230,11 +259,11 @@ const portfolios = await this.portfolioService.findByUserId(user.id);
 ### 3. 매직 넘버/스트링 금지
 
 ```typescript
-// 나쁜 예
+// ❌ 나쁜 예
 if (status === 1) { ... }
 if (role === 'admin') { ... }
 
-// 좋은 예
+// ✅ 좋은 예
 enum Status { ACTIVE = 1, INACTIVE = 0 }
 enum Role { ADMIN = 'admin', USER = 'user' }
 
@@ -245,10 +274,10 @@ if (role === Role.ADMIN) { ... }
 ### 4. console.log 금지 (프로덕션)
 
 ```typescript
-// 나쁜 예
+// ❌ 나쁜 예
 console.log('User created:', user);
 
-// 좋은 예
+// ✅ 좋은 예
 this.logger.log(`User created: ${user.id}`);
 ```
 
@@ -282,31 +311,31 @@ throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 ### 2. Optional Chaining 사용
 
 ```typescript
-// 나쁜 예
+// ❌ 나쁜 예
 if (user && user.profile && user.profile.avatar) { ... }
 
-// 좋은 예
+// ✅ 좋은 예
 if (user?.profile?.avatar) { ... }
 ```
 
 ### 3. Nullish Coalescing 사용
 
 ```typescript
-// 나쁜 예
+// ❌ 나쁜 예
 const name = user.name || 'Unknown';
 
-// 좋은 예
+// ✅ 좋은 예
 const name = user.name ?? 'Unknown';
 ```
 
 ### 4. Destructuring 활용
 
 ```typescript
-// 나쁜 예
+// ❌ 나쁜 예
 const email = dto.email;
 const name = dto.name;
 
-// 좋은 예
+// ✅ 좋은 예
 const { email, name } = dto;
 ```
 
@@ -324,7 +353,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@modules/user/domain/entities/user.entity';
 
 // 4. 상대 경로
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserReqDto } from './dto/create-user.dto';
 ```
 
 ## package.json Scripts 작성 가이드
@@ -350,37 +379,6 @@ Git hooks 관리 도구(husky)는 `.git` 폴더가 필요하므로 존재 여부
 - Docker 컨테이너 빌드 시 `.git` 폴더가 없어 husky 실행 실패
 - `pnpm install` 실행 시 `prepare` 스크립트가 자동으로 실행됨
 - `.git`이 있는 환경에서는 husky 실행 오류를 정상적으로 전파하여 설정 문제를 즉시 발견 가능
-
-#### 잘못된 예시
-
-```json
-{
-    "scripts": {
-        // ❌ .git 폴더 체크 없이 실행 - Docker 빌드 실패
-        "prepare": "husky",
-
-        // ❌ if 문법 사용 - Windows 환경에서 실행 불가
-        "prepare": "if [ -d .git ]; then husky; fi",
-
-        // ❌ try-catch로 모든 에러 무시 - husky 설정 오류도 숨겨짐
-        "prepare": "node -e \"try { require('fs').statSync('.git') && require('child_process').execSync('husky', {stdio: 'inherit'}) } catch {}\""
-    }
-}
-```
-
-#### 올바른 예시
-
-```json
-{
-    "scripts": {
-        // ✅ .git 체크만 하고 husky 오류는 정상 전파
-        "prepare": "node -e \"if (require('fs').existsSync('.git')) { require('child_process').execSync('husky', {stdio: 'inherit'}) }\"",
-
-        // ✅ 환경 변수로 CI 환경 감지
-        "postinstall": "node -e \"if (!process.env.CI) { require('child_process').execSync('some-command', {stdio: 'inherit'}) }\""
-    }
-}
-```
 
 ### pnpm 버전 명시
 

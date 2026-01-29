@@ -45,7 +45,8 @@ TYPE: Feat, Fix, Refactor, Chore, Docs, Test, Style
 PR 생성 전 확인사항:
 
 - [ ] 코드 컨벤션을 준수했습니다 (`docs/development/CODE_STYLE.md`)
-- [ ] 커밋 메시지 컨벤션을 준수했습니다 (`docs/development/CONVENTIONS.md`)
+- [ ] Git 컨벤션을 준수했습니다 (`docs/development/GIT_CONVENTIONS.md`)
+- [ ] 네이밍 컨벤션을 준수했습니다 (`docs/development/NAMING_CONVENTIONS.md`)
 - [ ] 로컬에서 빌드가 성공합니다 (`pnpm run build`)
 - [ ] 로컬에서 린트가 통과합니다 (`pnpm run lint`)
 - [ ] (API 변경 시) Swagger 문서가 업데이트되었습니다
