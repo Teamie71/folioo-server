@@ -33,24 +33,25 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 
 ### 1. 에러 처리 계층
 
-| 계층       | 책임                      |
-| ---------- | ------------------------- |
-| Repository | `null` 반환               |
-| Service    | `BusinessException` throw |
-| Controller | 입력 검증만               |
+| 계층       | 책임                              |
+| ---------- | --------------------------------- |
+| Repository | DB 관련 에러 throw (NOT_FOUND 등) |
+| Service    | 비즈니스 로직 에러 throw          |
+| Controller | 입력 검증만                       |
 
 ```typescript
-// Repository - null 반환
-async findById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
-}
-
-// Service - 예외 throw
-async getProfile(userId: number): Promise<UserResDto> {
-    const user = await this.userRepository.findById(userId);
+// Repository - DB 관련 에러 throw
+async findByIdOrThrow(id: number): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
         throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
+    return user;
+}
+
+// Service - 비즈니스 로직 처리
+async getProfile(userId: number): Promise<UserResDto> {
+    const user = await this.userRepository.findByIdOrThrow(userId);
     return UserResDto.from(user);
 }
 ```
@@ -73,14 +74,14 @@ async getProfile(userId: number): Promise<UserResDto> {
 
 ## 도메인 구조
 
-| 도메인               | 분류       | 설명                |
-| -------------------- | ---------- | ------------------- |
-| Experience           | Core       | 경험 정리 (AI 채팅) |
-| Portfolio            | Core       | 포트폴리오          |
-| Portfolio-Correction | Core       | 포트폴리오 첨삭     |
-| Insight              | Supporting | 인사이트            |
-| User                 | Supporting | 사용자              |
-| Auth                 | Generic    | 인증 (OAuth)        |
+| 도메인               | 분류    | 설명                |
+| -------------------- | ------- | ------------------- |
+| Experience           | Core    | 경험 정리 (AI 채팅) |
+| Portfolio            | Core    | 포트폴리오          |
+| Portfolio-Correction | Core    | 포트폴리오 첨삭     |
+| Insight              | Core    | 인사이트            |
+| User                 | Generic | 사용자              |
+| Auth                 | Generic | 인증 (OAuth)        |
 
 ## 파일 처리 방식
 

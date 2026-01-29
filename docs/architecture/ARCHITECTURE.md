@@ -43,15 +43,15 @@ Package by Feature + Layered Architecture를 결합하여 도메인별로 코드
 
 ## 도메인 분류
 
-| 도메인                   | 분류       | 설명                                                |
-| ------------------------ | ---------- | --------------------------------------------------- |
-| **Experience**           | Core       | 경험 정리 (AI 채팅 포함), 서비스의 핵심 기능        |
-| **Portfolio**            | Core       | 경험 정리의 결과물, 첨삭의 소스로 사용              |
-| **Portfolio-Correction** | Core       | 포트폴리오 첨삭 서비스                              |
-| **Insight**              | Supporting | 인사이트/팁 정리                                    |
-| **User**                 | Supporting | 사용자 도메인 (추후 userAuth-userProfile 분리 가능) |
-| **Auth**                 | Generic    | 인증 (passport - kakao/google/apple)                |
-| **Payment**              | Generic    | 결제 (예정)                                         |
+| 도메인                   | 분류    | 설명                                                |
+| ------------------------ | ------- | --------------------------------------------------- |
+| **Experience**           | Core    | 경험 정리 (AI 채팅 포함), 서비스의 핵심 기능        |
+| **Portfolio**            | Core    | 경험 정리의 결과물, 첨삭의 소스로 사용              |
+| **Portfolio-Correction** | Core    | 포트폴리오 첨삭 서비스                              |
+| **Insight**              | Core    | 인사이트/팁 정리                                    |
+| **User**                 | Generic | 사용자 도메인 (추후 userAuth-userProfile 분리 가능) |
+| **Auth**                 | Generic | 인증 (passport - kakao/google/apple)                |
+| **Payment**              | Generic | 결제 (예정)                                         |
 
 ---
 
@@ -87,7 +87,7 @@ src/
 │
 └── modules/                     # 비즈니스 도메인
     ├── auth/                    # 인증 (Generic)
-    ├── user/                    # 사용자 (Supporting)
+    ├── user/                    # 사용자 (Generic)
     │   ├── domain/              # 도메인 계층
     │   │   └── entities/        # 엔티티
     │   ├── application/         # 애플리케이션 계층
@@ -100,7 +100,8 @@ src/
     ├── experience/              # 경험 정리 (Core)
     ├── portfolio/               # 포트폴리오 (Core)
     ├── portfolio-correction/    # 포트폴리오 첨삭 (Core)
-    ├── insight/                 # 인사이트 (Supporting)
+    ├── insight/                 # 인사이트 (Core)
+    ├── upload/                  # 파일 업로드 (Supporting)
     └── payment/                 # 결제 (Generic, 예정)
 ```
 
@@ -134,7 +135,7 @@ export class UserController {
 - 비즈니스 로직 구현
 - 트랜잭션 관리
 - DTO 변환
-- **예외 처리** (BusinessException throw)
+- **비즈니스 로직 에러 처리** (BusinessException throw)
 
 ```typescript
 @Injectable()
@@ -142,10 +143,8 @@ export class UserService {
     constructor(private readonly userRepository: UserRepository) {}
 
     async findOne(id: string): Promise<UserResDto> {
-        const user = await this.userRepository.findById(id);
-        if (!user) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
+        // Repository에서 NOT_FOUND 처리
+        const user = await this.userRepository.findByIdOrThrow(id);
         return UserResDto.from(user);
     }
 }
@@ -170,13 +169,17 @@ export class User extends BaseEntity {
 ### Infrastructure Layer (Repository)
 
 - 데이터 접근 구현
-- **null 반환** (예외 throw 하지 않음)
+- **DB 관련 에러 처리** (NOT_FOUND 등)
 
 ```typescript
 @Injectable()
 export class UserRepository {
-    async findById(id: number): Promise<User | null> {
-        return this.userRepository.findOne({ where: { id } });
+    async findByIdOrThrow(id: number): Promise<User> {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        return user;
     }
 }
 ```
@@ -238,8 +241,9 @@ Client (PDF)
 **장점**:
 
 - S3 비용 절감
-- 메모리 효율적 (대용량 파일도 처리 가능)
 - 단순한 아키텍처
+
+> **Note**: 서비스 기획상 PDF 파일은 10MB 이하로 제한되어 있어, 별도 스토리지 없이 스트리밍 방식으로 처리합니다.
 
 ---
 

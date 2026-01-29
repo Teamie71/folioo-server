@@ -102,44 +102,39 @@ user: User;
 
 ### 원칙
 
-| 계층           | 책임          | 에러 처리 방식               |
-| -------------- | ------------- | ---------------------------- |
-| **Repository** | 데이터 접근   | `null` 또는 `Entity` 반환    |
-| **Service**    | 비즈니스 로직 | `BusinessException` throw    |
-| **Controller** | HTTP 처리     | 입력 검증만 (ValidationPipe) |
+| 계층           | 책임          | 에러 처리 방식                    |
+| -------------- | ------------- | --------------------------------- |
+| **Repository** | 데이터 접근   | DB 관련 에러 throw (NOT_FOUND 등) |
+| **Service**    | 비즈니스 로직 | 비즈니스 로직 에러 throw          |
+| **Controller** | HTTP 처리     | 입력 검증만 (ValidationPipe)      |
 
 ### Repository 계층
 
-Repository는 **데이터 접근만** 담당합니다. 조회 결과가 없으면 `null`을 반환합니다.
+Repository는 **데이터 접근과 DB 관련 에러 처리**를 담당합니다.
 
 ```typescript
 // ✅ 올바른 패턴
 @Injectable()
 export class UserRepository {
-    async findById(id: number): Promise<User | null> {
-        return await this.userRepository.findOne({ where: { id } });
+    // 조회 실패 시 예외 throw (NOT_FOUND)
+    async findByIdOrThrow(id: number): Promise<User> {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        return user;
     }
 
+    // 존재 여부 확인용 (null 반환 허용)
     async findByEmail(email: string): Promise<User | null> {
         return await this.userRepository.findOne({ where: { email } });
     }
 }
 ```
 
-```typescript
-// ❌ 피해야 할 패턴 (Repository에서 예외 throw)
-async findById(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) {
-        throw new BusinessException(ErrorCode.USER_NOT_FOUND); // ❌
-    }
-    return user;
-}
-```
-
 ### Service 계층
 
-Service는 **비즈니스 로직과 예외 처리**를 담당합니다.
+Service는 **비즈니스 로직**을 담당합니다. DB 조회 에러는 Repository에서 처리되므로 Service는 비즈니스 로직에 집중합니다.
 
 ```typescript
 // ✅ 올바른 패턴
@@ -148,48 +143,40 @@ export class UserService {
     constructor(private readonly userRepository: UserRepository) {}
 
     async getProfile(userId: number): Promise<UserResDto> {
-        const user = await this.userRepository.findById(userId);
-
-        if (!user) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-
+        // Repository에서 NOT_FOUND 처리
+        const user = await this.userRepository.findByIdOrThrow(userId);
         return UserResDto.from(user);
     }
 
     async checkEmailExists(email: string): Promise<boolean> {
+        // 존재 여부 확인은 null 반환 메서드 사용
         const user = await this.userRepository.findByEmail(email);
-        return user !== null; // null 반환이 정상인 케이스
+        return user !== null;
     }
-}
-```
 
-### 왜 Service에서 예외를 throw 해야 하는가?
+    async updateProfile(userId: number, dto: UpdateProfileReqDto): Promise<UserResDto> {
+        const user = await this.userRepository.findByIdOrThrow(userId);
 
-1. **문맥(Context)**: Repository는 "데이터가 없다"만 알고, "그게 에러인지"는 모릅니다.
-    - `findByEmail`에서 `null`은 "이메일 중복 아님" (성공)
-    - `findById`에서 `null`은 "사용자 없음" (에러)
-
-2. **재사용성**: Repository가 `null`을 반환하면 다양한 상황에서 재사용 가능합니다.
-
-3. **업계 표준**: NestJS 공식 문서, Cal.com, Novu 등 프로덕션 프로젝트에서 이 패턴을 사용합니다.
-
-### 참고: "편의 메서드" 패턴
-
-자주 사용하는 "조회 후 예외" 로직은 Service에 편의 메서드로 만들 수 있습니다:
-
-```typescript
-@Injectable()
-export class UserService {
-    async getByIdOrThrow(id: number): Promise<User> {
-        const user = await this.userRepository.findById(id);
-        if (!user) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        // 비즈니스 로직 에러는 Service에서 처리
+        if (dto.email && dto.email !== user.email) {
+            const existing = await this.userRepository.findByEmail(dto.email);
+            if (existing) {
+                throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
         }
-        return user;
+
+        // ... 업데이트 로직
+        return UserResDto.from(user);
     }
 }
 ```
+
+### Repository 메서드 네이밍 컨벤션
+
+| 메서드 패턴      | 반환 타입               | 설명                                |
+| ---------------- | ----------------------- | ----------------------------------- |
+| `findByXOrThrow` | `Promise<User>`         | 없으면 예외 throw                   |
+| `findByX`        | `Promise<User \| null>` | 없으면 null 반환 (존재 여부 확인용) |
 
 ## Controller 작성 규칙
 
