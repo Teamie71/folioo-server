@@ -32,9 +32,13 @@ import {
     UpdatePortfolioBlockReqDTO,
 } from '../application/dtos/external-portfolio.dto';
 
+import { ExternalPortfolioService } from '../application/services/external-portfolio.service';
+
 @ApiTags('Portfolio')
 @Controller('external-portfolios')
 export class ExternalPortfolioController {
+    constructor(private readonly externalPortfolioService: ExternalPortfolioService) {}
+
     @Post('extract')
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 추출',
@@ -88,23 +92,16 @@ export class ExternalPortfolioController {
         description:
             '텍스트 정리 블록의 활동 블록을 추가합니다. 활동 블록은 최대 5개까지 존재 가능합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '텍스트 정리 블록의 활동 블록을 추가합니다.',
-            },
-        },
-    })
+    @ApiBody({ type: CreateExternalPortfolioReqDTO })
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.CORRECTION_NOT_FOUND,
         ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED
     )
-    createExternalPortfolios(@Body() body: CreateExternalPortfolioReqDTO): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    async createExternalPortfolios(
+        @Body() body: CreateExternalPortfolioReqDTO
+    ): Promise<StructuredPortfolioResDTO> {
+        return this.externalPortfolioService.createExternalPortfolioBlock(body.correctionId);
     }
 
     @Get()
@@ -112,13 +109,13 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 정리 결과 조회',
         description: 'AI가 구조화한 포트폴리오 정보를 조회합니다.',
     })
-    @ApiQuery({ name: 'correctionId', required: true })
+    @ApiQuery({ name: 'correctionId', required: true, type: Number })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    getExternalPortfolios(
+    async getExternalPortfolios(
         @Query('correctionId') correctionId: number
-    ): StructuredPortfolioResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    ): Promise<StructuredPortfolioResDTO[]> {
+        return this.externalPortfolioService.getExternalPortfolios(correctionId);
     }
 
     @Patch(':portfolioId')
