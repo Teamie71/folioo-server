@@ -13,8 +13,8 @@ export class PortfolioRepository {
         private readonly portfolioRepository: Repository<Portfolio>
     ) {}
 
-    async save(portfolio: Portfolio): Promise<Portfolio> {
-        return await this.portfolioRepository.save(portfolio);
+    save(portfolio: Portfolio): Promise<Portfolio> {
+        return this.portfolioRepository.save(portfolio);
     }
 
     async findByIdOrThrow(id: number): Promise<Portfolio> {
@@ -28,19 +28,19 @@ export class PortfolioRepository {
     }
 
     async findExternalByCorrectionId(correctionId: number): Promise<Portfolio[]> {
-        return await this.portfolioRepository
+        return this.portfolioRepository
             .createQueryBuilder('portfolio')
-            .innerJoin('correction_item', 'ci', 'ci.portfolioId = portfolio.id')
-            .where('ci.portfolioCorrectionId = :correctionId', { correctionId })
+            .innerJoin('portfolio.correctionItems', 'ci')
+            .innerJoin('ci.portfolioCorrection', 'pc', 'pc.id = :correctionId', { correctionId })
             .andWhere('portfolio.sourceType = :sourceType', { sourceType: SourceType.EXTERNAL })
             .getMany();
     }
 
     async countExternalByCorrectionId(correctionId: number): Promise<number> {
-        return await this.portfolioRepository
+        return this.portfolioRepository
             .createQueryBuilder('portfolio')
-            .innerJoin('correction_item', 'ci', 'ci.portfolioId = portfolio.id')
-            .where('ci.portfolioCorrectionId = :correctionId', { correctionId })
+            .innerJoin('portfolio.correctionItems', 'ci')
+            .innerJoin('ci.portfolioCorrection', 'pc', 'pc.id = :correctionId', { correctionId })
             .andWhere('portfolio.sourceType = :sourceType', { sourceType: SourceType.EXTERNAL })
             .getCount();
     }

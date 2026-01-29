@@ -22,8 +22,10 @@ import {
 } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
+    ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
+import { User } from 'src/common/decorators/user.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
@@ -93,15 +95,20 @@ export class ExternalPortfolioController {
             '텍스트 정리 블록의 활동 블록을 추가합니다. 활동 블록은 최대 5개까지 존재 가능합니다.',
     })
     @ApiBody({ type: CreateExternalPortfolioReqDTO })
+    @ApiCommonResponse(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.CORRECTION_NOT_FOUND,
         ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED
     )
-    async createExternalPortfolios(
+    async createExternalPortfolioBlock(
+        @User('sub') userId: number,
         @Body() body: CreateExternalPortfolioReqDTO
     ): Promise<StructuredPortfolioResDTO> {
-        return this.externalPortfolioService.createExternalPortfolioBlock(body.correctionId);
+        return this.externalPortfolioService.createExternalPortfolioBlock(
+            body.correctionId,
+            userId
+        );
     }
 
     @Get()

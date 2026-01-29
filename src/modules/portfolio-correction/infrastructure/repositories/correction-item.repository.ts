@@ -10,7 +10,7 @@ export class CorrectionItemRepository {
         private readonly correctionItemRepository: Repository<CorrectionItem>
     ) {}
 
-    async save(correctionItem: CorrectionItem): Promise<CorrectionItem> {
-        return await this.correctionItemRepository.save(correctionItem);
+    save(correctionItem: CorrectionItem): Promise<CorrectionItem> {
+        return this.correctionItemRepository.save(correctionItem);
     }
 }

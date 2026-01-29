@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Transactional } from 'typeorm-transactional';
 import { PortfolioRepository } from '../../infrastructure/repositories/portfolio.repository';
 import { PortfolioCorrectionRepository } from 'src/modules/portfolio-correction/infrastructure/repositories/portfolio-correction.repository';
 import { CorrectionItemRepository } from 'src/modules/portfolio-correction/infrastructure/repositories/correction-item.repository';
@@ -8,6 +9,7 @@ import { SourceType } from '../../domain/enums/source-type.enum';
 import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { User } from 'src/modules/user/domain/user.entity';
 
 const MAX_EXTERNAL_PORTFOLIO_BLOCKS = 5;
 
@@ -27,7 +29,11 @@ export class ExternalPortfolioService {
         return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
     }
 
-    async createExternalPortfolioBlock(correctionId: number): Promise<StructuredPortfolioResDTO> {
+    @Transactional()
+    async createExternalPortfolioBlock(
+        correctionId: number,
+        userId: number
+    ): Promise<StructuredPortfolioResDTO> {
         const correction = await this.portfolioCorrectionRepository.findByIdOrThrow(correctionId);
 
         const currentCount =
@@ -43,6 +49,7 @@ export class ExternalPortfolioService {
         portfolio.problemSolving = '';
         portfolio.learnings = '';
         portfolio.sourceType = SourceType.EXTERNAL;
+        portfolio.user = { id: userId } as User;
 
         const savedPortfolio = await this.portfolioRepository.save(portfolio);
 
