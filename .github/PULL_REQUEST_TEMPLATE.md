@@ -26,6 +26,13 @@ TYPE: Feat, Fix, Refactor, Chore, Docs, Test, Style
 - [ ] Documentation (문서 변경)
 - [ ] Chore (빌드, 설정 등)
 
+## Target Environment
+
+배포 대상 브랜치를 선택해주세요:
+
+- [ ] Dev (`dev`)
+- [ ] Prod (`main`)
+
 ## Related Issues
 
 관련 이슈를 연결해주세요:
