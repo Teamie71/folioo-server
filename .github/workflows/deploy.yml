@@ -69,9 +69,9 @@ jobs:
             - name: Copy docker-compose.dev.yml to Server
               uses: appleboy/scp-action@master
               with:
-                  host: ${{ secrets.LIGHTSAIL_HOST_DEV }}
-                  username: ${{ secrets.LIGHTSAIL_USERNAME_DEV }}
-                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_DEV }}
+                  host: ${{ secrets.LIGHTSAIL_HOST }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
                   port: 22
                   source: 'docker-compose.dev.yml'
                   target: '~/docker'
@@ -82,9 +82,9 @@ jobs:
               env:
                   ENV_DEV: ${{ secrets.ENV_DEV }}
               with:
-                  host: ${{ secrets.LIGHTSAIL_HOST_DEV }}
-                  username: ${{ secrets.LIGHTSAIL_USERNAME_DEV }}
-                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_DEV }}
+                  host: ${{ secrets.LIGHTSAIL_HOST }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
                   port: 22
                   envs: ENV_DEV
                   script: |
@@ -129,9 +129,9 @@ jobs:
             - name: Copy docker-compose.prod.yml to Server
               uses: appleboy/scp-action@master
               with:
-                  host: ${{ secrets.LIGHTSAIL_HOST_PROD }}
-                  username: ${{ secrets.LIGHTSAIL_USERNAME_PROD }}
-                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_PROD }}
+                  host: ${{ secrets.LIGHTSAIL_HOST }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
                   port: 22
                   source: 'docker-compose.prod.yml'
                   target: '~/docker'
@@ -142,9 +142,9 @@ jobs:
               env:
                   ENV_PROD: ${{ secrets.ENV_PROD }}
               with:
-                  host: ${{ secrets.LIGHTSAIL_HOST_PROD }}
-                  username: ${{ secrets.LIGHTSAIL_USERNAME_PROD }}
-                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_PROD }}
+                  host: ${{ secrets.LIGHTSAIL_HOST }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
                   port: 22
                   envs: ENV_PROD
                   script: |
