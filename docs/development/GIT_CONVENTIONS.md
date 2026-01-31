@@ -25,6 +25,23 @@
 - 단어 구분은 하이픈(`-`)
 - Issue 번호 필수 포함
 
+## 브랜치/환경 매핑
+
+### 기본 규칙
+
+- `dev` 브랜치: 개발 서버 배포 (APP_PROFILE=dev)
+- `main` 브랜치: 프로덕션 서버 배포 (APP_PROFILE=prod)
+
+### 배포 구성
+
+- 개발 서버: `docker-compose.dev.yml` + `.env.dev`
+- 프로덕션 서버: `docker-compose.prod.yml` + `.env.prod`
+
+### 릴리스 흐름
+
+1. 기능 브랜치 → `dev` PR
+2. 검증 완료 후 `main` PR
+
 ## 커밋 메시지 컨벤션
 
 ### 형식

@@ -1,100 +1,176 @@
 name: CD (Deploy to Lightsail)
 
 on:
-  push:
-    branches: [ "dev" ]
+    push:
+        branches: ['dev', 'main']
 
 permissions:
-  contents: read
+    contents: read
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
+    DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
+    BRANCH_TAG: ${{ github.ref_name }}
 
 jobs:
-  # =========================================================
-  # JOB 1: Docker 이미지 빌드 및 Docker Hub 푸시
-  # =========================================================
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    # =========================================================
+    # JOB 1: Docker 이미지 빌드 및 Docker Hub 푸시
+    # =========================================================
+    build-and-push:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+            - name: Login to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKERHUB_USERNAME }}
+                  password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.DOCKER_IMAGE }}:latest
-            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            - name: Set Docker tags
+              run: |
+                  if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+                    echo "DOCKER_TAGS<<EOF" >> $GITHUB_ENV
+                    echo "${{ env.DOCKER_IMAGE }}:latest" >> $GITHUB_ENV
+                    echo "${{ env.DOCKER_IMAGE }}:${{ github.sha }}" >> $GITHUB_ENV
+                    echo "${{ env.DOCKER_IMAGE }}:${{ env.BRANCH_TAG }}" >> $GITHUB_ENV
+                    echo "EOF" >> $GITHUB_ENV
+                  else
+                    echo "DOCKER_TAGS<<EOF" >> $GITHUB_ENV
+                    echo "${{ env.DOCKER_IMAGE }}:${{ github.sha }}" >> $GITHUB_ENV
+                    echo "${{ env.DOCKER_IMAGE }}:${{ env.BRANCH_TAG }}" >> $GITHUB_ENV
+                    echo "EOF" >> $GITHUB_ENV
+                  fi
 
-  # =========================================================
-  # JOB 2: Lightsail 서버에 SSH로 배포
-  # =========================================================
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+            - name: Build and Push
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  push: true
+                  tags: |
+                      ${{ env.DOCKER_TAGS }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
 
-      - name: Copy docker-compose.prod.yml to Server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
-          username: ${{ secrets.LIGHTSAIL_USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          port: 22
-          source: "docker-compose.prod.yml"
-          target: "~/docker"
-          strip_components: 0
+    # =========================================================
+    # JOB 2: Dev 서버 배포
+    # =========================================================
+    deploy-dev:
+        needs: build-and-push
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/dev'
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
-        env:
-          ENV_PROD: ${{ secrets.ENV_PROD }}
-        with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
-          username: ${{ secrets.LIGHTSAIL_USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          port: 22
-          envs: ENV_PROD
-          script: |
-            echo "🚀 Starting deployment..."
+            - name: Copy docker-compose.dev.yml to Server
+              uses: appleboy/scp-action@master
+              with:
+                  host: ${{ secrets.LIGHTSAIL_HOST_DEV }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME_DEV }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_DEV }}
+                  port: 22
+                  source: 'docker-compose.dev.yml'
+                  target: '~/docker'
+                  strip_components: 0
 
-            cd ~/docker
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@master
+              env:
+                  ENV_DEV: ${{ secrets.ENV_DEV }}
+              with:
+                  host: ${{ secrets.LIGHTSAIL_HOST_DEV }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME_DEV }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_DEV }}
+                  port: 22
+                  envs: ENV_DEV
+                  script: |
+                      echo "🚀 Starting dev deployment..."
 
-            # .env.prod 파일 생성 (GitHub Secrets에서)
-            echo "$ENV_PROD" > .env.prod
+                      cd ~/docker
 
-            # 최신 이미지 Pull & 재시작 (헬스체크 통과까지 대기)
-            docker compose --env-file .env.prod -f docker-compose.prod.yml pull
-            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --force-recreate --wait
+                      # .env.dev 파일 생성 (GitHub Secrets에서)
+                      echo "$ENV_DEV" > .env.dev
 
-            # 헬스체크 추가 확인
-            echo "🔍 Verifying health..."
-            sleep 5
-            if curl -sf http://localhost:3000/health > /dev/null; then
-              echo "✅ Health check passed!"
-            else
-              echo "❌ Health check failed!"
-              docker compose --env-file .env.prod -f docker-compose.prod.yml logs --tail=50
-              exit 1
-            fi
+                      # 최신 이미지 Pull & 재시작 (헬스체크 통과까지 대기)
+                      docker compose --env-file .env.dev -f docker-compose.dev.yml pull
+                      docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --force-recreate --wait
 
-            # 사용하지 않는 이미지 정리
-            docker image prune -f
+                      # 헬스체크 추가 확인
+                      echo "🔍 Verifying health..."
+                      sleep 5
+                      if curl -sf http://localhost:3000/health > /dev/null; then
+                        echo "✅ Health check passed!"
+                      else
+                        echo "❌ Health check failed!"
+                        docker compose --env-file .env.dev -f docker-compose.dev.yml logs --tail=50
+                        exit 1
+                      fi
 
-            echo "✅ Deployment completed!"
+                      # 사용하지 않는 이미지 정리
+                      docker image prune -f
+
+                      echo "✅ Dev deployment completed!"
+
+    # =========================================================
+    # JOB 3: Prod 서버 배포
+    # =========================================================
+    deploy-prod:
+        needs: build-and-push
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Copy docker-compose.prod.yml to Server
+              uses: appleboy/scp-action@master
+              with:
+                  host: ${{ secrets.LIGHTSAIL_HOST_PROD }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME_PROD }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_PROD }}
+                  port: 22
+                  source: 'docker-compose.prod.yml'
+                  target: '~/docker'
+                  strip_components: 0
+
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@master
+              env:
+                  ENV_PROD: ${{ secrets.ENV_PROD }}
+              with:
+                  host: ${{ secrets.LIGHTSAIL_HOST_PROD }}
+                  username: ${{ secrets.LIGHTSAIL_USERNAME_PROD }}
+                  key: ${{ secrets.LIGHTSAIL_SSH_KEY_PROD }}
+                  port: 22
+                  envs: ENV_PROD
+                  script: |
+                      echo "🚀 Starting prod deployment..."
+
+                      cd ~/docker
+
+                      # .env.prod 파일 생성 (GitHub Secrets에서)
+                      echo "$ENV_PROD" > .env.prod
+
+                      # 최신 이미지 Pull & 재시작 (헬스체크 통과까지 대기)
+                      docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+                      docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --force-recreate --wait
+
+                      # 헬스체크 추가 확인
+                      echo "🔍 Verifying health..."
+                      sleep 5
+                      if curl -sf http://localhost:3000/health > /dev/null; then
+                        echo "✅ Health check passed!"
+                      else
+                        echo "❌ Health check failed!"
+                        docker compose --env-file .env.prod -f docker-compose.prod.yml logs --tail=50
+                        exit 1
+                      fi
+
+                      # 사용하지 않는 이미지 정리
+                      docker image prune -f
+
+                      echo "✅ Prod deployment completed!"
