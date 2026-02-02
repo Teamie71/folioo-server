@@ -17,12 +17,15 @@ export class ExperienceService {
     ) {}
 
     async validateCreation(userId: number, name: string): Promise<void> {
-        const count = await this.experienceRepository.countByUserId(userId);
+        const [count, isDuplicate] = await Promise.all([
+            this.experienceRepository.countByUserId(userId),
+            this.experienceRepository.existsByUserIdAndName(userId, name),
+        ]);
+
         if (count >= MAX_EXPERIENCES_PER_USER) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAX_LIMIT);
         }
 
-        const isDuplicate = await this.experienceRepository.existsByUserIdAndName(userId, name);
         if (isDuplicate) {
             throw new BusinessException(ErrorCode.DUPLICATE_EXPERIENCE_NAME);
         }

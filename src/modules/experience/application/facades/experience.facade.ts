@@ -19,8 +19,8 @@ export class ExperienceFacade {
         name: string,
         hopeJob: JobCategory
     ): Promise<ExperienceResDTO> {
-        await this.experienceService.validateCreation(userId, name);
         await this.userService.deductCredit(userId, EXPERIENCE_CREDIT_COST);
+        await this.experienceService.validateCreation(userId, name);
         return this.experienceService.createExperience(userId, name, hopeJob);
     }
 }
