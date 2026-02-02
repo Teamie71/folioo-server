@@ -85,17 +85,36 @@ export class User extends BaseEntity {
 
 ### 관계 매핑
 
-> **Note**: 모듈 간 순환참조 방지를 위해 **단방향 매핑(ManyToOne)만 사용**합니다.
-> 양방향 매핑(`OneToMany`)은 꼭 필요한 경우에만 사용합니다.
+> **Note**: 모듈 간 순환참조 방지를 위해 **단방향 매핑(`@ManyToOne`)만 사용**합니다.
+> **`@OneToMany` 사용 금지** — SWC 컴파일러 환경에서 순환참조를 유발합니다.
 
 ```typescript
-// 다대일 관계 (단방향) - LAZY 필수
-@ManyToOne(() => User, {
-  lazy: true,
-  onDelete: 'CASCADE',
-})
-@JoinColumn({ name: 'user_id' })
+// ✅ 단방향 관계 (ManyToOne만 사용)
+@ManyToOne(() => User, { onDelete: 'CASCADE' })
 user: User;
+```
+
+```typescript
+// ❌ 양방향 관계 (사용 금지)
+// Portfolio 엔티티에서
+@OneToMany(() => CorrectionItem, (item) => item.portfolio)
+correctionItems: CorrectionItem[];
+```
+
+### 크로스 도메인 조인 쿼리 (엔티티 클래스 참조 패턴)
+
+`@OneToMany` 없이도 QueryBuilder에서 다른 엔티티와 조인할 수 있습니다.
+**엔티티 클래스를 직접 참조**하여 타입 안전한 조인을 수행합니다.
+
+```typescript
+// ❌ 하드코딩된 테이블/컬럼명 (유지보수 취약)
+.innerJoin('correction_item', 'ci', 'ci.portfolioId = portfolio.id')
+
+// ❌ @OneToMany 관계 활용 (순환참조 위험)
+.innerJoin('portfolio.correctionItems', 'ci')
+
+// ✅ 엔티티 클래스 참조 (권장)
+.innerJoin(CorrectionItem, 'ci', 'ci.portfolio.id = portfolio.id')
 ```
 
 ## 에러 처리 패턴 (계층별 책임)

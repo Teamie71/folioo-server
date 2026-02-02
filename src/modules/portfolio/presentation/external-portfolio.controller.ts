@@ -33,13 +33,12 @@ import {
     StructuredPortfolioResDTO,
     UpdatePortfolioBlockReqDTO,
 } from '../application/dtos/external-portfolio.dto';
-
-import { ExternalPortfolioService } from '../application/services/external-portfolio.service';
+import { ExternalPortfolioFacade } from '../application/facades/external-portfolio.facade';
 
 @ApiTags('Portfolio')
 @Controller('external-portfolios')
 export class ExternalPortfolioController {
-    constructor(private readonly externalPortfolioService: ExternalPortfolioService) {}
+    constructor(private readonly externalPortfolioFacade: ExternalPortfolioFacade) {}
 
     @Post('extract')
     @ApiOperation({
@@ -105,10 +104,7 @@ export class ExternalPortfolioController {
         @User('sub') userId: number,
         @Body() body: CreateExternalPortfolioReqDTO
     ): Promise<StructuredPortfolioResDTO> {
-        return this.externalPortfolioService.createExternalPortfolioBlock(
-            body.correctionId,
-            userId
-        );
+        return this.externalPortfolioFacade.createExternalPortfolioBlock(body.correctionId, userId);
     }
 
     @Get()
@@ -122,7 +118,7 @@ export class ExternalPortfolioController {
     async getExternalPortfolios(
         @Query('correctionId') correctionId: number
     ): Promise<StructuredPortfolioResDTO[]> {
-        return this.externalPortfolioService.getExternalPortfolios(correctionId);
+        return this.externalPortfolioFacade.getExternalPortfolios(correctionId);
     }
 
     @Patch(':portfolioId')

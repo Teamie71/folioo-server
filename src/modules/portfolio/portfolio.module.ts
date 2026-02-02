@@ -5,19 +5,12 @@ import { ExternalPortfolioController } from './presentation/external-portfolio.c
 import { Portfolio } from './domain/portfolio.entity';
 import { PortfolioRepository } from './infrastructure/repositories/portfolio.repository';
 import { ExternalPortfolioService } from './application/services/external-portfolio.service';
-import { PortfolioCorrection } from '../portfolio-correction/domain/portfolio-correction.entity';
-import { CorrectionItem } from '../portfolio-correction/domain/correction-item.entity';
-import { PortfolioCorrectionRepository } from '../portfolio-correction/infrastructure/repositories/portfolio-correction.repository';
-import { CorrectionItemRepository } from '../portfolio-correction/infrastructure/repositories/correction-item.repository';
+import { ExternalPortfolioFacade } from './application/facades/external-portfolio.facade';
+import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-correction.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Portfolio, PortfolioCorrection, CorrectionItem])],
+    imports: [TypeOrmModule.forFeature([Portfolio]), PortfolioCorrectionModule],
     controllers: [PortfolioController, ExternalPortfolioController],
-    providers: [
-        PortfolioRepository,
-        PortfolioCorrectionRepository,
-        CorrectionItemRepository,
-        ExternalPortfolioService,
-    ],
+    providers: [PortfolioRepository, ExternalPortfolioService, ExternalPortfolioFacade],
 })
 export class PortfolioModule {}

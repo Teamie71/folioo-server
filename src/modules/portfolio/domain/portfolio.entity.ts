@@ -1,9 +1,10 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { SourceType } from './enums/source-type.enum';
 import { User } from '../../user/domain/user.entity';
 import { Experience } from '../../experience/domain/experience.entity';
-import { CorrectionItem } from '../../portfolio-correction/domain/correction-item.entity';
+
+export const MAX_EXTERNAL_PORTFOLIO_BLOCKS = 5;
 
 @Entity()
 export class Portfolio extends BaseEntity {
@@ -38,7 +39,4 @@ export class Portfolio extends BaseEntity {
     @OneToOne(() => Experience, { nullable: true })
     @JoinColumn()
     experience: Experience;
-
-    @OneToMany(() => CorrectionItem, (correctionItem) => correctionItem.portfolio)
-    correctionItems: CorrectionItem[];
 }

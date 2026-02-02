@@ -5,6 +5,7 @@ import { Portfolio } from '../../domain/portfolio.entity';
 import { SourceType } from '../../domain/enums/source-type.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
 
 @Injectable()
 export class PortfolioRepository {
@@ -30,8 +31,8 @@ export class PortfolioRepository {
     async findExternalByCorrectionId(correctionId: number): Promise<Portfolio[]> {
         return this.portfolioRepository
             .createQueryBuilder('portfolio')
-            .innerJoin('portfolio.correctionItems', 'ci')
-            .innerJoin('ci.portfolioCorrection', 'pc', 'pc.id = :correctionId', { correctionId })
+            .innerJoin(CorrectionItem, 'ci', 'ci.portfolio.id = portfolio.id')
+            .where('ci.portfolioCorrection.id = :correctionId', { correctionId })
             .andWhere('portfolio.sourceType = :sourceType', { sourceType: SourceType.EXTERNAL })
             .getMany();
     }
@@ -39,8 +40,8 @@ export class PortfolioRepository {
     async countExternalByCorrectionId(correctionId: number): Promise<number> {
         return this.portfolioRepository
             .createQueryBuilder('portfolio')
-            .innerJoin('portfolio.correctionItems', 'ci')
-            .innerJoin('ci.portfolioCorrection', 'pc', 'pc.id = :correctionId', { correctionId })
+            .innerJoin(CorrectionItem, 'ci', 'ci.portfolio.id = portfolio.id')
+            .where('ci.portfolioCorrection.id = :correctionId', { correctionId })
             .andWhere('portfolio.sourceType = :sourceType', { sourceType: SourceType.EXTERNAL })
             .getCount();
     }
