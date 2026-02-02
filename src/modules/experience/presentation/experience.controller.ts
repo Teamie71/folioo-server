@@ -5,6 +5,7 @@ import {
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
+import { User } from 'src/common/decorators/user.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
@@ -12,10 +13,13 @@ import {
     ExperienceResDTO,
     ExperienceStateResDTO,
 } from '../application/dtos/experience.dto';
+import { ExperienceFacade } from '../application/facades/experience.facade';
 
 @ApiTags('Experience')
 @Controller('experiences')
 export class ExperienceController {
+    constructor(private readonly experienceFacade: ExperienceFacade) {}
+
     @Post()
     @ApiOperation({
         summary: '새로운 경험 정리 시작하기',
@@ -26,10 +30,14 @@ export class ExperienceController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_MAX_LIMIT,
-        ErrorCode.DUPLICATE_EXPERIENCE_NAME
+        ErrorCode.DUPLICATE_EXPERIENCE_NAME,
+        ErrorCode.INSUFFICIENT_CREDITS
     )
-    createExperience(@Body() body: CreateExperienceReqDTO): ExperienceResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    async createExperience(
+        @User('sub') userId: number,
+        @Body() body: CreateExperienceReqDTO
+    ): Promise<ExperienceResDTO> {
+        return this.experienceFacade.createExperience(userId, body.name, body.hopeJob);
     }
 
     @Get()
