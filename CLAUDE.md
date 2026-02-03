@@ -148,6 +148,57 @@ pnpm run lint
 pnpm run test
 ```
 
+## Git 워크플로우 (필수)
+
+> 이슈 생성, 브랜치 생성, 커밋, PR 생성 시 **반드시** 아래 규칙을 따라야 합니다.
+> 상세 내용: `docs/development/GIT_CONVENTIONS.md`
+
+### 이슈 생성
+
+**반드시 `.github/ISSUE_TEMPLATE/`의 템플릿을 사용합니다.**
+
+- 제목 형식: `[TYPE] 설명` (예: `[Feat] 포트폴리오 CRUD API 구현`, `[Task] 코드 스타일 가이드 업데이트`)
+- 템플릿 선택 기준:
+    - 기능 개발 → `feature-template.md`
+    - 일반 작업 → `task.md`
+    - 버그 → `bug_report.md`
+- **모든 섹션을 빠짐없이 작성** (해당 없는 항목은 N/A로 표기)
+
+### 브랜치 생성
+
+```
+<type>/<간단한_설명>-#<issue_number>
+```
+
+- 예: `feat/portfolio-crud-#15`, `docs/api-spec-#12`
+- **Issue 번호 없이 브랜치 생성 금지**
+
+### 커밋 메시지
+
+```
+<type>: <subject> (#<issue_number>)
+```
+
+- 예: `feat: 포트폴리오 생성 API 구현 (#15)`
+- 타입: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `rename`, `remove`
+- **Issue 번호 필수 포함**
+
+### PR 생성
+
+**반드시 `.github/PULL_REQUEST_TEMPLATE.md`의 모든 섹션을 작성합니다.**
+
+- 제목 형식: `TYPE: 설명 (#이슈번호)` (예: `Feat: 포트폴리오 CRUD API 구현 (#15)`)
+- **필수 섹션** (하나라도 빠지면 안 됨):
+    - Summary
+    - Changes
+    - Type of Change
+    - Target Environment (`Dev` 또는 `Prod`)
+    - Related Issues (`Closes #이슈번호`)
+    - Testing
+    - Checklist
+    - Screenshots (해당 없으면 `N/A`)
+    - Additional Notes (해당 없으면 `N/A`)
+
 ## 주의사항
 
 1. **any 타입 사용 금지**
