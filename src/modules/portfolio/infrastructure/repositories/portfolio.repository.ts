@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Portfolio } from '../../domain/portfolio.entity';
 import { SourceType } from '../../domain/enums/source-type.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
 
 @Injectable()
 export class PortfolioRepository {
@@ -28,21 +27,13 @@ export class PortfolioRepository {
         return portfolio;
     }
 
-    async findExternalByCorrectionId(correctionId: number): Promise<Portfolio[]> {
-        return this.portfolioRepository
-            .createQueryBuilder('portfolio')
-            .innerJoin(CorrectionItem, 'ci', 'ci.portfolio.id = portfolio.id')
-            .where('ci.portfolioCorrection.id = :correctionId', { correctionId })
-            .andWhere('portfolio.sourceType = :sourceType', { sourceType: SourceType.EXTERNAL })
-            .getMany();
-    }
-
-    async countExternalByCorrectionId(correctionId: number): Promise<number> {
-        return this.portfolioRepository
-            .createQueryBuilder('portfolio')
-            .innerJoin(CorrectionItem, 'ci', 'ci.portfolio.id = portfolio.id')
-            .where('ci.portfolioCorrection.id = :correctionId', { correctionId })
-            .andWhere('portfolio.sourceType = :sourceType', { sourceType: SourceType.EXTERNAL })
-            .getCount();
+    async findExternalByIds(ids: number[]): Promise<Portfolio[]> {
+        if (ids.length === 0) return [];
+        return this.portfolioRepository.find({
+            where: {
+                id: In(ids),
+                sourceType: SourceType.EXTERNAL,
+            },
+        });
     }
 }

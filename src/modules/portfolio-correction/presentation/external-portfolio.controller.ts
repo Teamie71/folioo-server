@@ -29,9 +29,9 @@ import { User } from 'src/common/decorators/user.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    CreateExternalPortfolioReqDTO,
-    StructuredPortfolioResDTO,
-    UpdatePortfolioBlockReqDTO,
+    CreateExternalPortfolioReqDto,
+    StructuredPortfolioResDto,
+    UpdatePortfolioBlockReqDto,
 } from '../application/dtos/external-portfolio.dto';
 import { ExternalPortfolioFacade } from '../application/facades/external-portfolio.facade';
 
@@ -93,8 +93,8 @@ export class ExternalPortfolioController {
         description:
             '텍스트 정리 블록의 활동 블록을 추가합니다. 활동 블록은 최대 5개까지 존재 가능합니다.',
     })
-    @ApiBody({ type: CreateExternalPortfolioReqDTO })
-    @ApiCommonResponse(StructuredPortfolioResDTO)
+    @ApiBody({ type: CreateExternalPortfolioReqDto })
+    @ApiCommonResponse(StructuredPortfolioResDto)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.CORRECTION_NOT_FOUND,
@@ -102,8 +102,8 @@ export class ExternalPortfolioController {
     )
     async createExternalPortfolioBlock(
         @User('sub') userId: number,
-        @Body() body: CreateExternalPortfolioReqDTO
-    ): Promise<StructuredPortfolioResDTO> {
+        @Body() body: CreateExternalPortfolioReqDto
+    ): Promise<StructuredPortfolioResDto> {
         return this.externalPortfolioFacade.createExternalPortfolioBlock(body.correctionId, userId);
     }
 
@@ -113,11 +113,11 @@ export class ExternalPortfolioController {
         description: 'AI가 구조화한 포트폴리오 정보를 조회합니다.',
     })
     @ApiQuery({ name: 'correctionId', required: true, type: Number })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
+    @ApiCommonResponseArray(StructuredPortfolioResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getExternalPortfolios(
         @Query('correctionId') correctionId: number
-    ): Promise<StructuredPortfolioResDTO[]> {
+    ): Promise<StructuredPortfolioResDto[]> {
         return this.externalPortfolioFacade.getExternalPortfolios(correctionId);
     }
 
@@ -126,12 +126,12 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 정리 결과 수정',
         description: 'AI가 구조화한 포트폴리오 정보를 수정합니다.',
     })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
+    @ApiCommonResponseArray(StructuredPortfolioResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     updateExternalPortfolios(
         @Param('portfolioId') portfolioId: number,
-        @Body() body: UpdatePortfolioBlockReqDTO
-    ): StructuredPortfolioResDTO[] {
+        @Body() body: UpdatePortfolioBlockReqDto
+    ): StructuredPortfolioResDto[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
     }
 
@@ -141,11 +141,11 @@ export class ExternalPortfolioController {
         description:
             'AI가 구조화한 포트폴리오 활동을 삭제합니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
     })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
+    @ApiCommonResponseArray(StructuredPortfolioResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     deleteExternalPortfolios(
         @Param('portfolioId') portfolioId: number
-    ): StructuredPortfolioResDTO[] {
+    ): StructuredPortfolioResDto[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 }

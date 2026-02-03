@@ -1,19 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PortfolioCorrectionController } from './presentation/portfolio-correction.controller';
+import { ExternalPortfolioController } from './presentation/external-portfolio.controller';
 import { PortfolioCorrection } from './domain/portfolio-correction.entity';
 import { CorrectionItem } from './domain/correction-item.entity';
 import { PortfolioCorrectionRepository } from './infrastructure/repositories/portfolio-correction.repository';
 import { CorrectionItemRepository } from './infrastructure/repositories/correction-item.repository';
 import { PortfolioCorrectionService } from './application/services/portfolio-correction.service';
+import { ExternalPortfolioFacade } from './application/facades/external-portfolio.facade';
+import { PortfolioModule } from '../portfolio/portfolio.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([PortfolioCorrection, CorrectionItem])],
-    controllers: [PortfolioCorrectionController],
+    imports: [TypeOrmModule.forFeature([PortfolioCorrection, CorrectionItem]), PortfolioModule],
+    controllers: [PortfolioCorrectionController, ExternalPortfolioController],
     providers: [
         PortfolioCorrectionRepository,
         CorrectionItemRepository,
         PortfolioCorrectionService,
+        ExternalPortfolioFacade,
     ],
     exports: [PortfolioCorrectionService],
 })

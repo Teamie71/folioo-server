@@ -39,4 +39,16 @@ export class Portfolio extends BaseEntity {
     @OneToOne(() => Experience, { nullable: true })
     @JoinColumn()
     experience: Experience;
+
+    static createExternal(userId: number): Portfolio {
+        const portfolio = new Portfolio();
+        portfolio.name = '';
+        portfolio.description = '';
+        portfolio.responsibilities = '';
+        portfolio.problemSolving = '';
+        portfolio.learnings = '';
+        portfolio.sourceType = SourceType.EXTERNAL;
+        portfolio.user = { id: userId } as User;
+        return portfolio;
+    }
 }
