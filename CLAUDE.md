@@ -22,6 +22,7 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 | 문서          | 경로                                     |
 | ------------- | ---------------------------------------- |
 | 아키텍처      | `docs/architecture/ARCHITECTURE.md`      |
+| 도메인 전략   | `docs/architecture/DOMAIN_STRATEGY.md`   |
 | ERD/DB 설계   | `docs/architecture/ERD.md`               |
 | 코드 스타일   | `docs/development/CODE_STYLE.md`         |
 | Git 컨벤션    | `docs/development/GIT_CONVENTIONS.md`    |
@@ -73,16 +74,57 @@ async getProfile(userId: number): Promise<UserResDto> {
 - **`@OneToMany` 사용 금지** — SWC 컴파일러 환경에서 순환참조 유발
 - 크로스 도메인 조인은 엔티티 클래스 참조 패턴 사용: `.innerJoin(EntityClass, 'alias', 'condition')`
 
+### 5. 계층 구조 및 의존성 규칙
+
+```
+Controller → Facade / Service → Repository → Entity
+```
+
+- 상위 계층은 하위 계층에만 의존
+- 인접하지 않은 하위 계층 의존 금지 (예: Controller → Repository)
+- 타 도메인 간 의존은 Application Layer를 통해서만 허용
+
+### 6. Facade vs Service
+
+- **Facade (Orchestrator)**: 여러 Service를 조합하여 비즈니스 흐름을 제어. 순수 비즈니스 로직은 포함하지 않음
+- **Service (Worker)**: 단일 도메인의 비즈니스 로직 수행. 자기 도메인의 Repository만 의존
+
+| 호출 방향                       | 허용 |
+| ------------------------------- | ---- |
+| Facade → Service                | ⭕   |
+| Service → Facade                | ❌   |
+| Service → Service (동일 도메인) | ⭕   |
+| Service → Service (타 도메인)   | ❌   |
+
+타 도메인 로직이 필요한 경우 반드시 Facade를 통해 조합해야 합니다.
+
+```typescript
+// Facade - 여러 도메인의 Service를 조율
+@Injectable()
+export class ExternalPortfolioFacade {
+    constructor(
+        private readonly externalPortfolioService: ExternalPortfolioService, // 포트폴리오 도메인
+        private readonly portfolioCorrectionService: PortfolioCorrectionService // 첨삭 도메인
+    ) {}
+}
+
+// Service - 자기 도메인의 Repository만 의존
+@Injectable()
+export class ExternalPortfolioService {
+    constructor(private readonly portfolioRepository: PortfolioRepository) {}
+}
+```
+
 ## 도메인 구조
 
-| 도메인               | 분류    | 설명                |
-| -------------------- | ------- | ------------------- |
-| Experience           | Core    | 경험 정리 (AI 채팅) |
-| Portfolio            | Core    | 포트폴리오          |
-| Portfolio-Correction | Core    | 포트폴리오 첨삭     |
-| Insight              | Core    | 인사이트            |
-| User                 | Generic | 사용자              |
-| Auth                 | Generic | 인증 (OAuth)        |
+| 도메인               | 분류    | 설명                                         |
+| -------------------- | ------- | -------------------------------------------- |
+| Experience           | Core    | 경험 정리 (AI 채팅), 서비스의 핵심 기능      |
+| Portfolio            | Core    | 경험 정리의 결과물, 첨삭의 소스로 사용       |
+| Portfolio-Correction | Core    | 포트폴리오 첨삭 서비스                       |
+| Insight              | Core    | 인사이트/팁 정리                             |
+| User                 | Generic | 사용자 (추후 userAuth-userProfile 분리 가능) |
+| Auth                 | Generic | 인증 (passport - kakao/google/apple)         |
 
 ## 파일 처리 방식
 
