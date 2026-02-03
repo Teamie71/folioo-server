@@ -1,13 +1,13 @@
-export class CorrectionResultResDTO {
+export class CorrectionResultResDto {
     companyName: string;
     positionName: string;
     jobDescription: string;
     companyInsight: string;
     highlightPoint: string;
-    items: CorrectionItemResDTO[];
+    items: CorrectionItemResDto[];
 }
 
-export class CorrectionItemResDTO {
+export class CorrectionItemResDto {
     portfolioId: number;
     overallReview: string;
     description: string;
