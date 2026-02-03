@@ -21,4 +21,12 @@ export class Experience extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     user: User;
+
+    static create(name: string, hopeJob: JobCategory, userId: number): Experience {
+        const experience = new Experience();
+        experience.name = name;
+        experience.hopeJob = hopeJob;
+        experience.user = { id: userId } as User;
+        return experience;
+    }
 }

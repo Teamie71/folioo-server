@@ -1,20 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ExperienceRepository } from '../../infrastructure/repositories/experience.repository';
-import { ExperienceChatRepository } from '../../infrastructure/repositories/experience-chat.repository';
 import { Experience, MAX_EXPERIENCES_PER_USER } from '../../domain/experience.entity';
-import { ExperienceChat } from '../../domain/experience-chat.entity';
 import { ExperienceResDTO } from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { User } from 'src/modules/user/domain/user.entity';
 
 @Injectable()
 export class ExperienceService {
-    constructor(
-        private readonly experienceRepository: ExperienceRepository,
-        private readonly experienceChatRepository: ExperienceChatRepository
-    ) {}
+    constructor(private readonly experienceRepository: ExperienceRepository) {}
 
     async validateCreation(userId: number, name: string): Promise<void> {
         const [count, isDuplicate] = await Promise.all([
@@ -36,18 +30,8 @@ export class ExperienceService {
         name: string,
         hopeJob: JobCategory
     ): Promise<ExperienceResDTO> {
-        const experience = new Experience();
-        experience.name = name;
-        experience.hopeJob = hopeJob;
-        experience.user = { id: userId } as User;
-
+        const experience = Experience.create(name, hopeJob, userId);
         const savedExperience = await this.experienceRepository.save(experience);
-
-        const experienceChat = new ExperienceChat();
-        experienceChat.chat = {};
-        experienceChat.experience = savedExperience;
-
-        await this.experienceChatRepository.save(experienceChat);
 
         return ExperienceResDTO.from(savedExperience);
     }
