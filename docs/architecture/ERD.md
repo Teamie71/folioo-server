@@ -281,6 +281,44 @@ ServiceProductType: '경험 정리' | '포트폴리오 첨삭';
 
 ---
 
+## 설계 리뷰 개선사항
+
+> v2.0.0 ERD 설계 리뷰 결과 (2026-02-03)
+> 아래 항목은 추후 마이그레이션/엔티티 수정 시 반영 예정
+
+### 🔴 Critical (즉시 수정 권장)
+
+| #   | 테이블               | 이슈                                                                  | 권장 조치                                                          |
+| --- | -------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 1   | `user_agreement`     | `id2`, `id3`은 ERD Cloud 자동생성 FK명. 의미 불명확                   | `user_id`, `term_id`로 변경. 약관 마스터 테이블(`terms`) 분리 권장 |
+| 2   | `service_purchase`   | `user_id` FK 없음 — 구매 주체 추적 불가                               | `user_id` 컬럼 추가 필수                                           |
+| 3   | `credit_transaction` | `paymentId` + `servicePurchaseId` 둘 다 NOT NULL                      | EARN/USE/REFUND 타입별로 nullable 허용 + CHECK 제약 조건 추가      |
+| 4   | 전체                 | 핵심 상태/불리언 컬럼이 NULL 허용 (`User.state`, `Payment.status` 등) | NOT NULL + DEFAULT 값 설정                                         |
+| 5   | 전체                 | `created_at` / `updated_at` 감사 컬럼 없음                            | 전 테이블에 `timestamptz` 감사 컬럼 추가                           |
+| 6   | `credit_transaction` | 결제 원장에 중복 처리 방지 장치 부재                                  | `idempotency_key` UNIQUE 컬럼 추가                                 |
+
+### 🟡 Warning (개선 권장)
+
+| #   | 테이블                 | 이슈                                                                                                    | 권장 조치                                                                  |
+| --- | ---------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 7   | `portfolio_correction` | `user_id` FK 없음 — 유저별 조회 시 3단 조인 필요, 다른 유저의 포트폴리오가 한 correction에 섞일 수 있음 | `user_id` 추가 권장                                                        |
+| 8   | `portfolio`, `insight` | `user_id`가 상위 테이블에서 파생 가능한 중복 FK                                                         | 제거하거나 앱 레벨 정합성 강제 규칙 추가                                   |
+| 9   | 전체                   | 네이밍 혼재 (`user_id` vs `userId`, `Experience_source` vs `PortfolioCorrection`)                       | DB는 snake_case 통일, TypeORM 엔티티에서 camelCase 매핑                    |
+| 10  | `portfolio`            | `experience_id NOT NULL` + `source_type=EXTERNAL` 조합 시 모순 가능                                     | EXTERNAL이어도 Experience를 최소 생성하여 연결하는 방향으로 정의 확정 필요 |
+| 11  | `portfolio`            | ERD Cloud 이미지에서 `experience_id`가 Nullable로 표시되나 DDL은 NOT NULL — 불일치                      | ERD Cloud 수정 또는 DDL 수정 필요                                          |
+
+### 🔵 Info (참고)
+
+| #   | 이슈                                                                            |
+| --- | ------------------------------------------------------------------------------- |
+| 12  | `varchar(20)` 제한이 기업명/포지션명 등에 짧을 수 있음 — UX 요구에 맞춰 재검토  |
+| 13  | `SocialUser.loginId`(bigint)는 JS number 범위 초과 가능 — varchar 권장          |
+| 14  | `Event` / `ServicePurchase.Field` placeholder 컬럼은 확정 전까지 기술부채       |
+| 15  | PostgreSQL은 FK에 자동 인덱스를 생성하지 않음 — FK 컬럼에 인덱스 별도 생성 필요 |
+| 16  | `User`는 PostgreSQL 예약어 — `users`로 변경 권장                                |
+
+---
+
 ## 변경 이력
 
 | 버전  | 날짜       | 변경 내용                                                                                                                                  |
