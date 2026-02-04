@@ -10,6 +10,9 @@ export class UserService {
 
     async getProfile(userId: number): Promise<UserProfileResDto> {
         const profile = await this.userRepository.findByIdWithProfile(userId);
+        if (!profile) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
         return UserProfileResDto.from(profile);
     }
 
