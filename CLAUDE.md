@@ -69,8 +69,9 @@ async getProfile(userId: number): Promise<UserResDto> {
 
 ### 4. 관계 매핑
 
-- **단방향 ManyToOne만 사용** (순환참조 방지)
-- 양방향 OneToMany는 꼭 필요한 경우에만
+- **단방향 `@ManyToOne`만 사용** (순환참조 방지)
+- **`@OneToMany` 사용 금지** — SWC 컴파일러 환경에서 순환참조 유발
+- 크로스 도메인 조인은 엔티티 클래스 참조 패턴 사용: `.innerJoin(EntityClass, 'alias', 'condition')`
 
 ## 도메인 구조
 

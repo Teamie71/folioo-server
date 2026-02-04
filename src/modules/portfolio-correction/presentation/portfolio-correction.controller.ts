@@ -8,19 +8,19 @@ import {
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    CorrectionResDTO,
-    CorrectionStatusResDTO,
-    CreateCorrectionReqDTO,
-    MapCorrectionWithPortfoliosReqDTO,
-    UpdateCorrectionTitleReqDTO,
+    CorrectionResDto,
+    CorrectionStatusResDto,
+    CreateCorrectionReqDto,
+    MapCorrectionWithPortfoliosReqDto,
+    UpdateCorrectionTitleReqDto,
 } from '../application/dtos/portfolio-correction.dto';
 import {
-    UpdateCompanyInsightReqDTO,
-    UpdateCompanyInsightResDTO,
+    UpdateCompanyInsightReqDto,
+    UpdateCompanyInsightResDto,
 } from '../application/dtos/company-insight.dto';
 import {
-    CorrectionItemResDTO,
-    CorrectionResultResDTO,
+    CorrectionItemResDto,
+    CorrectionResultResDto,
 } from '../application/dtos/correction-result.dto';
 
 @ApiTags('Portfolio-Correction')
@@ -33,9 +33,9 @@ export class PortfolioCorrectionController {
             '포트폴리오 첨삭 목록을 조회합니다. 검색어를 입력하면 제목에 키워드를 포함하는 목록만 조회됩니다.',
     })
     @ApiQuery({ name: 'keyword', required: false })
-    @ApiCommonResponseArray(CorrectionResDTO)
+    @ApiCommonResponseArray(CorrectionResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_MAX_LIMIT)
-    getCorrections(@Query('keyword') keyword?: string): CorrectionResDTO[] {
+    getCorrections(@Query('keyword') keyword?: string): CorrectionResDto[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, keyword);
     }
 
@@ -55,7 +55,7 @@ export class PortfolioCorrectionController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.INSUFFICIENT_CREDITS)
-    createCorrection(@Body() body: CreateCorrectionReqDTO): string {
+    createCorrection(@Body() body: CreateCorrectionReqDto): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
@@ -64,9 +64,9 @@ export class PortfolioCorrectionController {
         summary: '개별 첨삭 상태 조회',
         description: '특정 AI 첨삭의 결과를 조회합니다.',
     })
-    @ApiCommonResponse(CorrectionStatusResDTO)
+    @ApiCommonResponse(CorrectionStatusResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    getCorrectionStatus(@Param('correctionId') correctionId: number): CorrectionStatusResDTO {
+    getCorrectionStatus(@Param('correctionId') correctionId: number): CorrectionStatusResDto {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 
@@ -95,9 +95,9 @@ export class PortfolioCorrectionController {
         summary: '기업 분석 정보 조회',
         description: '특정 AI 첨삭의 기업 분석 정보를 조회합니다.',
     })
-    @ApiCommonResponse(UpdateCompanyInsightResDTO)
+    @ApiCommonResponse(UpdateCompanyInsightResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    getCompanyInsight(@Param('correctionId') correctionId: number): UpdateCompanyInsightResDTO {
+    getCompanyInsight(@Param('correctionId') correctionId: number): UpdateCompanyInsightResDto {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 
@@ -107,12 +107,12 @@ export class PortfolioCorrectionController {
         description:
             'AI가 생성한 기업 분석 정보를 사용자가 수정합니다. 또는 강조 포인트를 추가합니다.',
     })
-    @ApiCommonResponse(UpdateCompanyInsightResDTO)
+    @ApiCommonResponse(UpdateCompanyInsightResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     updateCompanyInsight(
         @Param('correctionId') correctionId: number,
-        @Body() body: UpdateCompanyInsightReqDTO
-    ): UpdateCompanyInsightResDTO {
+        @Body() body: UpdateCompanyInsightReqDto
+    ): UpdateCompanyInsightResDto {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
     }
 
@@ -145,7 +145,7 @@ export class PortfolioCorrectionController {
         summary: '포트폴리오 선택',
         description: '첨삭을 진행할 포트폴리오를 선택합니다.',
     })
-    @ApiCommonResponseArray(CorrectionItemResDTO)
+    @ApiCommonResponseArray(CorrectionItemResDto)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.CORRECTION_NOT_FOUND,
@@ -153,8 +153,8 @@ export class PortfolioCorrectionController {
     )
     mapCorrectionWithPortfolios(
         @Param('correctionId') correctionId: number,
-        @Body() body: MapCorrectionWithPortfoliosReqDTO
-    ): CorrectionItemResDTO[] {
+        @Body() body: MapCorrectionWithPortfoliosReqDto
+    ): CorrectionItemResDto[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
     }
 
@@ -183,9 +183,9 @@ export class PortfolioCorrectionController {
         summary: '개별 첨삭 조회',
         description: '특정 AI 첨삭의 결과를 조회합니다.',
     })
-    @ApiCommonResponse(CorrectionResultResDTO)
+    @ApiCommonResponse(CorrectionResultResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    getCorrection(@Param('correctionId') correctionId: number): CorrectionResultResDTO {
+    getCorrection(@Param('correctionId') correctionId: number): CorrectionResultResDto {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 
@@ -194,12 +194,12 @@ export class PortfolioCorrectionController {
         summary: '개별 첨삭 수정',
         description: '특정 AI 첨삭의 제목을 수정합니다.',
     })
-    @ApiCommonResponse(CorrectionResDTO)
+    @ApiCommonResponse(CorrectionResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     updateCorrectionTitle(
         @Param('correctionId') correctionId: number,
-        @Body() body: UpdateCorrectionTitleReqDTO
-    ): CorrectionResDTO {
+        @Body() body: UpdateCorrectionTitleReqDto
+    ): CorrectionResDto {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
     }
 

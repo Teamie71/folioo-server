@@ -1,9 +1,9 @@
-export class UpdateCompanyInsightReqDTO {
+export class UpdateCompanyInsightReqDto {
     companyInsight?: string;
     highlightPoint?: string;
 }
 
-export class UpdateCompanyInsightResDTO {
+export class UpdateCompanyInsightResDto {
     id: number;
     companyInsight: string;
     highlightPoint: string;

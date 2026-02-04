@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../domain/user.entity';
 import { Repository } from 'typeorm';
 import { LoginType } from '../../domain/enums/login-type.enum';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class UserRepository {
@@ -29,8 +27,8 @@ export class UserRepository {
         });
     }
 
-    async findByIdWithProfile(userId: number): Promise<User> {
-        const user = await this.userRepository.findOne({
+    async findByIdWithProfile(userId: number): Promise<User | null> {
+        return await this.userRepository.findOne({
             where: {
                 id: userId,
             },
@@ -40,9 +38,5 @@ export class UserRepository {
                 phoneNum: true,
             },
         });
-        if (!user) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-        return user;
     }
 }
