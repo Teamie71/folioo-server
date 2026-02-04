@@ -47,6 +47,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인증 번호가 일치하지 않습니다. 다시 확인해 주세요.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.NOT_LOG_OWNER]: {
+        message: '인사이트 로그에 접근할 권한이 없는 사용자입니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
     [ErrorCode.SMS_CODE_NOT_FOUND]: {
         message: '인증 시간이 만료되었습니다. 재전송 버튼을 눌러주세요.',
         statusCode: HttpStatus.NOT_FOUND,

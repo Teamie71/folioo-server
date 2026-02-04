@@ -20,6 +20,7 @@ export enum ErrorCode {
     INSUFFICIENT_CREDITS = 'CREDIT402',
 
     //Insight-Log
+    NOT_LOG_OWNER = 'LOG403',
     LOG_NOT_FOUND = 'LOG404',
     DUPLICATE_LOG_NAME = 'LOG409',
     ACTIVITY_NOT_FOUND = 'ACTIVITY404',
