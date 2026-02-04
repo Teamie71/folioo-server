@@ -1,8 +1,7 @@
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { BaseEntity } from '../../../../common/entities/base.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
-import { InsightCategory } from './enums/insight-category.enum';
-import { User } from '../../user/domain/user.entity';
-import { Activity } from './activity.entity';
+import { InsightCategory } from '../enums/insight-category.enum';
+import { User } from '../../../user/domain/user.entity';
 
 @Entity()
 export class Insight extends BaseEntity {
@@ -21,7 +20,4 @@ export class Insight extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     user: User;
-
-    @ManyToOne(() => Activity)
-    activity: Activity;
 }
