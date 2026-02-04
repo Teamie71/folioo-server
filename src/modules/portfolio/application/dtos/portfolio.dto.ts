@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { JobCategory } from 'src/modules/experience/domain/enums/job-category.enum';
 
-export class PortfolioDetailResDTO {
+export class PortfolioDetailResDto {
     name: string;
     @ApiProperty({ enum: JobCategory, example: JobCategory.DEV })
     hopeJob: JobCategory;
@@ -12,12 +12,12 @@ export class PortfolioDetailResDTO {
     contributionRate: number;
 }
 
-export class UpdatePortfolioReqDTO {
+export class UpdatePortfolioReqDto {
     name?: string;
     contributionRate?: number;
 }
 
-export class ExportPortfolioResDTO {
+export class ExportPortfolioResDto {
     @ApiProperty({ example: 'https://example.pdf' })
     url: string;
 }
