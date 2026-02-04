@@ -1,7 +1,7 @@
 # Folioo ERD
 
 > 포트폴리오 관리 플랫폼 데이터베이스 설계서
-> v2.1.0 | 2026-02-04
+> v2.2.0 | 2026-02-04
 
 ---
 
@@ -9,7 +9,7 @@
 
 | 도메인                   | 테이블                 | 설명                              |
 | ------------------------ | ---------------------- | --------------------------------- |
-| **user**                 | `user`                 | 사용자 정보                       |
+| **user**                 | `users`                | 사용자 정보                       |
 |                          | `social_user`          | 소셜 로그인 정보                  |
 |                          | `user_agreement`       | 약관 동의                         |
 | **experience**           | `experience`           | 경험 정리                         |
@@ -30,7 +30,7 @@
 ## ERD 관계도
 
 ```
-user
+users
    │
    ├── 1:N ─ social_user (소셜 로그인)
    │
@@ -40,7 +40,7 @@ user
    │
    ├── 1:N ─ portfolio ─── N:1 ─ experience (경험에서 생성, nullable)
    │
-   │         portfolio_correction ─── 1:N ─ correction_item
+   ├── 1:N ─ portfolio_correction ─── 1:N ─ correction_item
    │                                        └─── N:1 ─ portfolio
    │
    ├── 1:N ─ activity ─── 1:N ─ insight
@@ -53,8 +53,6 @@ user
    │
    └── 1:N ─ event_participation ─── N:1 ─ event (이벤트 정의)
 ```
-
-> **Note**: `portfolio_correction`은 `user`와 직접 FK 관계가 없습니다. `correction_item` → `portfolio` → `user` 경로로 간접 접근합니다. (#7 Warning — `user_id` 추가 검토 중)
 
 ---
 
@@ -104,46 +102,47 @@ PayType: 'CARD' |
 
 ## 테이블 상세
 
-### user (사용자)
+### users (사용자)
 
-| 컬럼          | 타입        | 설명                           |
-| ------------- | ----------- | ------------------------------ |
-| id            | number      | PK                             |
-| name          | varchar     | 이름                           |
-| phone_num     | varchar(11) | 전화번호                       |
-| state         | ENUM        | 상태 (GUEST, ACTIVE, INACTIVE) |
-| deactivatedAt | date        | 비활성화 일시                  |
+| 컬럼           | 타입        | 설명                           |
+| -------------- | ----------- | ------------------------------ |
+| id             | number      | PK                             |
+| name           | varchar     | 이름                           |
+| phone_num      | varchar(11) | 전화번호                       |
+| state          | ENUM        | 상태 (GUEST, ACTIVE, INACTIVE) |
+| deactivated_at | date        | 비활성화 일시                  |
 
-> **Note**: v2.0.0에서 `email`, `loginType`, `loginId`, `credit`, `isActive` 제거. 소셜 로그인 정보는 `social_user`로 분리, `isActive`는 `state` ENUM으로 대체. v2.1.0에서 `credit` 필드가 이용권(ticket) 시스템으로 완전 대체됨.
+> **Note**: 소셜 로그인 정보는 `social_user`로 분리. 크레딧은 이용권(ticket) 시스템으로 대체. 테이블명 `users`는 PostgreSQL 예약어 `user` 회피.
 
 ### social_user (소셜 로그인)
 
-| 컬럼      | 타입         | 설명                               |
-| --------- | ------------ | ---------------------------------- |
-| id        | number       | PK                                 |
-| user_id   | number       | FK → user.id                       |
-| loginType | ENUM         | 로그인 타입 (KAKAO, NAVER, GOOGLE) |
-| loginId   | bigint       | 소셜 로그인 ID                     |
-| email     | varchar(255) | 이메일                             |
+| 컬럼       | 타입         | 설명                               |
+| ---------- | ------------ | ---------------------------------- |
+| id         | number       | PK                                 |
+| user_id    | number       | FK → users.id                      |
+| login_type | ENUM         | 로그인 타입 (KAKAO, NAVER, GOOGLE) |
+| login_id   | varchar(255) | 소셜 로그인 ID                     |
+| email      | varchar(255) | 이메일                             |
+
+> **Note**: `login_id`는 `varchar(255)`. 소셜 플랫폼 ID가 JS `number` 범위(2^53)를 초과할 수 있어 문자열로 저장.
 
 ### user_agreement (약관 동의)
 
-| 컬럼     | 타입        | 설명                                    |
-| -------- | ----------- | --------------------------------------- |
-| id       | number      | PK                                      |
-| TermType | ENUM        | 약관 종류 (SERVICE, PRIVACY, MARKETING) |
-| version  | varchar(10) | 약관 버전                               |
-| is_agree | boolean     | 동의 여부                               |
-| agree_at | datetime    | 동의 일시                               |
-| id2      | number      | FK → user.id                            |
-| id3      | number      | FK (미정의)                             |
+| 컬럼      | 타입        | 설명                                    |
+| --------- | ----------- | --------------------------------------- |
+| id        | number      | PK                                      |
+| user_id   | number      | FK → users.id                           |
+| term_type | ENUM        | 약관 종류 (SERVICE, PRIVACY, MARKETING) |
+| version   | varchar(10) | 약관 버전                               |
+| is_agree  | boolean     | 동의 여부                               |
+| agree_at  | datetime    | 동의 일시                               |
 
 ### experience (경험 정리)
 
 | 컬럼     | 타입        | 설명                           |
 | -------- | ----------- | ------------------------------ |
 | id       | number      | PK                             |
-| user_id  | number      | FK → user.id                   |
+| user_id  | number      | FK → users.id                  |
 | name     | varchar(20) | 경험명                         |
 | hope_job | ENUM        | 희망 직무                      |
 | status   | ENUM        | 상태 (ON_CHAT, GENERATE, DONE) |
@@ -162,7 +161,7 @@ PayType: 'CARD' |
 | 컬럼              | 타입         | 설명                          |
 | ----------------- | ------------ | ----------------------------- |
 | id                | number       | PK                            |
-| user_id           | number       | FK → user.id                  |
+| user_id           | number       | FK → users.id                 |
 | experience_id     | int (null)   | FK → experience.id (nullable) |
 | name              | varchar(20)  | 활동명                        |
 | description       | varchar(400) | 상세정보                      |
@@ -172,14 +171,15 @@ PayType: 'CARD' |
 | source_type       | ENUM         | 타입 (INTERNAL, EXTERNAL)     |
 | contribution_rate | int          | 기여도                        |
 
-> **Note**: `experience_id`는 nullable. `source_type = 'EXTERNAL'`인 포트폴리오는 경험 정리 없이 직접 생성 가능. (v2.0.0에서 NOT NULL로 변경했으나, v2.1.0에서 nullable로 재확정 — 코드 현행과 일치)
+> **Note**: `experience_id`는 nullable. `source_type = 'EXTERNAL'`인 포트폴리오는 경험 정리 없이 직접 생성 가능.
 
 ### portfolio_correction (포트폴리오 첨삭)
 
 | 컬럼            | 타입          | 설명            |
 | --------------- | ------------- | --------------- |
 | id              | number        | PK              |
-| title           | varchar(20)   | 제목            |
+| user_id         | number        | FK → users.id   |
+| title           | varchar(50)   | 제목            |
 | company_name    | varchar(20)   | 지원기업명      |
 | position_name   | varchar(20)   | 지원직무명      |
 | job_description | varchar(700)  | Job Description |
@@ -187,7 +187,7 @@ PayType: 'CARD' |
 | highlight_point | varchar(200)  | 참조포인트      |
 | status          | ENUM          | 상태            |
 
-> **Note**: v2.0.0에서 `user_id` FK 제거. `correction_item` → `portfolio` → `user` 경로로 간접 접근.
+> **Note**: `user_id`는 denormalization (조회 편의 — `portfolio`, `insight`과 동일 패턴).
 
 ### correction_item (활동 첨삭)
 
@@ -207,19 +207,19 @@ PayType: 'CARD' |
 | 컬럼        | 타입         | 설명             |
 | ----------- | ------------ | ---------------- |
 | id          | number       | PK               |
-| userId      | number       | FK → user.id     |
-| activityId  | number       | FK → activity.id |
-| title       | varchar(20)  | 제목             |
+| user_id     | number       | FK → users.id    |
+| activity_id | number       | FK → activity.id |
+| title       | varchar(50)  | 제목             |
 | category    | ENUM         | 카테고리         |
 | description | varchar(250) | 내용             |
 
 ### activity (활동)
 
-| 컬럼   | 타입        | 설명         |
-| ------ | ----------- | ------------ |
-| id     | number      | PK           |
-| userId | number      | FK → user.id |
-| name   | varchar(20) | 활동명       |
+| 컬럼    | 타입        | 설명          |
+| ------- | ----------- | ------------- |
+| id      | number      | PK            |
+| user_id | number      | FK → users.id |
+| name    | varchar(20) | 활동명        |
 
 ### ticket_product (이용권 상품)
 
@@ -240,7 +240,7 @@ PayType: 'CARD' |
 | 컬럼                   | 타입          | 설명                                           |
 | ---------------------- | ------------- | ---------------------------------------------- |
 | id                     | number        | PK                                             |
-| user_id                | number        | FK → user.id                                   |
+| user_id                | number        | FK → users.id                                  |
 | type                   | ENUM          | 이용권 타입 (EXPERIENCE, PORTFOLIO_CORRECTION) |
 | status                 | ENUM          | 상태 (AVAILABLE, USED, EXPIRED) NOT NULL       |
 | source                 | ENUM          | 획득 경로 (PURCHASE, EVENT) NOT NULL           |
@@ -256,7 +256,7 @@ PayType: 'CARD' |
 | 컬럼              | 타입         | 설명                                      |
 | ----------------- | ------------ | ----------------------------------------- |
 | id                | number       | PK                                        |
-| user_id           | number       | FK → user.id                              |
+| user_id           | number       | FK → users.id                             |
 | ticket_product_id | number       | FK → ticket_product.id                    |
 | mul_no            | number       | PayApp 결제요청번호 (UNIQUE)              |
 | pay_url           | varchar(255) | PayApp 결제창 URL (nullable)              |
@@ -298,7 +298,7 @@ PayType: 'CARD' |
 | 컬럼              | 타입     | 설명                                |
 | ----------------- | -------- | ----------------------------------- |
 | id                | number   | PK                                  |
-| user_id           | number   | FK → user.id                        |
+| user_id           | number   | FK → users.id                       |
 | event_id          | number   | FK → event.id                       |
 | progress          | int      | 챌린지 진행도 (NOT NULL, DEFAULT 0) |
 | is_completed      | boolean  | 달성 여부 (NOT NULL, DEFAULT false) |
@@ -309,40 +309,24 @@ PayType: 'CARD' |
 
 ---
 
-## 설계 리뷰 개선사항
+## 인덱스 설계
 
-> v2.0.0 설계 리뷰 결과 + v2.1.0 반영 현황 (2026-02-04)
+> PostgreSQL은 FK에 자동 인덱스를 생성하지 않음. 아래 FK 컬럼에 `@Index()` 필요.
 
-### 🔴 Critical
-
-| #   | 테이블                | 이슈                                     | 상태                                                                                                                                       |
-| --- | --------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | `user_agreement`      | `id2`, `id3` FK명 의미 불명확            | **미반영** — `user_id`, `term_id`로 변경 + 약관 마스터 테이블 분리 권장                                                                    |
-| 2   | `service_purchase` 등 | 크레딧 기반 결제 모델 구조 이슈          | ✅ **v2.1.0 해결** — 이용권(ticket) 시스템으로 전면 재설계. `service_purchase`, `credit_transaction`, `pg_product`, `service_product` 삭제 |
-| 3   | `credit_transaction`  | nullable 이슈                            | ✅ **v2.1.0 해결** — 테이블 삭제. ticket의 `payment_id`/`event_participation_id` nullable 구조로 대체                                      |
-| 4   | 전체                  | 핵심 상태 컬럼 NULL 허용                 | ✅ **v2.1.0 반영** — 신규 테이블 NOT NULL + DEFAULT 적용                                                                                   |
-| 5   | 전체                  | `created_at`/`updated_at` 감사 컬럼 없음 | ✅ **코드 반영 완료** — `BaseEntity`에 `@CreateDateColumn`/`@UpdateDateColumn` 적용 중                                                     |
-| 6   | 결제 원장             | 중복 처리 방지 장치 부재                 | ✅ **v2.1.0 반영** — `payment.mul_no` UNIQUE + PayApp `feedbackurl` 중복 체크                                                              |
-
-### 🟡 Warning
-
-| #   | 테이블                 | 이슈                                            | 상태                                                                         |
-| --- | ---------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------- |
-| 7   | `portfolio_correction` | `user_id` FK 없음 — 3단 조인 필요               | **미반영** — `user_id` 추가 권장 (팀 합의 필요)                              |
-| 8   | `portfolio`, `insight` | `user_id` 중복 FK                               | **의도적 유지** — 조회 편의를 위한 denormalization. 앱 레벨에서 정합성 강제  |
-| 9   | 전체                   | 네이밍 혼재 (`user_id` vs `userId`)             | **v2.1.0 신규 테이블은 snake_case 통일**. 기존 테이블은 마이그레이션 시 정리 |
-| 10  | `portfolio`            | `experience_id NOT NULL` + `EXTERNAL` 조합 모순 | ✅ **v2.1.0 해결** — `experience_id` nullable로 확정. 코드(현행)와 일치      |
-| 11  | `portfolio`            | ERD Cloud vs DDL 불일치                         | ✅ **v2.1.0 해결** — ERD 문서를 코드 기준(nullable)으로 수정                 |
-
-### 🔵 Info
-
-| #   | 이슈                                                                            | 상태                                                                     |
-| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| 12  | `varchar(20)` 제한이 기업명/포지션명 등에 짧을 수 있음                          | 미반영 — UX 재검토 필요                                                  |
-| 13  | `SocialUser.loginId`(bigint)는 JS number 범위 초과 가능 — varchar 권장          | 미반영                                                                   |
-| 14  | placeholder 컬럼 기술부채                                                       | ✅ **v2.1.0 해결** — `event`, `service_purchase` placeholder 제거/재설계 |
-| 15  | PostgreSQL은 FK에 자동 인덱스를 생성하지 않음 — FK 컬럼에 인덱스 별도 생성 필요 | 미반영                                                                   |
-| 16  | `User`는 PostgreSQL 예약어 — `users`로 변경 권장                                | 미반영                                                                   |
+| 테이블                 | 인덱스 대상 컬럼                                  | 비고 |
+| ---------------------- | ------------------------------------------------- | ---- |
+| `social_user`          | `user_id`                                         |      |
+| `user_agreement`       | `user_id`                                         |      |
+| `experience`           | `user_id`                                         |      |
+| `experience_source`    | `experience_id`                                   |      |
+| `portfolio`            | `user_id`, `experience_id`                        |      |
+| `portfolio_correction` | `user_id`                                         |      |
+| `correction_item`      | `portfolio_correction_id`, `portfolio_id`         |      |
+| `insight`              | `user_id`, `activity_id`                          |      |
+| `activity`             | `user_id`                                         |      |
+| `ticket`               | `user_id`, `payment_id`, `event_participation_id` |      |
+| `payment`              | `user_id`, `ticket_product_id`                    |      |
+| `event_participation`  | `user_id`, `event_id`                             |      |
 
 ---
 
@@ -350,6 +334,7 @@ PayType: 'CARD' |
 
 | 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                    |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.2.0 | 2026-02-04 | 설계 리뷰 전건 해결 — `user` → `users`(예약어 회피), snake_case 통일, `user_agreement` FK 정리, `portfolio_correction`에 `user_id` 추가, `login_id` bigint→varchar, FK 인덱스 설계 추가. 설계 리뷰 섹션 제거(전건 해결)                                                                      |
 | 2.1.0 | 2026-02-04 | 크레딧 → 이용권(ticket) 시스템 전면 재설계 — `ticket_product`, `ticket`, `payment`(PayApp 연동), `event`, `event_participation` 신규. `pg_product`, `service_product`, `service_purchase`, `credit_transaction` 삭제. `portfolio.experience_id` nullable 확정. 설계 리뷰 16건 반영 현황 추가 |
 | 2.0.0 | 2026-02-03 | 기획 변경에 따른 ERD 전면 개편 — SocialUser 분리, chat 제거, UserAgreement·Event 추가, User/Experience/Payment/creditTransaction 구조 변경                                                                                                                                                   |
 | 1.1.0 | 2026-01-28 | user.img_url 컬럼 제거 (프로필 이미지 기능 미사용)                                                                                                                                                                                                                                           |
