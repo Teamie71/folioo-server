@@ -7,6 +7,7 @@ import { CorrectionItem } from './domain/correction-item.entity';
 import { PortfolioCorrectionRepository } from './infrastructure/repositories/portfolio-correction.repository';
 import { CorrectionItemRepository } from './infrastructure/repositories/correction-item.repository';
 import { PortfolioCorrectionService } from './application/services/portfolio-correction.service';
+import { CorrectionItemService } from './application/services/correction-item.service';
 import { ExternalPortfolioFacade } from './application/facades/external-portfolio.facade';
 import { PortfolioModule } from '../portfolio/portfolio.module';
 
@@ -17,8 +18,9 @@ import { PortfolioModule } from '../portfolio/portfolio.module';
         PortfolioCorrectionRepository,
         CorrectionItemRepository,
         PortfolioCorrectionService,
+        CorrectionItemService,
         ExternalPortfolioFacade,
     ],
-    exports: [PortfolioCorrectionService],
+    exports: [PortfolioCorrectionService, CorrectionItemService],
 })
 export class PortfolioCorrectionModule {}

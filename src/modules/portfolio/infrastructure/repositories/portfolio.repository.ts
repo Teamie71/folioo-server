@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Portfolio } from '../../domain/portfolio.entity';
 import { SourceType } from '../../domain/enums/source-type.enum';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class PortfolioRepository {
@@ -17,14 +15,10 @@ export class PortfolioRepository {
         return this.portfolioRepository.save(portfolio);
     }
 
-    async findByIdOrThrow(id: number): Promise<Portfolio> {
-        const portfolio = await this.portfolioRepository.findOne({
+    async findById(id: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
             where: { id },
         });
-        if (!portfolio) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
-        }
-        return portfolio;
     }
 
     async findExternalByIds(ids: number[]): Promise<Portfolio[]> {
