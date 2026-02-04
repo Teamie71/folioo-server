@@ -25,6 +25,7 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 | 도메인 전략   | `docs/architecture/DOMAIN_STRATEGY.md`   |
 | ERD/DB 설계   | `docs/architecture/ERD.md`               |
 | 코드 스타일   | `docs/development/CODE_STYLE.md`         |
+| 예외 처리     | `docs/development/ERROR_HANDLING.md`     |
 | Git 컨벤션    | `docs/development/GIT_CONVENTIONS.md`    |
 | 네이밍 컨벤션 | `docs/development/NAMING_CONVENTIONS.md` |
 | PR 템플릿     | `.github/PULL_REQUEST_TEMPLATE.md`       |
@@ -57,11 +58,23 @@ async getProfile(userId: number): Promise<UserResDto> {
 }
 ```
 
-### 2. 예외 클래스
+### 2. 예외 처리 규칙
 
-- 커스텀 예외: `BusinessException`
+- 커스텀 예외: `BusinessException` (유일하게 허용되는 예외 클래스)
 - 에러 코드: `ErrorCode` enum
 - 위치: `src/common/exceptions/`
+- **NestJS 내장 예외 사용 금지** (`NotFoundException`, `BadRequestException` 등)
+- ErrorCode 네이밍: `<DOMAIN><HTTP_STATUS><SEQUENCE?>` (예: `USER404`, `EXPERIENCE4091`)
+- 새 에러 추가 시: `error-code.enum.ts` + `error-code.ts` 두 파일 모두 수정
+- 상세 가이드: `docs/development/ERROR_HANDLING.md`
+
+```typescript
+// ✅ 올바른 사용
+throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+
+// ❌ 금지
+throw new NotFoundException('User not found');
+```
 
 ### 3. DTO 네이밍
 

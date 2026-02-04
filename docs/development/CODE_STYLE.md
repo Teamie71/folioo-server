@@ -413,27 +413,41 @@ this.logger.log(`User created: ${user.id}`);
 ### 1. 일관된 에러 처리
 
 프로젝트에서 정의한 `BusinessException`과 `ErrorCode`를 사용하여 에러를 처리합니다.
+**NestJS 내장 예외(`NotFoundException`, `BadRequestException` 등)는 사용하지 않습니다.**
 
 ```typescript
-// error-code.enum.ts
-export enum ErrorCode {
-    // 공통
-    BAD_REQUEST = 'COMMON400',
-    UNAUTHORIZED = 'COMMON401',
-    INTERNAL_SERVER_ERROR = 'COMMON500',
-    NOT_IMPLEMENTED = 'COMMON501',
-
-    // 도메인별 에러 코드 추가
-    USER_NOT_FOUND = 'USER404',
-}
-
-// 서비스에서 사용
-throw new BusinessException(ErrorCode.BAD_REQUEST);
-throw new BusinessException(ErrorCode.UNAUTHORIZED);
+// ✅ 올바른 사용
 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+throw new BusinessException(ErrorCode.BAD_REQUEST);
+
+// ✅ 추가 디버깅 정보가 필요한 경우 details 사용
+throw new BusinessException(ErrorCode.USER_NOT_FOUND, { requestedId: userId });
+
+// ❌ 금지 — NestJS 내장 예외 사용
+throw new NotFoundException('User not found');
+throw new BadRequestException('Invalid input');
 ```
 
-> 참고: `common/exceptions/` 디렉토리의 `error-code.enum.ts`, `error-code.ts`, `business.exception.ts` 파일 참조
+### ErrorCode 네이밍 규칙
+
+```
+<DOMAIN><HTTP_STATUS><SEQUENCE?>
+```
+
+- enum name: `SCREAMING_SNAKE_CASE` (의미가 명확하게 드러나야 함)
+- enum value: `도메인 접두사` + `HTTP 상태 코드` + `구분 번호(선택)`
+- 새 에러 코드 추가 시: `error-code.enum.ts`에 코드, `error-code.ts`에 메시지+상태 코드 매핑 모두 추가
+
+```typescript
+// 기본: DOMAIN + HTTP_STATUS
+USER_NOT_FOUND = 'USER404';
+
+// 동일 도메인+상태 코드가 여러 개: SEQUENCE 추가
+DUPLICATE_EXPERIENCE_NAME = 'EXPERIENCE4091';
+EXPERIENCE_MAX_LIMIT = 'EXPERIENCE4092';
+```
+
+> 상세 가이드: `docs/development/ERROR_HANDLING.md` 참조
 
 ### 2. Optional Chaining 사용
 
