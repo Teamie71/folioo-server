@@ -72,7 +72,11 @@ export class InsightController {
         description: '인사이트 로그 및 메타데이터를 삭제합니다.',
     })
     @ApiCommonResponse(DeletedInsightLogResDto)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.LOG_NOT_FOUND)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.LOG_NOT_FOUND,
+        ErrorCode.NOT_LOG_OWNER
+    )
     async deleteLog(
         @Param('insightId') insightId: number,
         @User('sub') userId: number

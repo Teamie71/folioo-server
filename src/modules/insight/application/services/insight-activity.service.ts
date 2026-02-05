@@ -20,7 +20,7 @@ export class InsightActivityService {
         }
     }
 
-    async findAcitivitiesByInsight(insightId: number): Promise<string[]> {
+    async findActivitiesByInsight(insightId: number): Promise<string[]> {
         return (await this.insightActivityRepository.findAllActivitiesByInsightId(insightId)).map(
             (r) => r.activity.name
         );
