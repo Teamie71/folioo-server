@@ -7,18 +7,22 @@ export class InsightActivityService {
 
     async compareAndReplaceByIds(insightId: number, activityIds: number[]): Promise<void> {
         const currentMapping =
-            await this.insightActivityRepository.findAllActivityIdsByInsightId(insightId);
+            await this.insightActivityRepository.findAllActivitiesByInsightId(insightId);
         const currentIds = currentMapping.map((r) => r.activity.id);
         const toDeleteIds = currentIds.filter((id) => !activityIds.includes(id));
         const toAddIds = activityIds.filter((id) => !currentIds.includes(id));
 
-        await this.insightActivityRepository.deleteByIds(toDeleteIds);
-        await this.insightActivityRepository.saveAllByIds(insightId, toAddIds);
+        if (toDeleteIds.length > 0) {
+            await this.insightActivityRepository.deleteByIds(insightId, toDeleteIds);
+        }
+        if (toAddIds.length > 0) {
+            await this.insightActivityRepository.saveAllByIds(insightId, toAddIds);
+        }
     }
 
-    async findAcitivityIdsByInsight(insightId: number): Promise<number[]> {
-        return (await this.insightActivityRepository.findAllActivityIdsByInsightId(insightId)).map(
-            (r) => r.activity.id
+    async findAcitivitiesByInsight(insightId: number): Promise<string[]> {
+        return (await this.insightActivityRepository.findAllActivitiesByInsightId(insightId)).map(
+            (r) => r.activity.name
         );
     }
 

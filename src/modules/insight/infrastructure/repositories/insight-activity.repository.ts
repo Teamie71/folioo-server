@@ -20,12 +20,13 @@ export class InsightActivityRepository {
         await this.mappingRepository.save(insightActivities);
     }
 
-    async findAllActivityIdsByInsightId(insightId: number): Promise<InsightActivity[]> {
+    async findAllActivitiesByInsightId(insightId: number): Promise<InsightActivity[]> {
         return await this.mappingRepository.find({
             relations: ['activity'],
             select: {
                 activity: {
                     id: true,
+                    name: true,
                 },
             },
             where: {
@@ -34,9 +35,14 @@ export class InsightActivityRepository {
         });
     }
 
-    async deleteByIds(ids: number[]) {
+    async deleteByIds(insightId: number, ids: number[]) {
         return await this.mappingRepository.delete({
-            id: In(ids),
+            insight: {
+                id: insightId,
+            },
+            activity: {
+                id: In(ids),
+            },
         });
     }
 

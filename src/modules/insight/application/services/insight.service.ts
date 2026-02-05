@@ -61,12 +61,7 @@ export class InsightService {
             await this.insightActivityService.compareAndReplaceByIds(insightId, dto.activityIds);
             activityNames = currentActivities.map((a) => a.name);
         } else {
-            const savedActivityIds =
-                await this.insightActivityService.findAcitivityIdsByInsight(insightId);
-            if (savedActivityIds.length > 0) {
-                const activities = await this.activityService.findByIdsOrThrow(savedActivityIds);
-                activityNames = activities.map((a) => a.name);
-            }
+            activityNames = await this.insightActivityService.findAcitivitiesByInsight(insightId);
         }
 
         const savedLog = await this.insightRepository.save(log);
