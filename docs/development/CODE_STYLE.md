@@ -247,6 +247,114 @@ export class UserController {
 }
 ```
 
+## Facade / Service 작성 규칙
+
+### Facade (Orchestrator)
+
+여러 도메인의 Service를 조합하여 비즈니스 흐름(Flow)을 제어합니다. 순수한 비즈니스 로직(계산, 검증)은 포함하지 않습니다.
+
+```typescript
+@Injectable()
+export class ExternalPortfolioFacade {
+    constructor(
+        private readonly externalPortfolioService: ExternalPortfolioService, // 포트폴리오 도메인
+        private readonly portfolioCorrectionService: PortfolioCorrectionService // 첨삭 도메인
+    ) {}
+
+    @Transactional()
+    async createExternalPortfolioBlock(correctionId: number, userId: number) {
+        // 각 서비스에 위임만 하고, 흐름을 조율
+        const correction = await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
+        const savedPortfolio = await this.externalPortfolioService.createEmptyPortfolio(userId);
+        await this.portfolioCorrectionService.createCorrectionItem(savedPortfolio, correction);
+        return StructuredPortfolioResDto.from(savedPortfolio);
+    }
+}
+```
+
+### Service (Worker)
+
+단일 도메인의 비즈니스 로직을 수행합니다. **자기 도메인의 Repository만** 의존합니다.
+
+```typescript
+// ✅ 올바른 패턴 - 자기 도메인의 Repository만 의존
+@Injectable()
+export class ExternalPortfolioService {
+    constructor(private readonly portfolioRepository: PortfolioRepository) {}
+}
+
+// ❌ 잘못된 패턴 - 타 도메인의 Repository를 직접 의존
+@Injectable()
+export class ExternalPortfolioService {
+    constructor(
+        private readonly portfolioRepository: PortfolioRepository,
+        private readonly correctionItemRepository: CorrectionItemRepository // 타 도메인!
+    ) {}
+}
+```
+
+### 호출 규칙
+
+| 호출 방향                       | 허용 |
+| ------------------------------- | ---- |
+| Facade → Service                | ⭕   |
+| Service → Facade                | ❌   |
+| Service → Service (동일 도메인) | ⭕   |
+| Service → Service (타 도메인)   | ❌   |
+
+타 도메인 로직이 필요한 경우 반드시 **Facade를 통해** 조합해야 합니다.
+
+### 비즈니스 규칙 배치
+
+도메인과 직접 연관된 비즈니스 상수(제한 값 등)는 **엔티티 파일에 정의**하여 export합니다.
+
+```typescript
+// ✅ 올바른 패턴 - 엔티티 파일에 비즈니스 상수 정의
+// portfolio.entity.ts
+export const MAX_EXTERNAL_PORTFOLIO_BLOCKS = 5;
+
+@Entity()
+export class Portfolio extends BaseEntity { ... }
+
+// ❌ 잘못된 패턴 - 서비스 파일에 비즈니스 상수 정의
+// external-portfolio.service.ts
+const MAX_BLOCKS = 5; // 도메인 규칙이 서비스에 흩어짐
+```
+
+## 계층 간 의존성 규칙
+
+### 허용되는 의존 방향
+
+```
+Controller → Facade / Service → Repository → Entity
+```
+
+- 상위 계층은 하위 계층에만 의존
+- **인접하지 않은 하위 계층 의존 금지** (예: Controller → Repository)
+- **타 도메인 간 의존은 Application Layer를 통해서만 허용**
+
+### 금지되는 의존 방향
+
+```typescript
+// ❌ Controller가 Repository를 직접 사용
+@Controller('users')
+export class UserController {
+    constructor(private readonly userRepository: UserRepository) {} // 금지!
+}
+
+// ❌ 하위 계층이 상위 계층을 의존
+@Injectable()
+export class UserRepository {
+    constructor(private readonly userService: UserService) {} // 금지!
+}
+
+// ❌ 타 도메인 Service 간 직접 호출
+@Injectable()
+export class ExternalPortfolioService {
+    constructor(private readonly correctionService: PortfolioCorrectionService) {} // 금지!
+}
+```
+
 ## 금지 사항
 
 ### 1. any 타입 사용 금지
@@ -305,27 +413,41 @@ this.logger.log(`User created: ${user.id}`);
 ### 1. 일관된 에러 처리
 
 프로젝트에서 정의한 `BusinessException`과 `ErrorCode`를 사용하여 에러를 처리합니다.
+**NestJS 내장 예외(`NotFoundException`, `BadRequestException` 등)는 사용하지 않습니다.**
 
 ```typescript
-// error-code.enum.ts
-export enum ErrorCode {
-    // 공통
-    BAD_REQUEST = 'COMMON400',
-    UNAUTHORIZED = 'COMMON401',
-    INTERNAL_SERVER_ERROR = 'COMMON500',
-    NOT_IMPLEMENTED = 'COMMON501',
-
-    // 도메인별 에러 코드 추가
-    USER_NOT_FOUND = 'USER404',
-}
-
-// 서비스에서 사용
-throw new BusinessException(ErrorCode.BAD_REQUEST);
-throw new BusinessException(ErrorCode.UNAUTHORIZED);
+// ✅ 올바른 사용
 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+throw new BusinessException(ErrorCode.BAD_REQUEST);
+
+// ✅ 추가 디버깅 정보가 필요한 경우 details 사용
+throw new BusinessException(ErrorCode.USER_NOT_FOUND, { requestedId: userId });
+
+// ❌ 금지 — NestJS 내장 예외 사용
+throw new NotFoundException('User not found');
+throw new BadRequestException('Invalid input');
 ```
 
-> 참고: `common/exceptions/` 디렉토리의 `error-code.enum.ts`, `error-code.ts`, `business.exception.ts` 파일 참조
+### ErrorCode 네이밍 규칙
+
+```
+<DOMAIN><HTTP_STATUS><SEQUENCE?>
+```
+
+- enum name: `SCREAMING_SNAKE_CASE` (의미가 명확하게 드러나야 함)
+- enum value: `도메인 접두사` + `HTTP 상태 코드` + `구분 번호(선택)`
+- 새 에러 코드 추가 시: `error-code.enum.ts`에 코드, `error-code.ts`에 메시지+상태 코드 매핑 모두 추가
+
+```typescript
+// 기본: DOMAIN + HTTP_STATUS
+USER_NOT_FOUND = 'USER404';
+
+// 동일 도메인+상태 코드가 여러 개: SEQUENCE 추가
+DUPLICATE_EXPERIENCE_NAME = 'EXPERIENCE4091';
+EXPERIENCE_MAX_LIMIT = 'EXPERIENCE4092';
+```
+
+> 상세 가이드: `docs/development/ERROR_HANDLING.md` 참조
 
 ### 2. Optional Chaining 사용
 
