@@ -21,4 +21,8 @@ export class InsightActivityService {
             (r) => r.activity.id
         );
     }
+
+    async deleteAllByInsightId(insightId: number): Promise<void> {
+        await this.insightActivityRepository.deleteAllByInsightId(insightId);
+    }
 }

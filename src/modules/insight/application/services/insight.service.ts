@@ -72,4 +72,15 @@ export class InsightService {
         const savedLog = await this.insightRepository.save(log);
         return InsightLogResDto.from(savedLog, activityNames);
     }
+
+    @Transactional()
+    async deleteInsight(userId: number, insightId: number): Promise<number> {
+        const log = await this.findByIdOrThrow(insightId);
+        if (log.user.id !== userId) {
+            throw new BusinessException(ErrorCode.NOT_LOG_OWNER);
+        }
+        await this.insightActivityService.deleteAllByInsightId(insightId);
+        await this.insightRepository.deleteById(insightId);
+        return log.id;
+    }
 }

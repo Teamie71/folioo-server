@@ -32,4 +32,10 @@ export class InsightRepository {
             },
         });
     }
+
+    async deleteById(id: number): Promise<void> {
+        await this.insightRepository.delete({
+            id: id,
+        });
+    }
 }

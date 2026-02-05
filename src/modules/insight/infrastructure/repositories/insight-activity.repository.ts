@@ -39,4 +39,12 @@ export class InsightActivityRepository {
             id: In(ids),
         });
     }
+
+    async deleteAllByInsightId(insightId: number) {
+        return await this.mappingRepository.delete({
+            insight: {
+                id: insightId,
+            },
+        });
+    }
 }

@@ -9,6 +9,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateInsightLogReqDto,
+    DeletedInsightLogResDto,
     InsightLogResDto,
     UpdateInsightReqDto,
 } from '../application/dtos/insight-log.dto';
@@ -70,19 +71,15 @@ export class InsightController {
         summary: '인사이트 로그 삭제',
         description: '인사이트 로그 및 메타데이터를 삭제합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '로그가 성공적으로 삭제되었습니다.',
-            },
-        },
-    })
+    @ApiCommonResponse(DeletedInsightLogResDto)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.LOG_NOT_FOUND)
-    deleteLog(@Param('insightId') insightId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { insightId });
+    async deleteLog(
+        @Param('insightId') insightId: number,
+        @User('sub') userId: number
+    ): Promise<DeletedInsightLogResDto> {
+        return DeletedInsightLogResDto.from(
+            await this.insightService.deleteInsight(userId, insightId)
+        );
     }
 
     @Get('search')

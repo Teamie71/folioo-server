@@ -32,6 +32,16 @@ export class InsightLogResDto {
     }
 }
 
+export class DeletedInsightLogResDto {
+    id: number;
+
+    static from(id: number): DeletedInsightLogResDto {
+        const dto = new DeletedInsightLogResDto();
+        dto.id = id;
+        return dto;
+    }
+}
+
 export class CreateInsightLogReqDto {
     @IsString()
     @IsNotEmpty({ message: '제목은 필수입니다.' })
