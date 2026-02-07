@@ -1,29 +1,30 @@
 # Folioo ERD
 
 > 포트폴리오 관리 플랫폼 데이터베이스 설계서
-> v2.2.0 | 2026-02-04
+> v2.3.0 | 2026-02-07
 
 ---
 
 ## 테이블 목록
 
-| 도메인                   | 테이블                 | 설명                              |
-| ------------------------ | ---------------------- | --------------------------------- |
-| **user**                 | `users`                | 사용자 정보                       |
-|                          | `social_user`          | 소셜 로그인 정보                  |
-|                          | `user_agreement`       | 약관 동의                         |
-| **experience**           | `experience`           | 경험 정리                         |
-|                          | `experience_source`    | 경험 정리 파일 (OCR 추출)         |
-| **portfolio**            | `portfolio`            | 포트폴리오                        |
-| **portfolio-correction** | `portfolio_correction` | 포트폴리오 첨삭                   |
-|                          | `correction_item`      | 첨삭 항목                         |
-| **insight**              | `insight`              | 인사이트 (ChromaDB에서 생성 예정) |
-|                          | `activity`             | 활동                              |
-| **ticket**               | `ticket_product`       | 이용권 상품 (구매용)              |
-|                          | `ticket`               | 이용권 (보유/사용 추적)           |
-| **payment**              | `payment`              | PayApp 결제 건                    |
-| **event**                | `event`                | 이벤트 정의                       |
-|                          | `event_participation`  | 이벤트 참여/진행도                |
+| 도메인                   | 테이블                 | 설명                      |
+| ------------------------ | ---------------------- | ------------------------- |
+| **user**                 | `users`                | 사용자 정보               |
+|                          | `social_user`          | 소셜 로그인 정보          |
+|                          | `user_agreement`       | 약관 동의                 |
+| **experience**           | `experience`           | 경험 정리                 |
+|                          | `experience_source`    | 경험 정리 파일 (OCR 추출) |
+| **portfolio**            | `portfolio`            | 포트폴리오                |
+| **portfolio-correction** | `portfolio_correction` | 포트폴리오 첨삭           |
+|                          | `correction_item`      | 첨삭 항목                 |
+| **insight**              | `insight`              | 인사이트                  |
+|                          | `insight_activity`     | 인사이트-활동 매핑        |
+|                          | `activity`             | 활동                      |
+| **ticket**               | `ticket_product`       | 이용권 상품 (구매용)      |
+|                          | `ticket`               | 이용권 (보유/사용 추적)   |
+| **payment**              | `payment`              | PayApp 결제 건            |
+| **event**                | `event`                | 이벤트 정의               |
+|                          | `event_participation`  | 이벤트 참여/진행도        |
 
 ---
 
@@ -43,8 +44,8 @@ users
    ├── 1:N ─ portfolio_correction ─── 1:N ─ correction_item
    │                                        └─── N:1 ─ portfolio
    │
-   ├── 1:N ─ activity ─── 1:N ─ insight
-   │
+    ├── 1:N ─ activity ─── N:N ─ insight_activity ─── N:N ─ insight
+    │
    ├── 1:N ─ ticket (이용권 보유)
    │           ├── N:1 ─ payment (구매로 획득 시)
    │           └── N:1 ─ event_participation (이벤트로 획득 시)
@@ -187,7 +188,7 @@ PayType: 'CARD' |
 | highlight_point | varchar(200)  | 참조포인트      |
 | status          | ENUM          | 상태            |
 
-> **Note**: `user_id`는 denormalization (조회 편의 — `portfolio`, `insight`과 동일 패턴).
+> **Note**: `user_id`는 도메인 원칙에 따른 필수적인 관계 (`portfolio`, `insight`과 동일 패턴).
 
 ### correction_item (활동 첨삭)
 
@@ -204,14 +205,23 @@ PayType: 'CARD' |
 
 ### insight (인사이트)
 
-| 컬럼        | 타입         | 설명             |
-| ----------- | ------------ | ---------------- |
-| id          | number       | PK               |
-| user_id     | number       | FK → users.id    |
-| activity_id | number       | FK → activity.id |
-| title       | varchar(50)  | 제목             |
-| category    | ENUM         | 카테고리         |
-| description | varchar(250) | 내용             |
+| 컬럼        | 타입         | 설명          |
+| ----------- | ------------ | ------------- |
+| id          | number       | PK            |
+| user_id     | number       | FK → users.id |
+| title       | varchar(50)  | 제목          |
+| category    | ENUM         | 카테고리      |
+| description | varchar(250) | 내용          |
+
+### insight_activity (인사이트-활동 매핑)
+
+| 컬럼        | 타입   | 설명             |
+| ----------- | ------ | ---------------- |
+| id          | number | PK               |
+| insight_id  | number | FK → insight.id  |
+| activity_id | number | FK → activity.id |
+
+> **Note**: 인사이트와 활동의 N:M 관계를 위한 매핑 테이블. 하나의 인사이트는 여러 활동에 연결될 수 있고, 하나의 활동도 여러 인사이트에 연결될 수 있습니다.
 
 ### activity (활동)
 
@@ -322,7 +332,8 @@ PayType: 'CARD' |
 | `portfolio`            | `user_id`, `experience_id`                        |      |
 | `portfolio_correction` | `user_id`                                         |      |
 | `correction_item`      | `portfolio_correction_id`, `portfolio_id`         |      |
-| `insight`              | `user_id`, `activity_id`                          |      |
+| `insight`              | `user_id`                                         |      |
+| `insight_activity`     | `insight_id`, `activity_id`                       |      |
 | `activity`             | `user_id`                                         |      |
 | `ticket`               | `user_id`, `payment_id`, `event_participation_id` |      |
 | `payment`              | `user_id`, `ticket_product_id`                    |      |
@@ -334,6 +345,7 @@ PayType: 'CARD' |
 
 | 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                    |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.3.0 | 2026-02-07 | Insight-Activity N:M 관계 재설계 — `insight_activity` 매핑 테이블 추가, `insight.activity_id` 제거. 인사이트는 pgvector 기반으로 관리.                                                                                                                                                       |
 | 2.2.0 | 2026-02-04 | 설계 리뷰 전건 해결 — `user` → `users`(예약어 회피), snake_case 통일, `user_agreement` FK 정리, `portfolio_correction`에 `user_id` 추가, `login_id` bigint→varchar, FK 인덱스 설계 추가. 설계 리뷰 섹션 제거(전건 해결)                                                                      |
 | 2.1.0 | 2026-02-04 | 크레딧 → 이용권(ticket) 시스템 전면 재설계 — `ticket_product`, `ticket`, `payment`(PayApp 연동), `event`, `event_participation` 신규. `pg_product`, `service_product`, `service_purchase`, `credit_transaction` 삭제. `portfolio.experience_id` nullable 확정. 설계 리뷰 16건 반영 현황 추가 |
 | 2.0.0 | 2026-02-03 | 기획 변경에 따른 ERD 전면 개편 — SocialUser 분리, chat 제거, UserAgreement·Event 추가, User/Experience/Payment/creditTransaction 구조 변경                                                                                                                                                   |
