@@ -42,7 +42,7 @@ export class PortfolioCorrectionController {
     })
     @ApiQuery({ name: 'keyword', required: false })
     @ApiCommonResponseArray(CorrectionResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_MAX_LIMIT)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async getCorrections(
         @User('sub') userId: number,
         @Query('keyword') keyword?: string
@@ -65,7 +65,11 @@ export class PortfolioCorrectionController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.INSUFFICIENT_CREDITS)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.INSUFFICIENT_CREDITS,
+        ErrorCode.CORRECTION_MAX_LIMIT
+    )
     async createCorrection(
         @User('sub') userId: number,
         @Body() body: CreateCorrectionReqDTO
