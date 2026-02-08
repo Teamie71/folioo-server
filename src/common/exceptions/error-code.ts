@@ -107,4 +107,24 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '포트폴리오 첨삭은 최대 5개의 활동블록(포트폴리오)을 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.TICKET_NOT_FOUND]: {
+        message: '해당하는 티켓을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.TICKET_PRODUCT_NOT_FOUND]: {
+        message: '해당하는 티켓 상품을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.PAYMENT_NOT_FOUND]: {
+        message: '해당하는 결제를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.EVENT_NOT_FOUND]: {
+        message: '해당하는 이벤트를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.EVENT_PARTICIPATION_NOT_FOUND]: {
+        message: '해당하는 이벤트 참여 기록을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
 };

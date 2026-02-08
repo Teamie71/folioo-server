@@ -13,6 +13,9 @@ import { InsightModule } from './modules/insight/insight.module';
 import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
+import { TicketModule } from './modules/ticket/ticket.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { EventModule } from './modules/event/event.module';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guard';
@@ -39,6 +42,9 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guar
         ExperienceModule,
         PortfolioModule,
         PortfolioCorrectionModule,
+        TicketModule,
+        PaymentModule,
+        EventModule,
     ],
     providers: [
         {
