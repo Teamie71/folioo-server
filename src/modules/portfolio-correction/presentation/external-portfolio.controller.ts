@@ -129,11 +129,11 @@ export class ExternalPortfolioController {
     })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    updateExternalPortfolios(
+    async updateExternalPortfolios(
         @Param('portfolioId') portfolioId: number,
         @Body() body: UpdatePortfolioBlockReqDTO
-    ): StructuredPortfolioResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
+    ): Promise<StructuredPortfolioResDTO[]> {
+        return this.externalPortfolioFacade.updateExternalPortfolio(portfolioId, body);
     }
 
     @Delete(':portfolioId')
@@ -144,9 +144,9 @@ export class ExternalPortfolioController {
     })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    deleteExternalPortfolios(
+    async deleteExternalPortfolios(
         @Param('portfolioId') portfolioId: number
-    ): StructuredPortfolioResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
+    ): Promise<StructuredPortfolioResDTO[]> {
+        return this.externalPortfolioFacade.deleteExternalPortfolio(portfolioId);
     }
 }
