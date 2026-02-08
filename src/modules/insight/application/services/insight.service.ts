@@ -3,7 +3,7 @@ import { InsightRepository } from '../../infrastructure/repositories/insight.rep
 import { Insight } from '../../domain/entities/insight.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { InsightLogResDto, UpdateInsightReqDto } from '../dtos/insight-log.dto';
+import { InsightLogResDTO, UpdateInsightReqDTO } from '../dtos/insight-log.dto';
 import { ActivityService } from './activity.service';
 import { InsightActivityService } from './insight-activity.service';
 import { Transactional } from 'typeorm-transactional';
@@ -28,8 +28,8 @@ export class InsightService {
     async updateInsight(
         userId: number,
         insightId: number,
-        dto: UpdateInsightReqDto
-    ): Promise<InsightLogResDto> {
+        dto: UpdateInsightReqDTO
+    ): Promise<InsightLogResDTO> {
         const log = await this.findByIdOrThrow(insightId);
         if (log.user.id !== userId) {
             throw new BusinessException(ErrorCode.NOT_LOG_OWNER);
@@ -65,7 +65,7 @@ export class InsightService {
         }
 
         const savedLog = await this.insightRepository.save(log);
-        return InsightLogResDto.from(savedLog, activityNames);
+        return InsightLogResDTO.from(savedLog, activityNames);
     }
 
     @Transactional()

@@ -4,9 +4,9 @@ import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    ExportPortfolioResDto,
-    PortfolioDetailResDto,
-    UpdatePortfolioReqDto,
+    ExportPortfolioResDTO,
+    PortfolioDetailResDTO,
+    UpdatePortfolioReqDTO,
 } from '../application/dtos/portfolio.dto';
 
 @ApiTags('Portfolio')
@@ -17,9 +17,9 @@ export class PortfolioController {
         summary: '개별 포트폴리오 조회',
         description: '경험 정리가 완료된 포트폴리오를 조회합니다.',
     })
-    @ApiCommonResponse(PortfolioDetailResDto)
+    @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    getPortfolio(@Param('portfolioId') portfolioId: number): PortfolioDetailResDto {
+    getPortfolio(@Param('portfolioId') portfolioId: number): PortfolioDetailResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 
@@ -28,12 +28,12 @@ export class PortfolioController {
         summary: '개별 포트폴리오 수정',
         description: '경험 정리가 완료된 포트폴리오의 내용을 수정합니다.',
     })
-    @ApiCommonResponse(PortfolioDetailResDto)
+    @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     updatePortfolio(
         @Param('portfolioId') portfolioId: number,
-        @Body() body: UpdatePortfolioReqDto
-    ): PortfolioDetailResDto {
+        @Body() body: UpdatePortfolioReqDTO
+    ): PortfolioDetailResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
     }
 
@@ -62,9 +62,9 @@ export class PortfolioController {
         summary: '포트폴리오 내보내기',
         description: '경험 정리가 완료된 포트폴리오를 pdf로 내보냅니다.',
     })
-    @ApiCommonResponse(ExportPortfolioResDto)
+    @ApiCommonResponse(ExportPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    exportPortfolio(@Param('portfolioId') portfolioId: number): ExportPortfolioResDto {
+    exportPortfolio(@Param('portfolioId') portfolioId: number): ExportPortfolioResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 }

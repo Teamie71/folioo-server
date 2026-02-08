@@ -52,9 +52,9 @@ async findByIdOrThrow(id: number): Promise<User> {
 }
 
 // Service - 비즈니스 로직 처리
-async getProfile(userId: number): Promise<UserResDto> {
+async getProfile(userId: number): Promise<UserResDTO> {
     const user = await this.userRepository.findByIdOrThrow(userId);
-    return UserResDto.from(user);
+    return UserResDTO.from(user);
 }
 ```
 
@@ -78,8 +78,8 @@ throw new NotFoundException('User not found');
 
 ### 3. DTO 네이밍
 
-- Request: `*ReqDto` (예: `CreateUserReqDto`)
-- Response: `*ResDto` (예: `UserResDto`)
+- Request: `*ReqDTO` (예: `CreateUserReqDTO`)
+- Response: `*ResDTO` (예: `UserResDTO`)
 
 ### 4. 관계 매핑
 

@@ -10,7 +10,7 @@ import {
 import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { SendSmsReqDto, VerifySmsReqDto } from '../application/dtos/sms-auth.dto';
+import { SendSmsReqDTO, VerifySmsReqDTO } from '../application/dtos/sms-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { SocialUser } from 'src/common/decorators/social-user.decorator';
 import type { SocialUserAfterOAuth, UserAfterAuth } from '../domain/types/jwt-payload.type';
@@ -302,9 +302,9 @@ export class AuthController {
             },
         },
     })
-    @ApiBody({ type: SendSmsReqDto })
+    @ApiBody({ type: SendSmsReqDTO })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ALREADY_VERIFY_USER)
-    handleSmsSend(@Body() body: SendSmsReqDto): string {
+    handleSmsSend(@Body() body: SendSmsReqDTO): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
@@ -323,13 +323,13 @@ export class AuthController {
             },
         },
     })
-    @ApiBody({ type: VerifySmsReqDto })
+    @ApiBody({ type: VerifySmsReqDTO })
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.SMS_CODE_MISMATCH,
         ErrorCode.SMS_CODE_NOT_FOUND
     )
-    handleSmsVerify(@Body() body: VerifySmsReqDto): string {
+    handleSmsVerify(@Body() body: VerifySmsReqDTO): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 }

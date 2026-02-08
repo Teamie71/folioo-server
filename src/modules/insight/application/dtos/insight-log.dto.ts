@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 import { Insight } from '../../domain/entities/insight.entity';
 
-export class InsightLogResDto {
+export class InsightLogResDTO {
     title: string;
     description: string;
     @ApiProperty({ enum: InsightCategory, example: InsightCategory.ETC })
@@ -21,8 +21,8 @@ export class InsightLogResDto {
     @ApiProperty({ example: '2026-01-02T12:34:56.000Z' })
     createdAt: string;
 
-    static from(insight: Insight, activityNames: string[]): InsightLogResDto {
-        const dto = new InsightLogResDto();
+    static from(insight: Insight, activityNames: string[]): InsightLogResDTO {
+        const dto = new InsightLogResDTO();
         dto.title = insight.title;
         dto.description = insight.description;
         dto.category = insight.category;
@@ -32,17 +32,17 @@ export class InsightLogResDto {
     }
 }
 
-export class DeletedInsightLogResDto {
+export class DeletedInsightLogResDTO {
     id: number;
 
-    static from(id: number): DeletedInsightLogResDto {
-        const dto = new DeletedInsightLogResDto();
+    static from(id: number): DeletedInsightLogResDTO {
+        const dto = new DeletedInsightLogResDTO();
         dto.id = id;
         return dto;
     }
 }
 
-export class CreateInsightLogReqDto {
+export class CreateInsightLogReqDTO {
     @IsString()
     @IsNotEmpty({ message: '제목은 필수입니다.' })
     @MaxLength(20, { message: '제목은 20자를 초과할 수 없습니다.' })
@@ -67,4 +67,4 @@ export class CreateInsightLogReqDto {
     activityIds: number[];
 }
 
-export class UpdateInsightReqDto extends PartialType(CreateInsightLogReqDto) {}
+export class UpdateInsightReqDTO extends PartialType(CreateInsightLogReqDTO) {}

@@ -3,10 +3,10 @@ import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { UpdateUserNameReqDto, UserProfileResDto } from '../application/dtos/user-profile.dto';
+import { UpdateUserNameReqDTO, UserProfileResDTO } from '../application/dtos/user-profile.dto';
 import {
-    AgreeMarketingReqDto,
-    AgreeMarketingResDto,
+    AgreeMarketingReqDTO,
+    AgreeMarketingResDTO,
 } from '../application/dtos/marketing-agree.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { UserService } from '../application/services/user.service';
@@ -21,9 +21,9 @@ export class UserController {
         summary: '사용자 프로필 조회',
         description: '사용자의 프로필을 조회합니다.',
     })
-    @ApiCommonResponse(UserProfileResDto)
+    @ApiCommonResponse(UserProfileResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async getProfile(@User('sub') userId: number): Promise<UserProfileResDto> {
+    async getProfile(@User('sub') userId: number): Promise<UserProfileResDTO> {
         return await this.userService.getProfile(userId);
     }
 
@@ -32,10 +32,10 @@ export class UserController {
         summary: '사용자 이름/닉네임 변경',
         description: '사용자의 이름/닉네임을 변경합니다.',
     })
-    @ApiBody({ type: UpdateUserNameReqDto })
-    @ApiCommonResponse(UserProfileResDto)
+    @ApiBody({ type: UpdateUserNameReqDTO })
+    @ApiCommonResponse(UserProfileResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    updateProfile(@Body() body: UpdateUserNameReqDto): UserProfileResDto {
+    updateProfile(@Body() body: UpdateUserNameReqDTO): UserProfileResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
@@ -45,10 +45,10 @@ export class UserController {
         description:
             '사용자의 마케팅 정보 수신 동의 여부를 동의 -> 비동의 또는 비동의 -> 동의로 변경합니다.',
     })
-    @ApiBody({ type: AgreeMarketingReqDto })
-    @ApiCommonResponse(AgreeMarketingResDto)
+    @ApiBody({ type: AgreeMarketingReqDTO })
+    @ApiCommonResponse(AgreeMarketingResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    updateMarketingConsent(@Body() body: AgreeMarketingReqDto): AgreeMarketingResDto {
+    updateMarketingConsent(@Body() body: AgreeMarketingReqDTO): AgreeMarketingResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 }

@@ -3,7 +3,7 @@ import { Transactional } from 'typeorm-transactional';
 import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionItemService } from '../services/correction-item.service';
-import { StructuredPortfolioResDto } from '../dtos/external-portfolio.dto';
+import { StructuredPortfolioResDTO } from '../dtos/external-portfolio.dto';
 import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -16,19 +16,19 @@ export class ExternalPortfolioFacade {
         private readonly correctionItemService: CorrectionItemService
     ) {}
 
-    async getExternalPortfolios(correctionId: number): Promise<StructuredPortfolioResDto[]> {
+    async getExternalPortfolios(correctionId: number): Promise<StructuredPortfolioResDTO[]> {
         await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
         const portfolioIds =
             await this.correctionItemService.findPortfolioIdsByCorrectionId(correctionId);
         const portfolios = await this.externalPortfolioService.getExternalPortfolios(portfolioIds);
-        return portfolios.map((portfolio) => StructuredPortfolioResDto.from(portfolio));
+        return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
     }
 
     @Transactional()
     async createExternalPortfolioBlock(
         correctionId: number,
         userId: number
-    ): Promise<StructuredPortfolioResDto> {
+    ): Promise<StructuredPortfolioResDTO> {
         const correction = await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
 
         const currentCount =
@@ -40,6 +40,6 @@ export class ExternalPortfolioFacade {
         const savedPortfolio = await this.externalPortfolioService.createEmptyPortfolio(userId);
         await this.correctionItemService.createCorrectionItem(savedPortfolio, correction);
 
-        return StructuredPortfolioResDto.from(savedPortfolio);
+        return StructuredPortfolioResDTO.from(savedPortfolio);
     }
 }

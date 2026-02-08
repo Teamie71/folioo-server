@@ -31,7 +31,7 @@
 특정 역할을 하는 **파일들이 여러 개 모여 있는 폴더**는 **복수형**을 사용합니다.
 
 ```
-✅ dtos           # CreateUserDto, UpdateUserDto 등 여러 개
+✅ dtos           # CreateUserDTO, UpdateUserDTO 등 여러 개
 ✅ entities       # User, UserProfile 등 여러 엔티티
 ✅ exceptions     # 여러 에러 정의
 ✅ utils
@@ -93,9 +93,9 @@ http-exception.filter.ts
 | Module      | `Module`      | `UserModule`           |
 | Entity      | (없음)        | `User`                 |
 | Repository  | `Repository`  | `UserRepository`       |
-| DTO (생성)  | `ReqDto`      | `CreateUserReqDto`     |
-| DTO (수정)  | `ReqDto`      | `UpdateUserReqDto`     |
-| DTO (응답)  | `ResDto`      | `UserResDto`           |
+| DTO (생성)  | `ReqDTO`      | `CreateUserReqDTO`     |
+| DTO (수정)  | `ReqDTO`      | `UpdateUserReqDTO`     |
+| DTO (응답)  | `ResDTO`      | `UserResDTO`           |
 | Guard       | `Guard`       | `JwtAuthGuard`         |
 | Decorator   | `Decorator`   | `CurrentUserDecorator` |
 | Filter      | `Filter`      | `HttpExceptionFilter`  |
@@ -122,7 +122,7 @@ const DEFAULT_PAGE_SIZE = 10;
 ```typescript
 // 동사로 시작하는 camelCase
 function getUserById(id: string) {}
-function createPortfolio(dto: CreatePortfolioDto) {}
+function createPortfolio(dto: CreatePortfolioDTO) {}
 function validateToken(token: string) {}
 
 // Boolean 반환 함수는 is/has/can 접두사

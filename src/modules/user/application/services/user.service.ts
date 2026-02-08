@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserProfileResDto } from '../dtos/user-profile.dto';
+import { UserProfileResDTO } from '../dtos/user-profile.dto';
 import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -8,12 +8,12 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 export class UserService {
     constructor(private readonly userRepository: UserRepository) {}
 
-    async getProfile(userId: number): Promise<UserProfileResDto> {
+    async getProfile(userId: number): Promise<UserProfileResDTO> {
         const profile = await this.userRepository.findByIdWithProfile(userId);
         if (!profile) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
-        return UserProfileResDto.from(profile);
+        return UserProfileResDTO.from(profile);
     }
 
     async deductCredit(userId: number, amount: number): Promise<void> {

@@ -1,7 +1,7 @@
 import { IsInt, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 
-export class StructuredPortfolioResDto {
+export class StructuredPortfolioResDTO {
     portfolioId: number;
     name: string;
     description: string;
@@ -9,8 +9,8 @@ export class StructuredPortfolioResDto {
     problemSolving: string;
     learnings: string;
 
-    static from(portfolio: Portfolio): StructuredPortfolioResDto {
-        const dto = new StructuredPortfolioResDto();
+    static from(portfolio: Portfolio): StructuredPortfolioResDTO {
+        const dto = new StructuredPortfolioResDTO();
         dto.portfolioId = portfolio.id;
         dto.name = portfolio.name;
         dto.description = portfolio.description;
@@ -21,13 +21,13 @@ export class StructuredPortfolioResDto {
     }
 }
 
-export class CreateExternalPortfolioReqDto {
+export class CreateExternalPortfolioReqDTO {
     @IsInt()
     @IsPositive()
     correctionId: number;
 }
 
-export class UpdatePortfolioBlockReqDto {
+export class UpdatePortfolioBlockReqDTO {
     @IsOptional()
     @IsString()
     @MaxLength(20)

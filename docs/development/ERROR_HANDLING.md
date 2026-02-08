@@ -137,18 +137,18 @@ NOT_FOUND 에러를 Service에서 처리하면 계층 분리는 명확하지만,
 
 ```typescript
 // ❌ Service에서 매번 null 체크 — 보일러플레이트 과다
-async getProfile(userId: number): Promise<UserResDto> {
+async getProfile(userId: number): Promise<UserResDTO> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
         throw new BusinessException(ErrorCode.USER_NOT_FOUND); // 매번 반복
     }
-    return UserResDto.from(user);
+    return UserResDTO.from(user);
 }
 
 // ✅ Repository의 findByIdOrThrow 사용 — 간결하고 일관됨
-async getProfile(userId: number): Promise<UserResDto> {
+async getProfile(userId: number): Promise<UserResDTO> {
     const user = await this.userRepository.findByIdOrThrow(userId);
-    return UserResDto.from(user);
+    return UserResDTO.from(user);
 }
 ```
 
@@ -210,7 +210,7 @@ Controller에서는 **직접 예외를 throw하지 않습니다**. 입력 검증
 @Controller('experiences')
 export class ExperienceController {
     @Post()
-    async create(@Body() dto: CreateExperienceReqDto): Promise<ExperienceResDto> {
+    async create(@Body() dto: CreateExperienceReqDTO): Promise<ExperienceResDTO> {
         // ✅ DTO의 class-validator로 입력 검증 자동 처리
         // ✅ 비즈니스 에러는 Service/Repository에서 throw
         return this.experienceService.create(dto);
@@ -261,9 +261,9 @@ export class ExperienceController {
 ```typescript
 @Get(':id')
 @ApiOperation({ summary: '사용자 조회' })
-@ApiCommonResponse(UserResDto)
+@ApiCommonResponse(UserResDTO)
 @ApiCommonErrorResponse(ErrorCode.USER_NOT_FOUND, ErrorCode.UNAUTHORIZED)
-async findOne(@Param('id') id: string): Promise<UserResDto> {
+async findOne(@Param('id') id: string): Promise<UserResDTO> {
     return this.userService.findOne(id);
 }
 ```
@@ -306,7 +306,7 @@ throw new BusinessException(ErrorCode.USER_NOT_FOUND, { requestedId: userId });
 ```typescript
 // ❌ 금지 — Controller에서 비즈니스 에러 throw
 @Post()
-async create(@Body() dto: CreateUserReqDto) {
+async create(@Body() dto: CreateUserReqDTO) {
     if (await this.userService.existsByEmail(dto.email)) {
         throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS); // 이건 Service 책임
     }
@@ -314,7 +314,7 @@ async create(@Body() dto: CreateUserReqDto) {
 
 // ✅ 올바른 사용 — Service에 위임
 @Post()
-async create(@Body() dto: CreateUserReqDto) {
+async create(@Body() dto: CreateUserReqDTO) {
     return this.userService.create(dto); // Service 내부에서 검증
 }
 ```

@@ -8,10 +8,10 @@ import {
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    CreateInsightLogReqDto,
-    DeletedInsightLogResDto,
-    InsightLogResDto,
-    UpdateInsightReqDto,
+    CreateInsightLogReqDTO,
+    DeletedInsightLogResDTO,
+    InsightLogResDTO,
+    UpdateInsightReqDTO,
 } from '../application/dtos/insight-log.dto';
 import { ActivityNameReqDTO, ActivityNameResDTO } from '../application/dtos/activity-tag.dto';
 import { User } from 'src/common/decorators/user.decorator';
@@ -28,9 +28,9 @@ export class InsightController {
         description:
             '인사이트 로그를 생성하고, 텍스트를 임베딩으로 변환하여 메타데이터를 벡터DB에 저장합니다.',
     })
-    @ApiCommonResponse(InsightLogResDto)
+    @ApiCommonResponse(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.DUPLICATE_LOG_NAME, ErrorCode.UNAUTHORIZED)
-    createLog(@Body() body: CreateInsightLogReqDto): InsightLogResDto {
+    createLog(@Body() body: CreateInsightLogReqDTO): InsightLogResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
@@ -39,9 +39,9 @@ export class InsightController {
         summary: '로그 목록 조회',
         description: '사용자가 생성한 인사이트 로그 목록을 조회합니다.',
     })
-    @ApiCommonResponseArray(InsightLogResDto)
+    @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    getLogs(): InsightLogResDto[] {
+    getLogs(): InsightLogResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
@@ -51,7 +51,7 @@ export class InsightController {
         description:
             '인사이트 로그를 수정하고, 기존 벡터를 삭제 후 메타데이터를 벡터DB에 다시 저장합니다.',
     })
-    @ApiCommonResponse(InsightLogResDto)
+    @ApiCommonResponse(InsightLogResDTO)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.LOG_NOT_FOUND,
@@ -60,9 +60,9 @@ export class InsightController {
     )
     async updateLog(
         @Param('insightId') insightId: number,
-        @Body() body: UpdateInsightReqDto,
+        @Body() body: UpdateInsightReqDTO,
         @User('sub') userId: number
-    ): Promise<InsightLogResDto> {
+    ): Promise<InsightLogResDTO> {
         return await this.insightService.updateInsight(userId, insightId, body);
     }
 
@@ -71,7 +71,7 @@ export class InsightController {
         summary: '인사이트 로그 삭제',
         description: '인사이트 로그 및 메타데이터를 삭제합니다.',
     })
-    @ApiCommonResponse(DeletedInsightLogResDto)
+    @ApiCommonResponse(DeletedInsightLogResDTO)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.LOG_NOT_FOUND,
@@ -80,8 +80,8 @@ export class InsightController {
     async deleteLog(
         @Param('insightId') insightId: number,
         @User('sub') userId: number
-    ): Promise<DeletedInsightLogResDto> {
-        return DeletedInsightLogResDto.from(
+    ): Promise<DeletedInsightLogResDTO> {
+        return DeletedInsightLogResDTO.from(
             await this.insightService.deleteInsight(userId, insightId)
         );
     }
@@ -94,13 +94,13 @@ export class InsightController {
     @ApiQuery({ name: 'keyword', required: false })
     @ApiQuery({ name: 'category', required: false })
     @ApiQuery({ name: 'activityName', required: false })
-    @ApiCommonResponseArray(InsightLogResDto)
+    @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     searchVector(
         @Query('keyword') keyword?: string,
         @Query('category') category?: string,
         @Query('activityName') activityName?: string
-    ): InsightLogResDto[] {
+    ): InsightLogResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { keyword, category, activityName });
     }
 
