@@ -64,7 +64,7 @@
 git commit -m "feat: 포트폴리오 생성 API 구현 (#15)
 
 - POST /portfolios 엔드포인트 추가
-- CreatePortfolioDto 정의
+- CreatePortfolioDTO 정의
 - Swagger 문서 업데이트"
 
 # 간단한 커밋
@@ -152,7 +152,7 @@ Docs: API 문서 업데이트 (#12)
 특정 역할을 하는 **파일들이 여러 개 모여 있는 폴더**는 **복수형**을 사용합니다.
 
 ```
-✅ dtos           # CreateUserDto, UpdateUserDto 등 여러 개
+✅ dtos           # CreateUserDTO, UpdateUserDTO 등 여러 개
 ✅ entities       # User, UserProfile 등 여러 엔티티
 ✅ exceptions     # 여러 에러 정의
 ✅ utils
