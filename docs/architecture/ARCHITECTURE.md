@@ -105,12 +105,12 @@ export class UserController {
 export class UserService {
     constructor(private readonly userRepository: UserRepository) {}
 
-    async findOne(id: string): Promise<UserResDto> {
+    async findOne(id: string): Promise<UserResDTO> {
         const user = await this.userRepository.findById(id);
         if (!user) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
-        return UserResDto.from(user);
+        return UserResDTO.from(user);
     }
 }
 ```

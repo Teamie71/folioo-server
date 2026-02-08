@@ -81,7 +81,7 @@
 git commit -m "feat: 포트폴리오 생성 API 구현 (#15)
 
 - POST /portfolios 엔드포인트 추가
-- CreatePortfolioDto 정의
+- CreatePortfolioDTO 정의
 - Swagger 문서 업데이트"
 
 # 간단한 커밋

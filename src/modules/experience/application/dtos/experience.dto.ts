@@ -4,7 +4,7 @@ import { IsEnum, IsString, MaxLength, MinLength } from 'class-validator';
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { Experience } from '../../domain/experience.entity';
 
-export class CreateExperienceReqDto {
+export class CreateExperienceReqDTO {
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsString()
     @MinLength(1)
@@ -16,15 +16,15 @@ export class CreateExperienceReqDto {
     hopeJob: JobCategory;
 }
 
-export class ExperienceResDto {
+export class ExperienceResDTO {
     id: number;
     name: string;
     @ApiProperty({ enum: JobCategory, example: JobCategory.MARKETING })
     hopeJob: JobCategory;
     createdAt: string;
 
-    static from(experience: Experience): ExperienceResDto {
-        const dto = new ExperienceResDto();
+    static from(experience: Experience): ExperienceResDTO {
+        const dto = new ExperienceResDTO();
         dto.id = experience.id;
         dto.name = experience.name;
         dto.hopeJob = experience.hopeJob;
@@ -33,7 +33,7 @@ export class ExperienceResDto {
     }
 }
 
-export class ExperienceStateResDto {
+export class ExperienceStateResDTO {
     status: string;
     id: number;
 }

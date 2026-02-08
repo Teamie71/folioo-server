@@ -17,7 +17,7 @@
 
 ```typescript
 // class-validator 데코레이터 사용
-export class CreateUserReqDto {
+export class CreateUserReqDTO {
     @IsEmail()
     @ApiProperty({ example: 'user@example.com' }) // example 명시 필요한 경우
     email: string;
@@ -40,14 +40,14 @@ export class CreateUserReqDto {
 ### Response DTO
 
 ```typescript
-export class UserResDto {
+export class UserResDTO {
     id: string; // Swagger 플러그인이 자동 추론
     email: string;
     name: string;
 
     // 정적 팩토리 메서드
-    static from(user: User): UserResDto {
-        const dto = new UserResDto();
+    static from(user: User): UserResDTO {
+        const dto = new UserResDTO();
         dto.id = user.id;
         dto.email = user.email;
         dto.name = user.name;
@@ -161,10 +161,10 @@ Service는 **비즈니스 로직**을 담당합니다. DB 조회 에러는 Repos
 export class UserService {
     constructor(private readonly userRepository: UserRepository) {}
 
-    async getProfile(userId: number): Promise<UserResDto> {
+    async getProfile(userId: number): Promise<UserResDTO> {
         // Repository에서 NOT_FOUND 처리
         const user = await this.userRepository.findByIdOrThrow(userId);
-        return UserResDto.from(user);
+        return UserResDTO.from(user);
     }
 
     async checkEmailExists(email: string): Promise<boolean> {
@@ -173,7 +173,7 @@ export class UserService {
         return user !== null;
     }
 
-    async updateProfile(userId: number, dto: UpdateProfileReqDto): Promise<UserResDto> {
+    async updateProfile(userId: number, dto: UpdateProfileReqDTO): Promise<UserResDTO> {
         const user = await this.userRepository.findByIdOrThrow(userId);
 
         // 비즈니스 로직 에러는 Service에서 처리
@@ -185,7 +185,7 @@ export class UserService {
         }
 
         // ... 업데이트 로직
-        return UserResDto.from(user);
+        return UserResDTO.from(user);
     }
 }
 ```
@@ -230,18 +230,18 @@ export class UserController {
 
     @Get(':id')
     @ApiOperation({ summary: '사용자 조회' })
-    @ApiCommonResponse(UserResDto)
+    @ApiCommonResponse(UserResDTO)
     @ApiCommonErrorResponse(ErrorCode.USER_NOT_FOUND)
-    async findOne(@Param('id') id: string): Promise<UserResDto> {
+    async findOne(@Param('id') id: string): Promise<UserResDTO> {
         return this.userService.findOne(id);
     }
 
     @Post()
     @ApiOperation({ summary: '사용자 생성' })
-    @ApiBody({ type: CreateUserReqDto })
-    @ApiCommonResponse(UserResDto)
+    @ApiBody({ type: CreateUserReqDTO })
+    @ApiCommonResponse(UserResDTO)
     @ApiCommonErrorResponse(ErrorCode.BAD_REQUEST)
-    async create(@Body() dto: CreateUserReqDto): Promise<UserResDto> {
+    async create(@Body() dto: CreateUserReqDTO): Promise<UserResDTO> {
         return this.userService.create(dto);
     }
 }
@@ -267,7 +267,7 @@ export class ExternalPortfolioFacade {
         const correction = await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
         const savedPortfolio = await this.externalPortfolioService.createEmptyPortfolio(userId);
         await this.portfolioCorrectionService.createCorrectionItem(savedPortfolio, correction);
-        return StructuredPortfolioResDto.from(savedPortfolio);
+        return StructuredPortfolioResDTO.from(savedPortfolio);
     }
 }
 ```
@@ -494,7 +494,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@modules/user/domain/entities/user.entity';
 
 // 4. 상대 경로
-import { CreateUserReqDto } from './dto/create-user.dto';
+import { CreateUserReqDTO } from './dto/create-user.dto';
 ```
 
 ## package.json Scripts 작성 가이드

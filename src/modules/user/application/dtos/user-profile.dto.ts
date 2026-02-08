@@ -2,15 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { User } from '../../domain/user.entity';
 
-export class UserProfileResDto {
+export class UserProfileResDTO {
     name: string;
     email: string;
     phoneNum: string | null;
     //TODO: 마케팅 정보 수신 동의 여부 및 약관 관련 필드 추가 필요함
     isMarketingAgreed: boolean;
 
-    static from(user: User): UserProfileResDto {
-        const dto = new UserProfileResDto();
+    static from(user: User): UserProfileResDTO {
+        const dto = new UserProfileResDTO();
         dto.name = user.name;
         dto.email = user.email;
         dto.phoneNum = user.phoneNum;
@@ -19,7 +19,7 @@ export class UserProfileResDto {
     }
 }
 
-export class UpdateUserNameReqDto {
+export class UpdateUserNameReqDTO {
     @ApiProperty({ description: '변경하고자 하는 닉네임을 입력합니다.', example: '새로운 닉네임' })
     @IsString()
     name: string;
