@@ -1,0 +1,60 @@
+import { BaseEntity } from '../../../../common/entities/base.entity';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { TicketType } from '../enums/ticket-type.enum';
+import { TicketStatus } from '../enums/ticket-status.enum';
+import { TicketSource } from '../enums/ticket-source.enum';
+import { User } from '../../../user/domain/user.entity';
+import { Payment } from '../../../payment/domain/entities/payment.entity';
+import { EventParticipation } from '../../../event/domain/entities/event-participation.entity';
+
+@Entity('ticket')
+@Index(['userId'])
+@Index(['paymentId'])
+@Index(['eventParticipationId'])
+export class Ticket extends BaseEntity {
+    @ManyToOne(() => User, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'user_id' })
+    user: User;
+
+    @Column({ name: 'user_id' })
+    userId: number;
+
+    @Column({
+        type: 'enum',
+        enum: TicketType,
+    })
+    type: TicketType;
+
+    @Column({
+        type: 'enum',
+        enum: TicketStatus,
+        default: TicketStatus.AVAILABLE,
+    })
+    status: TicketStatus;
+
+    @Column({
+        type: 'enum',
+        enum: TicketSource,
+    })
+    source: TicketSource;
+
+    @ManyToOne(() => Payment, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'payment_id' })
+    payment: Payment;
+
+    @Column({ name: 'payment_id', nullable: true })
+    paymentId: number;
+
+    @ManyToOne(() => EventParticipation, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'event_participation_id' })
+    eventParticipation: EventParticipation;
+
+    @Column({ name: 'event_participation_id', nullable: true })
+    eventParticipationId: number;
+
+    @Column({ nullable: true })
+    usedAt: Date;
+
+    @Column({ nullable: true })
+    expiredAt: Date;
+}
