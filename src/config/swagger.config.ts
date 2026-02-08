@@ -41,7 +41,7 @@ export async function setupSwagger(app: INestApplication): Promise<void> {
         .addSecurityRequirements('access-token')
         .build();
 
-    await SwaggerModule.loadPluginMetadata(metadata);
+    await SwaggerModule.loadPluginMetadata(() => Promise.resolve(metadata as any));
     const document = SwaggerModule.createDocument(app, config);
 
     SwaggerModule.setup('api', app, document, {
