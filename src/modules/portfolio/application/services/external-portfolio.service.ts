@@ -1,14 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PortfolioRepository } from '../../infrastructure/repositories/portfolio.repository';
 import { Portfolio } from '../../domain/portfolio.entity';
-
-type ExternalPortfolioUpdateValues = {
-    name?: string;
-    description?: string;
-    responsibilities?: string;
-    problemSolving?: string;
-    learnings?: string;
-};
+import { UpdatePortfolioBlockReqDTO } from 'src/modules/portfolio-correction/application/dtos/external-portfolio.dto';
 
 @Injectable()
 export class ExternalPortfolioService {
@@ -25,7 +18,7 @@ export class ExternalPortfolioService {
 
     async updateExternalPortfolio(
         portfolioId: number,
-        update: ExternalPortfolioUpdateValues
+        update: UpdatePortfolioBlockReqDTO
     ): Promise<Portfolio> {
         return this.portfolioRepository.updateExternalPortfolio(portfolioId, update);
     }

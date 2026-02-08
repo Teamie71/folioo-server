@@ -55,10 +55,7 @@ export class ExternalPortfolioFacade {
             await this.correctionItemService.findCorrectionIdByPortfolioIdOrThrow(portfolioId);
         await this.externalPortfolioService.updateExternalPortfolio(portfolioId, body);
 
-        const portfolioIds =
-            await this.correctionItemService.findPortfolioIdsByCorrectionId(correctionId);
-        const portfolios = await this.externalPortfolioService.getExternalPortfolios(portfolioIds);
-        return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
+        return this.getStructuredPortfoliosByCorrectionId(correctionId);
     }
 
     @Transactional()
@@ -67,6 +64,12 @@ export class ExternalPortfolioFacade {
             await this.correctionItemService.findCorrectionIdByPortfolioIdOrThrow(portfolioId);
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId);
 
+        return this.getStructuredPortfoliosByCorrectionId(correctionId);
+    }
+
+    private async getStructuredPortfoliosByCorrectionId(
+        correctionId: number
+    ): Promise<StructuredPortfolioResDTO[]> {
         const portfolioIds =
             await this.correctionItemService.findPortfolioIdsByCorrectionId(correctionId);
         const portfolios = await this.externalPortfolioService.getExternalPortfolios(portfolioIds);

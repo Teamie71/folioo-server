@@ -5,14 +5,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { Portfolio } from '../../domain/portfolio.entity';
 import { SourceType } from '../../domain/enums/source-type.enum';
-
-type ExternalPortfolioUpdateValues = {
-    name?: string;
-    description?: string;
-    responsibilities?: string;
-    problemSolving?: string;
-    learnings?: string;
-};
+import { UpdatePortfolioBlockReqDTO } from 'src/modules/portfolio-correction/application/dtos/external-portfolio.dto';
 
 @Injectable()
 export class PortfolioRepository {
@@ -50,7 +43,7 @@ export class PortfolioRepository {
 
     async updateExternalPortfolio(
         portfolioId: number,
-        update: ExternalPortfolioUpdateValues
+        update: UpdatePortfolioBlockReqDTO
     ): Promise<Portfolio> {
         const portfolio = await this.findExternalByIdOrThrow(portfolioId);
 
