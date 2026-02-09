@@ -131,61 +131,53 @@ throw new BusinessException(ErrorCode.NEW_DOMAIN_ERROR, { field: 'email' });
 
 ## 계층별 에러 처리 책임
 
-### 설계 배경
+### 설계 원칙
 
-NOT_FOUND 에러를 Service에서 처리하면 계층 분리는 명확하지만, **모든 조회마다 null 체크 보일러플레이트가 반복**됩니다. 팀 논의 결과, NOT_FOUND처럼 **데이터 존재 여부와 직접 관련된 에러는 Repository에서 처리**하여 코드 간결성을 확보하기로 결정했습니다.
-
-```typescript
-// ❌ Service에서 매번 null 체크 — 보일러플레이트 과다
-async getProfile(userId: number): Promise<UserResDTO> {
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-        throw new BusinessException(ErrorCode.USER_NOT_FOUND); // 매번 반복
-    }
-    return UserResDTO.from(user);
-}
-
-// ✅ Repository의 findByIdOrThrow 사용 — 간결하고 일관됨
-async getProfile(userId: number): Promise<UserResDTO> {
-    const user = await this.userRepository.findByIdOrThrow(userId);
-    return UserResDTO.from(user);
-}
-```
+**모든 `BusinessException`은 Service 계층에서 throw합니다.** Repository는 순수 데이터 접근만 담당하며, 예외를 직접 발생시키지 않습니다. NOT_FOUND를 포함한 모든 에러 판단은 Service의 책임입니다.
 
 ### 정리
 
-| 계층           | 에러 종류                           | 예시                                           |
-| -------------- | ----------------------------------- | ---------------------------------------------- |
-| **Repository** | 데이터 존재 여부 (NOT_FOUND)        | `findByIdOrThrow` → `USER_NOT_FOUND`           |
-| **Service**    | 비즈니스 로직 (검증, 제한, 중복 등) | `EXPERIENCE_MAX_LIMIT`, `DUPLICATE_*`          |
-| **Controller** | 입력 검증만                         | `ValidationPipe` + `class-validator` 자동 처리 |
+| 계층           | 에러 종류                           | 예시                                                    |
+| -------------- | ----------------------------------- | ------------------------------------------------------- |
+| **Repository** | throw 금지 — 순수 데이터 접근만     | `findById` → `Entity \| null` 반환                      |
+| **Service**    | 모든 비즈니스 에러 (NOT_FOUND 포함) | `USER_NOT_FOUND`, `EXPERIENCE_MAX_LIMIT`, `DUPLICATE_*` |
+| **Controller** | 입력 검증만                         | `ValidationPipe` + `class-validator` 자동 처리          |
 
-### Repository 계층 — 데이터 접근 에러
+### Repository 계층 — 순수 데이터 접근
+
+Repository는 **예외를 throw하지 않습니다**. 데이터가 없으면 `null`을 반환하고, 판단은 Service에 위임합니다.
 
 ```typescript
 @Injectable()
 export class UserRepository {
-    // NOT_FOUND 에러를 throw하는 조회
-    async findByIdOrThrow(id: number): Promise<User> {
-        const user = await this.userRepository.findOne({ where: { id } });
-        if (!user) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-        return user;
+    // 없으면 null 반환 — 판단은 Service에서
+    async findById(id: number): Promise<User | null> {
+        return this.userRepository.findOne({ where: { id } });
     }
 
-    // null 반환 허용 (존재 여부 확인용)
+    // 존재 여부 확인용
     async findByEmail(email: string): Promise<User | null> {
         return await this.userRepository.findOne({ where: { email } });
     }
 }
 ```
 
-### Service 계층 — 비즈니스 로직 에러
+### Service 계층 — 모든 비즈니스 에러
+
+NOT_FOUND를 포함한 **모든 에러는 Service에서 throw**합니다. `findByIdOrThrow` 패턴은 Service에 위치합니다.
 
 ```typescript
 @Injectable()
 export class ExperienceService {
+    // NOT_FOUND 에러 — Service에서 판단하고 throw
+    async findByIdOrThrow(id: number): Promise<Experience> {
+        const experience = await this.experienceRepository.findById(id);
+        if (!experience) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_NOT_FOUND);
+        }
+        return experience;
+    }
+
     async validateCreation(userId: number, name: string): Promise<void> {
         // 개수 제한 검증
         const count = await this.experienceRepository.countByUserId(userId);
@@ -212,18 +204,18 @@ export class ExperienceController {
     @Post()
     async create(@Body() dto: CreateExperienceReqDTO): Promise<ExperienceResDTO> {
         // ✅ DTO의 class-validator로 입력 검증 자동 처리
-        // ✅ 비즈니스 에러는 Service/Repository에서 throw
+        // ✅ 비즈니스 에러는 Service에서 throw
         return this.experienceService.create(dto);
     }
 }
 ```
 
-### Repository 메서드 네이밍 컨벤션
+### Service 메서드 네이밍 컨벤션
 
-| 메서드 패턴      | 반환 타입                 | 용도                             |
-| ---------------- | ------------------------- | -------------------------------- |
-| `findByXOrThrow` | `Promise<Entity>`         | 없으면 `BusinessException` throw |
-| `findByX`        | `Promise<Entity \| null>` | 없으면 `null` 반환 (존재 확인용) |
+| 메서드 패턴       | 위치        | 반환 타입                 | 용도                             |
+| ----------------- | ----------- | ------------------------- | -------------------------------- |
+| `findByIdOrThrow` | **Service** | `Promise<Entity>`         | 없으면 `BusinessException` throw |
+| `findById`        | Repository  | `Promise<Entity \| null>` | 없으면 `null` 반환 (순수 조회)   |
 
 ## 응답 형식
 

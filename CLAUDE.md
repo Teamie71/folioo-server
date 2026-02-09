@@ -35,26 +35,25 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 
 ### 1. 에러 처리 계층
 
-| 계층       | 책임                              |
-| ---------- | --------------------------------- |
-| Repository | DB 관련 에러 throw (NOT_FOUND 등) |
-| Service    | 비즈니스 로직 에러 throw          |
-| Controller | 입력 검증만                       |
+| 계층       | 책임                                      |
+| ---------- | ----------------------------------------- |
+| Repository | 순수 데이터 접근만 (throw 금지)           |
+| Service    | 모든 비즈니스 에러 throw (NOT_FOUND 포함) |
+| Controller | 입력 검증만                               |
 
 ```typescript
-// Repository - DB 관련 에러 throw
+// Repository - 순수 데이터 접근만 (throw 금지)
+async findById(id: number): Promise<User | null> {
+    return this.userRepository.findOne({ where: { id } });
+}
+
+// Service - NOT_FOUND 포함 모든 에러 throw
 async findByIdOrThrow(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findById(id);
     if (!user) {
         throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
     return user;
-}
-
-// Service - 비즈니스 로직 처리
-async getProfile(userId: number): Promise<UserResDTO> {
-    const user = await this.userRepository.findByIdOrThrow(userId);
-    return UserResDTO.from(user);
 }
 ```
 
