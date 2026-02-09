@@ -62,6 +62,12 @@ export class ExternalPortfolioFacade {
     async deleteExternalPortfolio(portfolioId: number): Promise<StructuredPortfolioResDTO[]> {
         const correctionId =
             await this.correctionItemService.findCorrectionIdByPortfolioIdOrThrow(portfolioId);
+
+        const portfolio = await this.externalPortfolioService.findExternalByIdOrThrow(portfolioId);
+        if (!this.externalPortfolioService.isEmptyPortfolio(portfolio)) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_EMPTY);
+        }
+
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId);
 
         return this.getStructuredPortfoliosByCorrectionId(correctionId);
