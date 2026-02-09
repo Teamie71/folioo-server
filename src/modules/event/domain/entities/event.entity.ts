@@ -1,5 +1,16 @@
 import { BaseEntity } from '../../../../common/entities/base.entity';
 import { Column, Entity } from 'typeorm';
+import { TicketType } from '../../../ticket/domain/enums/ticket-type.enum';
+
+export interface RewardConfigItem {
+    type: TicketType;
+    quantity: number;
+}
+
+export interface GoalConfig {
+    target: number;
+    dailyLimit?: number;
+}
 
 @Entity('event')
 export class Event extends BaseEntity {
@@ -19,10 +30,10 @@ export class Event extends BaseEntity {
     ctaLink: string;
 
     @Column({ type: 'jsonb' })
-    rewardConfig: Record<string, unknown>;
+    rewardConfig: RewardConfigItem[];
 
     @Column({ type: 'jsonb', nullable: true })
-    goalConfig: Record<string, unknown>;
+    goalConfig: GoalConfig | null;
 
     @Column({ type: 'date' })
     startDate: Date;

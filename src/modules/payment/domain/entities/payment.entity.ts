@@ -16,7 +16,7 @@ export class Payment extends BaseEntity {
     @Column({ name: 'user_id' })
     userId: number;
 
-    @ManyToOne(() => TicketProduct, { onDelete: 'CASCADE' })
+    @ManyToOne(() => TicketProduct, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'ticket_product_id' })
     ticketProduct: TicketProduct;
 
