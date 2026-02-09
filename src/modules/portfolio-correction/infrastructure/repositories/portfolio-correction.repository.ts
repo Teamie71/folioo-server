@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class PortfolioCorrectionRepository {
@@ -20,14 +18,6 @@ export class PortfolioCorrectionRepository {
         return this.portfolioCorrectionRepository.findOne({
             where: { id },
         });
-    }
-
-    async findByIdOrThrow(id: number): Promise<PortfolioCorrection> {
-        const correction = await this.findById(id);
-        if (!correction) {
-            throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
-        }
-        return correction;
     }
 
     countByUserId(userId: number): Promise<number> {

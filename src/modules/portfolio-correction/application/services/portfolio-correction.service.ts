@@ -46,6 +46,10 @@ export class PortfolioCorrectionService {
     }
 
     async findByIdOrThrow(correctionId: number): Promise<PortfolioCorrection> {
-        return this.portfolioCorrectionRepository.findByIdOrThrow(correctionId);
+        const correction = await this.portfolioCorrectionRepository.findById(correctionId);
+        if (!correction) {
+            throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
+        }
+        return correction;
     }
 }
