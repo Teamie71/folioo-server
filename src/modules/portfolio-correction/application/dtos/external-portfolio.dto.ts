@@ -1,4 +1,5 @@
-import { IsInt, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsInt, IsOptional, IsPositive, IsString, MaxLength, MinLength } from 'class-validator';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 
 export class StructuredPortfolioResDTO {
@@ -28,28 +29,38 @@ export class CreateExternalPortfolioReqDTO {
 }
 
 export class UpdatePortfolioBlockReqDTO {
+    @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
+    @MinLength(1)
     @MaxLength(20)
     name?: string;
 
+    @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
+    @MinLength(1)
     @MaxLength(400)
     description?: string;
 
+    @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
+    @MinLength(1)
     @MaxLength(400)
     responsibilities?: string;
 
+    @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
+    @MinLength(1)
     @MaxLength(400)
     problemSolving?: string;
 
+    @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
+    @MinLength(1)
     @MaxLength(400)
     learnings?: string;
 }
