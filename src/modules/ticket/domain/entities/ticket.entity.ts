@@ -38,14 +38,14 @@ export class Ticket extends BaseEntity {
     })
     source: TicketSource;
 
-    @ManyToOne(() => Payment, { nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => Payment, { nullable: true, onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'payment_id' })
     payment: Payment;
 
     @Column({ name: 'payment_id', nullable: true })
     paymentId: number;
 
-    @ManyToOne(() => EventParticipation, { nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => EventParticipation, { nullable: true, onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'event_participation_id' })
     eventParticipation: EventParticipation;
 
