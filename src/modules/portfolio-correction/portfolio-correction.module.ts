@@ -10,9 +10,15 @@ import { PortfolioCorrectionService } from './application/services/portfolio-cor
 import { CorrectionItemService } from './application/services/correction-item.service';
 import { ExternalPortfolioFacade } from './application/facades/external-portfolio.facade';
 import { PortfolioModule } from '../portfolio/portfolio.module';
+import { UserModule } from '../user/user.module';
+import { PortfolioCorrectionFacade } from './application/facades/portfolio-correction.facade';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([PortfolioCorrection, CorrectionItem]), PortfolioModule],
+    imports: [
+        TypeOrmModule.forFeature([PortfolioCorrection, CorrectionItem]),
+        PortfolioModule,
+        UserModule,
+    ],
     controllers: [PortfolioCorrectionController, ExternalPortfolioController],
     providers: [
         PortfolioCorrectionRepository,
@@ -20,6 +26,7 @@ import { PortfolioModule } from '../portfolio/portfolio.module';
         PortfolioCorrectionService,
         CorrectionItemService,
         ExternalPortfolioFacade,
+        PortfolioCorrectionFacade,
     ],
     exports: [PortfolioCorrectionService, CorrectionItemService],
 })

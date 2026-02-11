@@ -5,6 +5,7 @@ import {
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
+import { User } from 'src/common/decorators/user.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
@@ -14,6 +15,8 @@ import {
     MapCorrectionWithPortfoliosReqDTO,
     UpdateCorrectionTitleReqDTO,
 } from '../application/dtos/portfolio-correction.dto';
+import { PortfolioCorrectionFacade } from '../application/facades/portfolio-correction.facade';
+import { PortfolioCorrectionService } from '../application/services/portfolio-correction.service';
 import {
     UpdateCompanyInsightReqDTO,
     UpdateCompanyInsightResDTO,
@@ -26,6 +29,11 @@ import {
 @ApiTags('Portfolio-Correction')
 @Controller('portfolio-corrections')
 export class PortfolioCorrectionController {
+    constructor(
+        private readonly portfolioCorrectionService: PortfolioCorrectionService,
+        private readonly portfolioCorrectionFacade: PortfolioCorrectionFacade
+    ) {}
+
     @Get()
     @ApiOperation({
         summary: '첨삭 목록 조회',
@@ -34,9 +42,12 @@ export class PortfolioCorrectionController {
     })
     @ApiQuery({ name: 'keyword', required: false })
     @ApiCommonResponseArray(CorrectionResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_MAX_LIMIT)
-    getCorrections(@Query('keyword') keyword?: string): CorrectionResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, keyword);
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getCorrections(
+        @User('sub') userId: number,
+        @Query('keyword') keyword?: string
+    ): Promise<CorrectionResDTO[]> {
+        return this.portfolioCorrectionService.getCorrections(userId, keyword);
     }
 
     @Post()
@@ -54,9 +65,17 @@ export class PortfolioCorrectionController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.INSUFFICIENT_CREDITS)
-    createCorrection(@Body() body: CreateCorrectionReqDTO): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.INSUFFICIENT_CREDITS,
+        ErrorCode.CORRECTION_MAX_LIMIT
+    )
+    async createCorrection(
+        @User('sub') userId: number,
+        @Body() body: CreateCorrectionReqDTO
+    ): Promise<string> {
+        await this.portfolioCorrectionFacade.requestCorrection(userId, body);
+        return 'AI 첨삭이 의뢰되었습니다.';
     }
 
     @Get(':correctionId/status')
