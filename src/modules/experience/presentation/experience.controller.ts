@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -11,6 +11,7 @@ import {
     CreateExperienceReqDTO,
     ExperienceResDTO,
     ExperienceStateResDTO,
+    UpdateExperienceReqDTO,
 } from '../application/dtos/experience.dto';
 import { ExperienceFacade } from '../application/facades/experience.facade';
 
@@ -68,5 +69,24 @@ export class ExperienceController {
         @Param('experienceId', ParseIntPipe) experienceId: number
     ): Promise<ExperienceStateResDTO> {
         return this.experienceFacade.getExperience(experienceId, userId);
+    }
+
+    @Patch(':experienceId')
+    @ApiOperation({
+        summary: '경험 정리 수정',
+        description: '경험 정리의 제목 또는 희망 직무를 수정합니다.',
+    })
+    @ApiCommonResponse(ExperienceResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EXPERIENCE_NOT_FOUND,
+        ErrorCode.DUPLICATE_EXPERIENCE_NAME
+    )
+    async updateExperience(
+        @User('sub') userId: number,
+        @Param('experienceId', ParseIntPipe) experienceId: number,
+        @Body() body: UpdateExperienceReqDTO
+    ): Promise<ExperienceResDTO> {
+        return this.experienceFacade.updateExperience(experienceId, userId, body);
     }
 }

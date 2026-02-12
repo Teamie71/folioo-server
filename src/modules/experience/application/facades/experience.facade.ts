@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { ExperienceService } from '../services/experience.service';
 import { UserService } from 'src/modules/user/application/services/user.service';
-import { ExperienceResDTO, ExperienceStateResDTO } from '../dtos/experience.dto';
+import {
+    ExperienceResDTO,
+    ExperienceStateResDTO,
+    UpdateExperienceReqDTO,
+} from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { EXPERIENCE_CREDIT_COST } from '../../domain/experience.entity';
 
@@ -30,5 +34,14 @@ export class ExperienceFacade {
 
     async getExperience(experienceId: number, userId: number): Promise<ExperienceStateResDTO> {
         return this.experienceService.getExperience(experienceId, userId);
+    }
+
+    @Transactional()
+    async updateExperience(
+        experienceId: number,
+        userId: number,
+        body: UpdateExperienceReqDTO
+    ): Promise<ExperienceResDTO> {
+        return this.experienceService.updateExperience(experienceId, userId, body);
     }
 }
