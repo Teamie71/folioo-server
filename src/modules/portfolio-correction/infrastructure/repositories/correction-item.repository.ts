@@ -23,6 +23,14 @@ export class CorrectionItemRepository {
         return results.map((r) => r.portfolioId);
     }
 
+    findByCorrectionId(correctionId: number): Promise<CorrectionItem[]> {
+        return this.correctionItemRepository.find({
+            where: { portfolioCorrection: { id: correctionId } },
+            relations: ['portfolio'],
+            order: { createdAt: 'ASC' },
+        });
+    }
+
     countByCorrectionId(correctionId: number): Promise<number> {
         return this.correctionItemRepository.count({
             where: { portfolioCorrection: { id: correctionId } },

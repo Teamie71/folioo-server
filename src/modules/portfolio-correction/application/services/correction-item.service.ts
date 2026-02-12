@@ -24,6 +24,10 @@ export class CorrectionItemService {
         return this.correctionItemRepository.findPortfolioIdsByCorrectionId(correctionId);
     }
 
+    findByCorrectionId(correctionId: number): Promise<CorrectionItem[]> {
+        return this.correctionItemRepository.findByCorrectionId(correctionId);
+    }
+
     countItemsByCorrectionId(correctionId: number): Promise<number> {
         return this.correctionItemRepository.countByCorrectionId(correctionId);
     }

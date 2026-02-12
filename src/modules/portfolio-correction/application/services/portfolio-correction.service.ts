@@ -6,12 +6,17 @@ import {
 } from '../../domain/portfolio-correction.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { CorrectionResDTO } from '../dtos/portfolio-correction.dto';
+import { CorrectionResDTO, CorrectionStatusResDTO } from '../dtos/portfolio-correction.dto';
+import { CorrectionResultResDTO } from '../dtos/correction-result.dto';
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
+import { CorrectionItemService } from './correction-item.service';
 
 @Injectable()
 export class PortfolioCorrectionService {
-    constructor(private readonly portfolioCorrectionRepository: PortfolioCorrectionRepository) {}
+    constructor(
+        private readonly portfolioCorrectionRepository: PortfolioCorrectionRepository,
+        private readonly correctionItemService: CorrectionItemService
+    ) {}
 
     async getCorrections(userId: number, keyword?: string): Promise<CorrectionResDTO[]> {
         const corrections = await this.portfolioCorrectionRepository.findAllByUserIdAndTitleKeyword(
@@ -51,5 +56,33 @@ export class PortfolioCorrectionService {
             throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
         }
         return correction;
+    }
+
+    async findByIdAndUserIdOrThrow(
+        correctionId: number,
+        userId: number
+    ): Promise<PortfolioCorrection> {
+        const correction = await this.portfolioCorrectionRepository.findByIdAndUserId(
+            correctionId,
+            userId
+        );
+        if (!correction) {
+            throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
+        }
+        return correction;
+    }
+
+    async getStatus(correctionId: number, userId: number): Promise<CorrectionStatusResDTO> {
+        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
+        return CorrectionStatusResDTO.from(correction);
+    }
+
+    async getCorrectionDetail(
+        correctionId: number,
+        userId: number
+    ): Promise<CorrectionResultResDTO> {
+        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
+        const items = await this.correctionItemService.findByCorrectionId(correctionId);
+        return CorrectionResultResDTO.from(correction, items);
     }
 }

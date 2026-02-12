@@ -81,12 +81,15 @@ export class PortfolioCorrectionController {
     @Get(':correctionId/status')
     @ApiOperation({
         summary: '개별 첨삭 상태 조회',
-        description: '특정 AI 첨삭의 결과를 조회합니다.',
+        description: '특정 AI 첨삭의 진행 상태를 조회합니다.',
     })
     @ApiCommonResponse(CorrectionStatusResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    getCorrectionStatus(@Param('correctionId') correctionId: number): CorrectionStatusResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    async getCorrectionStatus(
+        @User('sub') userId: number,
+        @Param('correctionId') correctionId: number
+    ): Promise<CorrectionStatusResDTO> {
+        return this.portfolioCorrectionService.getStatus(correctionId, userId);
     }
 
     @Post(':correctionId/company-insight')
@@ -204,8 +207,11 @@ export class PortfolioCorrectionController {
     })
     @ApiCommonResponse(CorrectionResultResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    getCorrection(@Param('correctionId') correctionId: number): CorrectionResultResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    async getCorrection(
+        @User('sub') userId: number,
+        @Param('correctionId') correctionId: number
+    ): Promise<CorrectionResultResDTO> {
+        return this.portfolioCorrectionService.getCorrectionDetail(correctionId, userId);
     }
 
     @Patch(':correctionId')
