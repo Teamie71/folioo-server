@@ -129,8 +129,11 @@ export class PortfolioCorrectionController {
     })
     @ApiCommonResponse(UpdateCompanyInsightResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    getCompanyInsight(@Param('correctionId') correctionId: number): UpdateCompanyInsightResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    async getCompanyInsight(
+        @User('sub') userId: number,
+        @Param('correctionId', ParseIntPipe) correctionId: number
+    ): Promise<UpdateCompanyInsightResDTO> {
+        return this.portfolioCorrectionService.getCompanyInsight(correctionId, userId);
     }
 
     @Patch(':correctionId/company-insight')

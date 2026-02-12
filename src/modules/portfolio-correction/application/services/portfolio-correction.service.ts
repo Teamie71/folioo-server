@@ -8,6 +8,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { CorrectionResDTO, CorrectionStatusResDTO } from '../dtos/portfolio-correction.dto';
 import { CorrectionResultResDTO } from '../dtos/correction-result.dto';
+import { UpdateCompanyInsightResDTO } from '../dtos/company-insight.dto';
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import { CorrectionItemService } from './correction-item.service';
 
@@ -75,6 +76,14 @@ export class PortfolioCorrectionService {
     async getStatus(correctionId: number, userId: number): Promise<CorrectionStatusResDTO> {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
         return CorrectionStatusResDTO.from(correction);
+    }
+
+    async getCompanyInsight(
+        correctionId: number,
+        userId: number
+    ): Promise<UpdateCompanyInsightResDTO> {
+        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
+        return UpdateCompanyInsightResDTO.from(correction);
     }
 
     async getCorrectionDetail(
