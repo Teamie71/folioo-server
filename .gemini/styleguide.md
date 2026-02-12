@@ -48,6 +48,12 @@
 2. **데코레이터 사용**: Swagger, Validation 데코레이터 적절성
 3. **모듈 구조**: 도메인별 모듈 분리 적절성
 
+## 응답 컨벤션 리뷰 항목
+
+1. `TransformInterceptor` 적용 프로젝트에서는 성공 응답이 `CommonResponse.success(result)`로 래핑되는지 확인
+2. DELETE API가 특별한 이유 없이 `204 No Content`를 사용하지 않는지 확인
+3. DELETE API는 `200 OK` + 메시지(`string`) 또는 도메인 결과값 반환 패턴을 우선 권장
+
 ## 예외 처리 리뷰 항목
 
 ### 우선순위 높음 (반드시 지적)

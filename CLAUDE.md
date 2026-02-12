@@ -147,6 +147,11 @@ export class ExternalPortfolioService {
 - `busboy`를 이용한 스트리밍 방식
 - PDF를 `multipart/form-data`로 받아 AI 서버에 직접 전달
 
+## 응답 컨벤션
+
+- 전역 `TransformInterceptor`가 성공 응답을 `CommonResponse.success(result)` 형태로 래핑합니다.
+- 따라서 DELETE API도 기본적으로 `204 No Content` 대신 `200 OK` + 메시지(`string`) 응답을 사용합니다.
+
 ## 자주 사용하는 명령어
 
 ```bash
