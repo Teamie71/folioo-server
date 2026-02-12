@@ -1,6 +1,8 @@
 import { Global, Logger, Module } from '@nestjs/common';
 import Redis from 'ioredis';
 import { RedisConfigService } from '../../config/redis-config';
+import { CachePort } from './cache.port';
+import { IoRedisCacheAdapter } from './ioredis-cache.adapter';
 import { RedisService } from './redis.service';
 import { REDIS_CLIENT } from './redis.constants';
 
@@ -26,6 +28,17 @@ import { REDIS_CLIENT } from './redis.constants';
                 return client;
             },
             inject: [RedisConfigService],
+        },
+        {
+            provide: IoRedisCacheAdapter,
+            useFactory: (redisClient: Redis): IoRedisCacheAdapter => {
+                return new IoRedisCacheAdapter(redisClient);
+            },
+            inject: [REDIS_CLIENT],
+        },
+        {
+            provide: CachePort,
+            useExisting: IoRedisCacheAdapter,
         },
         RedisService,
     ],
