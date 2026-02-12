@@ -62,7 +62,7 @@ async findByIdOrThrow(id: number): Promise<User> {
 - 커스텀 예외: `BusinessException` (유일하게 허용되는 예외 클래스)
 - 에러 코드: `ErrorCode` enum
 - 위치: `src/common/exceptions/`
-- **NestJS 내장 예외 사용 금지** (`NotFoundException`, `BadRequestException` 등)
+- 애플리케이션 코드에서 **NestJS 내장 예외 직접 throw 금지** (`NotFoundException`, `BadRequestException` 등)
 - ErrorCode 네이밍: `<DOMAIN><HTTP_STATUS><SEQUENCE?>` (예: `USER404`, `EXPERIENCE4091`)
 - 새 에러 추가 시: `error-code.enum.ts` + `error-code.ts` 두 파일 모두 수정
 - 상세 가이드: `docs/development/ERROR_HANDLING.md`
@@ -74,6 +74,9 @@ throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 // ❌ 금지
 throw new NotFoundException('User not found');
 ```
+
+> 예외: 전역 `ValidationPipe`/`ParseIntPipe`가 프레임워크 내부에서 생성하는 `BadRequestException`은
+> `GlobalExceptionFilter`에서 `ErrorCode.BAD_REQUEST`로 표준화 처리합니다.
 
 ### 3. DTO 네이밍
 

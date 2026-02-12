@@ -2,7 +2,8 @@
 
 ## 개요
 
-Folioo 서버는 **NestJS 내장 예외를 사용하지 않고**, 자체 정의한 `BusinessException` + `ErrorCode`를 통해 일관된 에러 처리를 수행합니다.
+Folioo 서버는 애플리케이션 코드에서 NestJS 내장 예외를 직접 throw하지 않고,
+자체 정의한 `BusinessException` + `ErrorCode`를 통해 일관된 에러 처리를 수행합니다.
 
 ## 아키텍처
 
@@ -264,7 +265,7 @@ async findOne(@Param('id') id: string): Promise<UserResDTO> {
 
 ## 금지 사항
 
-### 1. NestJS 내장 예외 사용 금지
+### 1. NestJS 내장 예외 직접 throw 금지
 
 ```typescript
 // ❌ 금지
@@ -279,6 +280,9 @@ throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 throw new BusinessException(ErrorCode.BAD_REQUEST);
 throw new BusinessException(ErrorCode.UNAUTHORIZED);
 ```
+
+> 예외: 전역 `ValidationPipe`/`ParseIntPipe`가 프레임워크 내부에서 생성하는 `BadRequestException`은 허용되며,
+> `GlobalExceptionFilter`에서 `ErrorCode.BAD_REQUEST`로 표준화해 응답합니다.
 
 ### 2. 에러 메시지 하드코딩 금지
 

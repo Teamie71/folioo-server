@@ -121,27 +121,22 @@ correctionItems: CorrectionItem[];
 
 ### 원칙
 
-| 계층           | 책임          | 에러 처리 방식                    |
-| -------------- | ------------- | --------------------------------- |
-| **Repository** | 데이터 접근   | DB 관련 에러 throw (NOT_FOUND 등) |
-| **Service**    | 비즈니스 로직 | 비즈니스 로직 에러 throw          |
-| **Controller** | HTTP 처리     | 입력 검증만 (ValidationPipe)      |
+| 계층           | 책임          | 에러 처리 방식                  |
+| -------------- | ------------- | ------------------------------- |
+| **Repository** | 데이터 접근   | throw 금지 — `null`/결과 반환만 |
+| **Service**    | 비즈니스 로직 | 비즈니스 로직 에러 throw        |
+| **Controller** | HTTP 처리     | 입력 검증만 (ValidationPipe)    |
 
 ### Repository 계층
 
-Repository는 **데이터 접근과 DB 관련 에러 처리**를 담당합니다.
+Repository는 **순수 데이터 접근만** 담당합니다. 데이터가 없으면 `null`을 반환하고 판단은 Service에 위임합니다.
 
 ```typescript
 // ✅ 올바른 패턴
 @Injectable()
 export class UserRepository {
-    // 조회 실패 시 예외 throw (NOT_FOUND)
-    async findByIdOrThrow(id: number): Promise<User> {
-        const user = await this.userRepository.findOne({ where: { id } });
-        if (!user) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-        }
-        return user;
+    async findById(id: number): Promise<User | null> {
+        return this.userRepository.findOne({ where: { id } });
     }
 
     // 존재 여부 확인용 (null 반환 허용)
@@ -153,7 +148,7 @@ export class UserRepository {
 
 ### Service 계층
 
-Service는 **비즈니스 로직**을 담당합니다. DB 조회 에러는 Repository에서 처리되므로 Service는 비즈니스 로직에 집중합니다.
+Service는 **비즈니스 로직과 모든 예외 처리(NOT_FOUND 포함)**를 담당합니다.
 
 ```typescript
 // ✅ 올바른 패턴
@@ -161,9 +156,16 @@ Service는 **비즈니스 로직**을 담당합니다. DB 조회 에러는 Repos
 export class UserService {
     constructor(private readonly userRepository: UserRepository) {}
 
+    async findByIdOrThrow(userId: number): Promise<User> {
+        const user = await this.userRepository.findById(userId);
+        if (!user) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        return user;
+    }
+
     async getProfile(userId: number): Promise<UserResDTO> {
-        // Repository에서 NOT_FOUND 처리
-        const user = await this.userRepository.findByIdOrThrow(userId);
+        const user = await this.findByIdOrThrow(userId);
         return UserResDTO.from(user);
     }
 
@@ -174,7 +176,7 @@ export class UserService {
     }
 
     async updateProfile(userId: number, dto: UpdateProfileReqDTO): Promise<UserResDTO> {
-        const user = await this.userRepository.findByIdOrThrow(userId);
+        const user = await this.findByIdOrThrow(userId);
 
         // 비즈니스 로직 에러는 Service에서 처리
         if (dto.email && dto.email !== user.email) {
@@ -194,7 +196,7 @@ export class UserService {
 
 | 메서드 패턴      | 반환 타입               | 설명                                |
 | ---------------- | ----------------------- | ----------------------------------- |
-| `findByXOrThrow` | `Promise<User>`         | 없으면 예외 throw                   |
+| `findByXOrThrow` | `Promise<User>`         | Service 계층에서 사용, 없으면 throw |
 | `findByX`        | `Promise<User \| null>` | 없으면 null 반환 (존재 여부 확인용) |
 
 ## Controller 작성 규칙
@@ -413,7 +415,10 @@ this.logger.log(`User created: ${user.id}`);
 ### 1. 일관된 에러 처리
 
 프로젝트에서 정의한 `BusinessException`과 `ErrorCode`를 사용하여 에러를 처리합니다.
-**NestJS 내장 예외(`NotFoundException`, `BadRequestException` 등)는 사용하지 않습니다.**
+애플리케이션 코드(Controller/Service/Repository)에서 `NotFoundException`, `BadRequestException` 등을 **직접 throw하지 않습니다**.
+
+단, 전역 `ValidationPipe`/`ParseIntPipe`처럼 프레임워크 파이프가 내부적으로 생성한 `BadRequestException`은
+`GlobalExceptionFilter`에서 `ErrorCode.BAD_REQUEST`로 표준화하여 처리할 수 있습니다.
 
 ```typescript
 // ✅ 올바른 사용

@@ -52,7 +52,7 @@
 
 ### 우선순위 높음 (반드시 지적)
 
-1. **NestJS 내장 예외 사용**: `NotFoundException`, `BadRequestException` 등 내장 예외 사용 시 → `BusinessException` + `ErrorCode` 사용으로 변경 요구
+1. **애플리케이션 코드에서 NestJS 내장 예외 직접 throw**: `NotFoundException`, `BadRequestException` 등을 서비스/컨트롤러/레포지토리에서 직접 throw하면 → `BusinessException` + `ErrorCode` 사용으로 변경 요구
 2. **Controller에서 비즈니스 에러 throw**: Controller가 직접 `BusinessException`을 throw하는 경우 → Service/Repository에서 처리하도록 변경 요구
 3. **빈 catch 블록**: `catch(e) {}` 처럼 에러를 무시하는 경우
 
@@ -62,6 +62,9 @@
 5. **ErrorCode 네이밍 위반**: `<DOMAIN><HTTP_STATUS><SEQUENCE?>` 형식을 따르지 않는 경우
 6. **계층별 에러 책임 위반**: Repository가 비즈니스 로직 에러를 throw하거나, Service가 NOT_FOUND를 직접 처리하는 경우
 7. **Swagger 에러 문서 누락**: Controller 메서드에 `@ApiCommonErrorResponse` 데코레이터가 빠진 경우
+
+> 예외: 전역 `ValidationPipe`/`ParseIntPipe`가 프레임워크 내부에서 생성하는 `BadRequestException`은 허용하며,
+> `GlobalExceptionFilter`에서 `ErrorCode.BAD_REQUEST`로 표준화하는 패턴은 정상으로 간주합니다.
 
 ## 아키텍처 규칙 리뷰 항목
 
