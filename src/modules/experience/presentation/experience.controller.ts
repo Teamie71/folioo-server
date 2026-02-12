@@ -13,15 +13,11 @@ import {
     ExperienceStateResDTO,
 } from '../application/dtos/experience.dto';
 import { ExperienceFacade } from '../application/facades/experience.facade';
-import { ExperienceService } from '../application/services/experience.service';
 
 @ApiTags('Experience')
 @Controller('experiences')
 export class ExperienceController {
-    constructor(
-        private readonly experienceFacade: ExperienceFacade,
-        private readonly experienceService: ExperienceService
-    ) {}
+    constructor(private readonly experienceFacade: ExperienceFacade) {}
 
     @Post()
     @ApiOperation({
@@ -56,7 +52,7 @@ export class ExperienceController {
         @User('sub') userId: number,
         @Query('keyword') keyword?: string
     ): Promise<ExperienceResDTO[]> {
-        return this.experienceService.getExperiences(userId, keyword);
+        return this.experienceFacade.getExperiences(userId, keyword);
     }
 
     @Get(':experienceId')
@@ -71,6 +67,6 @@ export class ExperienceController {
         @User('sub') userId: number,
         @Param('experienceId') experienceId: number
     ): Promise<ExperienceStateResDTO> {
-        return this.experienceService.getExperience(experienceId, userId);
+        return this.experienceFacade.getExperience(experienceId, userId);
     }
 }
