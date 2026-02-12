@@ -57,6 +57,13 @@ export class CorrectionStatusResDTO {
     id: number;
     @ApiProperty({ enum: CorrectionStatus, example: CorrectionStatus.GENERATING })
     status: CorrectionStatus;
+
+    static from(correction: PortfolioCorrection): CorrectionStatusResDTO {
+        const dto = new CorrectionStatusResDTO();
+        dto.id = correction.id;
+        dto.status = correction.status;
+        return dto;
+    }
 }
 
 export class MapCorrectionWithPortfoliosReqDTO {

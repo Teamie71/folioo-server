@@ -1,3 +1,18 @@
+import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
+import { CorrectionItem } from '../../domain/correction-item.entity';
+
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+interface JsonObject {
+    [key: string]: JsonValue;
+}
+
+type OverallReviewPayload = JsonObject;
+type DescriptionPayload = JsonObject;
+type ResponsibilitiesPayload = JsonObject;
+type ProblemSolvingPayload = JsonObject;
+type LearningsPayload = JsonObject;
+
 export class CorrectionResultResDTO {
     companyName: string;
     positionName: string;
@@ -5,13 +20,35 @@ export class CorrectionResultResDTO {
     companyInsight: string;
     highlightPoint: string;
     items: CorrectionItemResDTO[];
+
+    static from(correction: PortfolioCorrection, items: CorrectionItem[]): CorrectionResultResDTO {
+        const dto = new CorrectionResultResDTO();
+        dto.companyName = correction.companyName;
+        dto.positionName = correction.positionName;
+        dto.jobDescription = correction.jobDescription;
+        dto.companyInsight = correction.companyInsight;
+        dto.highlightPoint = correction.highlightPoint;
+        dto.items = items.map((item) => CorrectionItemResDTO.from(item));
+        return dto;
+    }
 }
 
 export class CorrectionItemResDTO {
     portfolioId: number;
-    overallReview: string;
-    description: string;
-    responsibilities: string;
-    problemSolving: string;
-    learnings: string;
+    overallReview: OverallReviewPayload;
+    description: DescriptionPayload;
+    responsibilities: ResponsibilitiesPayload;
+    problemSolving: ProblemSolvingPayload;
+    learnings: LearningsPayload;
+
+    static from(item: CorrectionItem): CorrectionItemResDTO {
+        const dto = new CorrectionItemResDTO();
+        dto.portfolioId = item.portfolio.id;
+        dto.overallReview = item.overallReview as OverallReviewPayload;
+        dto.description = item.description as DescriptionPayload;
+        dto.responsibilities = item.responsibilities as ResponsibilitiesPayload;
+        dto.problemSolving = item.problemSolving as ProblemSolvingPayload;
+        dto.learnings = item.learnings as LearningsPayload;
+        return dto;
+    }
 }

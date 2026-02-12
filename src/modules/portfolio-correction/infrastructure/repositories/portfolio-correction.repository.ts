@@ -20,6 +20,12 @@ export class PortfolioCorrectionRepository {
         });
     }
 
+    async findByIdAndUserId(id: number, userId: number): Promise<PortfolioCorrection | null> {
+        return this.portfolioCorrectionRepository.findOne({
+            where: { id, user: { id: userId } },
+        });
+    }
+
     countByUserId(userId: number): Promise<number> {
         return this.portfolioCorrectionRepository.count({
             where: { user: { id: userId } },
