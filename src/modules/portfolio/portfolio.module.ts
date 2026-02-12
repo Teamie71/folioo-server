@@ -4,11 +4,12 @@ import { PortfolioController } from './presentation/portfolio.controller';
 import { Portfolio } from './domain/portfolio.entity';
 import { PortfolioRepository } from './infrastructure/repositories/portfolio.repository';
 import { ExternalPortfolioService } from './application/services/external-portfolio.service';
+import { PortfolioService } from './application/services/portfolio.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Portfolio])],
     controllers: [PortfolioController],
-    providers: [PortfolioRepository, ExternalPortfolioService],
+    providers: [PortfolioRepository, ExternalPortfolioService, PortfolioService],
     exports: [ExternalPortfolioService],
 })
 export class PortfolioModule {}
