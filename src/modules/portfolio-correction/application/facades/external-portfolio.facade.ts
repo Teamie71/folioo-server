@@ -50,35 +50,21 @@ export class ExternalPortfolioFacade {
     async updateExternalPortfolio(
         portfolioId: number,
         body: UpdatePortfolioBlockReqDTO
-    ): Promise<StructuredPortfolioResDTO[]> {
-        const correctionId =
-            await this.correctionItemService.findCorrectionIdByPortfolioIdOrThrow(portfolioId);
-        await this.externalPortfolioService.updateExternalPortfolio(portfolioId, body);
-
-        return this.getStructuredPortfoliosByCorrectionId(correctionId);
+    ): Promise<StructuredPortfolioResDTO> {
+        const updatedPortfolio = await this.externalPortfolioService.updateExternalPortfolio(
+            portfolioId,
+            body
+        );
+        return StructuredPortfolioResDTO.from(updatedPortfolio);
     }
 
     @Transactional()
-    async deleteExternalPortfolio(portfolioId: number): Promise<StructuredPortfolioResDTO[]> {
-        const correctionId =
-            await this.correctionItemService.findCorrectionIdByPortfolioIdOrThrow(portfolioId);
-
+    async deleteExternalPortfolio(portfolioId: number): Promise<void> {
         const portfolio = await this.externalPortfolioService.findExternalByIdOrThrow(portfolioId);
         if (!this.externalPortfolioService.isEmptyPortfolio(portfolio)) {
             throw new BusinessException(ErrorCode.PORTFOLIO_NOT_EMPTY);
         }
 
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId);
-
-        return this.getStructuredPortfoliosByCorrectionId(correctionId);
-    }
-
-    private async getStructuredPortfoliosByCorrectionId(
-        correctionId: number
-    ): Promise<StructuredPortfolioResDTO[]> {
-        const portfolioIds =
-            await this.correctionItemService.findPortfolioIdsByCorrectionId(correctionId);
-        const portfolios = await this.externalPortfolioService.getExternalPortfolios(portfolioIds);
-        return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
     }
 }

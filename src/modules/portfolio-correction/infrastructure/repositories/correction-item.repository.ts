@@ -23,16 +23,6 @@ export class CorrectionItemRepository {
         return results.map((r) => r.portfolioId);
     }
 
-    async findCorrectionIdByPortfolioId(portfolioId: number): Promise<number | null> {
-        const result = await this.correctionItemRepository
-            .createQueryBuilder('ci')
-            .select('ci.portfolioCorrectionId', 'correctionId')
-            .where('ci.portfolioId = :portfolioId', { portfolioId })
-            .getRawOne<{ correctionId: number }>();
-
-        return result?.correctionId ?? null;
-    }
-
     findByCorrectionId(correctionId: number): Promise<CorrectionItem[]> {
         return this.correctionItemRepository.find({
             where: { portfolioCorrection: { id: correctionId } },

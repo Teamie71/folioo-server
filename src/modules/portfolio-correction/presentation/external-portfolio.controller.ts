@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    HttpCode,
     Param,
     ParseFilePipeBuilder,
     ParseIntPipe,
@@ -127,26 +128,24 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 정리 결과 수정',
         description: 'AI가 구조화한 포트폴리오 정보를 수정합니다.',
     })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
+    @ApiCommonResponse(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    async updateExternalPortfolios(
+    async updateExternalPortfolio(
         @Param('portfolioId') portfolioId: number,
         @Body() body: UpdatePortfolioBlockReqDTO
-    ): Promise<StructuredPortfolioResDTO[]> {
+    ): Promise<StructuredPortfolioResDTO> {
         return this.externalPortfolioFacade.updateExternalPortfolio(portfolioId, body);
     }
 
     @Delete(':portfolioId')
+    @HttpCode(204)
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 정리 결과 삭제',
         description:
             'AI가 구조화한 포트폴리오 활동을 삭제합니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
     })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    async deleteExternalPortfolios(
-        @Param('portfolioId') portfolioId: number
-    ): Promise<StructuredPortfolioResDTO[]> {
-        return this.externalPortfolioFacade.deleteExternalPortfolio(portfolioId);
+    async deleteExternalPortfolio(@Param('portfolioId') portfolioId: number): Promise<void> {
+        await this.externalPortfolioFacade.deleteExternalPortfolio(portfolioId);
     }
 }

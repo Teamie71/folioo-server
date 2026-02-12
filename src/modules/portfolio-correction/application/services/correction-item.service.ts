@@ -3,8 +3,6 @@ import { CorrectionItemRepository } from '../../infrastructure/repositories/corr
 import { CorrectionItem } from '../../domain/correction-item.entity';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class CorrectionItemService {
@@ -24,15 +22,6 @@ export class CorrectionItemService {
 
     async findPortfolioIdsByCorrectionId(correctionId: number): Promise<number[]> {
         return this.correctionItemRepository.findPortfolioIdsByCorrectionId(correctionId);
-    }
-
-    async findCorrectionIdByPortfolioIdOrThrow(portfolioId: number): Promise<number> {
-        const correctionId =
-            await this.correctionItemRepository.findCorrectionIdByPortfolioId(portfolioId);
-        if (correctionId === null) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
-        }
-        return correctionId;
     }
 
     findByCorrectionId(correctionId: number): Promise<CorrectionItem[]> {
