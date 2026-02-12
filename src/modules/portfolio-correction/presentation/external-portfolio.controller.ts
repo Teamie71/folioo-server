@@ -3,7 +3,6 @@ import {
     Controller,
     Delete,
     Get,
-    HttpCode,
     Param,
     ParseFilePipeBuilder,
     ParseIntPipe,
@@ -138,14 +137,24 @@ export class ExternalPortfolioController {
     }
 
     @Delete(':portfolioId')
-    @HttpCode(204)
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 정리 결과 삭제',
         description:
             'AI가 구조화한 포트폴리오 활동을 삭제합니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
     })
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: '포트폴리오가 삭제되었습니다.',
+            },
+        },
+    })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    async deleteExternalPortfolio(@Param('portfolioId') portfolioId: number): Promise<void> {
+    async deleteExternalPortfolio(@Param('portfolioId') portfolioId: number): Promise<string> {
         await this.externalPortfolioFacade.deleteExternalPortfolio(portfolioId);
+        return '포트폴리오가 삭제되었습니다.';
     }
 }
