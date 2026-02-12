@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { ExperienceRepository } from '../../infrastructure/repositories/experience.repository';
 import { Experience, MAX_EXPERIENCES_PER_USER } from '../../domain/experience.entity';
-import { ExperienceResDTO } from '../dtos/experience.dto';
+import { ExperienceResDTO, ExperienceStateResDTO } from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -12,6 +12,24 @@ const PG_UNIQUE_VIOLATION = '23505';
 @Injectable()
 export class ExperienceService {
     constructor(private readonly experienceRepository: ExperienceRepository) {}
+
+    async findByIdOrThrow(id: number, userId: number): Promise<Experience> {
+        const experience = await this.experienceRepository.findByIdAndUserId(id, userId);
+        if (!experience) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_NOT_FOUND);
+        }
+        return experience;
+    }
+
+    async getExperiences(userId: number, keyword?: string): Promise<ExperienceResDTO[]> {
+        const experiences = await this.experienceRepository.findAllByUserId(userId, keyword);
+        return experiences.map((experience) => ExperienceResDTO.from(experience));
+    }
+
+    async getExperience(experienceId: number, userId: number): Promise<ExperienceStateResDTO> {
+        const experience = await this.findByIdOrThrow(experienceId, userId);
+        return ExperienceStateResDTO.from(experience);
+    }
 
     async validateCreation(userId: number, name: string): Promise<void> {
         const [count, isDuplicate] = await Promise.all([

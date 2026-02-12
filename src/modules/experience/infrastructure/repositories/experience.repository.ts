@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Experience } from '../../domain/experience.entity';
 
 @Injectable()
@@ -17,6 +17,22 @@ export class ExperienceRepository {
     async findById(id: number): Promise<Experience | null> {
         return this.experienceRepository.findOne({
             where: { id },
+        });
+    }
+
+    async findByIdAndUserId(id: number, userId: number): Promise<Experience | null> {
+        return this.experienceRepository.findOne({
+            where: { id, user: { id: userId } },
+        });
+    }
+
+    async findAllByUserId(userId: number, keyword?: string): Promise<Experience[]> {
+        return this.experienceRepository.find({
+            where: {
+                user: { id: userId },
+                ...(keyword ? { name: ILike(`%${keyword}%`) } : {}),
+            },
+            order: { createdAt: 'DESC' },
         });
     }
 
