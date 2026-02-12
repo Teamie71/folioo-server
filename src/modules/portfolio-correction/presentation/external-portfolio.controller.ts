@@ -5,6 +5,7 @@ import {
     Get,
     Param,
     ParseFilePipeBuilder,
+    ParseIntPipe,
     Patch,
     Post,
     Query,
@@ -116,7 +117,7 @@ export class ExternalPortfolioController {
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getExternalPortfolios(
-        @Query('correctionId') correctionId: number
+        @Query('correctionId', ParseIntPipe) correctionId: number
     ): Promise<StructuredPortfolioResDTO[]> {
         return this.externalPortfolioFacade.getExternalPortfolios(correctionId);
     }

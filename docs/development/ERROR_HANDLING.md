@@ -2,7 +2,8 @@
 
 ## 개요
 
-Folioo 서버는 **NestJS 내장 예외를 사용하지 않고**, 자체 정의한 `BusinessException` + `ErrorCode`를 통해 일관된 에러 처리를 수행합니다.
+Folioo 서버는 애플리케이션 코드에서 NestJS 내장 예외를 직접 throw하지 않고,
+자체 정의한 `BusinessException` + `ErrorCode`를 통해 일관된 에러 처리를 수행합니다.
 
 ## 아키텍처
 
@@ -264,7 +265,7 @@ async findOne(@Param('id') id: string): Promise<UserResDTO> {
 
 ## 금지 사항
 
-### 1. NestJS 내장 예외 사용 금지
+### 1. NestJS 내장 예외 직접 throw 금지
 
 ```typescript
 // ❌ 금지
@@ -279,6 +280,9 @@ throw new BusinessException(ErrorCode.USER_NOT_FOUND);
 throw new BusinessException(ErrorCode.BAD_REQUEST);
 throw new BusinessException(ErrorCode.UNAUTHORIZED);
 ```
+
+> 예외: 전역 `ValidationPipe`/`ParseIntPipe`가 프레임워크 내부에서 생성하는 `BadRequestException`은 허용되며,
+> `GlobalExceptionFilter`에서 `ErrorCode.BAD_REQUEST`로 표준화해 응답합니다.
 
 ### 2. 에러 메시지 하드코딩 금지
 
@@ -328,11 +332,92 @@ try {
 }
 ```
 
+## 전역 ValidationPipe
+
+`main.ts`에서 전역 `ValidationPipe`를 설정하여 모든 요청의 DTO 검증을 일관되게 처리합니다.
+
+```typescript
+app.useGlobalPipes(
+    new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+    })
+);
+```
+
+| 옵션                   | 설명                                              |
+| ---------------------- | ------------------------------------------------- |
+| `whitelist`            | DTO에 정의되지 않은 속성을 자동 제거              |
+| `forbidNonWhitelisted` | DTO에 정의되지 않은 속성이 있으면 400 에러 반환   |
+| `transform`            | 경로 파라미터/쿼리 등을 DTO 타입에 맞게 자동 변환 |
+
+### 숫자 파라미터 검증
+
+`@Param` 또는 `@Query`로 받는 숫자 타입 파라미터는 `ParseIntPipe`를 사용하여 검증합니다.
+
+```typescript
+@Get(':id')
+async findOne(@Param('id', ParseIntPipe) id: number): Promise<ResDTO> {
+    return this.service.findOne(id);
+}
+```
+
+`ParseIntPipe` 미사용 시 `"abc"` 같은 입력이 `NaN`으로 변환되어 서비스 계층까지 전달될 수 있습니다. `ParseIntPipe`를 사용하면 유효하지 않은 입력을 컨트롤러 진입 전에 차단합니다.
+
+### Validation 에러 응답 형식
+
+Validation 에러도 `GlobalExceptionFilter`를 통해 `CommonResponse` 형식으로 응답됩니다.
+
+```json
+{
+    "timestamp": "2026-01-02T12:34:56.000Z",
+    "isSuccess": false,
+    "error": {
+        "errorCode": "COMMON400",
+        "reason": "잘못된 요청입니다.",
+        "details": ["name must be a string", "property unknownField should not exist"],
+        "path": "/api/experiences"
+    },
+    "result": null
+}
+```
+
+### 검증/비즈니스 에러 시나리오 표
+
+| 시나리오                                              | 발생 계층               | 내부 예외                               | 표준 응답 errorCode |
+| ----------------------------------------------------- | ----------------------- | --------------------------------------- | ------------------- |
+| `name` 누락 (`POST /experiences`)                     | ValidationPipe + ReqDTO | `BadRequestException` (프레임워크 내부) | `COMMON400`         |
+| `experienceId=abc` (`GET /experiences/:experienceId`) | `ParseIntPipe`          | `BadRequestException` (프레임워크 내부) | `COMMON400`         |
+| 경험 제목 중복                                        | Service 비즈니스 검증   | `BusinessException`                     | `EXPERIENCE4091`    |
+| 경험 최대 개수 초과                                   | Service 비즈니스 검증   | `BusinessException`                     | `EXPERIENCE4092`    |
+| 조회 대상 없음                                        | Service 존재 검증       | `BusinessException`                     | `EXPERIENCE404`     |
+
+프레임워크 검증 에러와 비즈니스 에러는 발생 지점은 다르지만,
+`GlobalExceptionFilter`를 거쳐 **동일한 `CommonResponse` 형식**으로 응답합니다.
+
+### DELETE 응답 규칙
+
+프로젝트는 `TransformInterceptor`가 모든 성공 응답을 `CommonResponse.success()`로 감싸므로,
+DELETE API도 기본적으로 `200 OK` + 메시지(`string`) 응답을 사용합니다.
+
+```typescript
+@Delete(':id')
+async remove(@Param('id', ParseIntPipe) id: number): Promise<string> {
+    await this.service.remove(id);
+    return '삭제되었습니다.';
+}
+```
+
+`204 No Content`는 응답 본문이 없어 공통 응답 래퍼 형태를 유지할 수 없으므로,
+현재 컨벤션에서는 사용하지 않습니다.
+
 ## GlobalExceptionFilter 동작 방식
 
 1. **모든 예외 캐치**: `@Catch()` 데코레이터로 처리되지 않은 모든 예외를 잡음
 2. **BusinessException**: `ErrorCode`, `reason`, `details`를 응답에 포함
-3. **기타 HttpException**: 가능한 에러 정보를 추출하여 응답
-4. **시스템 에러 (Non-HttpException)**: `INTERNAL_SERVER_ERROR`로 래핑
-5. **Sentry 연동**: HTTP 500 이상 에러는 자동으로 Sentry에 전송
-6. **로깅**: 4xx는 `warn`, 5xx 및 시스템 에러는 `error` 레벨로 기록
+3. **ValidationPipe / ParseIntPipe 검증 에러**: `COMMON400` 코드 + `details`에 검증 실패 메시지 배열 포함
+4. **기타 HttpException**: 가능한 에러 정보를 추출하여 응답
+5. **시스템 에러 (Non-HttpException)**: `INTERNAL_SERVER_ERROR`로 래핑
+6. **Sentry 연동**: HTTP 500 이상 에러는 자동으로 Sentry에 전송
+7. **로깅**: 4xx는 `warn`, 5xx 및 시스템 에러는 `error` 레벨로 기록

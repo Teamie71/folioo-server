@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -65,7 +65,7 @@ export class ExperienceController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.EXPERIENCE_NOT_FOUND)
     async getExperience(
         @User('sub') userId: number,
-        @Param('experienceId') experienceId: number
+        @Param('experienceId', ParseIntPipe) experienceId: number
     ): Promise<ExperienceStateResDTO> {
         return this.experienceFacade.getExperience(experienceId, userId);
     }
