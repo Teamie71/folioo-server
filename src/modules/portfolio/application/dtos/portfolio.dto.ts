@@ -5,7 +5,7 @@ import { Portfolio } from '../../domain/portfolio.entity';
 export class PortfolioDetailResDTO {
     id: number;
     name: string;
-    @ApiProperty({ enum: JobCategory, example: JobCategory.DEV })
+    @ApiProperty({ enum: JobCategory, example: JobCategory.DEV, nullable: true })
     hopeJob: JobCategory | null;
     description: string;
     responsibilities: string;
