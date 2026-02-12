@@ -21,4 +21,11 @@ export class TicketProductRepository {
     async existsById(id: number): Promise<boolean> {
         return this.ticketProductRepository.exists({ where: { id } });
     }
+
+    async findActiveOrderByDisplayOrder(): Promise<TicketProduct[]> {
+        return this.ticketProductRepository.find({
+            where: { isActive: true },
+            order: { displayOrder: 'ASC' },
+        });
+    }
 }

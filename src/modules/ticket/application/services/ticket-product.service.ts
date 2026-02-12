@@ -3,6 +3,7 @@ import { TicketProductRepository } from '../../infrastructure/repositories/ticke
 import { TicketProduct } from '../../domain/entities/ticket-product.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { TicketProductResDTO } from '../dtos/ticket-product.dto';
 
 @Injectable()
 export class TicketProductService {
@@ -14,5 +15,10 @@ export class TicketProductService {
             throw new BusinessException(ErrorCode.TICKET_PRODUCT_NOT_FOUND);
         }
         return ticketProduct;
+    }
+
+    async findActiveProducts(): Promise<TicketProductResDTO[]> {
+        const products = await this.ticketProductRepository.findActiveOrderByDisplayOrder();
+        return products.map((product) => TicketProductResDTO.from(product));
     }
 }
