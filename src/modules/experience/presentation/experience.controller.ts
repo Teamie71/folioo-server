@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -6,7 +6,6 @@ import {
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
 import { User } from 'src/common/decorators/user.decorator';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateExperienceReqDTO,
@@ -49,8 +48,11 @@ export class ExperienceController {
     @ApiQuery({ name: 'keyword', required: false })
     @ApiCommonResponseArray(ExperienceResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    getExperiences(@Query('keyword') keyword?: string): ExperienceResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, keyword);
+    async getExperiences(
+        @User('sub') userId: number,
+        @Query('keyword') keyword?: string
+    ): Promise<ExperienceResDTO[]> {
+        return this.experienceFacade.getExperiences(userId, keyword);
     }
 
     @Get(':experienceId')
@@ -60,8 +62,11 @@ export class ExperienceController {
             '경험 정리를 개별 조회합니다. 현재 경험 정리의 상태를 반환합니다. (대화 중/완료)',
     })
     @ApiCommonResponse(ExperienceStateResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    getExperience(): ExperienceStateResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.EXPERIENCE_NOT_FOUND)
+    async getExperience(
+        @User('sub') userId: number,
+        @Param('experienceId') experienceId: number
+    ): Promise<ExperienceStateResDTO> {
+        return this.experienceFacade.getExperience(experienceId, userId);
     }
 }
