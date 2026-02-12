@@ -23,7 +23,7 @@ export class PaymentService {
     }
 
     private async generateMulNo(): Promise<number> {
-        let mulNo = Date.now();
+        let mulNo = Math.floor(Date.now() / 1000);
 
         while (await this.paymentRepository.existsByMulNo(mulNo)) {
             mulNo += 1;
