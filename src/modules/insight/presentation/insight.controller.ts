@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -59,7 +69,7 @@ export class InsightController {
         ErrorCode.DUPLICATE_LOG_NAME
     )
     async updateLog(
-        @Param('insightId') insightId: number,
+        @Param('insightId', ParseIntPipe) insightId: number,
         @Body() body: UpdateInsightReqDTO,
         @User('sub') userId: number
     ): Promise<InsightLogResDTO> {
@@ -78,7 +88,7 @@ export class InsightController {
         ErrorCode.NOT_LOG_OWNER
     )
     async deleteLog(
-        @Param('insightId') insightId: number,
+        @Param('insightId', ParseIntPipe) insightId: number,
         @User('sub') userId: number
     ): Promise<DeletedInsightLogResDTO> {
         return DeletedInsightLogResDTO.from(

@@ -328,11 +328,63 @@ try {
 }
 ```
 
+## 전역 ValidationPipe
+
+`main.ts`에서 전역 `ValidationPipe`를 설정하여 모든 요청의 DTO 검증을 일관되게 처리합니다.
+
+```typescript
+app.useGlobalPipes(
+    new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+    })
+);
+```
+
+| 옵션                   | 설명                                              |
+| ---------------------- | ------------------------------------------------- |
+| `whitelist`            | DTO에 정의되지 않은 속성을 자동 제거              |
+| `forbidNonWhitelisted` | DTO에 정의되지 않은 속성이 있으면 400 에러 반환   |
+| `transform`            | 경로 파라미터/쿼리 등을 DTO 타입에 맞게 자동 변환 |
+
+### 숫자 파라미터 검증
+
+`@Param` 또는 `@Query`로 받는 숫자 타입 파라미터는 `ParseIntPipe`를 사용하여 검증합니다.
+
+```typescript
+@Get(':id')
+async findOne(@Param('id', ParseIntPipe) id: number): Promise<ResDTO> {
+    return this.service.findOne(id);
+}
+```
+
+`ParseIntPipe` 미사용 시 `"abc"` 같은 입력이 `NaN`으로 변환되어 서비스 계층까지 전달될 수 있습니다. `ParseIntPipe`를 사용하면 유효하지 않은 입력을 컨트롤러 진입 전에 차단합니다.
+
+### Validation 에러 응답 형식
+
+Validation 에러도 `GlobalExceptionFilter`를 통해 `CommonResponse` 형식으로 응답됩니다.
+
+```json
+{
+    "timestamp": "2026-01-02T12:34:56.000Z",
+    "isSuccess": false,
+    "error": {
+        "errorCode": "COMMON400",
+        "reason": "잘못된 요청입니다.",
+        "details": ["name must be a string", "property unknownField should not exist"],
+        "path": "/api/experiences"
+    },
+    "result": null
+}
+```
+
 ## GlobalExceptionFilter 동작 방식
 
 1. **모든 예외 캐치**: `@Catch()` 데코레이터로 처리되지 않은 모든 예외를 잡음
 2. **BusinessException**: `ErrorCode`, `reason`, `details`를 응답에 포함
-3. **기타 HttpException**: 가능한 에러 정보를 추출하여 응답
-4. **시스템 에러 (Non-HttpException)**: `INTERNAL_SERVER_ERROR`로 래핑
-5. **Sentry 연동**: HTTP 500 이상 에러는 자동으로 Sentry에 전송
-6. **로깅**: 4xx는 `warn`, 5xx 및 시스템 에러는 `error` 레벨로 기록
+3. **ValidationPipe / ParseIntPipe 검증 에러**: `COMMON400` 코드 + `details`에 검증 실패 메시지 배열 포함
+4. **기타 HttpException**: 가능한 에러 정보를 추출하여 응답
+5. **시스템 에러 (Non-HttpException)**: `INTERNAL_SERVER_ERROR`로 래핑
+6. **Sentry 연동**: HTTP 500 이상 에러는 자동으로 Sentry에 전송
+7. **로깅**: 4xx는 `warn`, 5xx 및 시스템 에러는 `error` 레벨로 기록

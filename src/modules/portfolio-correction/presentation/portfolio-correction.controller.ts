@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -87,7 +97,7 @@ export class PortfolioCorrectionController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getCorrectionStatus(
         @User('sub') userId: number,
-        @Param('correctionId') correctionId: number
+        @Param('correctionId', ParseIntPipe) correctionId: number
     ): Promise<CorrectionStatusResDTO> {
         return this.portfolioCorrectionService.getStatus(correctionId, userId);
     }
@@ -209,7 +219,7 @@ export class PortfolioCorrectionController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getCorrection(
         @User('sub') userId: number,
-        @Param('correctionId') correctionId: number
+        @Param('correctionId', ParseIntPipe) correctionId: number
     ): Promise<CorrectionResultResDTO> {
         return this.portfolioCorrectionService.getCorrectionDetail(correctionId, userId);
     }
