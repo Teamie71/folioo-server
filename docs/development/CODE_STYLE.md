@@ -83,6 +83,29 @@ export class User extends BaseEntity {
 }
 ```
 
+### DELETE 응답 컨벤션
+
+`TransformInterceptor`가 성공 응답을 `CommonResponse.success(result)`로 감싸는 구조이므로,
+DELETE API는 `204` 대신 `200 OK`와 간단한 메시지(`string`)를 반환합니다.
+
+```typescript
+@Delete(':portfolioId')
+@ApiOkResponse({
+    schema: {
+        example: {
+            timestamp: '2026-01-02T14:56:23.295Z',
+            isSuccess: true,
+            error: null,
+            result: '포트폴리오가 삭제되었습니다.',
+        },
+    },
+})
+async deletePortfolio(@Param('portfolioId', ParseIntPipe) portfolioId: number): Promise<string> {
+    await this.portfolioService.delete(portfolioId);
+    return '포트폴리오가 삭제되었습니다.';
+}
+```
+
 ### 관계 매핑
 
 > **Note**: 모듈 간 순환참조 방지를 위해 **단방향 매핑(`@ManyToOne`)만 사용**합니다.
