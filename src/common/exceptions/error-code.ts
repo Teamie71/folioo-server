@@ -119,6 +119,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 결제를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.PAYMENT_NOT_OWNER]: {
+        message: '결제에 접근할 권한이 없는 사용자입니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
     [ErrorCode.EVENT_NOT_FOUND]: {
         message: '해당하는 이벤트를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,

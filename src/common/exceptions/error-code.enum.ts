@@ -46,6 +46,7 @@ export enum ErrorCode {
 
     //Payment
     PAYMENT_NOT_FOUND = 'PAYMENT404',
+    PAYMENT_NOT_OWNER = 'PAYMENT403',
 
     //Event
     EVENT_NOT_FOUND = 'EVENT404',
