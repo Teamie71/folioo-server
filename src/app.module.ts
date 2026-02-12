@@ -16,6 +16,7 @@ import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfo
 import { TicketModule } from './modules/ticket/ticket.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { EventModule } from './modules/event/event.module';
+import { RedisModule } from './common/redis';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guard';
@@ -36,6 +37,7 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guar
                 return Promise.resolve(addTransactionalDataSource(new DataSource(options)));
             },
         }),
+        RedisModule,
         AuthModule,
         UserModule,
         InsightModule,
