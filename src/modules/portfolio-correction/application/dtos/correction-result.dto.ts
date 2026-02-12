@@ -1,6 +1,18 @@
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { CorrectionItem } from '../../domain/correction-item.entity';
 
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+interface JsonObject {
+    [key: string]: JsonValue;
+}
+
+type OverallReviewPayload = JsonObject;
+type DescriptionPayload = JsonObject;
+type ResponsibilitiesPayload = JsonObject;
+type ProblemSolvingPayload = JsonObject;
+type LearningsPayload = JsonObject;
+
 export class CorrectionResultResDTO {
     companyName: string;
     positionName: string;
@@ -23,20 +35,20 @@ export class CorrectionResultResDTO {
 
 export class CorrectionItemResDTO {
     portfolioId: number;
-    overallReview: Record<string, unknown>;
-    description: Record<string, unknown>;
-    responsibilities: Record<string, unknown>;
-    problemSolving: Record<string, unknown>;
-    learnings: Record<string, unknown>;
+    overallReview: OverallReviewPayload;
+    description: DescriptionPayload;
+    responsibilities: ResponsibilitiesPayload;
+    problemSolving: ProblemSolvingPayload;
+    learnings: LearningsPayload;
 
     static from(item: CorrectionItem): CorrectionItemResDTO {
         const dto = new CorrectionItemResDTO();
         dto.portfolioId = item.portfolio.id;
-        dto.overallReview = item.overallReview;
-        dto.description = item.description;
-        dto.responsibilities = item.responsibilities;
-        dto.problemSolving = item.problemSolving;
-        dto.learnings = item.learnings;
+        dto.overallReview = item.overallReview as OverallReviewPayload;
+        dto.description = item.description as DescriptionPayload;
+        dto.responsibilities = item.responsibilities as ResponsibilitiesPayload;
+        dto.problemSolving = item.problemSolving as ProblemSolvingPayload;
+        dto.learnings = item.learnings as LearningsPayload;
         return dto;
     }
 }
