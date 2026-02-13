@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsPositive } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-validator';
 import { PaymentStatus } from '../../domain/enums/payment-status.enum';
 import { Payment } from '../../domain/entities/payment.entity';
 
@@ -7,6 +8,65 @@ export class CreatePaymentReqDTO {
     @IsInt()
     @IsPositive()
     ticketProductId: number;
+}
+
+export class PayAppWebhookReqDTO {
+    @Type(() => Number)
+    @IsInt()
+    @IsPositive()
+    mul_no: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @IsPositive()
+    amount?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @IsPositive()
+    price?: number;
+
+    @IsString()
+    @IsNotEmpty()
+    pay_state: string;
+
+    @IsString()
+    @IsNotEmpty()
+    userid: string;
+
+    @IsString()
+    @IsNotEmpty()
+    linkkey: string;
+
+    @IsString()
+    @IsNotEmpty()
+    linkval: string;
+
+    @IsOptional()
+    @IsString()
+    pay_type?: string;
+
+    @IsOptional()
+    @IsString()
+    card_name?: string;
+
+    @IsOptional()
+    @IsString()
+    pay_auth_code?: string;
+
+    @IsOptional()
+    @IsString()
+    card_quota?: string;
+
+    @IsOptional()
+    @IsString()
+    var1?: string;
+
+    @IsOptional()
+    @IsString()
+    var2?: string;
 }
 
 export class PaymentResDTO {

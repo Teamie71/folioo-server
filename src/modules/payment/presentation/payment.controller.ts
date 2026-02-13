@@ -1,15 +1,33 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Logger,
+    Param,
+    ParseIntPipe,
+    Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
+import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PaymentFacade } from '../application/facades/payment.facade';
 import { PaymentService } from '../application/services/payment.service';
-import { CreatePaymentReqDTO, PaymentResDTO } from '../application/dtos/payment.dto';
+import {
+    CreatePaymentReqDTO,
+    PayAppWebhookReqDTO,
+    PaymentResDTO,
+} from '../application/dtos/payment.dto';
 
 @ApiTags('Payment')
 @Controller('payments')
 export class PaymentController {
+    private readonly logger = new Logger(PaymentController.name);
+
     constructor(
         private readonly paymentFacade: PaymentFacade,
         private readonly paymentService: PaymentService
@@ -47,6 +65,47 @@ export class PaymentController {
         @Param('paymentId', ParseIntPipe) paymentId: number
     ): Promise<PaymentResDTO> {
         const payment = await this.paymentService.findByIdAndUserIdOrThrow(paymentId, userId);
+        return PaymentResDTO.from(payment);
+    }
+
+    @Post('webhook')
+    @Public()
+    @SkipTransform()
+    @ApiOperation({
+        summary: 'PayApp 결제 콜백(feedbackurl) 수신',
+        description:
+            'PayApp이 결제 완료 시 호출하는 webhook입니다. 인증 없이 수신하며, mulNo 기반으로 결제를 조회하여 상태를 갱신하고 티켓을 발급합니다. 멱등성이 보장됩니다.',
+    })
+    @ApiCommonErrorResponse(ErrorCode.PAYMENT_NOT_FOUND, ErrorCode.PAYMENT_WEBHOOK_INVALID)
+    @HttpCode(HttpStatus.OK)
+    async handleWebhook(@Body() dto: PayAppWebhookReqDTO): Promise<string> {
+        try {
+            await this.paymentFacade.handleWebhook(dto);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`PayApp webhook ignored: ${message}`);
+        }
+        return 'SUCCESS';
+    }
+
+    @Post(':paymentId/cancel')
+    @ApiOperation({
+        summary: '결제 취소 요청',
+        description:
+            '본인의 결제를 취소합니다. PAID 상태의 결제만 취소할 수 있습니다. 이미 취소된 결제는 멱등하게 처리됩니다.',
+    })
+    @ApiCommonResponse(PaymentResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.PAYMENT_NOT_FOUND,
+        ErrorCode.PAYMENT_NOT_OWNER,
+        ErrorCode.PAYMENT_CANCEL_NOT_ALLOWED
+    )
+    async cancelPayment(
+        @User('sub') userId: number,
+        @Param('paymentId', ParseIntPipe) paymentId: number
+    ): Promise<PaymentResDTO> {
+        const payment = await this.paymentFacade.cancelPayment(paymentId, userId);
         return PaymentResDTO.from(payment);
     }
 }
