@@ -27,15 +27,13 @@ export class TicketExpiringResDTO {
     ): TicketExpiringResDTO {
         const dto = new TicketExpiringResDTO();
 
-        const experience = new ExpiringTicketTypeResDTO();
-        experience.count = experienceCount;
-        experience.earliestExpiredAt = experienceEarliestExpiredAt;
-        dto.experience = experience;
+        dto.experience = new ExpiringTicketTypeResDTO();
+        dto.experience.count = experienceCount;
+        dto.experience.earliestExpiredAt = experienceEarliestExpiredAt;
 
-        const correction = new ExpiringTicketTypeResDTO();
-        correction.count = correctionCount;
-        correction.earliestExpiredAt = correctionEarliestExpiredAt;
-        dto.portfolioCorrection = correction;
+        dto.portfolioCorrection = new ExpiringTicketTypeResDTO();
+        dto.portfolioCorrection.count = correctionCount;
+        dto.portfolioCorrection.earliestExpiredAt = correctionEarliestExpiredAt;
 
         return dto;
     }

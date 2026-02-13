@@ -15,13 +15,11 @@ export class TicketBalanceResDTO {
     static from(experienceCount: number, portfolioCorrectionCount: number): TicketBalanceResDTO {
         const dto = new TicketBalanceResDTO();
 
-        const experience = new TicketTypeBalanceResDTO();
-        experience.count = experienceCount;
-        dto.experience = experience;
+        dto.experience = new TicketTypeBalanceResDTO();
+        dto.experience.count = experienceCount;
 
-        const portfolioCorrection = new TicketTypeBalanceResDTO();
-        portfolioCorrection.count = portfolioCorrectionCount;
-        dto.portfolioCorrection = portfolioCorrection;
+        dto.portfolioCorrection = new TicketTypeBalanceResDTO();
+        dto.portfolioCorrection.count = portfolioCorrectionCount;
 
         return dto;
     }
