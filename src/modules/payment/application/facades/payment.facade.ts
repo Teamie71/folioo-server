@@ -6,6 +6,7 @@ import { PaymentService } from '../services/payment.service';
 import { TicketProductService } from 'src/modules/ticket/application/services/ticket-product.service';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { PayAppWebhookReqDTO } from '../dtos/payment.dto';
+import { PayAppClient } from '../../infrastructure/clients/payapp.client';
 
 @Injectable()
 export class PaymentFacade {
@@ -14,7 +15,8 @@ export class PaymentFacade {
     constructor(
         private readonly paymentService: PaymentService,
         private readonly ticketProductService: TicketProductService,
-        private readonly ticketService: TicketService
+        private readonly ticketService: TicketService,
+        private readonly payAppClient: PayAppClient
     ) {}
 
     async createPayment(userId: number, ticketProductId: number): Promise<Payment> {
@@ -24,6 +26,12 @@ export class PaymentFacade {
 
     @Transactional()
     async handleWebhook(dto: PayAppWebhookReqDTO): Promise<void> {
+        this.payAppClient.verifyWebhook({
+            userid: dto.userid,
+            linkkey: dto.linkkey,
+            linkval: dto.linkval,
+        });
+
         const payment = await this.paymentService.findByMulNoOrThrow(dto.mul_no);
 
         if (!this.paymentService.isPayAppPaid(dto.pay_state)) {
@@ -61,6 +69,8 @@ export class PaymentFacade {
         if (payment.status === PaymentStatus.CANCELLED) {
             return payment;
         }
+
+        await this.payAppClient.requestCancel(payment.mulNo, 'user_requested');
 
         const cancelledPayment = await this.paymentService.markCancelled(payment);
         await this.ticketService.revokeAvailableTicketsForPayment(cancelledPayment.id);

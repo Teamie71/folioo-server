@@ -4,6 +4,7 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Logger,
     Param,
     ParseIntPipe,
     Post,
@@ -24,6 +25,8 @@ import {
 @ApiTags('Payment')
 @Controller('payments')
 export class PaymentController {
+    private readonly logger = new Logger(PaymentController.name);
+
     constructor(
         private readonly paymentFacade: PaymentFacade,
         private readonly paymentService: PaymentService
@@ -74,7 +77,12 @@ export class PaymentController {
     @ApiCommonErrorResponse(ErrorCode.PAYMENT_NOT_FOUND, ErrorCode.PAYMENT_WEBHOOK_INVALID)
     @HttpCode(HttpStatus.OK)
     async handleWebhook(@Body() dto: PayAppWebhookReqDTO): Promise<string> {
-        await this.paymentFacade.handleWebhook(dto);
+        try {
+            await this.paymentFacade.handleWebhook(dto);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`PayApp webhook ignored: ${message}`);
+        }
         return 'SUCCESS';
     }
 
