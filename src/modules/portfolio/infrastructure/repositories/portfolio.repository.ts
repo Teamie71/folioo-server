@@ -21,6 +21,13 @@ export class PortfolioRepository {
         });
     }
 
+    async findByIdAndUserId(id: number, userId: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: { id, user: { id: userId } },
+            relations: { experience: true },
+        });
+    }
+
     async findExternalByIds(ids: number[]): Promise<Portfolio[]> {
         if (ids.length === 0) return [];
         return this.portfolioRepository.find({
