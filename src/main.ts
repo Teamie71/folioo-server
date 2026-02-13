@@ -5,11 +5,13 @@ import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import cookieParser from 'cookie-parser';
+import express from 'express';
 
 async function bootstrap() {
     initializeTransactionalContext();
     const app = await NestFactory.create(AppModule);
     app.use(cookieParser());
+    app.use(express.urlencoded({ extended: true }));
 
     app.useGlobalPipes(
         new ValidationPipe({

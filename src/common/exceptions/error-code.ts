@@ -123,6 +123,18 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '결제에 접근할 권한이 없는 사용자입니다.',
         statusCode: HttpStatus.FORBIDDEN,
     },
+    [ErrorCode.PAYMENT_ALREADY_PAID]: {
+        message: '이미 결제 완료된 건입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.PAYMENT_CANCEL_NOT_ALLOWED]: {
+        message: '취소할 수 없는 결제 상태입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.PAYMENT_WEBHOOK_INVALID]: {
+        message: '유효하지 않은 결제 콜백 요청입니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
     [ErrorCode.EVENT_NOT_FOUND]: {
         message: '해당하는 이벤트를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
