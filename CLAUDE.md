@@ -166,7 +166,19 @@ pnpm run lint
 
 # 테스트
 pnpm run test
+
+# (Dev) API 스모크 테스트
+# access token을 준비한 뒤 OpenAPI 기반으로 dev 서버에 요청을 쏩니다.
+export FOLIOO_ACCESS_TOKEN="<paste-access-token>"
+node scripts/smoke-dev-api.mjs
+
+# 변형 요청(POST/PATCH/DELETE)까지 포함
+node scripts/smoke-dev-api.mjs --mutate --exclude '^/auth/(kakao|google|naver)'
 ```
+
+## API 구현/테스트 문서
+
+- `docs/API.md`에 API 구현 상태(IMPLEMENTED/NOT_IMPLEMENTED)와 수동/자동 테스트 방법을 기록합니다.
 
 ## Git 워크플로우 (필수)
 
