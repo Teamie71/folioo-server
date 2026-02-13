@@ -31,7 +31,6 @@ function parseArgs(argv) {
         tokenEnv: 'FOLIOO_ACCESS_TOKEN',
         out: null,
         mutate: false,
-        concurrency: 1,
         delayMs: 120,
         timeoutMs: 15000,
         include: null,
@@ -256,7 +255,9 @@ async function preflightContext(base, token, timeoutMs) {
         if (Array.isArray(list) && list.length && typeof list[0]?.id === 'number') {
             ctx.ticketProductId = list[0].id;
         }
-    } catch {}
+    } catch (e) {
+        console.error('[smoke][preflight] failed to get ticket product ID:', e);
+    }
 
     // Existing corrections
     try {
@@ -272,7 +273,9 @@ async function preflightContext(base, token, timeoutMs) {
         if (Array.isArray(list) && list.length && typeof list[0]?.id === 'number') {
             ctx.correctionId = list[0].id;
         }
-    } catch {}
+    } catch (e) {
+        console.error('[smoke][preflight] failed to get existing corrections:', e);
+    }
 
     // Existing experiences
     try {
@@ -288,7 +291,9 @@ async function preflightContext(base, token, timeoutMs) {
         if (Array.isArray(list) && list.length && typeof list[0]?.id === 'number') {
             ctx.experienceId = list[0].id;
         }
-    } catch {}
+    } catch (e) {
+        console.error('[smoke][preflight] failed to get existing experiences:', e);
+    }
 
     if (ctx.experienceId != null) ctx.pathParamValues.experienceId = ctx.experienceId;
     if (ctx.correctionId != null) ctx.pathParamValues.correctionId = ctx.correctionId;
