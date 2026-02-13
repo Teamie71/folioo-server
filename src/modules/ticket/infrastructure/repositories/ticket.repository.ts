@@ -3,6 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from '../../domain/entities/ticket.entity';
 import { TicketStatus } from '../../domain/enums/ticket-status.enum';
+import { TicketType } from '../../domain/enums/ticket-type.enum';
+
+interface TicketCountByType {
+    type: TicketType;
+    count: number;
+}
+
+interface ExpiringTicketInfo {
+    type: TicketType;
+    count: number;
+    earliestExpiredAt: string | Date | null;
+}
 
 @Injectable()
 export class TicketRepository {
@@ -47,5 +59,38 @@ export class TicketRepository {
                 expiredAt,
             }
         );
+    }
+
+    async countAvailableByUserIdGroupByType(userId: number): Promise<TicketCountByType[]> {
+        const rows = await this.ticketRepository
+            .createQueryBuilder('ticket')
+            .select('ticket.type', 'type')
+            .addSelect('COUNT(*)::int', 'count')
+            .where('ticket.userId = :userId', { userId })
+            .andWhere('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .groupBy('ticket.type')
+            .getRawMany<TicketCountByType>();
+
+        return rows;
+    }
+
+    async findExpiringByUserIdGroupByType(
+        userId: number,
+        now: Date,
+        expiredBefore: Date
+    ): Promise<ExpiringTicketInfo[]> {
+        const rows = await this.ticketRepository
+            .createQueryBuilder('ticket')
+            .select('ticket.type', 'type')
+            .addSelect('COUNT(*)::int', 'count')
+            .addSelect('MIN(ticket.expiredAt)', 'earliestExpiredAt')
+            .where('ticket.userId = :userId', { userId })
+            .andWhere('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .andWhere('ticket.expiredAt > :now', { now })
+            .andWhere('ticket.expiredAt <= :expiredBefore', { expiredBefore })
+            .groupBy('ticket.type')
+            .getRawMany<ExpiringTicketInfo>();
+
+        return rows;
     }
 }
