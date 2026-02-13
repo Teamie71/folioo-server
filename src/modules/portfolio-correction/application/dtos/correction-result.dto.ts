@@ -17,8 +17,8 @@ export class CorrectionResultResDTO {
     companyName: string;
     positionName: string;
     jobDescription: string;
-    companyInsight: string;
-    highlightPoint: string;
+    companyInsight: string | null;
+    highlightPoint: string | null;
     items: CorrectionItemResDTO[];
 
     static from(correction: PortfolioCorrection, items: CorrectionItem[]): CorrectionResultResDTO {
@@ -35,11 +35,11 @@ export class CorrectionResultResDTO {
 
 export class CorrectionItemResDTO {
     portfolioId: number;
-    overallReview: OverallReviewPayload;
-    description: DescriptionPayload;
-    responsibilities: ResponsibilitiesPayload;
-    problemSolving: ProblemSolvingPayload;
-    learnings: LearningsPayload;
+    overallReview: OverallReviewPayload | null;
+    description: DescriptionPayload | null;
+    responsibilities: ResponsibilitiesPayload | null;
+    problemSolving: ProblemSolvingPayload | null;
+    learnings: LearningsPayload | null;
 
     static from(item: CorrectionItem): CorrectionItemResDTO {
         const dto = new CorrectionItemResDTO();
