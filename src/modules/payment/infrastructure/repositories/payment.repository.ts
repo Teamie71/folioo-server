@@ -18,7 +18,15 @@ export class PaymentRepository {
         return this.paymentRepository.findOne({ where: { id } });
     }
 
+    async findByIdAndUserId(id: number, userId: number): Promise<Payment | null> {
+        return this.paymentRepository.findOne({ where: { id, userId } });
+    }
+
     async existsById(id: number): Promise<boolean> {
         return this.paymentRepository.exists({ where: { id } });
+    }
+
+    async existsByMulNo(mulNo: number): Promise<boolean> {
+        return this.paymentRepository.exists({ where: { mulNo } });
     }
 }
