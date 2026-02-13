@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { ExperienceRepository } from '../../infrastructure/repositories/experience.repository';
 import { Experience, MAX_EXPERIENCES_PER_USER } from '../../domain/experience.entity';
-import { ExperienceResDTO, ExperienceStateResDTO } from '../dtos/experience.dto';
+import {
+    ExperienceResDTO,
+    ExperienceStateResDTO,
+    UpdateExperienceReqDTO,
+} from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -29,6 +33,34 @@ export class ExperienceService {
     async getExperience(experienceId: number, userId: number): Promise<ExperienceStateResDTO> {
         const experience = await this.findByIdOrThrow(experienceId, userId);
         return ExperienceStateResDTO.from(experience);
+    }
+
+    async updateExperience(
+        experienceId: number,
+        userId: number,
+        body: UpdateExperienceReqDTO
+    ): Promise<ExperienceResDTO> {
+        const experience = await this.findByIdOrThrow(experienceId, userId);
+
+        if (body.name !== undefined) {
+            if (body.name !== experience.name) {
+                const isDuplicate = await this.experienceRepository.existsByUserIdAndName(
+                    userId,
+                    body.name
+                );
+                if (isDuplicate) {
+                    throw new BusinessException(ErrorCode.DUPLICATE_EXPERIENCE_NAME);
+                }
+            }
+            experience.name = body.name;
+        }
+
+        if (body.hopeJob !== undefined) {
+            experience.hopeJob = body.hopeJob;
+        }
+
+        const updatedExperience = await this.experienceRepository.save(experience);
+        return ExperienceResDTO.from(updatedExperience);
     }
 
     async validateCreation(userId: number, name: string): Promise<void> {
