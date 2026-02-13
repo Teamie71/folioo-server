@@ -28,6 +28,18 @@ export class PayAppWebhookReqDTO {
 
     @IsOptional()
     @IsString()
+    userid?: string;
+
+    @IsOptional()
+    @IsString()
+    linkkey?: string;
+
+    @IsOptional()
+    @IsString()
+    linkval?: string;
+
+    @IsOptional()
+    @IsString()
     pay_type?: string;
 
     @IsOptional()

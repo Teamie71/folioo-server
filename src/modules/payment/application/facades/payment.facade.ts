@@ -26,7 +26,7 @@ export class PaymentFacade {
     async handleWebhook(dto: PayAppWebhookReqDTO): Promise<void> {
         const payment = await this.paymentService.findByMulNoOrThrow(dto.mul_no);
 
-        if (!this.paymentService.isPayAppSuccess(dto.pay_state)) {
+        if (!this.paymentService.isPayAppPaid(dto.pay_state)) {
             this.logger.warn(`Non-success webhook: mulNo=${dto.mul_no}, state=${dto.pay_state}`);
             return;
         }

@@ -10,16 +10,13 @@ import { PayAppWebhookReqDTO } from '../dtos/payment.dto';
 
 const PG_UNIQUE_VIOLATION = '23505';
 const MAX_MUL_NO_RETRY = 5;
-const PAYAPP_PAY_STATE_SUCCESS = '1';
+const PAYAPP_PAY_STATE_PAID = '4';
 
 const PAY_TYPE_MAP: Record<string, PayType> = {
-    card: PayType.CARD,
-    phone: PayType.PHONE,
-    bank: PayType.BANK_TRANSFER,
-    vbank: PayType.VIRTUAL_ACCOUNT,
-    kakao: PayType.KAKAO_PAY,
-    naver: PayType.NAVER_PAY,
-    toss: PayType.TOSS_PAY,
+    '1': PayType.CARD,
+    '2': PayType.PHONE,
+    '6': PayType.BANK_TRANSFER,
+    '7': PayType.VIRTUAL_ACCOUNT,
 };
 
 @Injectable()
@@ -148,8 +145,8 @@ export class PaymentService {
         return { payment: refreshed, newlyPaid: true };
     }
 
-    isPayAppSuccess(payState: string): boolean {
-        return payState === PAYAPP_PAY_STATE_SUCCESS;
+    isPayAppPaid(payState: string): boolean {
+        return payState === PAYAPP_PAY_STATE_PAID;
     }
 
     async markCancelled(payment: Payment): Promise<Payment> {

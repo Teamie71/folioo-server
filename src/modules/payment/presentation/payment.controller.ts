@@ -75,7 +75,7 @@ export class PaymentController {
     @HttpCode(HttpStatus.OK)
     async handleWebhook(@Body() dto: PayAppWebhookReqDTO): Promise<string> {
         await this.paymentFacade.handleWebhook(dto);
-        return 'OK';
+        return 'SUCCESS';
     }
 
     @Post(':paymentId/cancel')
