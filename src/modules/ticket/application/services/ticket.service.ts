@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { TicketRepository } from '../../infrastructure/repositories/ticket.repository';
-import { Ticket } from '../../domain/entities/ticket.entity';
-import { TicketStatus } from '../../domain/enums/ticket-status.enum';
-import { TicketSource } from '../../domain/enums/ticket-source.enum';
-import { TicketType } from '../../domain/enums/ticket-type.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { Ticket } from '../../domain/entities/ticket.entity';
+import { TicketSource } from '../../domain/enums/ticket-source.enum';
+import { TicketStatus } from '../../domain/enums/ticket-status.enum';
+import { TicketType } from '../../domain/enums/ticket-type.enum';
+import { TicketRepository } from '../../infrastructure/repositories/ticket.repository';
+import { TicketBalanceResDTO } from '../dtos/ticket-balance.dto';
+import { TicketExpiringResDTO } from '../dtos/ticket-expiring.dto';
 
 @Injectable()
 export class TicketService {
@@ -45,5 +47,40 @@ export class TicketService {
         }
 
         await this.ticketRepository.expireAvailableByPaymentId(paymentId, new Date());
+    }
+
+    async getBalance(userId: number): Promise<TicketBalanceResDTO> {
+        const rows = await this.ticketRepository.countAvailableByUserIdGroupByType(userId);
+
+        const countMap = new Map(rows.map((r) => [r.type, r.count]));
+
+        return TicketBalanceResDTO.from(
+            countMap.get(TicketType.EXPERIENCE) ?? 0,
+            countMap.get(TicketType.PORTFOLIO_CORRECTION) ?? 0
+        );
+    }
+
+    async getExpiring(userId: number, days: number): Promise<TicketExpiringResDTO> {
+        const now = new Date();
+        const expiredBefore = new Date(now);
+        expiredBefore.setDate(expiredBefore.getDate() + days);
+
+        const rows = await this.ticketRepository.findExpiringByUserIdGroupByType(
+            userId,
+            now,
+            expiredBefore
+        );
+
+        const infoMap = new Map(rows.map((r) => [r.type, r]));
+
+        const experienceInfo = infoMap.get(TicketType.EXPERIENCE);
+        const correctionInfo = infoMap.get(TicketType.PORTFOLIO_CORRECTION);
+
+        return TicketExpiringResDTO.from(
+            experienceInfo?.count ?? 0,
+            experienceInfo?.earliestExpiredAt ? new Date(experienceInfo.earliestExpiredAt) : null,
+            correctionInfo?.count ?? 0,
+            correctionInfo?.earliestExpiredAt ? new Date(correctionInfo.earliestExpiredAt) : null
+        );
     }
 }
