@@ -8,8 +8,12 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { CorrectionResDTO, CorrectionStatusResDTO } from '../dtos/portfolio-correction.dto';
 import { CorrectionResultResDTO } from '../dtos/correction-result.dto';
-import { UpdateCompanyInsightResDTO } from '../dtos/company-insight.dto';
+import {
+    UpdateCompanyInsightReqDTO,
+    UpdateCompanyInsightResDTO,
+} from '../dtos/company-insight.dto';
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
+import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItemService } from './correction-item.service';
 
 @Injectable()
@@ -84,6 +88,43 @@ export class PortfolioCorrectionService {
     ): Promise<UpdateCompanyInsightResDTO> {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
         return UpdateCompanyInsightResDTO.from(correction);
+    }
+
+    async createCompanyInsight(correctionId: number, userId: number): Promise<void> {
+        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
+
+        if (correction.companyInsight !== null) {
+            throw new BusinessException(ErrorCode.COMPANY_INSIGHT_ALREADY_EXISTS);
+        }
+
+        if (correction.status === CorrectionStatus.COMPANY_INSIGHT) {
+            return;
+        }
+
+        correction.status = CorrectionStatus.COMPANY_INSIGHT;
+        await this.portfolioCorrectionRepository.save(correction);
+    }
+
+    async updateCompanyInsight(
+        correctionId: number,
+        userId: number,
+        dto: UpdateCompanyInsightReqDTO
+    ): Promise<UpdateCompanyInsightResDTO> {
+        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
+
+        if (dto.companyInsight !== undefined && correction.companyInsight === null) {
+            throw new BusinessException(ErrorCode.COMPANY_INSIGHT_NOT_READY);
+        }
+
+        if (dto.companyInsight !== undefined) {
+            correction.companyInsight = dto.companyInsight;
+        }
+        if (dto.highlightPoint !== undefined) {
+            correction.highlightPoint = dto.highlightPoint;
+        }
+
+        const saved = await this.portfolioCorrectionRepository.save(correction);
+        return UpdateCompanyInsightResDTO.from(saved);
     }
 
     async getCorrectionDetail(
