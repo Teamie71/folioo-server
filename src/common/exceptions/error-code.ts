@@ -107,6 +107,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '포트폴리오 첨삭은 최대 5개의 활동블록(포트폴리오)을 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.COMPANY_INSIGHT_ALREADY_EXISTS]: {
+        message: '기업 분석 정보가 이미 존재합니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.COMPANY_INSIGHT_NOT_READY]: {
+        message: '기업 분석 정보가 아직 생성되지 않았습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.TICKET_NOT_FOUND]: {
         message: '해당하는 티켓을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,

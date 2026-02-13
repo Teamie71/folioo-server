@@ -117,9 +117,17 @@ export class PortfolioCorrectionController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    createCompanyInsight(@Param('correctionId') correctionId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.CORRECTION_NOT_FOUND,
+        ErrorCode.COMPANY_INSIGHT_ALREADY_EXISTS
+    )
+    async createCompanyInsight(
+        @User('sub') userId: number,
+        @Param('correctionId', ParseIntPipe) correctionId: number
+    ): Promise<string> {
+        await this.portfolioCorrectionService.requestCompanyInsightCreation(correctionId, userId);
+        return '기업 분석 정보 생성이 시작되었습니다.';
     }
 
     @Get(':correctionId/company-insight')
@@ -143,12 +151,17 @@ export class PortfolioCorrectionController {
             'AI가 생성한 기업 분석 정보를 사용자가 수정합니다. 또는 강조 포인트를 추가합니다.',
     })
     @ApiCommonResponse(UpdateCompanyInsightResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    updateCompanyInsight(
-        @Param('correctionId') correctionId: number,
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.CORRECTION_NOT_FOUND,
+        ErrorCode.COMPANY_INSIGHT_NOT_READY
+    )
+    async updateCompanyInsight(
+        @User('sub') userId: number,
+        @Param('correctionId', ParseIntPipe) correctionId: number,
         @Body() body: UpdateCompanyInsightReqDTO
-    ): UpdateCompanyInsightResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
+    ): Promise<UpdateCompanyInsightResDTO> {
+        return this.portfolioCorrectionService.updateCompanyInsight(correctionId, userId, body);
     }
 
     @Post(':correctionId/regenerate-insight')
