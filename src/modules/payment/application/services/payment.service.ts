@@ -85,13 +85,12 @@ export class PaymentService {
         return payment;
     }
 
-    findByMulNoOrThrow(mulNo: number): Promise<Payment> {
-        return this.paymentRepository.findByMulNo(mulNo).then((payment) => {
-            if (!payment) {
-                throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
-            }
-            return payment;
-        });
+    async findByMulNoOrThrow(mulNo: number): Promise<Payment> {
+        const payment = await this.paymentRepository.findByMulNo(mulNo);
+        if (!payment) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+        }
+        return payment;
     }
 
     async markPaid(
