@@ -90,7 +90,7 @@ export class PortfolioCorrectionService {
         return UpdateCompanyInsightResDTO.from(correction);
     }
 
-    async createCompanyInsight(correctionId: number, userId: number): Promise<void> {
+    async requestCompanyInsightCreation(correctionId: number, userId: number): Promise<void> {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
 
         if (correction.companyInsight !== null) {
