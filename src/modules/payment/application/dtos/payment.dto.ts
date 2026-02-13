@@ -22,6 +22,12 @@ export class PayAppWebhookReqDTO {
     @IsPositive()
     amount?: number;
 
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @IsPositive()
+    price?: number;
+
     @IsString()
     @IsNotEmpty()
     pay_state: string;

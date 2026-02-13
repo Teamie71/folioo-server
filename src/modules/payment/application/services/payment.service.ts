@@ -94,7 +94,8 @@ export class PaymentService {
         payment: Payment,
         dto: PayAppWebhookReqDTO
     ): Promise<{ payment: Payment; newlyPaid: boolean }> {
-        if (dto.amount !== undefined && dto.amount !== payment.amount) {
+        const receivedAmount = dto.amount ?? dto.price;
+        if (receivedAmount !== undefined && receivedAmount !== payment.amount) {
             throw new BusinessException(ErrorCode.PAYMENT_WEBHOOK_INVALID);
         }
 

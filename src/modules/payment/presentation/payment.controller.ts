@@ -12,6 +12,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
+import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PaymentFacade } from '../application/facades/payment.facade';
@@ -69,6 +70,7 @@ export class PaymentController {
 
     @Post('webhook')
     @Public()
+    @SkipTransform()
     @ApiOperation({
         summary: 'PayApp 결제 콜백(feedbackurl) 수신',
         description:

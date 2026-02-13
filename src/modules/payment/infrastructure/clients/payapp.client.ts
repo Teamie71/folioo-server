@@ -19,7 +19,7 @@ export class PayAppClient {
 
     verifyWebhook(params: { userid?: string; linkkey?: string; linkval?: string }): void {
         if (!this.userId || !this.linkKey || !this.linkValue) {
-            throw new BusinessException(ErrorCode.PAYMENT_WEBHOOK_INVALID);
+            return;
         }
 
         if (
