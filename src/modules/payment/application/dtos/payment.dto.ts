@@ -5,6 +5,7 @@ import { PaymentStatus } from '../../domain/enums/payment-status.enum';
 import { Payment } from '../../domain/entities/payment.entity';
 
 export class CreatePaymentReqDTO {
+    @Type(() => Number)
     @IsInt()
     @IsPositive()
     ticketProductId: number;
