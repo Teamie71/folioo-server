@@ -10,6 +10,7 @@ export class CreateExperienceReqDTO {
     @IsString()
     @MinLength(1)
     @MaxLength(20)
+    @ApiProperty({ example: '마케팅 인턴 경험', minLength: 1, maxLength: 20 })
     name: string;
 
     @IsEnum(JobCategory)
