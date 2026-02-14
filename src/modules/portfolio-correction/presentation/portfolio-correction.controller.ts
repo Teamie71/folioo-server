@@ -184,7 +184,7 @@ export class PortfolioCorrectionController {
         ErrorCode.CORRECTION_NOT_FOUND,
         ErrorCode.INSUFFICIENT_CREDITS
     )
-    reCreateCompanyInsight(@Param('correctionId') correctionId: number): string {
+    reCreateCompanyInsight(@Param('correctionId', ParseIntPipe) correctionId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 
@@ -200,7 +200,7 @@ export class PortfolioCorrectionController {
         ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED
     )
     mapCorrectionWithPortfolios(
-        @Param('correctionId') correctionId: number,
+        @Param('correctionId', ParseIntPipe) correctionId: number,
         @Body() body: MapCorrectionWithPortfoliosReqDTO
     ): CorrectionItemResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
@@ -222,7 +222,7 @@ export class PortfolioCorrectionController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    createCorrectionByAI(@Param('correctionId') correctionId: number): string {
+    createCorrectionByAI(@Param('correctionId', ParseIntPipe) correctionId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 
@@ -248,7 +248,7 @@ export class PortfolioCorrectionController {
     @ApiCommonResponse(CorrectionResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     updateCorrectionTitle(
-        @Param('correctionId') correctionId: number,
+        @Param('correctionId', ParseIntPipe) correctionId: number,
         @Body() body: UpdateCorrectionTitleReqDTO
     ): CorrectionResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
@@ -270,7 +270,7 @@ export class PortfolioCorrectionController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    deleteCorrection(@Param('correctionId') correctionId: number): string {
+    deleteCorrection(@Param('correctionId', ParseIntPipe) correctionId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 }
