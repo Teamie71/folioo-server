@@ -4,7 +4,9 @@ import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class ActivityNameReqDTO {
     @ApiProperty({ description: '활동 태그 이름', example: '프로젝트' })
-    @Transform(({ value }: { value: string }) => value?.trim())
+    @Transform(({ value }: { value: unknown }) =>
+        typeof value === 'string' ? value.trim() : value
+    )
     @IsString()
     @IsNotEmpty()
     @MinLength(1)
