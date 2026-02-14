@@ -3,7 +3,10 @@ import { Transactional } from 'typeorm-transactional';
 import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionItemService } from '../services/correction-item.service';
-import { StructuredPortfolioResDTO } from '../dtos/external-portfolio.dto';
+import {
+    StructuredPortfolioResDTO,
+    UpdatePortfolioBlockReqDTO,
+} from '../dtos/external-portfolio.dto';
 import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -41,5 +44,27 @@ export class ExternalPortfolioFacade {
         await this.correctionItemService.createCorrectionItem(savedPortfolio, correction);
 
         return StructuredPortfolioResDTO.from(savedPortfolio);
+    }
+
+    @Transactional()
+    async updateExternalPortfolio(
+        portfolioId: number,
+        body: UpdatePortfolioBlockReqDTO
+    ): Promise<StructuredPortfolioResDTO> {
+        const updatedPortfolio = await this.externalPortfolioService.updateExternalPortfolio(
+            portfolioId,
+            body
+        );
+        return StructuredPortfolioResDTO.from(updatedPortfolio);
+    }
+
+    @Transactional()
+    async deleteExternalPortfolio(portfolioId: number): Promise<void> {
+        const portfolio = await this.externalPortfolioService.findExternalByIdOrThrow(portfolioId);
+        if (!this.externalPortfolioService.isEmptyPortfolio(portfolio)) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_EMPTY);
+        }
+
+        await this.externalPortfolioService.deleteExternalPortfolio(portfolioId);
     }
 }

@@ -127,13 +127,13 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 정리 결과 수정',
         description: 'AI가 구조화한 포트폴리오 정보를 수정합니다.',
     })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
+    @ApiCommonResponse(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    updateExternalPortfolios(
+    async updateExternalPortfolio(
         @Param('portfolioId') portfolioId: number,
         @Body() body: UpdatePortfolioBlockReqDTO
-    ): StructuredPortfolioResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
+    ): Promise<StructuredPortfolioResDTO> {
+        return this.externalPortfolioFacade.updateExternalPortfolio(portfolioId, body);
     }
 
     @Delete(':portfolioId')
@@ -142,11 +142,19 @@ export class ExternalPortfolioController {
         description:
             'AI가 구조화한 포트폴리오 활동을 삭제합니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
     })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: '포트폴리오가 삭제되었습니다.',
+            },
+        },
+    })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    deleteExternalPortfolios(
-        @Param('portfolioId') portfolioId: number
-    ): StructuredPortfolioResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
+    async deleteExternalPortfolio(@Param('portfolioId') portfolioId: number): Promise<string> {
+        await this.externalPortfolioFacade.deleteExternalPortfolio(portfolioId);
+        return '포트폴리오가 삭제되었습니다.';
     }
 }

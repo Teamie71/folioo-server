@@ -28,6 +28,15 @@ export class PortfolioRepository {
         });
     }
 
+    async findExternalById(portfolioId: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: {
+                id: portfolioId,
+                sourceType: SourceType.EXTERNAL,
+            },
+        });
+    }
+
     async findExternalByIds(ids: number[]): Promise<Portfolio[]> {
         if (ids.length === 0) return [];
         return this.portfolioRepository.find({
@@ -36,5 +45,9 @@ export class PortfolioRepository {
                 sourceType: SourceType.EXTERNAL,
             },
         });
+    }
+
+    async deleteById(portfolioId: number): Promise<void> {
+        await this.portfolioRepository.delete(portfolioId);
     }
 }

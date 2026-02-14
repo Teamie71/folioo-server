@@ -75,6 +75,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 포트폴리오를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.PORTFOLIO_NOT_EMPTY]: {
+        message: '내용이 있는 활동블록은 삭제할 수 없습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
