@@ -157,7 +157,7 @@ export class InsightController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ACTIVITY_NOT_FOUND)
-    deleteActivityTag(@Param('tagId') tagId: number): string {
+    deleteActivityTag(@Param('tagId', ParseIntPipe) tagId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, tagId);
     }
 }

@@ -38,7 +38,7 @@ export class PortfolioController {
     @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     updatePortfolio(
-        @Param('portfolioId') portfolioId: number,
+        @Param('portfolioId', ParseIntPipe) portfolioId: number,
         @Body() body: UpdatePortfolioReqDTO
     ): PortfolioDetailResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
@@ -60,7 +60,7 @@ export class PortfolioController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    deletePortfolio(@Param('portfolioId') portfolioId: number): string {
+    deletePortfolio(@Param('portfolioId', ParseIntPipe) portfolioId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 
@@ -71,7 +71,9 @@ export class PortfolioController {
     })
     @ApiCommonResponse(ExportPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    exportPortfolio(@Param('portfolioId') portfolioId: number): ExportPortfolioResDTO {
+    exportPortfolio(
+        @Param('portfolioId', ParseIntPipe) portfolioId: number
+    ): ExportPortfolioResDTO {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 }
