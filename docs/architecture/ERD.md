@@ -103,17 +103,27 @@ PayType: 'CARD' |
 
 ## 테이블 상세
 
+> **Naming Policy**: DB 테이블/컬럼은 snake_case로 통일합니다.
+> 코드(엔티티/DTO) 프로퍼티는 camelCase를 유지하며, TypeORM `namingStrategy`로 매핑합니다.
+>
+> **Common Columns**: 아래 테이블들은 공통으로 `created_at`, `updated_at` 컬럼을 포함합니다. (`BaseEntity`)
+
 ### users (사용자)
 
-| 컬럼           | 타입        | 설명                           |
-| -------------- | ----------- | ------------------------------ |
-| id             | number      | PK                             |
-| name           | varchar     | 이름                           |
-| phone_num      | varchar(11) | 전화번호                       |
-| state          | ENUM        | 상태 (GUEST, ACTIVE, INACTIVE) |
-| deactivated_at | date        | 비활성화 일시                  |
+| 컬럼           | 타입         | 설명                                  |
+| -------------- | ------------ | ------------------------------------- |
+| id             | number       | PK                                    |
+| name           | varchar(10)  | 이름                                  |
+| email          | varchar(255) | 이메일                                |
+| phone_num      | varchar(11)  | 전화번호 (nullable)                   |
+| social_id      | bigint       | (LEGACY) 소셜 로그인 ID (추후 제거)   |
+| social_type    | ENUM         | (LEGACY) 소셜 로그인 타입 (추후 제거) |
+| is_active      | boolean      | 활성 여부                             |
+| deactivated_at | datetime     | 비활성화 일시 (nullable)              |
 
-> **Note**: 소셜 로그인 정보는 `social_user`로 분리. 크레딧은 이용권(ticket) 시스템으로 대체. 테이블명 `users`는 PostgreSQL 예약어 `user` 회피.
+> **Note**: 테이블명 `users`는 PostgreSQL 예약어 `user` 회피.
+> 소셜 로그인 정보의 소스 오브 트루스는 `social_user`이며, `users.social_id/social_type`는 과도기 레거시 컬럼입니다.
+> 레거시 제거(데이터 마이그레이션 포함)는 별도 작업으로 진행합니다.
 
 ### social_user (소셜 로그인)
 
