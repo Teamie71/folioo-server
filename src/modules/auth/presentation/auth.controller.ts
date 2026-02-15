@@ -22,7 +22,7 @@ import { JwtRefreshGuard } from '../infrastructure/guards/jwt-refresh.guard';
 import { TokenService } from '../infrastructure/services/token.service';
 import { User } from 'src/common/decorators/user.decorator';
 import { StringValue } from 'ms';
-import { TimeUtil } from 'src/common/utills/time.util';
+import { TimeUtil } from 'src/common/utils/time.util';
 
 @ApiTags('Auth')
 @Controller('auth')
