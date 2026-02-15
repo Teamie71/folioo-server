@@ -31,9 +31,6 @@ export class User extends BaseEntity {
     })
     socialType: LoginType;
 
-    @Column({ default: 0 })
-    credit: number;
-
     @Column({ default: true })
     isActive: boolean;
 
