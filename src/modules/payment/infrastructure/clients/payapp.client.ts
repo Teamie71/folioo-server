@@ -4,6 +4,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 const PAYAPP_API_URL = 'https://api.payapp.kr/oapi/apiLoad.html';
+const PAYAPP_API_TIMEOUT_MS = 10000;
 
 @Injectable()
 export class PayAppClient {
@@ -53,7 +54,7 @@ export class PayAppClient {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body,
-                signal: AbortSignal.timeout(10000),
+                signal: AbortSignal.timeout(PAYAPP_API_TIMEOUT_MS),
             });
         } catch (error) {
             this.logger.error(`PayApp cancel request failed: mulNo=${mulNo}`, error);
