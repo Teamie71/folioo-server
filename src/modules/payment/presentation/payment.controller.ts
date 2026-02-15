@@ -99,7 +99,8 @@ export class PaymentController {
         ErrorCode.UNAUTHORIZED,
         ErrorCode.PAYMENT_NOT_FOUND,
         ErrorCode.PAYMENT_NOT_OWNER,
-        ErrorCode.PAYMENT_CANCEL_NOT_ALLOWED
+        ErrorCode.PAYMENT_CANCEL_NOT_ALLOWED,
+        ErrorCode.PAYMENT_EXTERNAL_API_FAILED
     )
     async cancelPayment(
         @User('sub') userId: number,
