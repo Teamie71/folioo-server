@@ -127,6 +127,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 티켓 상품을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.INSUFFICIENT_TICKETS]: {
+        message: '티켓이 부족합니다.',
+        statusCode: HttpStatus.PAYMENT_REQUIRED,
+    },
     [ErrorCode.PAYMENT_NOT_FOUND]: {
         message: '해당하는 결제를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,

@@ -63,7 +63,7 @@ export class PortfolioCorrectionController {
     @Post()
     @ApiOperation({
         summary: '첨삭 의뢰하기',
-        description: '포트폴리오 첨삭을 시작합니다. 30크레딧이 차감됩니다.',
+        description: '포트폴리오 첨삭을 시작합니다. 포트폴리오 첨삭 티켓 1장이 사용됩니다.',
     })
     @ApiOkResponse({
         schema: {
@@ -77,7 +77,7 @@ export class PortfolioCorrectionController {
     })
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
-        ErrorCode.INSUFFICIENT_CREDITS,
+        ErrorCode.INSUFFICIENT_TICKETS,
         ErrorCode.CORRECTION_MAX_LIMIT
     )
     async createCorrection(

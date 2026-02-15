@@ -5,10 +5,10 @@ import { Experience } from './domain/experience.entity';
 import { ExperienceRepository } from './infrastructure/repositories/experience.repository';
 import { ExperienceService } from './application/services/experience.service';
 import { ExperienceFacade } from './application/facades/experience.facade';
-import { UserModule } from '../user/user.module';
+import { TicketModule } from '../ticket/ticket.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Experience]), UserModule],
+    imports: [TypeOrmModule.forFeature([Experience]), TicketModule],
     controllers: [ExperienceController],
     providers: [ExperienceRepository, ExperienceService, ExperienceFacade],
 })

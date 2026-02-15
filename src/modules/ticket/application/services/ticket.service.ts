@@ -49,6 +49,19 @@ export class TicketService {
         await this.ticketRepository.expireAvailableByPaymentId(paymentId, new Date());
     }
 
+    async consumeTicket(userId: number, type: TicketType): Promise<Ticket> {
+        const now = new Date();
+        const ticket = await this.ticketRepository.findOneAvailableForConsume(userId, type, now);
+
+        if (!ticket) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_TICKETS);
+        }
+
+        ticket.status = TicketStatus.USED;
+        ticket.usedAt = now;
+        return this.ticketRepository.save(ticket);
+    }
+
     async getBalance(userId: number): Promise<TicketBalanceResDTO> {
         const rows = await this.ticketRepository.countAvailableByUserIdGroupByType(userId);
 
