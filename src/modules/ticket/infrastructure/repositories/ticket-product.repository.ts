@@ -14,6 +14,10 @@ export class TicketProductRepository {
         return this.ticketProductRepository.save(entity);
     }
 
+    async saveAll(entities: TicketProduct[]): Promise<TicketProduct[]> {
+        return this.ticketProductRepository.save(entities);
+    }
+
     async findById(id: number): Promise<TicketProduct | null> {
         return this.ticketProductRepository.findOne({ where: { id } });
     }

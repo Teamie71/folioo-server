@@ -73,7 +73,7 @@ export class TicketProductSeedService implements OnModuleInit {
             return;
         }
 
-        await Promise.all(toSave.map((p) => this.ticketProductRepository.save(p)));
+        await this.ticketProductRepository.saveAll(toSave);
     }
 
     private static getExpectedProducts(): SeedTicketProduct[] {
