@@ -28,4 +28,8 @@ export class TicketProductRepository {
             order: { displayOrder: 'ASC' },
         });
     }
+
+    async findAll(): Promise<TicketProduct[]> {
+        return this.ticketProductRepository.find();
+    }
 }

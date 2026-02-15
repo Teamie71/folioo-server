@@ -17,7 +17,7 @@ export class TicketProduct extends BaseEntity {
     price: number;
 
     @Column({ nullable: true })
-    originalPrice: number;
+    originalPrice: number | null;
 
     @Column({ default: true })
     isActive: boolean;
