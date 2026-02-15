@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
@@ -19,6 +20,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
             autoLoadEntities: true,
             synchronize: !isProd,
             logging: !isProd ? ['error', 'query'] : false,
+            namingStrategy: new SnakeNamingStrategy(),
         };
     }
 }

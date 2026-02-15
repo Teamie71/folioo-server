@@ -2,7 +2,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity } from 'typeorm';
 import { LoginType } from './enums/login-type.enum';
 
-@Entity()
+@Entity('users')
 export class User extends BaseEntity {
     @Column({ length: 10 })
     name: string;
