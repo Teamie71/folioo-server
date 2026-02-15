@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 const PAYAPP_API_URL = 'https://api.payapp.kr/oapi/apiLoad.html';
+const PAYAPP_API_TIMEOUT_MS = 10000;
 
 @Injectable()
 export class PayAppClient {
+    private readonly logger = new Logger(PayAppClient.name);
     private readonly userId: string;
     private readonly linkKey: string;
     private readonly linkValue: string;
@@ -44,21 +46,37 @@ export class PayAppClient {
             cancelmemo: cancelMemo,
         });
 
-        const response = await fetch(PAYAPP_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body,
-        });
-
-        if (!response.ok) {
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        let response: Response;
+        try {
+            response = await fetch(PAYAPP_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body,
+                signal: AbortSignal.timeout(PAYAPP_API_TIMEOUT_MS),
+            });
+        } catch (error) {
+            this.logger.error(`PayApp cancel request failed: mulNo=${mulNo}`, error);
+            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
         }
 
-        const text = (await response.text()).trim();
+        if (!response.ok) {
+            this.logger.warn(`PayApp cancel HTTP error: mulNo=${mulNo}, status=${response.status}`);
+            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
+        }
+
+        let text: string;
+        try {
+            text = (await response.text()).trim();
+        } catch (error) {
+            this.logger.error(`PayApp cancel response read failed: mulNo=${mulNo}`, error);
+            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
+        }
+
         if (!text.startsWith('OK')) {
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+            this.logger.warn(`PayApp cancel rejected: mulNo=${mulNo}, response=${text}`);
+            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
         }
     }
 }
