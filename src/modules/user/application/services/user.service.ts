@@ -15,11 +15,4 @@ export class UserService {
         }
         return UserProfileResDTO.from(profile);
     }
-
-    async deductCredit(userId: number, amount: number): Promise<void> {
-        const result = await this.userRepository.deductCredit(userId, amount);
-        if ((result.affected ?? 0) === 0) {
-            throw new BusinessException(ErrorCode.INSUFFICIENT_CREDITS);
-        }
-    }
 }

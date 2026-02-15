@@ -16,9 +16,6 @@ export enum ErrorCode {
     //User
     USER_NOT_FOUND = 'USER404',
 
-    //Credit
-    INSUFFICIENT_CREDITS = 'CREDIT402',
-
     //Insight-Log
     NOT_LOG_OWNER = 'LOG403',
     LOG_NOT_FOUND = 'LOG404',

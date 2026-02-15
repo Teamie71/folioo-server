@@ -20,7 +20,7 @@
 | ------- | ------------------------------------ | ------------------------- |
 | Auth    | email, password, loginAt, isVerified | 로그인이 되는가?          |
 | Profile | nickname, profileImage, introduce    | 남들에게 어떻게 보이는가? |
-| Payment | address, phoneNumber, credit         | 결제는 어떻게 하는가?     |
+| Payment | address, phoneNumber                 | 결제는 어떻게 하는가?     |
 
 > **잘못된 설계**: 모든 속성을 하나의 User 엔티티에 다 넣기 (God Class)
 > **DDD 설계**: AuthUser, Profile, Customer 등으로 도메인을 쪼개고 각각 별도 엔티티로 관리

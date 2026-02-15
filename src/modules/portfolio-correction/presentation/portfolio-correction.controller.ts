@@ -167,7 +167,7 @@ export class PortfolioCorrectionController {
     @Post(':correctionId/regenerate-insight')
     @ApiOperation({
         summary: '기업 분석 정보 재생성',
-        description: '특정 AI 첨삭의 기업 분석 정보를 재생성합니다. 3크레딧이 차감됩니다.',
+        description: '특정 AI 첨삭의 기업 분석 정보를 재생성합니다. (미구현)',
     })
     @ApiOkResponse({
         schema: {
@@ -175,14 +175,14 @@ export class PortfolioCorrectionController {
                 timestamp: '2026-01-02T14:56:23.295Z',
                 isSuccess: true,
                 error: null,
-                result: '3크레딧을 차감하여 기업 분석 정보를 재생성합니다.',
+                result: '기업 분석 정보를 재생성합니다.',
             },
         },
     })
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.CORRECTION_NOT_FOUND,
-        ErrorCode.INSUFFICIENT_CREDITS
+        ErrorCode.NOT_IMPLEMENTED
     )
     reCreateCompanyInsight(@Param('correctionId', ParseIntPipe) correctionId: number): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);

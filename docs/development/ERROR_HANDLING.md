@@ -79,7 +79,7 @@ INTERNAL_SERVER_ERROR = 'COMMON500';
 |                | `REFRESH_TOKEN_MISSING`           | `AUTH4012`       | 401       | 리프레시 토큰이 없습니다.                                             |
 |                | `INVALID_REFRESH_TOKEN`           | `AUTH4013`       | 401       | 유효하지 않은 토큰입니다.                                             |
 | **User**       | `USER_NOT_FOUND`                  | `USER404`        | 404       | 해당하는 사용자를 찾을 수 없습니다.                                   |
-| **Credit**     | `INSUFFICIENT_CREDITS`            | `CREDIT402`      | 402       | 크레딧이 부족합니다.                                                  |
+| **Ticket**     | `INSUFFICIENT_TICKETS`            | `TICKET402`      | 402       | 티켓이 부족합니다.                                                    |
 | **Insight**    | `LOG_NOT_FOUND`                   | `LOG404`         | 404       | 해당하는 인사이트 로그를 찾을 수 없습니다.                            |
 |                | `DUPLICATE_LOG_NAME`              | `LOG409`         | 409       | 인사이트 로그의 제목은 중복될 수 없습니다.                            |
 |                | `ACTIVITY_NOT_FOUND`              | `ACTIVITY404`    | 404       | 해당하는 활동 분류 태그를 찾을 수 없습니다.                           |

@@ -35,10 +35,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '유효하지 않은 토큰입니다.',
         statusCode: HttpStatus.UNAUTHORIZED,
     },
-    [ErrorCode.INSUFFICIENT_CREDITS]: {
-        message: '크레딧이 부족합니다.',
-        statusCode: HttpStatus.PAYMENT_REQUIRED,
-    },
     [ErrorCode.ALREADY_VERIFY_USER]: {
         message: '이미 인증 이력이 있는 번호입니다.',
         statusCode: HttpStatus.CONFLICT,

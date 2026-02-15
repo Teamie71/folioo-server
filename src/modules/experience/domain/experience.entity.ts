@@ -5,7 +5,6 @@ import { ExperienceStatus } from './enums/experience-status.enum';
 import { User } from '../../user/domain/user.entity';
 
 export const MAX_EXPERIENCES_PER_USER = 15;
-export const EXPERIENCE_CREDIT_COST = 30;
 
 @Entity()
 @Unique(['user', 'name'])
