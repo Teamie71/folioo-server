@@ -7,7 +7,7 @@ export class ErrorPayload {
     path: string;
 }
 
-export class CommonResponse<T = any> {
+export class CommonResponse<T = unknown> {
     readonly timestamp: string;
     readonly isSuccess: boolean;
     readonly error: ErrorPayload | null;

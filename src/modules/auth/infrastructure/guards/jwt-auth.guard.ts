@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { UserAfterAuth } from 'src/modules/auth/domain/types/jwt-payload.type';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -12,11 +13,28 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         super();
     }
 
-    handleRequest(err: any, user: any) {
-        if (err || !user) {
-            throw err || new BusinessException(ErrorCode.UNAUTHORIZED);
+    handleRequest<TUser = UserAfterAuth>(
+        err: unknown,
+        user: TUser,
+        _info: unknown,
+        _context: ExecutionContext,
+        _status?: unknown
+    ): TUser {
+        void _info;
+        void _context;
+        void _status;
+
+        if (err) {
+            if (err instanceof Error) {
+                throw err;
+            }
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
+        if (!user) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
         return user;
     }
 

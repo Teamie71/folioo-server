@@ -16,7 +16,7 @@ export class ExperienceSource extends BaseEntity {
         type: 'jsonb',
         nullable: true,
     })
-    ocrMetaData: Record<string, any>;
+    ocrMetaData: Record<string, unknown>;
 
     @ManyToOne(() => Experience, {
         onDelete: 'CASCADE',

@@ -1,12 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {
-    handleRequest(err: any, user: any, info: any) {
-        const errorInfo = info as Error;
+    handleRequest<TUser = unknown>(
+        err: unknown,
+        user: TUser,
+        info: unknown,
+        _context: ExecutionContext,
+        _status?: unknown
+    ): TUser {
+        void _context;
+        void _status;
+
+        const errorInfo = info instanceof Error ? info : undefined;
 
         if (err || !user) {
             // Case A: 토큰 만료
@@ -22,7 +31,7 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {
             // Case C: 서명 불일치, 형식 오류 등 기타 (JsonWebTokenError)
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
         return user;
     }
 }
