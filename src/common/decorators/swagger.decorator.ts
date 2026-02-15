@@ -11,7 +11,7 @@ const baseResponseSchema = {
 };
 
 // 단일 객체 응답
-export const ApiCommonResponse = <T extends Type<any>>(model: T) => {
+export const ApiCommonResponse = <T extends Type<unknown>>(model: T) => {
     return applyDecorators(
         ApiExtraModels(CommonResponse, model),
         ApiOkResponse({
@@ -29,7 +29,7 @@ export const ApiCommonResponse = <T extends Type<any>>(model: T) => {
 };
 
 // 배열 응답
-export const ApiCommonResponseArray = <T extends Type<any>>(model: T) => {
+export const ApiCommonResponseArray = <T extends Type<unknown>>(model: T) => {
     return applyDecorators(
         ApiExtraModels(CommonResponse, model),
         ApiOkResponse({

@@ -9,31 +9,31 @@ export class CorrectionItem extends BaseEntity {
         type: 'jsonb',
         nullable: true,
     })
-    description: Record<string, any>;
+    description: Record<string, unknown>;
 
     @Column({
         type: 'jsonb',
         nullable: true,
     })
-    responsibilities: Record<string, any>;
+    responsibilities: Record<string, unknown>;
 
     @Column({
         type: 'jsonb',
         nullable: true,
     })
-    problemSolving: Record<string, any>;
+    problemSolving: Record<string, unknown>;
 
     @Column({
         type: 'jsonb',
         nullable: true,
     })
-    learnings: Record<string, any>;
+    learnings: Record<string, unknown>;
 
     @Column({
         type: 'jsonb',
         nullable: true,
     })
-    overallReview: Record<string, any>;
+    overallReview: Record<string, unknown>;
 
     @ManyToOne(() => PortfolioCorrection, { onDelete: 'CASCADE' })
     portfolioCorrection: PortfolioCorrection;
