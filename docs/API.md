@@ -11,7 +11,7 @@ Notes:
 
 - In non-local environments, Swagger UI is mounted at `/api` and protected by Basic Auth.
 - Most API endpoints are protected by a global JWT guard and require `Authorization: Bearer <accessToken>`.
-- Some endpoints consume credits (ticket/payment required). Expect `402` when credits are insufficient.
+- Some endpoints consume tickets (ticket/payment required). Expect `402` when tickets are insufficient.
 
 ## Environments
 
@@ -100,7 +100,7 @@ The report includes:
 
 Legend:
 
-- IMPLEMENTED: endpoint has real logic (may still fail due to missing data or credits)
+- IMPLEMENTED: endpoint has real logic (may still fail due to missing data or tickets)
 - NOT_IMPLEMENTED: throws `BusinessException(ErrorCode.NOT_IMPLEMENTED)` -> typically `501`
 - EMPTY: controller exists but no routes
 
@@ -132,7 +132,7 @@ Legend:
 
 ### Experience
 
-- POST `/experiences` -> IMPLEMENTED (consumes credits, can return `CREDIT402`)
+- POST `/experiences` -> IMPLEMENTED (consumes tickets, can return `TICKET402`)
 - GET `/experiences` -> IMPLEMENTED
 - GET `/experiences/:experienceId` -> IMPLEMENTED
 - PATCH `/experiences/:experienceId` -> IMPLEMENTED
@@ -147,7 +147,7 @@ Legend:
 ### Portfolio-Correction
 
 - GET `/portfolio-corrections` -> IMPLEMENTED
-- POST `/portfolio-corrections` -> IMPLEMENTED (consumes credits, can return `CREDIT402`)
+- POST `/portfolio-corrections` -> IMPLEMENTED (consumes tickets, can return `TICKET402`)
 - GET `/portfolio-corrections/:correctionId/status` -> IMPLEMENTED
 - GET `/portfolio-corrections/:correctionId/company-insight` -> IMPLEMENTED
 - GET `/portfolio-corrections/:correctionId` -> IMPLEMENTED

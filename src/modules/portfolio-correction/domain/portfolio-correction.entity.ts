@@ -5,7 +5,6 @@ import { Column, Entity, ManyToOne } from 'typeorm';
 import { CorrectionStatus } from './enums/correction-status.enum';
 
 export const MAX_CORRECTIONS_PER_USER = 15;
-export const CORRECTION_CREDIT_COST = 30;
 
 @Entity()
 export class PortfolioCorrection extends BaseEntity {
