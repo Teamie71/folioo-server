@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Transactional } from 'typeorm-transactional';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { Ticket } from '../../domain/entities/ticket.entity';
@@ -47,6 +48,20 @@ export class TicketService {
         }
 
         await this.ticketRepository.expireAvailableByPaymentId(paymentId, new Date());
+    }
+
+    @Transactional()
+    async consumeTicket(userId: number, type: TicketType): Promise<Ticket> {
+        const now = new Date();
+        const ticket = await this.ticketRepository.findOneAvailableForConsume(userId, type, now);
+
+        if (!ticket) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_TICKETS);
+        }
+
+        ticket.status = TicketStatus.USED;
+        ticket.usedAt = now;
+        return this.ticketRepository.save(ticket);
     }
 
     async getBalance(userId: number): Promise<TicketBalanceResDTO> {

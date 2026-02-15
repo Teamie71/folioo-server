@@ -35,6 +35,28 @@ export class TicketRepository {
         return this.ticketRepository.findOne({ where: { id } });
     }
 
+    async findOneAvailableForConsume(
+        userId: number,
+        type: TicketType,
+        now: Date
+    ): Promise<Ticket | null> {
+        const qb = this.ticketRepository
+            .createQueryBuilder('ticket')
+            .where('ticket.userId = :userId', { userId })
+            .andWhere('ticket.type = :type', { type })
+            .andWhere('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .andWhere('(ticket.expiredAt IS NULL OR ticket.expiredAt > :now)', { now })
+            .orderBy('ticket.expiredAt', 'ASC', 'NULLS LAST')
+            .addOrderBy('ticket.id', 'ASC')
+            .setLock('pessimistic_write');
+
+        if (typeof qb.setOnLocked === 'function') {
+            qb.setOnLocked('skip_locked');
+        }
+
+        return qb.getOne();
+    }
+
     async existsById(id: number): Promise<boolean> {
         return this.ticketRepository.exists({ where: { id } });
     }
