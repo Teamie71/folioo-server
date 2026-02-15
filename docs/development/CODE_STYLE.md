@@ -510,6 +510,9 @@ const { email, name } = dto;
 
 ## Import 정렬 순서
 
+> 현재 프로젝트는 tsconfig paths alias(`@modules/*` 등)를 사용하지 않고,
+> `baseUrl` 기반의 `src/...` 절대 import를 사용합니다.
+
 ```typescript
 // 1. Node.js 내장 모듈
 import * as path from 'path';
@@ -519,7 +522,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 // 3. 내부 모듈 (절대 경로)
-import { User } from '@modules/user/domain/entities/user.entity';
+import { User } from 'src/modules/user/domain/user.entity';
 
 // 4. 상대 경로
 import { CreateUserReqDTO } from './dto/create-user.dto';

@@ -165,15 +165,15 @@ Docs: API 문서 업데이트 (#12)
 ### 전체 구조 예시
 
 ```
-src/modules/user/           # 단수 (도메인)
-├── domain/                 # 단수 (계층)
-│   ├── entities/           # 복수 (구성 요소 모음)
-│   └── repositories/       # 복수
-├── application/            # 단수 (계층)
-│   ├── services/           # 복수
-│   └── dtos/               # 복수
-└── presentation/           # 단수 (계층)
-    └── controllers/        # 복수
+ src/modules/user/           # 단수 (도메인)
+ ├── domain/                 # 단수 (계층)
+ │   ├── entities/           # 복수 (구성 요소 모음)
+ │   └── repositories/       # 복수
+ ├── application/            # 단수 (계층)
+ │   ├── services/           # 복수
+ │   └── dtos/               # 복수
+ └── presentation/           # 단수 (계층)
+     └── user.controller.ts  # Controller는 presentation 폴더에 위치
 ```
 
 ## 파일 네이밍
