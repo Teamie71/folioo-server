@@ -2,10 +2,11 @@ import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { UserAfterAuth } from 'src/modules/auth/domain/types/jwt-payload.type';
 
 @Injectable()
 export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {
-    handleRequest<TUser = unknown>(
+    handleRequest<TUser = UserAfterAuth>(
         err: unknown,
         user: TUser,
         info: unknown,
