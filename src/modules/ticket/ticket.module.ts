@@ -6,12 +6,19 @@ import { TicketRepository } from './infrastructure/repositories/ticket.repositor
 import { TicketProductRepository } from './infrastructure/repositories/ticket-product.repository';
 import { TicketService } from './application/services/ticket.service';
 import { TicketProductService } from './application/services/ticket-product.service';
+import { TicketProductSeedService } from './application/services/ticket-product-seed.service';
 import { TicketController } from './presentation/ticket.controller';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Ticket, TicketProduct])],
     controllers: [TicketController],
-    providers: [TicketRepository, TicketProductRepository, TicketService, TicketProductService],
+    providers: [
+        TicketRepository,
+        TicketProductRepository,
+        TicketService,
+        TicketProductService,
+        TicketProductSeedService,
+    ],
     exports: [TicketService, TicketProductService],
 })
 export class TicketModule {}
