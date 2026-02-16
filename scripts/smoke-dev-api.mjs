@@ -65,6 +65,9 @@ const CLASS = Object.freeze({
     NETWORK_ERROR: 'network_error',
 });
 
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
 function nowIso() {
     return new Date().toISOString();
 }
@@ -73,6 +76,9 @@ function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
 }
 
+// ---------------------------------------------------------------------------
+// CLI
+// ---------------------------------------------------------------------------
 function parseArgs(argv) {
     const args = {
         base: DEFAULT_BASE,
@@ -165,6 +171,9 @@ Examples:
 `);
 }
 
+// ---------------------------------------------------------------------------
+// Schema helpers
+// ---------------------------------------------------------------------------
 function buildDummyValue(schema) {
     const t = schema?.type;
     if (schema?.enum?.length) return schema.enum[0];
@@ -187,45 +196,6 @@ function buildDummyValue(schema) {
     return 'test';
 }
 
-function fillPathParams(rawPath, op, context) {
-    const params = [...(op.parameters || [])];
-    return rawPath.replace(/\{([^}]+)\}/g, (_m, name) => {
-        // If we have a discovered ID for this resource, use it.
-        const byName = context.pathParamValues?.[name];
-        if (byName != null) return encodeURIComponent(String(byName));
-
-        const p = params.find((x) => x.in === 'path' && x.name === name);
-        return encodeURIComponent(String(buildDummyValue(p?.schema || { type: 'integer' })));
-    });
-}
-
-function buildQuery(path, op) {
-    const params = op.parameters || [];
-    const q = new URLSearchParams();
-    for (const p of params) {
-        if (p.in !== 'query') continue;
-        if (!p.required) continue;
-        q.set(p.name, String(buildDummyValue(p.schema || { type: 'string' })));
-    }
-    const qs = q.toString();
-    return qs ? `${path}?${qs}` : path;
-}
-
-function getFirstJsonContent(op) {
-    const content = op.requestBody?.content;
-    if (!content) return null;
-    if (content['application/json'])
-        return { contentType: 'application/json', schema: content['application/json']?.schema };
-    if (content['multipart/form-data'])
-        return {
-            contentType: 'multipart/form-data',
-            schema: content['multipart/form-data']?.schema,
-        };
-    const first = Object.keys(content)[0];
-    if (!first) return null;
-    return { contentType: first, schema: content[first]?.schema };
-}
-
 function deref(spec, schema) {
     if (!schema) return null;
     if (!schema.$ref) return schema;
@@ -245,7 +215,6 @@ function buildJsonBodyFromSchema(spec, schema) {
     if (s.oneOf?.length) return buildJsonBodyFromSchema(spec, s.oneOf[0]);
     if (s.anyOf?.length) return buildJsonBodyFromSchema(spec, s.anyOf[0]);
     if (s.allOf?.length) {
-        // Merge object shapes
         const merged = {};
         for (const part of s.allOf) {
             const v = buildJsonBodyFromSchema(spec, part);
@@ -268,6 +237,47 @@ function buildJsonBodyFromSchema(spec, schema) {
         return [];
     }
     return buildDummyValue(s);
+}
+
+// ---------------------------------------------------------------------------
+// Path / query helpers
+// ---------------------------------------------------------------------------
+function fillPathParams(rawPath, op, context) {
+    const params = [...(op.parameters || [])];
+    return rawPath.replace(/\{([^}]+)\}/g, (_m, name) => {
+        const byName = context.pathParamValues?.[name];
+        if (byName != null) return encodeURIComponent(String(byName));
+
+        const p = params.find((x) => x.in === 'path' && x.name === name);
+        return encodeURIComponent(String(buildDummyValue(p?.schema || { type: 'integer' })));
+    });
+}
+
+function buildQuery(pathStr, op) {
+    const params = op.parameters || [];
+    const q = new URLSearchParams();
+    for (const p of params) {
+        if (p.in !== 'query') continue;
+        if (!p.required) continue;
+        q.set(p.name, String(buildDummyValue(p.schema || { type: 'string' })));
+    }
+    const qs = q.toString();
+    return qs ? `${pathStr}?${qs}` : pathStr;
+}
+
+function getFirstJsonContent(op) {
+    const content = op.requestBody?.content;
+    if (!content) return null;
+    if (content['application/json'])
+        return { contentType: 'application/json', schema: content['application/json']?.schema };
+    if (content['multipart/form-data'])
+        return {
+            contentType: 'multipart/form-data',
+            schema: content['multipart/form-data']?.schema,
+        };
+    const first = Object.keys(content)[0];
+    if (!first) return null;
+    return { contentType: first, schema: content[first]?.schema };
 }
 
 // ---------------------------------------------------------------------------
@@ -315,7 +325,7 @@ function envSkipCheck(method, rawPath, ctx) {
 // ---------------------------------------------------------------------------
 // Static skip rules (OAuth redirects, multipart without --file)
 // ---------------------------------------------------------------------------
-function shouldSkipOperation(method, rawPath, firstContent, hasUploadFile) {
+function shouldSkipOperation(method, rawPath, firstContent, hasFile) {
     // OAuth redirects aren't meaningful as API smoke requests.
     if (
         rawPath.startsWith('/auth/kakao') ||
@@ -325,7 +335,7 @@ function shouldSkipOperation(method, rawPath, firstContent, hasUploadFile) {
         if (method === 'GET') return { skip: true, reason: 'oauth-redirect' };
     }
     // Multipart: skip only when --file is NOT provided.
-    if (firstContent?.contentType === 'multipart/form-data' && !hasUploadFile) {
+    if (firstContent?.contentType === 'multipart/form-data' && !hasFile) {
         return { skip: true, reason: 'multipart-no-file (use --file <path>)' };
     }
     return { skip: false, reason: null };
@@ -334,6 +344,10 @@ function shouldSkipOperation(method, rawPath, firstContent, hasUploadFile) {
 // ---------------------------------------------------------------------------
 // HTTP helper
 // ---------------------------------------------------------------------------
+/**
+ * Fetch a URL and return { status, headers, text, json }.
+ * Safely handles non-JSON response bodies (e.g. HTML error pages from proxies).
+ */
 async function fetchJson(url, opts, timeoutMs) {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), timeoutMs);
@@ -371,8 +385,10 @@ async function fetchJson(url, opts, timeoutMs) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Preflight context
+// ---------------------------------------------------------------------------
 async function preflightContext(base, token, timeoutMs) {
-    // Gather IDs and primitives for later operations.
     const ctx = {
         ticketProductId: null,
         correctionId: null,
@@ -440,6 +456,10 @@ async function preflightContext(base, token, timeoutMs) {
     return ctx;
 }
 
+// ---------------------------------------------------------------------------
+// Payload overrides - known DTO shapes that the OpenAPI spec may not fully
+// describe, or where we need env-specific values.
+// ---------------------------------------------------------------------------
 function payloadOverrides(method, rawPath, ctx) {
     if (method === 'POST' && rawPath === '/experiences') {
         return { name: 'smoke', hopeJob: 'DEV' };
@@ -530,14 +550,14 @@ async function main() {
         process.exit(2);
     }
 
-    const includeRe = args.include ? new RegExp(args.include) : null;
-    const excludeRe = args.exclude ? new RegExp(args.exclude) : null;
-    const uploadEnabled = hasFile(args.file);
-
-    if (args.file && !uploadEnabled) {
-        console.error(`--file not found: ${args.file}`);
+    // Validate --file path early.
+    if (args.file && !fs.existsSync(nodePath.resolve(args.file))) {
+        console.error(`--file path does not exist: ${nodePath.resolve(args.file)}`);
         process.exit(2);
     }
+
+    const includeRe = args.include ? new RegExp(args.include) : null;
+    const excludeRe = args.exclude ? new RegExp(args.exclude) : null;
 
     const startedAt = nowIso();
     const outPath = args.out || `/tmp/folioo_dev_smoke_${Date.now()}.json`;
@@ -555,60 +575,38 @@ async function main() {
 
     const ctx = await preflightContext(args.base, token, args.timeoutMs);
 
-    const methods = args.mutate ? ['get', 'post', 'patch', 'delete'] : ['get'];
+    const httpMethods = args.mutate ? ['get', 'post', 'patch', 'delete'] : ['get'];
     const operations = [];
     for (const [rawPath, item] of Object.entries(spec.paths || {})) {
-        for (const m of methods) {
+        for (const m of httpMethods) {
             const op = item?.[m];
             if (!op) continue;
             if (includeRe && !includeRe.test(rawPath)) continue;
             if (excludeRe && excludeRe.test(rawPath)) continue;
 
             const firstContent = getFirstJsonContent(op);
-            const skipInfo = shouldSkipOperation(
-                m.toUpperCase(),
-                rawPath,
-                firstContent,
-                uploadEnabled
-            );
-            operations.push({ method: m.toUpperCase(), rawPath, op, firstContent, skipInfo });
+            operations.push({ method: m.toUpperCase(), rawPath, op, firstContent });
         }
     }
 
     const results = [];
     for (const entry of operations) {
-        const { method, rawPath, op, firstContent, skipInfo } = entry;
+        const { method, rawPath, op, firstContent } = entry;
+        const tag = (op.tags && op.tags[0]) || '(no-tag)';
 
-        if (skipInfo.skip) {
+        // -- Static skip (oauth, multipart without file) --------------------
+        const staticSkip = shouldSkipOperation(method, rawPath, firstContent, !!args.file);
+        if (staticSkip.skip) {
             results.push({
                 method,
                 rawPath,
-                url: new URL(rawPath, args.base).toString(),
-                tag: (op.tags && op.tags[0]) || '(no-tag)',
-                summary: op.summary || null,
-                skipped: true,
-                skipReason: skipInfo.reason,
-                classification: CLASS.SKIPPED,
-                status: null,
-                errorCode: null,
-                errorReason: null,
-                durationMs: 0,
-            });
-            continue;
-        }
-
-        const envSkip = envSkipCheck(method, rawPath, ctx);
-        if (envSkip.skip) {
-            results.push({
-                method,
-                rawPath,
-                url: new URL(rawPath, args.base).toString(),
-                tag: (op.tags && op.tags[0]) || '(no-tag)',
+                url: `${args.base}${rawPath}`,
+                tag,
                 summary: op.summary || null,
                 operationId: op.operationId || null,
-                skipped: true,
-                skipReason: envSkip.reason,
                 classification: CLASS.SKIPPED,
+                skipped: true,
+                skipReason: staticSkip.reason,
                 status: null,
                 errorCode: null,
                 errorReason: null,
@@ -618,36 +616,62 @@ async function main() {
             continue;
         }
 
-        let path = fillPathParams(rawPath, op, ctx);
-        path = buildQuery(path, op);
-        const url = new URL(path, args.base).toString();
+        // -- Env-dependent skip ---------------------------------------------
+        const envSkip = envSkipCheck(method, rawPath, ctx);
+        if (envSkip.skip) {
+            results.push({
+                method,
+                rawPath,
+                url: `${args.base}${rawPath}`,
+                tag,
+                summary: op.summary || null,
+                operationId: op.operationId || null,
+                classification: CLASS.SKIPPED,
+                skipped: true,
+                skipReason: envSkip.reason,
+                status: null,
+                errorCode: null,
+                errorReason: null,
+                durationMs: 0,
+                networkError: null,
+            });
+            continue;
+        }
+
+        // -- Build URL ------------------------------------------------------
+        let resolvedPath = fillPathParams(rawPath, op, ctx);
+        resolvedPath = buildQuery(resolvedPath, op);
+        const url = new URL(resolvedPath, args.base).toString();
 
         const headers = {
             accept: 'application/json, text/plain;q=0.9, */*;q=0.8',
             authorization: `Bearer ${token}`,
         };
 
+        // -- Build body -----------------------------------------------------
         let body = null;
         let contentType = null;
-        let multipartBody = null;
-        if (method !== 'GET' && method !== 'DELETE') {
+        const isMultipart = firstContent?.contentType === 'multipart/form-data';
+
+        if (isMultipart && args.file) {
+            const mp = buildMultipartBody(args.file, spec, firstContent.schema);
+            if (mp) {
+                body = mp.body;
+                // Do NOT set content-type; fetch sets it with the correct boundary.
+            }
+        } else if (method !== 'GET' && method !== 'DELETE') {
             const override = payloadOverrides(method, rawPath, ctx);
             if (override) {
-                body = override;
+                body = JSON.stringify(override);
                 contentType = 'application/json';
             } else if (firstContent?.contentType === 'application/json') {
-                body = buildJsonBodyFromSchema(spec, firstContent.schema);
+                body = JSON.stringify(buildJsonBodyFromSchema(spec, firstContent.schema));
                 contentType = 'application/json';
-            } else if (firstContent?.contentType === 'multipart/form-data' && uploadEnabled) {
-                const form = new FormData();
-                const fileBuffer = fs.readFileSync(args.file);
-                const fileName = nodePath.basename(args.file);
-                form.append('file', new Blob([fileBuffer]), fileName);
-                multipartBody = form;
             }
         }
         if (contentType) headers['content-type'] = contentType;
 
+        // -- Execute request ------------------------------------------------
         const started = Date.now();
         let status = null;
         let errorCode = null;
@@ -655,22 +679,21 @@ async function main() {
         let networkError = null;
 
         try {
-            const r = await fetchJson(
-                url,
-                {
-                    method,
-                    headers,
-                    body: multipartBody || (body ? JSON.stringify(body) : undefined),
-                },
-                args.timeoutMs
-            );
+            const r = await fetchJson(url, { method, headers, body }, args.timeoutMs);
             status = r.status;
+
+            // Extract error details from the standardized error envelope.
             const err = r.json?.error;
             if (err && typeof err === 'object') {
                 errorCode = err.errorCode || err.code || null;
                 errorReason = err.reason || err.message || null;
             }
-            // capture any returned IDs for later operations
+            // Fallback: capture a text snippet for non-2xx without JSON error.
+            if (!err && status >= 400 && r.text) {
+                errorReason = r.text.slice(0, 300);
+            }
+
+            // Capture returned IDs for later operations.
             if (
                 method === 'POST' &&
                 rawPath === '/payments' &&
@@ -678,9 +701,6 @@ async function main() {
             ) {
                 ctx.paymentId = r.json.result.id;
                 ctx.pathParamValues.paymentId = ctx.paymentId;
-            }
-            if (method === 'POST' && rawPath === '/portfolio-corrections') {
-                // response is string; new correctionId can be fetched by listing after
             }
             if (
                 method === 'POST' &&
@@ -690,26 +710,23 @@ async function main() {
                 ctx.experienceId = r.json.result.id;
                 ctx.pathParamValues.experienceId = ctx.experienceId;
             }
-            if (r.status >= 400 && !errorReason) {
-                errorReason = r.text
-                    ? `[non-json] ${r.text.slice(0, 200).replace(/\n/g, ' ')}`
-                    : '[empty body]';
-            }
         } catch (e) {
             networkError = String(e?.message || e);
         }
 
         const durationMs = Date.now() - started;
+        const classification = classify(status, errorCode, networkError);
+
         results.push({
             method,
             rawPath,
             url,
-            tag: (op.tags && op.tags[0]) || '(no-tag)',
+            tag,
             summary: op.summary || null,
             operationId: op.operationId || null,
+            classification,
             skipped: false,
             skipReason: null,
-            classification: classify(status, errorCode, networkError),
             status,
             errorCode,
             errorReason,
@@ -720,6 +737,15 @@ async function main() {
         await sleep(args.delayMs);
     }
 
+    // -- Build classification buckets ---------------------------------------
+    const classificationBuckets = {};
+    for (const cls of Object.values(CLASS)) classificationBuckets[cls] = 0;
+    for (const r of results) {
+        const cls = r.classification || CLASS.NETWORK_ERROR;
+        classificationBuckets[cls] = (classificationBuckets[cls] || 0) + 1;
+    }
+
+    // Legacy HTTP-status buckets (backward compat).
     const buckets = {
         ok2xx: 0,
         redirect3xx: 0,
@@ -753,6 +779,7 @@ async function main() {
         },
         options: {
             mutate: args.mutate,
+            file: args.file,
             delayMs: args.delayMs,
             timeoutMs: args.timeoutMs,
             include: args.include,
@@ -764,25 +791,22 @@ async function main() {
             experienceId: ctx.experienceId,
             paymentId: ctx.paymentId,
         },
+        classification: classificationBuckets,
         buckets,
-        classBuckets: classifyBucketsFromResults(results),
         count: results.length,
         results,
     };
 
     fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
-    console.log(
-        JSON.stringify(
-            {
-                outPath,
-                buckets,
-                classBuckets: report.classBuckets,
-                count: results.length,
-            },
-            null,
-            2
-        )
-    );
+
+    // -- Console summary ----------------------------------------------------
+    const summary = {
+        outPath,
+        count: results.length,
+        classification: classificationBuckets,
+        buckets,
+    };
+    console.log(JSON.stringify(summary, null, 2));
 }
 
 main().catch((e) => {
