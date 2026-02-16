@@ -31,4 +31,8 @@ export class CorrectionItemService {
     countItemsByCorrectionId(correctionId: number): Promise<number> {
         return this.correctionItemRepository.countByCorrectionId(correctionId);
     }
+
+    async deleteByCorrectionId(correctionId: number): Promise<void> {
+        await this.correctionItemRepository.deleteByCorrectionId(correctionId);
+    }
 }

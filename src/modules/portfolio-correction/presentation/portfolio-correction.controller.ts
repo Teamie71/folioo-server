@@ -248,10 +248,11 @@ export class PortfolioCorrectionController {
     @ApiCommonResponse(CorrectionResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     updateCorrectionTitle(
+        @User('sub') userId: number,
         @Param('correctionId', ParseIntPipe) correctionId: number,
         @Body() body: UpdateCorrectionTitleReqDTO
-    ): CorrectionResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
+    ): Promise<CorrectionResDTO> {
+        return this.portfolioCorrectionService.updateTitle(correctionId, userId, body);
     }
 
     @Delete(':correctionId')
@@ -270,7 +271,11 @@ export class PortfolioCorrectionController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    deleteCorrection(@Param('correctionId', ParseIntPipe) correctionId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    async deleteCorrection(
+        @User('sub') userId: number,
+        @Param('correctionId', ParseIntPipe) correctionId: number
+    ): Promise<string> {
+        await this.portfolioCorrectionService.deleteCorrection(correctionId, userId);
+        return '첨삭이 삭제되었습니다.';
     }
 }

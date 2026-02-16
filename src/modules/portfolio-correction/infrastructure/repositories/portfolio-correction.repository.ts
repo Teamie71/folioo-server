@@ -14,6 +14,16 @@ export class PortfolioCorrectionRepository {
         return this.portfolioCorrectionRepository.save(correction);
     }
 
+    async deleteById(id: number): Promise<number> {
+        const result = await this.portfolioCorrectionRepository.delete(id);
+        return result.affected ?? 0;
+    }
+
+    async updateById(id: number, correction: Partial<PortfolioCorrection>): Promise<number> {
+        const result = await this.portfolioCorrectionRepository.update(id, correction);
+        return result.affected ?? 0;
+    }
+
     async findById(id: number): Promise<PortfolioCorrection | null> {
         return this.portfolioCorrectionRepository.findOne({
             where: { id },

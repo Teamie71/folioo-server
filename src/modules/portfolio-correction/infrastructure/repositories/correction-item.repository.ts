@@ -36,4 +36,11 @@ export class CorrectionItemRepository {
             where: { portfolioCorrection: { id: correctionId } },
         });
     }
+
+    async deleteByCorrectionId(correctionId: number): Promise<number> {
+        const result = await this.correctionItemRepository.delete({
+            portfolioCorrection: { id: correctionId },
+        });
+        return result.affected ?? 0;
+    }
 }

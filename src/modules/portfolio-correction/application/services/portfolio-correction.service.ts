@@ -15,6 +15,7 @@ import {
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItemService } from './correction-item.service';
+import { UpdateCorrectionTitleReqDTO } from '../dtos/portfolio-correction.dto';
 
 @Injectable()
 export class PortfolioCorrectionService {
@@ -134,5 +135,26 @@ export class PortfolioCorrectionService {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
         const items = await this.correctionItemService.findByCorrectionId(correctionId);
         return CorrectionResultResDTO.from(correction, items);
+    }
+
+    async updateTitle(
+        correctionId: number,
+        userId: number,
+        body: UpdateCorrectionTitleReqDTO
+    ): Promise<CorrectionResDTO> {
+        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
+        correction.title = body.title;
+        const saved = await this.portfolioCorrectionRepository.save(correction);
+        return CorrectionResDTO.from(saved);
+    }
+
+    async deleteCorrection(correctionId: number, userId: number): Promise<void> {
+        await this.findByIdAndUserIdOrThrow(correctionId, userId);
+        await this.correctionItemService.deleteByCorrectionId(correctionId);
+
+        const affected = await this.portfolioCorrectionRepository.deleteById(correctionId);
+        if (affected === 0) {
+            throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
+        }
     }
 }
