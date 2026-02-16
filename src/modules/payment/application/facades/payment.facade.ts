@@ -70,7 +70,17 @@ export class PaymentFacade {
             return payment;
         }
 
-        await this.payAppClient.requestCancel(payment.mulNo, 'user_requested');
+        try {
+            await this.payAppClient.requestCancel(payment.mulNo, 'user_requested', {
+                paymentId,
+                currentStatus: payment.status,
+            });
+        } catch (error) {
+            this.logger.error(
+                `Cancel payment external call failed: paymentId=${paymentId}, mulNo=${payment.mulNo}, status=${payment.status}, userId=${userId}`
+            );
+            throw error;
+        }
 
         const cancelledPayment = await this.paymentService.markCancelled(payment);
         await this.ticketService.revokeAvailableTicketsForPayment(cancelledPayment.id);

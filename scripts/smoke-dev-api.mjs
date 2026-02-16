@@ -437,6 +437,10 @@ async function main() {
             if (err && typeof err === 'object') {
                 errorCode = err.errorCode || err.code || null;
                 errorReason = err.reason || err.message || null;
+            } else if (r.status >= 400 && !r.json) {
+                errorReason = r.text
+                    ? `[non-json] ${r.text.slice(0, 200).replace(/\n/g, ' ')}`
+                    : '[empty body]';
             }
             // capture any returned IDs for later operations
             if (
