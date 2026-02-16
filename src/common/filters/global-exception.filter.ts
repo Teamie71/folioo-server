@@ -25,6 +25,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
+    private formatDetails(details: unknown): string {
+        if (details == null) {
+            return '';
+        }
+
+        try {
+            return ` | details=${JSON.stringify(details)}`;
+        } catch {
+            return ' | details=[unserializable]';
+        }
+    }
+
     catch(exception: unknown, host: ArgumentsHost): void {
         const { httpAdapter } = this.httpAdapterHost;
 
@@ -73,7 +85,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
         const result = CommonResponse.fail(errorCode, reason, path, details);
         if (httpStatus >= 500 && exception instanceof HttpException) {
-            this.logger.error(`🚨 [Server Error] ${path}: ${errorCode} - ${reason}`);
+            this.logger.error(
+                `🚨 [Server Error] ${path}: ${errorCode} - ${reason}${this.formatDetails(details)}`
+            );
         } else if (httpStatus < 500) {
             this.logger.warn(`⚠️ [Client Error] ${path}: ${reason}`);
         }

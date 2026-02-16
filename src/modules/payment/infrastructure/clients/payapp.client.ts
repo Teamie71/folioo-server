@@ -109,11 +109,21 @@ export class PayAppClient {
         context?: CancelRequestContext,
         httpStatus?: number
     ): BusinessException {
-        return new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED, {
+        const details: Record<string, unknown> = {
             kind,
             mulNo,
-            ...(context?.paymentId != null && { paymentId: context.paymentId }),
-            ...(httpStatus != null && { httpStatus }),
+        };
+
+        if (context?.paymentId != null) {
+            details.paymentId = context.paymentId;
+        }
+
+        if (httpStatus != null) {
+            details.httpStatus = httpStatus;
+        }
+
+        return new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED, {
+            ...details,
         });
     }
 }
