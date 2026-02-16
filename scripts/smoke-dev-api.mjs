@@ -1,21 +1,69 @@
 #!/usr/bin/env node
 /*
-  Dev API smoke runner
+  Dev API smoke runner (v2)
 
-  - Pulls OpenAPI spec from /api-json
-  - Calls endpoints with an access token (Bearer)
-  - Writes a JSON report under /tmp
+  Pulls the OpenAPI spec from /api-json, calls endpoints with an
+  access-token (Bearer), and writes a JSON report under /tmp.
 
-  Safety:
+  Result Classification
+  ---------------------
+  Each endpoint result is classified into one of:
+    implemented       - 2xx success
+    not_implemented   - 501 Not Implemented
+    validation_error  - 400 Bad Request (DTO / payload issue)
+    not_found         - 404 Not Found
+    auth_required     - 401 Unauthorized
+    payment_required  - 402 Payment Required
+    server_error      - 500, 502, 503 etc.
+    redirect          - 3xx
+    skipped           - skipped by rule (env-dependent or multipart)
+    network_error     - timeout / connection failure
+
+  Safety
+  ------
   - Never hardcode tokens in this file.
-  - By default, skips endpoints that are clearly not suitable for automation (OAuth redirects, multipart upload).
-  - You can enable mutating requests with --mutate.
+  - OAuth redirects are excluded by default.
+  - Multipart endpoints are skipped unless --file is given.
+  - Env-dependent endpoints (e.g. payments, auth/refresh) are auto-skipped
+    when prerequisite data is unavailable.
+
+  Usage
+  -----
+  # GET-only (safe, default)
+  FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs
+
+  # Include mutating endpoints (POST/PATCH/DELETE)
+  FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate
+
+  # Attach a file for multipart/form-data endpoints
+  FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate --file ./sample.pdf
+
+  # Filter by path regex
+  FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --include '^/portfolio-corrections'
+  FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate --exclude '^/auth/(kakao|google|naver)'
 */
 
 import fs from 'node:fs';
+import nodePath from 'node:path';
 import process from 'node:process';
 
 const DEFAULT_BASE = 'https://folioo-dev-api.log8.kr';
+
+// ---------------------------------------------------------------------------
+// Result classification
+// ---------------------------------------------------------------------------
+const CLASS = Object.freeze({
+    IMPLEMENTED: 'implemented',
+    NOT_IMPLEMENTED: 'not_implemented',
+    VALIDATION_ERROR: 'validation_error',
+    NOT_FOUND: 'not_found',
+    AUTH_REQUIRED: 'auth_required',
+    PAYMENT_REQUIRED: 'payment_required',
+    SERVER_ERROR: 'server_error',
+    REDIRECT: 'redirect',
+    SKIPPED: 'skipped',
+    NETWORK_ERROR: 'network_error',
+});
 
 function nowIso() {
     return new Date().toISOString();
@@ -35,6 +83,7 @@ function parseArgs(argv) {
         timeoutMs: 15000,
         include: null,
         exclude: null,
+        file: null,
     };
 
     for (let i = 2; i < argv.length; i++) {
@@ -63,6 +112,9 @@ function parseArgs(argv) {
         } else if (a === '--exclude' && next) {
             args.exclude = next;
             i++;
+        } else if (a === '--file' && next) {
+            args.file = next;
+            i++;
         } else if (a === '--help' || a === '-h') {
             printHelp();
             process.exit(0);
@@ -79,16 +131,37 @@ Options:
   --base <url>           Base URL (default: ${DEFAULT_BASE})
   --token-env <name>     Env var containing access token (default: FOLIOO_ACCESS_TOKEN)
   --mutate               Enable POST/PATCH/DELETE (default: GET only)
+  --file <path>          Attach a local file for multipart/form-data endpoints
   --delay-ms <n>         Delay between requests (default: 120)
   --timeout-ms <n>       Per-request timeout (default: 15000)
   --include <regex>      Only run operations whose path matches regex
   --exclude <regex>      Skip operations whose path matches regex
   --out <path>           Write report to this path (default: /tmp/folioo_dev_smoke_<ts>.json)
 
+Result Classification:
+  implemented            2xx - endpoint works
+  not_implemented        501 - endpoint is stubbed / not yet built
+  validation_error       400 - payload rejected by DTO validation
+  not_found              404 - resource not found
+  auth_required          401 - authentication missing/invalid
+  payment_required       402 - ticket/payment required
+  server_error           500/502/503 etc.
+  skipped                endpoint skipped (env-dependent or multipart)
+  network_error          timeout or connection failure
+
 Examples:
+  # GET-only smoke
   FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs
+
+  # Full smoke (POST/PATCH/DELETE included)
   FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate
+
+  # With a file for multipart endpoints
+  FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate --file ./sample.pdf
+
+  # Filter by path
   FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --include '^/portfolio-corrections'
+  FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate --exclude '^/auth/(kakao|google|naver)'
 `);
 }
 
@@ -102,9 +175,14 @@ function buildDummyValue(schema) {
         if (schema?.format === 'date') return nowIso().slice(0, 10);
         if (schema?.format === 'email') return 'smoke@folioo.local';
         if (schema?.format === 'uuid') return '00000000-0000-0000-0000-000000000001';
+        if (schema?.minLength > 0) return 'a'.repeat(schema.minLength);
         return 'test';
     }
-    if (t === 'array') return [];
+    if (t === 'array') {
+        // Generate one element if items schema is available (avoids minItems failures).
+        if (schema?.items && !schema.items.$ref) return [buildDummyValue(schema.items)];
+        return [];
+    }
     if (t === 'object') return {};
     return 'test';
 }
@@ -138,6 +216,11 @@ function getFirstJsonContent(op) {
     if (!content) return null;
     if (content['application/json'])
         return { contentType: 'application/json', schema: content['application/json']?.schema };
+    if (content['multipart/form-data'])
+        return {
+            contentType: 'multipart/form-data',
+            schema: content['multipart/form-data']?.schema,
+        };
     const first = Object.keys(content)[0];
     if (!first) return null;
     return { contentType: first, schema: content[first]?.schema };
@@ -173,51 +256,108 @@ function buildJsonBodyFromSchema(spec, schema) {
 
     if (s.type === 'object' || s.properties) {
         const out = {};
-        const required = new Set(s.required || []);
+        // Fill ALL properties (not just required) to minimise 400 masking of 501.
         for (const [k, vRaw] of Object.entries(s.properties || {})) {
             const v = deref(spec, vRaw);
-            if (required.has(k)) {
-                out[k] = buildJsonBodyFromSchema(spec, v);
-            }
+            out[k] = buildJsonBodyFromSchema(spec, v);
         }
-        // If spec forgot required fields, sending empty object is still useful for validation checks.
         return out;
     }
     if (s.type === 'array') {
+        if (s.items) return [buildJsonBodyFromSchema(spec, s.items)];
         return [];
     }
     return buildDummyValue(s);
 }
 
-function shouldSkipOperation(op, method, path, firstContent) {
+// ---------------------------------------------------------------------------
+// Classification
+// ---------------------------------------------------------------------------
+/** Classify an HTTP response into a result class. */
+function classify(status, _errorCode, networkError) {
+    if (networkError) return CLASS.NETWORK_ERROR;
+    if (status == null) return CLASS.NETWORK_ERROR;
+    if (status >= 200 && status < 300) return CLASS.IMPLEMENTED;
+    if (status >= 300 && status < 400) return CLASS.REDIRECT;
+    if (status === 400) return CLASS.VALIDATION_ERROR;
+    if (status === 401) return CLASS.AUTH_REQUIRED;
+    if (status === 402) return CLASS.PAYMENT_REQUIRED;
+    if (status === 404) return CLASS.NOT_FOUND;
+    if (status === 501) return CLASS.NOT_IMPLEMENTED;
+    if (status >= 500) return CLASS.SERVER_ERROR;
+    // Other 4xx (403, 409, 422, etc.)
+    return CLASS.VALIDATION_ERROR;
+}
+
+// ---------------------------------------------------------------------------
+// Environment-dependent skip rules
+// ---------------------------------------------------------------------------
+/**
+ * Check whether an operation should be skipped based on runtime context
+ * (e.g. missing prerequisite data in the environment).
+ *
+ * Returns { skip: boolean, reason: string | null }
+ */
+function envSkipCheck(method, rawPath, ctx) {
+    // POST /payments - requires a valid ticketProductId from preflight.
+    if (method === 'POST' && rawPath === '/payments' && ctx.ticketProductId == null) {
+        return { skip: true, reason: 'env:no-ticket-products' };
+    }
+
+    // POST /auth/refresh - needs httpOnly refreshToken cookie, not an access token.
+    if (method === 'POST' && rawPath === '/auth/refresh') {
+        return { skip: true, reason: 'env:requires-refresh-cookie' };
+    }
+
+    return { skip: false, reason: null };
+}
+
+// ---------------------------------------------------------------------------
+// Static skip rules (OAuth redirects, multipart without --file)
+// ---------------------------------------------------------------------------
+function shouldSkipOperation(method, rawPath, firstContent, hasUploadFile) {
     // OAuth redirects aren't meaningful as API smoke requests.
     if (
-        path.startsWith('/auth/kakao') ||
-        path.startsWith('/auth/google') ||
-        path.startsWith('/auth/naver')
+        rawPath.startsWith('/auth/kakao') ||
+        rawPath.startsWith('/auth/google') ||
+        rawPath.startsWith('/auth/naver')
     ) {
         if (method === 'GET') return { skip: true, reason: 'oauth-redirect' };
     }
-    // Multipart needs a real PDF file.
-    if (firstContent?.contentType === 'multipart/form-data') {
-        return { skip: true, reason: 'multipart-not-supported' };
+    // Multipart: skip only when --file is NOT provided.
+    if (firstContent?.contentType === 'multipart/form-data' && !hasUploadFile) {
+        return { skip: true, reason: 'multipart-no-file (use --file <path>)' };
     }
     return { skip: false, reason: null };
 }
 
+// ---------------------------------------------------------------------------
+// HTTP helper
+// ---------------------------------------------------------------------------
 async function fetchJson(url, opts, timeoutMs) {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), timeoutMs);
     try {
         const res = await fetch(url, { ...opts, signal: ac.signal });
         const ct = res.headers.get('content-type') || '';
-        const text = await res.text();
+        const rawText = await res.text();
+        // Truncate very large response bodies (e.g. HTML error pages).
+        const text = rawText.length > 2000 ? rawText.slice(0, 2000) + '\u2026' : rawText;
         let json = null;
-        if (ct.includes('application/json') && text) {
+        if (ct.includes('application/json') && rawText) {
             try {
-                json = JSON.parse(text);
+                json = JSON.parse(rawText);
             } catch {
-                json = { invalidJson: true, sample: text.slice(0, 500) };
+                json = null;
+            }
+        }
+        // Fallback: attempt JSON parse even without correct content-type.
+        // Some error responses arrive without proper headers.
+        if (!json && rawText && rawText.trimStart().startsWith('{')) {
+            try {
+                json = JSON.parse(rawText);
+            } catch {
+                // genuinely not JSON - leave null
             }
         }
         return {
@@ -300,16 +440,14 @@ async function preflightContext(base, token, timeoutMs) {
     return ctx;
 }
 
-function payloadOverrides(method, path, ctx) {
-    // Some request schemas in /api-json are incomplete (missing required fields).
-    // Patch known endpoints using DTO-derived requirements.
-    if (method === 'POST' && path === '/experiences') {
+function payloadOverrides(method, rawPath, ctx) {
+    if (method === 'POST' && rawPath === '/experiences') {
         return { name: 'smoke', hopeJob: 'DEV' };
     }
-    if (method === 'PATCH' && path === '/experiences/{experienceId}') {
+    if (method === 'PATCH' && rawPath === '/experiences/{experienceId}') {
         return { name: 'smoke-update', hopeJob: 'DEV' };
     }
-    if (method === 'POST' && path === '/portfolio-corrections') {
+    if (method === 'POST' && rawPath === '/portfolio-corrections') {
         return {
             companyName: 'SmokeCo',
             positionName: 'Developer',
@@ -317,19 +455,73 @@ function payloadOverrides(method, path, ctx) {
             jobDescription: 'smoke test job description',
         };
     }
-    if (method === 'POST' && path === '/payments') {
-        // ticketProductId must exist.
+    if (method === 'POST' && rawPath === '/payments') {
         return { ticketProductId: ctx.ticketProductId ?? 1 };
     }
-    if (method === 'PATCH' && path === '/users/me') {
+    if (method === 'PATCH' && rawPath === '/users/me') {
         return { name: 'smoke-user' };
     }
-    if (method === 'PATCH' && path === '/users/me/marketing-consent') {
+    if (method === 'PATCH' && rawPath === '/users/me/marketing-consent') {
         return { isMarketingAgreed: true };
     }
     return null;
 }
 
+// ---------------------------------------------------------------------------
+// Multipart body builder
+// ---------------------------------------------------------------------------
+/**
+ * Build a FormData body for endpoints that accept file uploads.
+ * Returns { body: FormData } or null when no file is available.
+ */
+function buildMultipartBody(filePath, spec, contentSchema) {
+    if (!filePath) return null;
+    const resolvedPath = nodePath.resolve(filePath);
+    if (!fs.existsSync(resolvedPath)) {
+        console.error(`[smoke] --file path does not exist: ${resolvedPath}`);
+        return null;
+    }
+
+    const fileBuffer = fs.readFileSync(resolvedPath);
+    const fileName = nodePath.basename(resolvedPath);
+    const blob = new Blob([fileBuffer], { type: 'application/pdf' });
+
+    // Determine the file field name from the schema.
+    const s = deref(spec, contentSchema);
+    let fileFieldName = 'file';
+    if (s?.properties) {
+        for (const [k, vRaw] of Object.entries(s.properties)) {
+            const v = deref(spec, vRaw);
+            if (v?.type === 'string' && v?.format === 'binary') {
+                fileFieldName = k;
+                break;
+            }
+        }
+    }
+
+    const formData = new FormData();
+    formData.append(fileFieldName, blob, fileName);
+
+    // Append required non-file fields as strings.
+    if (s?.properties) {
+        const required = new Set(s.required || []);
+        for (const [k, vRaw] of Object.entries(s.properties)) {
+            if (k === fileFieldName) continue;
+            const v = deref(spec, vRaw);
+            if (v?.type === 'string' && v?.format === 'binary') continue;
+            if (required.has(k)) {
+                formData.append(k, String(buildDummyValue(v)));
+            }
+        }
+    }
+
+    // Do not set content-type header; fetch sets it with the correct boundary.
+    return { body: formData };
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
 async function main() {
     const args = parseArgs(process.argv);
     const token = process.env[args.tokenEnv];
@@ -340,6 +532,12 @@ async function main() {
 
     const includeRe = args.include ? new RegExp(args.include) : null;
     const excludeRe = args.exclude ? new RegExp(args.exclude) : null;
+    const uploadEnabled = hasFile(args.file);
+
+    if (args.file && !uploadEnabled) {
+        console.error(`--file not found: ${args.file}`);
+        process.exit(2);
+    }
 
     const startedAt = nowIso();
     const outPath = args.out || `/tmp/folioo_dev_smoke_${Date.now()}.json`;
@@ -367,7 +565,12 @@ async function main() {
             if (excludeRe && excludeRe.test(rawPath)) continue;
 
             const firstContent = getFirstJsonContent(op);
-            const skipInfo = shouldSkipOperation(op, m.toUpperCase(), rawPath, firstContent);
+            const skipInfo = shouldSkipOperation(
+                m.toUpperCase(),
+                rawPath,
+                firstContent,
+                uploadEnabled
+            );
             operations.push({ method: m.toUpperCase(), rawPath, op, firstContent, skipInfo });
         }
     }
@@ -385,10 +588,32 @@ async function main() {
                 summary: op.summary || null,
                 skipped: true,
                 skipReason: skipInfo.reason,
+                classification: CLASS.SKIPPED,
                 status: null,
                 errorCode: null,
                 errorReason: null,
                 durationMs: 0,
+            });
+            continue;
+        }
+
+        const envSkip = envSkipCheck(method, rawPath, ctx);
+        if (envSkip.skip) {
+            results.push({
+                method,
+                rawPath,
+                url: new URL(rawPath, args.base).toString(),
+                tag: (op.tags && op.tags[0]) || '(no-tag)',
+                summary: op.summary || null,
+                operationId: op.operationId || null,
+                skipped: true,
+                skipReason: envSkip.reason,
+                classification: CLASS.SKIPPED,
+                status: null,
+                errorCode: null,
+                errorReason: null,
+                durationMs: 0,
+                networkError: null,
             });
             continue;
         }
@@ -404,6 +629,7 @@ async function main() {
 
         let body = null;
         let contentType = null;
+        let multipartBody = null;
         if (method !== 'GET' && method !== 'DELETE') {
             const override = payloadOverrides(method, rawPath, ctx);
             if (override) {
@@ -412,6 +638,12 @@ async function main() {
             } else if (firstContent?.contentType === 'application/json') {
                 body = buildJsonBodyFromSchema(spec, firstContent.schema);
                 contentType = 'application/json';
+            } else if (firstContent?.contentType === 'multipart/form-data' && uploadEnabled) {
+                const form = new FormData();
+                const fileBuffer = fs.readFileSync(args.file);
+                const fileName = nodePath.basename(args.file);
+                form.append('file', new Blob([fileBuffer]), fileName);
+                multipartBody = form;
             }
         }
         if (contentType) headers['content-type'] = contentType;
@@ -428,7 +660,7 @@ async function main() {
                 {
                     method,
                     headers,
-                    body: body ? JSON.stringify(body) : undefined,
+                    body: multipartBody || (body ? JSON.stringify(body) : undefined),
                 },
                 args.timeoutMs
             );
@@ -458,6 +690,11 @@ async function main() {
                 ctx.experienceId = r.json.result.id;
                 ctx.pathParamValues.experienceId = ctx.experienceId;
             }
+            if (r.status >= 400 && !errorReason) {
+                errorReason = r.text
+                    ? `[non-json] ${r.text.slice(0, 200).replace(/\n/g, ' ')}`
+                    : '[empty body]';
+            }
         } catch (e) {
             networkError = String(e?.message || e);
         }
@@ -472,6 +709,7 @@ async function main() {
             operationId: op.operationId || null,
             skipped: false,
             skipReason: null,
+            classification: classify(status, errorCode, networkError),
             status,
             errorCode,
             errorReason,
@@ -527,12 +765,24 @@ async function main() {
             paymentId: ctx.paymentId,
         },
         buckets,
+        classBuckets: classifyBucketsFromResults(results),
         count: results.length,
         results,
     };
 
     fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
-    console.log(JSON.stringify({ outPath, buckets, count: results.length }, null, 2));
+    console.log(
+        JSON.stringify(
+            {
+                outPath,
+                buckets,
+                classBuckets: report.classBuckets,
+                count: results.length,
+            },
+            null,
+            2
+        )
+    );
 }
 
 main().catch((e) => {
