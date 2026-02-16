@@ -486,10 +486,10 @@ function payloadOverrides(method, rawPath, ctx) {
     }
     // Auth SMS endpoints (NOT_IMPLEMENTED - min-valid payloads to expose 501)
     if (method === 'POST' && rawPath === '/auth/sms/send') {
-        return { phoneNumber: '01000000000' };
+        return { phoneNum: '01000000000' };
     }
     if (method === 'POST' && rawPath === '/auth/sms/verify') {
-        return { phoneNumber: '01000000000', code: '000000' };
+        return { phoneNum: '01000000000', verifyToken: '000000' };
     }
     // Auth management endpoints (NOT_IMPLEMENTED - empty body to expose 501)
     if (method === 'POST' && rawPath === '/auth/logout') {
