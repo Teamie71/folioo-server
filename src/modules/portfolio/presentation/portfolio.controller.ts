@@ -38,10 +38,11 @@ export class PortfolioController {
     @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     updatePortfolio(
+        @User('sub') userId: number,
         @Param('portfolioId', ParseIntPipe) portfolioId: number,
         @Body() body: UpdatePortfolioReqDTO
-    ): PortfolioDetailResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { portfolioId, body });
+    ): Promise<PortfolioDetailResDTO> {
+        return this.portfolioService.updatePortfolio(portfolioId, userId, body);
     }
 
     @Delete(':portfolioId')
@@ -60,8 +61,12 @@ export class PortfolioController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    deletePortfolio(@Param('portfolioId', ParseIntPipe) portfolioId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
+    async deletePortfolio(
+        @User('sub') userId: number,
+        @Param('portfolioId', ParseIntPipe) portfolioId: number
+    ): Promise<string> {
+        await this.portfolioService.deletePortfolio(portfolioId, userId);
+        return '포트폴리오가 성공적으로 삭제되었습니다.';
     }
 
     @Post(':portfolioId/export')

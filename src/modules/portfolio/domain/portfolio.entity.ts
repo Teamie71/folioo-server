@@ -51,4 +51,13 @@ export class Portfolio extends BaseEntity {
         portfolio.user = { id: userId } as User;
         return portfolio;
     }
+
+    update(updates: { name?: string; contributionRate?: number }): void {
+        if (updates.name !== undefined) {
+            this.name = updates.name;
+        }
+        if (updates.contributionRate !== undefined) {
+            this.contributionRate = updates.contributionRate;
+        }
+    }
 }
