@@ -6,6 +6,13 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 const PAYAPP_API_URL = 'https://api.payapp.kr/oapi/apiLoad.html';
 const PAYAPP_API_TIMEOUT_MS = 10000;
 
+type CancelFailureKind = 'TIMEOUT' | 'NETWORK' | 'HTTP_ERROR' | 'RESPONSE_READ_FAILED' | 'REJECTED';
+
+export interface CancelRequestContext {
+    paymentId: number;
+    currentStatus: string;
+}
+
 @Injectable()
 export class PayAppClient {
     private readonly logger = new Logger(PayAppClient.name);
@@ -33,10 +40,18 @@ export class PayAppClient {
         }
     }
 
-    async requestCancel(mulNo: number, cancelMemo: string): Promise<void> {
+    async requestCancel(
+        mulNo: number,
+        cancelMemo: string,
+        context?: CancelRequestContext
+    ): Promise<void> {
         if (!this.userId || !this.linkKey) {
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+
+        const logCtx = context
+            ? `paymentId=${context.paymentId}, mulNo=${mulNo}, status=${context.currentStatus}`
+            : `mulNo=${mulNo}`;
 
         const body = new URLSearchParams({
             cmd: 'paycancelreq',
@@ -57,26 +72,48 @@ export class PayAppClient {
                 signal: AbortSignal.timeout(PAYAPP_API_TIMEOUT_MS),
             });
         } catch (error) {
-            this.logger.error(`PayApp cancel request failed: mulNo=${mulNo}`, error);
-            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
+            const kind: CancelFailureKind =
+                error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK';
+            this.logger.error(
+                `PayApp cancel ${kind}: ${logCtx}, error=${error instanceof Error ? error.message : String(error)}`,
+                error instanceof Error ? error.stack : undefined
+            );
+            throw this.cancelFailure(kind, mulNo, context);
         }
 
         if (!response.ok) {
-            this.logger.warn(`PayApp cancel HTTP error: mulNo=${mulNo}, status=${response.status}`);
-            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
+            this.logger.warn(`PayApp cancel HTTP_ERROR: ${logCtx}, httpStatus=${response.status}`);
+            throw this.cancelFailure('HTTP_ERROR', mulNo, context, response.status);
         }
 
         let text: string;
         try {
             text = (await response.text()).trim();
         } catch (error) {
-            this.logger.error(`PayApp cancel response read failed: mulNo=${mulNo}`, error);
-            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
+            this.logger.error(
+                `PayApp cancel RESPONSE_READ_FAILED: ${logCtx}, error=${error instanceof Error ? error.message : String(error)}`,
+                error instanceof Error ? error.stack : undefined
+            );
+            throw this.cancelFailure('RESPONSE_READ_FAILED', mulNo, context);
         }
 
         if (!text.startsWith('OK')) {
-            this.logger.warn(`PayApp cancel rejected: mulNo=${mulNo}, response=${text}`);
-            throw new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED);
+            this.logger.warn(`PayApp cancel REJECTED: ${logCtx}, response=${text.slice(0, 200)}`);
+            throw this.cancelFailure('REJECTED', mulNo, context);
         }
+    }
+
+    private cancelFailure(
+        kind: CancelFailureKind,
+        mulNo: number,
+        context?: CancelRequestContext,
+        httpStatus?: number
+    ): BusinessException {
+        return new BusinessException(ErrorCode.PAYMENT_EXTERNAL_API_FAILED, {
+            kind,
+            mulNo,
+            ...(context?.paymentId != null && { paymentId: context.paymentId }),
+            ...(httpStatus != null && { httpStatus }),
+        });
     }
 }
