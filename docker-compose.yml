@@ -45,7 +45,7 @@ services:
     # Redis (로컬 개발용)
     # ========================================
     redis:
-        image: redis:7-alpine
+        image: redis:8.6.0-alpine
         container_name: folioo-redis
         restart: unless-stopped
         ports:
