@@ -28,14 +28,7 @@ export class PortfolioService {
         body: UpdatePortfolioReqDTO
     ): Promise<PortfolioDetailResDTO> {
         const portfolio = await this.findByIdOrThrow(portfolioId, userId);
-
-        if (body.name !== undefined) {
-            portfolio.name = body.name;
-        }
-        if (body.contributionRate !== undefined) {
-            portfolio.contributionRate = body.contributionRate;
-        }
-
+        portfolio.update(body);
         const saved = await this.portfolioRepository.save(portfolio);
         return PortfolioDetailResDTO.from(saved);
     }
