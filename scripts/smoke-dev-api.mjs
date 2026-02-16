@@ -484,6 +484,20 @@ function payloadOverrides(method, rawPath, ctx) {
     if (method === 'PATCH' && rawPath === '/users/me/marketing-consent') {
         return { isMarketingAgreed: true };
     }
+    // Auth SMS endpoints (NOT_IMPLEMENTED - min-valid payloads to expose 501)
+    if (method === 'POST' && rawPath === '/auth/sms/send') {
+        return { phoneNumber: '01000000000' };
+    }
+    if (method === 'POST' && rawPath === '/auth/sms/verify') {
+        return { phoneNumber: '01000000000', code: '000000' };
+    }
+    // Auth management endpoints (NOT_IMPLEMENTED - empty body to expose 501)
+    if (method === 'POST' && rawPath === '/auth/logout') {
+        return {};
+    }
+    if (method === 'POST' && /^\/auth\/(kakao|google|naver)\/unlink$/.test(rawPath)) {
+        return {};
+    }
     return null;
 }
 
@@ -803,14 +817,27 @@ async function main() {
 
     fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
 
-    // -- Console summary ----------------------------------------------------
-    const summary = {
-        outPath,
-        count: results.length,
-        classification: classificationBuckets,
-        buckets,
-    };
-    console.log(JSON.stringify(summary, null, 2));
+    // -- Console summary (human-readable + machine-parseable) ---------------
+    console.log('\n--- Smoke Test Summary ---');
+    console.log(`Endpoints: ${results.length}  |  Report: ${outPath}`);
+
+    console.log('\nClassification:');
+    const ordered = Object.entries(classificationBuckets)
+        .filter(([, v]) => v > 0)
+        .sort(([, a], [, b]) => b - a);
+    for (const [cat, count] of ordered) {
+        console.log(`  ${cat.padEnd(22)} ${count}`);
+    }
+
+    console.log('\nHTTP status buckets:');
+    for (const [k, v] of Object.entries(buckets)) {
+        if (v > 0) console.log(`  ${k.padEnd(14)} ${v}`);
+    }
+
+    // Machine-parseable last line (backward-compatible shape + classification)
+    console.log(
+        `\n${JSON.stringify({ outPath, buckets, classification: classificationBuckets, count: results.length })}`
+    );
 }
 
 main().catch((e) => {
