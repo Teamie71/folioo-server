@@ -38,7 +38,26 @@ import { REDIS_CLIENT } from './redis.constants';
         },
         {
             provide: CachePort,
-            useExisting: IoRedisCacheAdapter,
+            useFactory: (
+                redisConfigService: RedisConfigService,
+                ioRedisAdapter: IoRedisCacheAdapter
+            ): CachePort => {
+                const logger = new Logger('RedisModule');
+                const driver = redisConfigService.getCacheDriver();
+
+                if (driver === 'ioredis') {
+                    logger.log('CachePort 드라이버: ioredis');
+                    return ioRedisAdapter;
+                }
+
+                redisConfigService.validateUpstashConfig();
+                throw new Error(
+                    'CACHE_DRIVER=upstash는 아직 구현되지 않았습니다. ' +
+                        'UpstashCacheAdapter 구현 후 사용 가능합니다. ' +
+                        '현재는 CACHE_DRIVER=ioredis를 사용하세요.'
+                );
+            },
+            inject: [RedisConfigService, IoRedisCacheAdapter],
         },
         RedisService,
     ],

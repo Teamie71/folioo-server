@@ -50,6 +50,32 @@ services:
                 max-file: '3'
 
     # ========================================
+    # Redis (개발 서버)
+    # ========================================
+    redis:
+        image: redis:8-alpine
+        container_name: folioo-redis
+        restart: unless-stopped
+        volumes:
+            - redis-data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        deploy:
+            resources:
+                limits:
+                    memory: 128M
+                reservations:
+                    memory: 64M
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '10m'
+                max-file: '3'
+
+    # ========================================
     # NestJS Backend (개발 서버)
     # ========================================
     backend:
@@ -58,6 +84,8 @@ services:
         restart: unless-stopped
         depends_on:
             postgres:
+                condition: service_healthy
+            redis:
                 condition: service_healthy
         ports:
             - '3000:3000'
@@ -86,6 +114,7 @@ services:
 
 volumes:
     postgres-data:
+    redis-data:
 
 networks:
     default:
