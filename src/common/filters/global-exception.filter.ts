@@ -72,7 +72,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         }
 
         const result = CommonResponse.fail(errorCode, reason, path, details);
-        if (httpStatus < 500) {
+        if (httpStatus >= 500 && exception instanceof HttpException) {
+            this.logger.error(`🚨 [Server Error] ${path}: ${errorCode} - ${reason}`);
+        } else if (httpStatus < 500) {
             this.logger.warn(`⚠️ [Client Error] ${path}: ${reason}`);
         }
         httpAdapter.reply(ctx.getResponse(), result, httpStatus);
