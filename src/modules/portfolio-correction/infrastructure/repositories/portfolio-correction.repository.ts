@@ -48,7 +48,7 @@ export class PortfolioCorrectionRepository {
     ): Promise<PortfolioCorrection[]> {
         const qb = this.portfolioCorrectionRepository
             .createQueryBuilder('pc')
-            .where('pc.userId = :userId', { userId })
+            .where('pc.user = :userId', { userId })
             .orderBy('pc.createdAt', 'DESC');
 
         const trimmedKeyword = keyword?.trim();
