@@ -14,6 +14,10 @@ export class PortfolioCorrectionRepository {
         return this.portfolioCorrectionRepository.save(correction);
     }
 
+    async deleteById(id: number): Promise<void> {
+        await this.portfolioCorrectionRepository.delete(id);
+    }
+
     async findById(id: number): Promise<PortfolioCorrection | null> {
         return this.portfolioCorrectionRepository.findOne({
             where: { id },
