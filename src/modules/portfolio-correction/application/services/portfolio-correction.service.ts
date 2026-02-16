@@ -149,7 +149,12 @@ export class PortfolioCorrectionService {
     }
 
     async deleteCorrection(correctionId: number, userId: number): Promise<void> {
-        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
-        await this.portfolioCorrectionRepository.deleteById(correction.id);
+        await this.findByIdAndUserIdOrThrow(correctionId, userId);
+        await this.correctionItemService.deleteByCorrectionId(correctionId);
+
+        const affected = await this.portfolioCorrectionRepository.deleteById(correctionId);
+        if (affected === 0) {
+            throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
+        }
     }
 }
