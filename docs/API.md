@@ -85,16 +85,67 @@ export FOLIOO_ACCESS_TOKEN="<paste-access-token>"
 node scripts/smoke-dev-api.mjs --mutate --exclude '^/auth/(kakao|google|naver)'
 ```
 
+### Multipart file upload endpoints
+
+By default, multipart/form-data endpoints (e.g. PDF extract) are skipped.
+To test them, provide a local file with `--file`:
+
+```bash
+node scripts/smoke-dev-api.mjs --mutate --file ./sample.pdf
+```
+
+### CLI Options
+
+| Option               | Default                           | Description                        |
+| -------------------- | --------------------------------- | ---------------------------------- |
+| `--base <url>`       | `https://folioo-dev-api.log8.kr`  | Dev server base URL                |
+| `--token-env <name>` | `FOLIOO_ACCESS_TOKEN`             | Env var containing access token    |
+| `--mutate`           | off                               | Enable POST/PATCH/DELETE endpoints |
+| `--file <path>`      | _(none)_                          | Attach file to multipart endpoints |
+| `--delay-ms <n>`     | 120                               | Delay between requests (ms)        |
+| `--timeout-ms <n>`   | 15000                             | Per-request timeout (ms)           |
+| `--include <regex>`  | _(none)_                          | Only run paths matching regex      |
+| `--exclude <regex>`  | _(none)_                          | Skip paths matching regex          |
+| `--out <path>`       | `/tmp/folioo_dev_smoke_<ts>.json` | Report output path                 |
+
+### Result Classification
+
+Each endpoint result is classified into one of:
+
+| Classification     | HTTP Status    | Meaning                                 |
+| ------------------ | -------------- | --------------------------------------- |
+| `implemented`      | 2xx            | Endpoint works correctly                |
+| `not_implemented`  | 501            | Endpoint is stubbed / not yet built     |
+| `validation_error` | 400            | Payload rejected by DTO validation      |
+| `not_found`        | 404            | Resource not found                      |
+| `auth_required`    | 401            | Authentication missing or invalid       |
+| `payment_required` | 402            | Insufficient tickets                    |
+| `server_error`     | 500+ (not 501) | Unexpected server error                 |
+| `skipped`          | _(n/a)_        | Skipped by rule (env, multipart, OAuth) |
+| `network_error`    | _(n/a)_        | Timeout or connection failure           |
+
+### Environment-Dependent Skipping
+
+Some endpoints are auto-skipped when prerequisite data is unavailable:
+
+- `POST /auth/refresh` - always skipped (needs httpOnly `refreshToken` cookie, not Bearer)
+- `POST /payments` - skipped when no ticket products are seeded in the environment
+- `GET /auth/{kakao,google,naver}*` - skipped (OAuth redirect, not meaningful as API call)
+- Multipart endpoints - skipped unless `--file` is provided
+
 ### Output
 
-The script prints a summary and writes a JSON report under `/tmp`.
+The script prints a human-readable classification summary and writes a JSON report under `/tmp`.
 
 The report includes:
 
 - request URL
 - HTTP status
+- classification category (see table above)
 - standardized error code (when provided)
 - standardized reason (when provided)
+- `classification` - aggregate count per classification category
+- `buckets` - legacy HTTP status code buckets (backward-compatible)
 
 ## Current Implementation Status (Controllers)
 
