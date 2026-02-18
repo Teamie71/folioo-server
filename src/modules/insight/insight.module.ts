@@ -10,9 +10,10 @@ import { ActivityService } from './application/services/activity.service';
 import { InsightActivity } from './domain/entities/insight-activity.entity';
 import { InsightActivityRepository } from './infrastructure/repositories/insight-activity.repository';
 import { InsightActivityService } from './application/services/insight-activity.service';
+import { EmbeddingModule } from '../embedding/embedding.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Insight, Activity, InsightActivity])],
+    imports: [TypeOrmModule.forFeature([Insight, Activity, InsightActivity]), EmbeddingModule],
     controllers: [InsightController],
     providers: [
         InsightRepository,

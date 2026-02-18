@@ -33,6 +33,14 @@ export class InsightRepository {
         });
     }
 
+    async countByUser(userId: number) {
+        return await this.insightRepository.countBy({
+            user: {
+                id: userId,
+            },
+        });
+    }
+
     async deleteById(id: number): Promise<void> {
         await this.insightRepository.delete({
             id: id,

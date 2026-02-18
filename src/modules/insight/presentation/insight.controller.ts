@@ -39,9 +39,16 @@ export class InsightController {
             '인사이트 로그를 생성하고, 텍스트를 임베딩으로 변환하여 메타데이터를 벡터DB에 저장합니다.',
     })
     @ApiCommonResponse(InsightLogResDTO)
-    @ApiCommonErrorResponse(ErrorCode.DUPLICATE_LOG_NAME, ErrorCode.UNAUTHORIZED)
-    createLog(@Body() body: CreateInsightLogReqDTO): InsightLogResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    @ApiCommonErrorResponse(
+        ErrorCode.DUPLICATE_LOG_NAME,
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.LOG_MAX_LIMIT
+    )
+    async createLog(
+        @Body() body: CreateInsightLogReqDTO,
+        @User('sub') userId: number
+    ): Promise<InsightLogResDTO> {
+        return this.insightService.createInsight(userId, body);
     }
 
     @Get()

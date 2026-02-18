@@ -83,6 +83,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인사이트 로그의 제목은 중복될 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.LOG_MAX_LIMIT]: {
+        message: '인사이트 로그는 최대 100개까지 가질 수 있습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.DUPLICATE_ACTIVITY_NAME]: {
         message: '활동명은 중복될 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
