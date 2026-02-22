@@ -24,6 +24,23 @@ export class InsightRepository {
         });
     }
 
+    async findSimilarInsights(
+        userId: number,
+        embedding: number[],
+        limit: number
+    ): Promise<Insight[]> {
+        const embeddingString = `[${embedding.join(',')}]`;
+        return await this.insightRepository
+            .createQueryBuilder('insight')
+            .where('insight.user = :userId', { userId })
+            .andWhere('insight.embedding <=> :embedding < 0.7')
+            // <=> : 코사인 거리(Cosine Distance). 0에 가까울수록 유사함.
+            .orderBy('insight.embedding <=> :embedding', 'ASC')
+            .setParameters({ embedding: embeddingString })
+            .limit(limit)
+            .getMany();
+    }
+
     async existsByTitleAndUser(title: string, userId: number): Promise<boolean> {
         return await this.insightRepository.existsBy({
             title: title,

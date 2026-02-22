@@ -108,17 +108,14 @@ export class InsightController {
         summary: '인사이트 로그 유사도 검색',
         description: '키워드를 통해 인사이트 로그를 검색합니다.',
     })
-    @ApiQuery({ name: 'keyword', required: false })
-    @ApiQuery({ name: 'category', required: false })
-    @ApiQuery({ name: 'activityName', required: false })
+    @ApiQuery({ name: 'keyword', required: true })
     @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    searchVector(
-        @Query('keyword') keyword?: string,
-        @Query('category') category?: string,
-        @Query('activityName') activityName?: string
-    ): InsightLogResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { keyword, category, activityName });
+    async searchVector(
+        @User('sub') userId: number,
+        @Query('keyword') keyword: string
+    ): Promise<InsightLogResDTO[]> {
+        return await this.insightService.searchInsight(userId, keyword);
     }
 
     @Post('tags')

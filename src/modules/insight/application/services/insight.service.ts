@@ -79,6 +79,31 @@ export class InsightService {
         return InsightLogResDTO.from(savedLog, activityNames);
     }
 
+    async searchInsight(
+        userId: number,
+        searchText: string,
+        limit: number = 3
+    ): Promise<InsightLogResDTO[]> {
+        if (!searchText || searchText.trim() === '') {
+            return [];
+        }
+        const queryEmbedding = await this.embeddingService.getEmbedding(searchText);
+        const similarInsights = await this.insightRepository.findSimilarInsights(
+            userId,
+            queryEmbedding,
+            limit
+        );
+        const result = await Promise.all(
+            similarInsights.map(async (insight) => {
+                const activityNames = await this.insightActivityService.findActivitiesByInsight(
+                    insight.id
+                );
+                return InsightLogResDTO.from(insight, activityNames);
+            })
+        );
+        return result;
+    }
+
     async updateInsight(
         userId: number,
         insightId: number,
