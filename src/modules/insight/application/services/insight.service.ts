@@ -65,6 +65,10 @@ export class InsightService {
         dto: CreateInsightLogReqDTO,
         embedding: number[]
     ): Promise<InsightLogResDTO> {
+        // double-check
+        const count = await this.insightRepository.countByUser(userId);
+        if (count > MAX_INSIGHTS_PER_USER) throw new BusinessException(ErrorCode.LOG_MAX_LIMIT);
+
         const insight: Insight = Insight.create(
             dto.title,
             dto.category,
@@ -135,12 +139,11 @@ export class InsightService {
             const textToEmbed = `title: ${targetTitle}\ndescription: ${targetDescription}`;
             newEmbedding = await this.embeddingService.getEmbedding(textToEmbed);
         }
-        return await this.updateInsightTransaction(userId, insightId, dto, newEmbedding);
+        return await this.updateInsightTransaction(insightId, dto, newEmbedding);
     }
 
     @Transactional()
     async updateInsightTransaction(
-        userId: number,
         insightId: number,
         dto: UpdateInsightReqDTO,
         newEmbedding?: number[]
