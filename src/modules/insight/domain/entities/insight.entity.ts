@@ -20,7 +20,7 @@ export class Insight extends BaseEntity {
     @Column({ length: 250 })
     description: string;
 
-    @Column({ type: 'vector', width: 1536, nullable: true })
+    @Column({ type: 'vector', length: 1536, nullable: true, select: false })
     embedding: number[];
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })

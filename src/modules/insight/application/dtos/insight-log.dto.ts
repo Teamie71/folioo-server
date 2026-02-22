@@ -13,6 +13,7 @@ import {
 import { Insight } from '../../domain/entities/insight.entity';
 
 export class InsightLogResDTO {
+    id: number;
     title: string;
     description: string;
     @ApiProperty({ enum: InsightCategory, example: InsightCategory.ETC })
@@ -23,11 +24,48 @@ export class InsightLogResDTO {
 
     static from(insight: Insight, activityNames: string[]): InsightLogResDTO {
         const dto = new InsightLogResDTO();
+        dto.id = insight.id;
         dto.title = insight.title;
         dto.description = insight.description;
         dto.category = insight.category;
         dto.activityNames = activityNames;
         dto.createdAt = insight.createdAt.toISOString();
+        return dto;
+    }
+}
+
+export class SummaryLogItemDTO {
+    id: number;
+    title: string;
+    activityNames: string[];
+
+    static from(insight: Insight, activityNames: string[]): SummaryLogItemDTO {
+        const dto = new SummaryLogItemDTO();
+        dto.id = insight.id;
+        dto.title = insight.title;
+        dto.activityNames = activityNames;
+        return dto;
+    }
+}
+
+export class SummaryLogResDTO {
+    @ApiProperty({
+        description: '카테고리명',
+        enum: InsightCategory,
+        example: InsightCategory.ETC,
+    })
+    category: InsightCategory;
+
+    @ApiProperty({
+        description: '해당 카테고리에 속한 인사이트 목록',
+        type: [SummaryLogItemDTO],
+    })
+    insights: SummaryLogItemDTO[];
+
+    static from(category: InsightCategory, insights: SummaryLogItemDTO[]): SummaryLogResDTO {
+        const dto = new SummaryLogResDTO();
+        dto.category = category;
+        dto.insights = insights;
         return dto;
     }
 }

@@ -24,6 +24,13 @@ export class InsightRepository {
         });
     }
 
+    async findAllByUserWithSimpleInfo(userId: number) {
+        return await this.insightRepository.find({
+            where: { user: { id: userId } },
+            order: { createdAt: 'DESC' },
+        });
+    }
+
     async findSimilarInsights(
         userId: number,
         embedding: number[],

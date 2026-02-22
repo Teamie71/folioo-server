@@ -6,6 +6,8 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateInsightLogReqDTO,
     InsightLogResDTO,
+    SummaryLogItemDTO,
+    SummaryLogResDTO,
     UpdateInsightReqDTO,
 } from '../dtos/insight-log.dto';
 import { ActivityService } from './activity.service';
@@ -13,6 +15,7 @@ import { InsightActivityService } from './insight-activity.service';
 import { Transactional } from 'typeorm-transactional';
 import { EMBEDDING_SERVICE } from 'src/modules/embedding/embedding.interface';
 import type { EmbeddingSupplier } from 'src/modules/embedding/embedding.interface';
+import { InsightCategory } from '../../domain/enums/insight-category.enum';
 
 @Injectable()
 export class InsightService {
@@ -37,6 +40,32 @@ export class InsightService {
         if (isDuplicateName) {
             throw new BusinessException(ErrorCode.DUPLICATE_LOG_NAME);
         }
+    }
+
+    async getSummaryInsights(userId: number): Promise<SummaryLogResDTO[]> {
+        // 1. 데이터 조회
+        const rawInsights = await this.insightRepository.findAllByUserWithSimpleInfo(userId);
+        const insightIds = rawInsights.map((insight) => insight.id);
+        // 2. 활동명 매핑
+        const activitiesMap = await this.insightActivityService.getNamesByInsightIds(insightIds);
+        // 3. Map을 이용한 그룹핑 (Category -> SummaryLogItemDTO 배열)
+        const groupedMap = new Map<InsightCategory, SummaryLogItemDTO[]>();
+
+        for (const insight of rawInsights) {
+            const activityNames = activitiesMap[insight.id] || [];
+            const itemDto = SummaryLogItemDTO.from(insight, activityNames);
+            // 맵에 카테고리가 없으면 빈 배열로 초기화
+            if (!groupedMap.has(insight.category)) {
+                groupedMap.set(insight.category, []);
+            }
+            // 해당 카테고리 배열에 DTO 푸시
+            groupedMap.get(insight.category)!.push(itemDto);
+        }
+
+        // 4. 조립된 Map을 SummaryLogResDTO 배열로 변환
+        return Array.from(groupedMap.entries()).map(([category, items]) =>
+            SummaryLogResDTO.from(category, items)
+        );
     }
 
     async createInsight(userId: number, dto: CreateInsightLogReqDTO): Promise<InsightLogResDTO> {

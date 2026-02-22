@@ -20,6 +20,30 @@ export class InsightActivityRepository {
         await this.mappingRepository.save(insightActivities);
     }
 
+    async findAllActivitiesByInsightIds(insightIds: number[]): Promise<InsightActivity[]> {
+        if (!insightIds || insightIds.length === 0) {
+            return [];
+        }
+
+        return await this.mappingRepository.find({
+            relations: ['insight', 'activity'],
+            select: {
+                insight: {
+                    id: true,
+                },
+                activity: {
+                    id: true,
+                    name: true,
+                },
+            },
+            where: {
+                insight: {
+                    id: In(insightIds),
+                },
+            },
+        });
+    }
+
     async findAllActivitiesByInsightId(insightId: number): Promise<InsightActivity[]> {
         return await this.mappingRepository.find({
             relations: ['activity'],

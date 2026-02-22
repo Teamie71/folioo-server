@@ -21,6 +21,7 @@ import {
     CreateInsightLogReqDTO,
     DeletedInsightLogResDTO,
     InsightLogResDTO,
+    SummaryLogResDTO,
     UpdateInsightReqDTO,
 } from '../application/dtos/insight-log.dto';
 import { ActivityNameReqDTO, ActivityNameResDTO } from '../application/dtos/activity-tag.dto';
@@ -60,6 +61,17 @@ export class InsightController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     getLogs(): InsightLogResDTO[] {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    }
+
+    @Get('summary')
+    @ApiOperation({
+        summary: '챗봇 멘션용 간소화 인사이트 목록 조회',
+        description: '사용자가 생성한 인사이트 로그 목록을 카테고리별로 간소화하여 조회합니다.',
+    })
+    @ApiCommonResponseArray(SummaryLogResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getSimpleLogs(@User('sub') userId: number): Promise<SummaryLogResDTO[]> {
+        return await this.insightService.getSummaryInsights(userId);
     }
 
     @Patch(':insightId')
