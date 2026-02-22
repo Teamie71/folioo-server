@@ -53,7 +53,8 @@ export class InsightService {
             await this.activityService.findByIdsOrThrow(dto.activityIds);
         }
         // 2. 텍스트를 벡터로 변환 (Embedding)
-        const embedding = await this.embeddingService.getEmbedding(dto.description);
+        const textToEmbed = `title: ${dto.title}\ndescription: ${dto.description}`;
+        const embedding = await this.embeddingService.getEmbedding(textToEmbed);
         // 3. 엔티티 생성 및 저장
         return await this.createInsightTransaction(userId, dto, embedding);
     }
@@ -125,8 +126,14 @@ export class InsightService {
         }
 
         let newEmbedding: number[] | undefined = undefined;
-        if (dto.description && dto.description !== log.description) {
-            newEmbedding = await this.embeddingService.getEmbedding(dto.description);
+        const isTitleChanged = dto.title && dto.title !== log.title;
+        const isDescriptionChanged = dto.description && dto.description !== log.description;
+        if (isTitleChanged || isDescriptionChanged) {
+            const targetTitle = dto.title ?? log.title;
+            const targetDescription = dto.description ?? log.description;
+
+            const textToEmbed = `title: ${targetTitle}\ndescription: ${targetDescription}`;
+            newEmbedding = await this.embeddingService.getEmbedding(textToEmbed);
         }
         return await this.updateInsightTransaction(userId, insightId, dto, newEmbedding);
     }
