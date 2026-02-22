@@ -31,30 +31,24 @@ export class InsightRepository {
         category?: InsightCategory,
         insightIds?: number[]
     ) {
-        const qb = this.insightRepository
-            .createQueryBuilder('insight')
-            .where('insight.user = :userId', { userId });
-
-        // 1. 카테고리 (단순 일치)
+        const qb = this.insightRepository.createQueryBuilder('insight');
+        // 1. 유저 필터
+        qb.where('insight.user = :userId', { userId });
+        // 2. 카테고리 필터
         if (category) {
             qb.andWhere('insight.category = :category', { category });
         }
-
-        // 2. 활동 ID 필터 (활동 쪽에서 받아온 ID들로 IN 절 처리)
-        if (insightIds) {
+        // 3. 활동 ID 필터
+        if (insightIds !== undefined) {
             if (insightIds.length === 0) return [];
             qb.andWhere('insight.id IN (:...insightIds)', { insightIds });
         }
-
-        // 3. 키워드 검색
+        // 4. 키워드 검색
         if (keyword) {
-            qb.andWhere((subQb) => {
-                subQb
-                    .where('insight.title ILIKE :keyword', { keyword: `%${keyword}%` })
-                    .orWhere('insight.description ILIKE :keyword', { keyword: `%${keyword}%` });
+            qb.andWhere('(insight.title ILIKE :keyword OR insight.description ILIKE :keyword)', {
+                keyword: `%${keyword}%`,
             });
         }
-
         return await qb.orderBy('insight.createdAt', 'DESC').getMany();
     }
 

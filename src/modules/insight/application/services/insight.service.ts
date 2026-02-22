@@ -47,10 +47,13 @@ export class InsightService {
         const { keyword, category, activityId } = dto;
 
         // 1. [활동 도메인] 활동 필터가 있으면 ID들을 먼저 가져옴
-        let insightIds: number[] | undefined;
+        let insightIds: number[] | undefined = undefined;
         if (activityId) {
             await this.activityService.findByIdOrThrow(activityId);
             insightIds = await this.insightActivityService.findInsightIdsByActivityId(activityId);
+            if (!insightIds || insightIds.length === 0) {
+                return [];
+            }
         }
 
         // 2. [인사이트 도메인] 필터링된 ID 배열을 통째로 넘겨서 검색 (나머지 필터와 조합)
@@ -60,6 +63,10 @@ export class InsightService {
             category,
             insightIds
         );
+
+        if (rawInsights.length === 0) {
+            return [];
+        }
 
         // 3. DTO 조립
         const finalInsightIds = rawInsights.map((i) => i.id);
