@@ -39,9 +39,16 @@ export class InsightController {
             '인사이트 로그를 생성하고, 텍스트를 임베딩으로 변환하여 메타데이터를 벡터DB에 저장합니다.',
     })
     @ApiCommonResponse(InsightLogResDTO)
-    @ApiCommonErrorResponse(ErrorCode.DUPLICATE_LOG_NAME, ErrorCode.UNAUTHORIZED)
-    createLog(@Body() body: CreateInsightLogReqDTO): InsightLogResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    @ApiCommonErrorResponse(
+        ErrorCode.DUPLICATE_LOG_NAME,
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.LOG_MAX_LIMIT
+    )
+    async createLog(
+        @Body() body: CreateInsightLogReqDTO,
+        @User('sub') userId: number
+    ): Promise<InsightLogResDTO> {
+        return this.insightService.createInsight(userId, body);
     }
 
     @Get()
@@ -101,17 +108,21 @@ export class InsightController {
         summary: '인사이트 로그 유사도 검색',
         description: '키워드를 통해 인사이트 로그를 검색합니다.',
     })
-    @ApiQuery({ name: 'keyword', required: false })
-    @ApiQuery({ name: 'category', required: false })
-    @ApiQuery({ name: 'activityName', required: false })
+    @ApiQuery({ name: 'keyword', required: true })
+    @ApiQuery({
+        name: 'threshold',
+        required: false,
+        description: '유사도 거리 임계값 (기본 0.7, 작을수록 일치도 높음)',
+    })
     @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    searchVector(
-        @Query('keyword') keyword?: string,
-        @Query('category') category?: string,
-        @Query('activityName') activityName?: string
-    ): InsightLogResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { keyword, category, activityName });
+    async searchVector(
+        @User('sub') userId: number,
+        @Query('keyword') keyword: string,
+        @Query('threshold') threshold?: number
+    ): Promise<InsightLogResDTO[]> {
+        const targetThreshold = threshold ?? 0.7;
+        return await this.insightService.searchInsight(userId, keyword, targetThreshold);
     }
 
     @Post('tags')

@@ -20,6 +20,12 @@ export class InsightActivityService {
         }
     }
 
+    async saveAllByIds(insightId: number, activityIds: number[]) {
+        if (activityIds.length > 0) {
+            await this.insightActivityRepository.saveAllByIds(insightId, activityIds);
+        }
+    }
+
     async findActivitiesByInsight(insightId: number): Promise<string[]> {
         return (await this.insightActivityRepository.findAllActivitiesByInsightId(insightId)).map(
             (r) => r.activity.name

@@ -21,7 +21,7 @@ services:
     # PostgreSQL Database (로컬 개발용)
     # ========================================
     postgres:
-        image: postgres:15-alpine
+        image: pgvector/pgvector:pg17
         container_name: folioo-postgres
         restart: unless-stopped
         ports:
