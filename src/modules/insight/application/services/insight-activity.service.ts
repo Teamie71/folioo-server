@@ -26,9 +26,38 @@ export class InsightActivityService {
         }
     }
 
+    async getNamesByInsightIds(insightIds: number[]): Promise<Record<number, string[]>> {
+        if (!insightIds || insightIds.length === 0) return {};
+
+        // 1. IN 쿼리로 한 번에 긁어오기
+        const mappingData =
+            await this.insightActivityRepository.findAllActivitiesByInsightIds(insightIds);
+
+        // 2. insightId를 키(Key)로, 활동명 배열을 값(Value)으로 하는 Map 객체 생성
+        const activitiesMap: Record<number, string[]> = {};
+
+        mappingData.forEach((mapping) => {
+            const insightId = mapping.insight.id;
+            const activityName = mapping.activity.name;
+
+            if (!activitiesMap[insightId]) {
+                activitiesMap[insightId] = [];
+            }
+            activitiesMap[insightId].push(activityName);
+        });
+
+        return activitiesMap;
+    }
+
     async findActivitiesByInsight(insightId: number): Promise<string[]> {
         return (await this.insightActivityRepository.findAllActivitiesByInsightId(insightId)).map(
             (r) => r.activity.name
+        );
+    }
+
+    async findInsightIdsByActivityId(activityId: number): Promise<number[]> {
+        return (await this.insightActivityRepository.findAllInsightIdByActivityId(activityId)).map(
+            (r) => r.insight.id
         );
     }
 
