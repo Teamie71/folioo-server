@@ -75,11 +75,11 @@ export class AuthController {
         const refreshToken = await this.loginUsecase.execute(user);
         const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
             '14d') as StringValue;
-        const isProd = this.configService.get<string>('APP_PROFILE') === 'prod';
+        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? 'none' : 'lax',
+            secure: !isLocal,
+            sameSite: isLocal ? 'lax' : 'none',
             path: '/',
             maxAge: TimeUtil.toMs(expiresIn),
         });
