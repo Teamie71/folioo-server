@@ -32,9 +32,7 @@ export async function setupSwagger(app: INestApplication): Promise<void> {
                 type: 'http',
                 scheme: 'bearer',
                 bearerFormat: 'JWT',
-                name: 'JWT',
                 description: '로그인 후 받은 accessToken을 입력하세요.',
-                in: 'header',
             },
             'access-token'
         )
