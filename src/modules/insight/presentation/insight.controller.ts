@@ -109,13 +109,20 @@ export class InsightController {
         description: '키워드를 통해 인사이트 로그를 검색합니다.',
     })
     @ApiQuery({ name: 'keyword', required: true })
+    @ApiQuery({
+        name: 'threshold',
+        required: false,
+        description: '유사도 거리 임계값 (기본 0.7, 작을수록 일치도 높음)',
+    })
     @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async searchVector(
         @User('sub') userId: number,
-        @Query('keyword') keyword: string
+        @Query('keyword') keyword: string,
+        @Query('threshold') threshold?: number
     ): Promise<InsightLogResDTO[]> {
-        return await this.insightService.searchInsight(userId, keyword);
+        const targetThreshold = threshold ?? 0.7;
+        return await this.insightService.searchInsight(userId, keyword, targetThreshold);
     }
 
     @Post('tags')

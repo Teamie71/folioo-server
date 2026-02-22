@@ -82,6 +82,7 @@ export class InsightService {
     async searchInsight(
         userId: number,
         searchText: string,
+        targetThreshold: number,
         limit: number = 3
     ): Promise<InsightLogResDTO[]> {
         if (!searchText || searchText.trim() === '') {
@@ -91,6 +92,7 @@ export class InsightService {
         const similarInsights = await this.insightRepository.findSimilarInsights(
             userId,
             queryEmbedding,
+            targetThreshold,
             limit
         );
         const result = await Promise.all(
