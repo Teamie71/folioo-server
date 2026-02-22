@@ -6,6 +6,7 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateInsightLogReqDTO,
     InsightLogResDTO,
+    QueryLogsDTO,
     SummaryLogItemDTO,
     SummaryLogResDTO,
     UpdateInsightReqDTO,
@@ -40,6 +41,35 @@ export class InsightService {
         if (isDuplicateName) {
             throw new BusinessException(ErrorCode.DUPLICATE_LOG_NAME);
         }
+    }
+
+    async getInsightLogs(userId: number, dto: QueryLogsDTO): Promise<InsightLogResDTO[]> {
+        const { keyword, category, activityId } = dto;
+
+        // 1. [활동 도메인] 활동 필터가 있으면 ID들을 먼저 가져옴
+        let insightIds: number[] | undefined;
+        if (activityId) {
+            await this.activityService.findByIdOrThrow(activityId);
+            insightIds = await this.insightActivityService.findInsightIdsByActivityId(activityId);
+        }
+
+        // 2. [인사이트 도메인] 필터링된 ID 배열을 통째로 넘겨서 검색 (나머지 필터와 조합)
+        const rawInsights = await this.insightRepository.search(
+            userId,
+            keyword,
+            category,
+            insightIds
+        );
+
+        // 3. DTO 조립
+        const finalInsightIds = rawInsights.map((i) => i.id);
+        const activitiesMap =
+            await this.insightActivityService.getNamesByInsightIds(finalInsightIds);
+
+        return rawInsights.map((insight) => {
+            const activityNames = activitiesMap[insight.id] || [];
+            return InsightLogResDTO.from(insight, activityNames);
+        });
     }
 
     async getSummaryInsights(userId: number): Promise<SummaryLogResDTO[]> {

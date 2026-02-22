@@ -59,6 +59,22 @@ export class InsightActivityRepository {
         });
     }
 
+    async findAllInsightIdByActivityId(activityId: number): Promise<InsightActivity[]> {
+        return await this.mappingRepository.find({
+            relations: ['insight', 'activity'],
+            select: {
+                insight: {
+                    id: true,
+                },
+            },
+            where: {
+                activity: {
+                    id: activityId,
+                },
+            },
+        });
+    }
+
     async deleteByIds(insightId: number, ids: number[]) {
         return await this.mappingRepository.delete({
             insight: {

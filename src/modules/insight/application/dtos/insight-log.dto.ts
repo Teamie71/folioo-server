@@ -1,4 +1,4 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { InsightCategory } from '../../domain/enums/insight-category.enum';
 import {
     ArrayUnique,
@@ -6,11 +6,14 @@ import {
     IsEnum,
     IsInt,
     IsNotEmpty,
+    IsNumber,
+    IsOptional,
     IsPositive,
     IsString,
     MaxLength,
 } from 'class-validator';
 import { Insight } from '../../domain/entities/insight.entity';
+import { Type } from 'class-transformer';
 
 export class InsightLogResDTO {
     id: number;
@@ -106,3 +109,28 @@ export class CreateInsightLogReqDTO {
 }
 
 export class UpdateInsightReqDTO extends PartialType(CreateInsightLogReqDTO) {}
+
+export class QueryLogsDTO {
+    @ApiPropertyOptional({ description: '검색 키워드 (제목/내용)', example: '소통' })
+    @IsOptional()
+    @IsString()
+    keyword?: string;
+
+    @ApiPropertyOptional({
+        description: '카테고리 필터',
+        enum: InsightCategory,
+        example: InsightCategory.ETC,
+    })
+    @IsOptional()
+    @IsEnum(InsightCategory)
+    category?: InsightCategory;
+
+    @ApiPropertyOptional({
+        description: '활동 ID',
+        example: 1,
+    })
+    @IsOptional()
+    @IsNumber({}, { each: true })
+    @Type(() => Number)
+    activityId?: number;
+}

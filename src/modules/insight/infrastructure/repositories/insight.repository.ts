@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Insight } from '../../domain/entities/insight.entity';
 import { Repository } from 'typeorm';
+import { InsightCategory } from '../../domain/enums/insight-category.enum';
 
 @Injectable()
 export class InsightRepository {
@@ -22,6 +23,39 @@ export class InsightRepository {
             relations: ['user'],
             select: { user: { id: true } },
         });
+    }
+
+    async search(
+        userId: number,
+        keyword?: string,
+        category?: InsightCategory,
+        insightIds?: number[]
+    ) {
+        const qb = this.insightRepository
+            .createQueryBuilder('insight')
+            .where('insight.user = :userId', { userId });
+
+        // 1. 카테고리 (단순 일치)
+        if (category) {
+            qb.andWhere('insight.category = :category', { category });
+        }
+
+        // 2. 활동 ID 필터 (활동 쪽에서 받아온 ID들로 IN 절 처리)
+        if (insightIds) {
+            if (insightIds.length === 0) return [];
+            qb.andWhere('insight.id IN (:...insightIds)', { insightIds });
+        }
+
+        // 3. 키워드 검색
+        if (keyword) {
+            qb.andWhere((subQb) => {
+                subQb
+                    .where('insight.title ILIKE :keyword', { keyword: `%${keyword}%` })
+                    .orWhere('insight.description ILIKE :keyword', { keyword: `%${keyword}%` });
+            });
+        }
+
+        return await qb.orderBy('insight.createdAt', 'DESC').getMany();
     }
 
     async findAllByUserWithSimpleInfo(userId: number) {

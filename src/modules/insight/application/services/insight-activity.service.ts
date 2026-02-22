@@ -55,6 +55,12 @@ export class InsightActivityService {
         );
     }
 
+    async findInsightIdsByActivityId(activityId: number): Promise<number[]> {
+        return (await this.insightActivityRepository.findAllInsightIdByActivityId(activityId)).map(
+            (r) => r.insight.id
+        );
+    }
+
     async deleteAllByInsightId(insightId: number): Promise<void> {
         await this.insightActivityRepository.deleteAllByInsightId(insightId);
     }

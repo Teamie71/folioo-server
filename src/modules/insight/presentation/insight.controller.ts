@@ -21,6 +21,7 @@ import {
     CreateInsightLogReqDTO,
     DeletedInsightLogResDTO,
     InsightLogResDTO,
+    QueryLogsDTO,
     SummaryLogResDTO,
     UpdateInsightReqDTO,
 } from '../application/dtos/insight-log.dto';
@@ -59,8 +60,11 @@ export class InsightController {
     })
     @ApiCommonResponseArray(InsightLogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    getLogs(): InsightLogResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async getLogs(
+        @User('sub') userId: number,
+        @Query() query: QueryLogsDTO
+    ): Promise<InsightLogResDTO[]> {
+        return await this.insightService.getInsightLogs(userId, query);
     }
 
     @Get('summary')
