@@ -166,15 +166,11 @@ export class InsightService {
             targetThreshold,
             limit
         );
-        const result = await Promise.all(
-            similarInsights.map(async (insight) => {
-                const activityNames = await this.insightActivityService.findActivitiesByInsight(
-                    insight.id
-                );
-                return InsightLogResDTO.from(insight, activityNames);
-            })
+        const insightIds = similarInsights.map((i) => i.id);
+        const activitiesMap = await this.insightActivityService.getNamesByInsightIds(insightIds);
+        return similarInsights.map((insight) =>
+            InsightLogResDTO.from(insight, activitiesMap[insight.id] || [])
         );
-        return result;
     }
 
     async updateInsight(
@@ -218,6 +214,9 @@ export class InsightService {
 
         if (dto.title && dto.title !== log.title) {
             log.title = dto.title;
+            if (newEmbedding) {
+                log.embedding = newEmbedding;
+            }
         }
 
         if (dto.description && dto.description !== log.description) {
