@@ -20,7 +20,7 @@ services:
     # PostgreSQL Database (개발 서버)
     # ========================================
     postgres:
-        image: postgres:15-alpine
+        image: pgvector/pgvector:pg15
         container_name: folioo-postgres
         restart: unless-stopped
         env_file:
