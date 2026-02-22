@@ -48,6 +48,10 @@ export class InsightService {
         }
         // 1-2. 로그 제목 중복 검사
         await this.validateDuplicationOfTitle(dto.title, userId);
+        // 1-3. 액티비티 ID 유효성 검사
+        if (dto.activityIds && dto.activityIds.length > 0) {
+            await this.activityService.findByIdsOrThrow(dto.activityIds);
+        }
         // 2. 텍스트를 벡터로 변환 (Embedding)
         const embedding = await this.embeddingService.getEmbedding(dto.description);
         // 3. 엔티티 생성 및 저장
@@ -68,7 +72,6 @@ export class InsightService {
             userId
         );
         const savedLog = await this.insightRepository.save(insight);
-        await this.activityService.findByIdsOrThrow(dto.activityIds);
         await this.insightActivityService.saveAllByIds(savedLog.id, dto.activityIds);
         const activityNames = await this.insightActivityService.findActivitiesByInsight(
             savedLog.id
@@ -76,40 +79,60 @@ export class InsightService {
         return InsightLogResDTO.from(savedLog, activityNames);
     }
 
-    @Transactional()
     async updateInsight(
         userId: number,
         insightId: number,
         dto: UpdateInsightReqDTO
     ): Promise<InsightLogResDTO> {
+        // 1. 도메인 로직 검사
         const log = await this.findByIdOrThrow(insightId);
         if (log.user.id !== userId) {
             throw new BusinessException(ErrorCode.NOT_LOG_OWNER);
         }
-
         if (dto.title && dto.title !== log.title) {
             // 로그 제목 중복 검사
             await this.validateDuplicationOfTitle(dto.title, userId);
+        }
+        if (dto.activityIds) {
+            await this.activityService.findByIdsOrThrow(dto.activityIds);
+        }
+
+        let newEmbedding: number[] | undefined = undefined;
+        if (dto.description && dto.description !== log.description) {
+            newEmbedding = await this.embeddingService.getEmbedding(dto.description);
+        }
+        return await this.updateInsightTransaction(userId, insightId, dto, newEmbedding);
+    }
+
+    @Transactional()
+    async updateInsightTransaction(
+        userId: number,
+        insightId: number,
+        dto: UpdateInsightReqDTO,
+        newEmbedding?: number[]
+    ): Promise<InsightLogResDTO> {
+        const log = await this.findByIdOrThrow(insightId);
+
+        if (dto.title && dto.title !== log.title) {
             log.title = dto.title;
         }
 
         if (dto.description && dto.description !== log.description) {
             log.description = dto.description;
+            if (newEmbedding) {
+                log.embedding = newEmbedding;
+            }
         }
 
         if (dto.category && dto.category !== log.category) {
             log.category = dto.category;
         }
 
-        let activityNames: string[] = [];
         if (dto.activityIds) {
-            const currentActivities = await this.activityService.findByIdsOrThrow(dto.activityIds);
             await this.insightActivityService.compareAndReplaceByIds(insightId, dto.activityIds);
-            activityNames = currentActivities.map((a) => a.name);
-        } else {
-            activityNames = await this.insightActivityService.findActivitiesByInsight(insightId);
         }
 
+        const activityNames = await this.insightActivityService.findActivitiesByInsight(insightId);
         const savedLog = await this.insightRepository.save(log);
         return InsightLogResDTO.from(savedLog, activityNames);
     }
