@@ -82,7 +82,6 @@ export class AuthController {
             sameSite: isLocal ? 'lax' : 'none',
             path: '/',
             maxAge: TimeUtil.toMs(expiresIn),
-            partitioned: true,
         });
         const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
         res.redirect(`${clientUrl}?status=success`);
