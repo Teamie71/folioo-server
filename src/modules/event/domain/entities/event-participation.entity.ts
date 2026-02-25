@@ -1,9 +1,11 @@
 import { BaseEntity } from '../../../../common/entities/base.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { User } from '../../../user/domain/user.entity';
 import { Event } from './event.entity';
+import { EventRewardStatus } from '../enums/event-reward-status.enum';
 
 @Entity('event_participation')
+@Unique(['userId', 'eventId'])
 @Index(['userId'])
 @Index(['eventId'])
 export class EventParticipation extends BaseEntity {
@@ -32,4 +34,17 @@ export class EventParticipation extends BaseEntity {
 
     @Column({ nullable: true })
     rewardGrantedAt: Date;
+
+    @Column({
+        type: 'enum',
+        enum: EventRewardStatus,
+        default: EventRewardStatus.NOT_GRANTED,
+    })
+    rewardStatus: EventRewardStatus;
+
+    @Column({ nullable: true, length: 64 })
+    grantedBy: string | null;
+
+    @Column({ nullable: true, length: 500 })
+    grantReason: string | null;
 }

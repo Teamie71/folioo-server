@@ -12,6 +12,29 @@ export interface GoalConfig {
     dailyLimit?: number;
 }
 
+export interface EventUiConfig {
+    feedbackModal?: {
+        eligibleTitle?: string;
+        eligibleDescription?: string;
+        rewardedTitle?: string;
+        rewardedDescription?: string;
+        ctaText?: string;
+        ctaLink?: string;
+    };
+    progressCard?: {
+        titleTemplate?: string;
+        subtitleTemplate?: string;
+        contentTemplate?: string;
+        ctaDefaultText?: string;
+        ctaCompletedText?: string;
+    };
+}
+
+export interface EventOpsConfig {
+    manualRewardOnly?: boolean;
+    allowFeedbackAfterReward?: boolean;
+}
+
 @Entity('event')
 export class Event extends BaseEntity {
     @Column({ unique: true, length: 50 })
@@ -34,6 +57,12 @@ export class Event extends BaseEntity {
 
     @Column({ type: 'jsonb', nullable: true })
     goalConfig: GoalConfig | null;
+
+    @Column({ type: 'jsonb', nullable: true })
+    uiConfig: EventUiConfig | null;
+
+    @Column({ type: 'jsonb', nullable: true })
+    opsConfig: EventOpsConfig | null;
 
     @Column({ type: 'date' })
     startDate: Date;
