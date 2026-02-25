@@ -15,4 +15,38 @@ export class EventParticipationService {
         }
         return participation;
     }
+
+    async findByUserIdAndEventId(
+        userId: number,
+        eventId: number
+    ): Promise<EventParticipation | null> {
+        return this.eventParticipationRepository.findByUserIdAndEventId(userId, eventId);
+    }
+
+    async findByUserIdAndEventIdForUpdate(
+        userId: number,
+        eventId: number
+    ): Promise<EventParticipation | null> {
+        return this.eventParticipationRepository.findByUserIdAndEventIdForUpdate(userId, eventId);
+    }
+
+    async findByUserIdAndEventCode(
+        userId: number,
+        eventCode: string
+    ): Promise<EventParticipation | null> {
+        return this.eventParticipationRepository.findByUserIdAndEventCode(userId, eventCode);
+    }
+
+    async save(participation: EventParticipation): Promise<EventParticipation> {
+        return this.eventParticipationRepository.save(participation);
+    }
+
+    async create(userId: number, eventId: number): Promise<EventParticipation> {
+        const participation = new EventParticipation();
+        participation.userId = userId;
+        participation.eventId = eventId;
+        participation.progress = 0;
+        participation.isCompleted = false;
+        return this.eventParticipationRepository.save(participation);
+    }
 }

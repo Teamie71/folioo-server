@@ -15,4 +15,21 @@ export class EventService {
         }
         return event;
     }
+
+    async findByCodeOrThrow(code: string): Promise<Event> {
+        const event = await this.eventRepository.findByCode(code);
+        if (!event) {
+            throw new BusinessException(ErrorCode.EVENT_NOT_FOUND);
+        }
+        return event;
+    }
+
+    async findActiveByCodeOrThrow(code: string): Promise<Event> {
+        const today = new Date().toISOString().slice(0, 10);
+        const event = await this.eventRepository.findActiveByCode(code, today);
+        if (!event) {
+            throw new BusinessException(ErrorCode.EVENT_NOT_ACTIVE);
+        }
+        return event;
+    }
 }
