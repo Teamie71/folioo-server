@@ -93,4 +93,12 @@ export class InsightActivityRepository {
             },
         });
     }
+
+    async deleteAllByActivityId(activityId: number) {
+        return await this.mappingRepository.delete({
+            activity: {
+                id: activityId,
+            },
+        });
+    }
 }

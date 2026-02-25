@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { ErrorCode } from './error-code.enum';
+import { MAX_ACTIVITY_TAG_PER_USER } from 'src/modules/insight/domain/entities/activity.entity';
 
 interface ErrorDetail {
     message: string;
@@ -47,6 +48,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인사이트 로그에 접근할 권한이 없는 사용자입니다.',
         statusCode: HttpStatus.FORBIDDEN,
     },
+    [ErrorCode.NOT_ACTIVITY_TAG_OWNER]: {
+        message: '활동 분류 태그에 접근할 권한이 없는 사용자입니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
     [ErrorCode.SMS_CODE_NOT_FOUND]: {
         message: '인증 시간이 만료되었습니다. 재전송 버튼을 눌러주세요.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -91,8 +96,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '활동명은 중복될 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
-    [ErrorCode.FULL_ACTIVITY_NAME]: {
-        message: '활동 분류 태그는 최대 10개까지 가질 수 있습니다.',
+    [ErrorCode.FULL_ACTIVITY_TAG]: {
+        message: `활동 분류 태그는 최대 ${MAX_ACTIVITY_TAG_PER_USER}개까지 가질 수 있습니다.`,
         statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.DUPLICATE_EXPERIENCE_NAME]: {

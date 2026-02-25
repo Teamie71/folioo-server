@@ -17,4 +17,11 @@ export class ActivityNameReqDTO {
 export class ActivityNameResDTO {
     id: number;
     name: string;
+
+    static of(id: number, name: string) {
+        const dto = new ActivityNameResDTO();
+        dto.id = id;
+        dto.name = name;
+        return dto;
+    }
 }

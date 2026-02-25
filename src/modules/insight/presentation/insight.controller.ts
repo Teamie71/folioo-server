@@ -15,7 +15,6 @@ import {
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateInsightLogReqDTO,
@@ -28,11 +27,15 @@ import {
 import { ActivityNameReqDTO, ActivityNameResDTO } from '../application/dtos/activity-tag.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { InsightService } from '../application/services/insight.service';
+import { ActivityService } from '../application/services/activity.service';
 
 @ApiTags('Insight')
 @Controller('insights')
 export class InsightController {
-    constructor(private readonly insightService: InsightService) {}
+    constructor(
+        private readonly insightService: InsightService,
+        private readonly activityService: ActivityService
+    ) {}
 
     @Post()
     @ApiOperation({
@@ -150,10 +153,13 @@ export class InsightController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.DUPLICATE_ACTIVITY_NAME,
-        ErrorCode.FULL_ACTIVITY_NAME
+        ErrorCode.FULL_ACTIVITY_TAG
     )
-    createActivityTag(@Body() body: ActivityNameReqDTO): ActivityNameResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    async createActivityTag(
+        @User('sub') userId: number,
+        @Body() body: ActivityNameReqDTO
+    ): Promise<ActivityNameResDTO> {
+        return await this.activityService.createActivity(userId, body.name);
     }
 
     @Get('tags')
@@ -163,8 +169,8 @@ export class InsightController {
     })
     @ApiCommonResponseArray(ActivityNameResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    getActivityTags(): ActivityNameResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async getActivityTags(@User('sub') userId: number): Promise<ActivityNameResDTO[]> {
+        return await this.activityService.getTagsByUser(userId);
     }
 
     @Delete('tags/:tagId')
@@ -183,8 +189,16 @@ export class InsightController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ACTIVITY_NOT_FOUND)
-    deleteActivityTag(@Param('tagId', ParseIntPipe) tagId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, tagId);
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.NOT_ACTIVITY_TAG_OWNER,
+        ErrorCode.ACTIVITY_NOT_FOUND
+    )
+    async deleteActivityTag(
+        @User('sub') userId: number,
+        @Param('tagId', ParseIntPipe) tagId: number
+    ): Promise<string> {
+        await this.activityService.deleteActivity(userId, tagId);
+        return '활동 분류 태그가 성공적으로 삭제되었습니다.';
     }
 }
