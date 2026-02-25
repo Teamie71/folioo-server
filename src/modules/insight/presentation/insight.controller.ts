@@ -170,8 +170,8 @@ export class InsightController {
     })
     @ApiCommonResponseArray(ActivityNameResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    getActivityTags(): ActivityNameResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async getActivityTags(@User('sub') userId: number): Promise<ActivityNameResDTO[]> {
+        return await this.activityService.getTagsByUser(userId);
     }
 
     @Delete('tags/:tagId')

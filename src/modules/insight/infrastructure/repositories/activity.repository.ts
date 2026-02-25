@@ -28,6 +28,16 @@ export class ActivityRepository {
         });
     }
 
+    async findAllByUser(userId: number): Promise<Activity[]> {
+        return await this.activityRepository.find({
+            where: {
+                user: {
+                    id: userId,
+                },
+            },
+        });
+    }
+
     async countByUserId(userId: number): Promise<number> {
         return await this.activityRepository.count({
             where: {

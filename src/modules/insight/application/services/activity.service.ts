@@ -26,6 +26,13 @@ export class ActivityService {
         return activities;
     }
 
+    async getTagsByUser(userId: number): Promise<ActivityNameResDTO[]> {
+        const tags = await this.activityRepository.findAllByUser(userId);
+        return tags.map((tag) => {
+            return ActivityNameResDTO.of(tag.id, tag.name);
+        });
+    }
+
     @Transactional()
     async createActivity(userId: number, activityName: string): Promise<ActivityNameResDTO> {
         // 검증1: 개수 검증 - 최대 10개
