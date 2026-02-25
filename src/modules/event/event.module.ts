@@ -13,7 +13,6 @@ import { EventController } from './presentation/event.controller';
 import { EventRewardFacade } from './application/facades/event-reward.facade';
 import { UserModule } from '../user/user.module';
 import { TicketModule } from '../ticket/ticket.module';
-import { EventAdminGuard } from './infrastructure/guards/event-admin.guard';
 
 @Module({
     imports: [
@@ -30,7 +29,6 @@ import { EventAdminGuard } from './infrastructure/guards/event-admin.guard';
         EventParticipationService,
         EventFeedbackSubmissionService,
         EventRewardFacade,
-        EventAdminGuard,
     ],
     exports: [
         EventService,

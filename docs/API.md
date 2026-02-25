@@ -242,4 +242,4 @@ Legend:
 
 - GET `/events/:eventCode/feedback-modal` -> IMPLEMENTED
 - GET `/events/:eventCode/progress-card` -> IMPLEMENTED
-- POST `/events/admin/:eventCode/feedback-rewards/grants` -> IMPLEMENTED (`@Public`, `x-event-admin-key` 헤더 필요)
+- POST `/events/admin/:eventCode/feedback-rewards/grants` -> IMPLEMENTED (`@Public`)
