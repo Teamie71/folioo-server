@@ -49,7 +49,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         statusCode: HttpStatus.FORBIDDEN,
     },
     [ErrorCode.NOT_ACTIVITY_TAG_OWNER]: {
-        message: '인사이트 로그에 접근할 권한이 없는 사용자입니다.',
+        message: '활동 분류 태그에 접근할 권한이 없는 사용자입니다.',
         statusCode: HttpStatus.FORBIDDEN,
     },
     [ErrorCode.SMS_CODE_NOT_FOUND]: {
