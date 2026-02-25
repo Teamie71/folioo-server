@@ -28,11 +28,15 @@ import {
 import { ActivityNameReqDTO, ActivityNameResDTO } from '../application/dtos/activity-tag.dto';
 import { User } from 'src/common/decorators/user.decorator';
 import { InsightService } from '../application/services/insight.service';
+import { ActivityService } from '../application/services/activity.service';
 
 @ApiTags('Insight')
 @Controller('insights')
 export class InsightController {
-    constructor(private readonly insightService: InsightService) {}
+    constructor(
+        private readonly insightService: InsightService,
+        private readonly activityService: ActivityService
+    ) {}
 
     @Post()
     @ApiOperation({
@@ -150,10 +154,13 @@ export class InsightController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.DUPLICATE_ACTIVITY_NAME,
-        ErrorCode.FULL_ACTIVITY_NAME
+        ErrorCode.FULL_ACTIVITY_TAG
     )
-    createActivityTag(@Body() body: ActivityNameReqDTO): ActivityNameResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    async createActivityTag(
+        @User('sub') userId: number,
+        @Body() body: ActivityNameReqDTO
+    ): Promise<ActivityNameResDTO> {
+        return await this.activityService.createActivity(userId, body.name);
     }
 
     @Get('tags')
