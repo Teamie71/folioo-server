@@ -19,7 +19,6 @@ export class ActivityRepository {
             where: {
                 id: id,
             },
-            loadRelationIds: true,
         });
     }
 
@@ -32,9 +31,7 @@ export class ActivityRepository {
     async findAllByUser(userId: number): Promise<Activity[]> {
         return await this.activityRepository.find({
             where: {
-                user: {
-                    id: userId,
-                },
+                userId: userId,
             },
         });
     }
@@ -42,9 +39,7 @@ export class ActivityRepository {
     async countByUserId(userId: number): Promise<number> {
         return await this.activityRepository.count({
             where: {
-                user: {
-                    id: userId,
-                },
+                userId: userId,
             },
         });
     }
@@ -53,9 +48,7 @@ export class ActivityRepository {
         return await this.activityRepository.findOne({
             where: {
                 name: activityName,
-                user: {
-                    id: userId,
-                },
+                userId: userId,
             },
         });
     }

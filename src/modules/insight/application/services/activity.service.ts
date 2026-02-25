@@ -60,7 +60,7 @@ export class ActivityService {
         // 검증 1: 활동 분류 태그 존재 여부 검증
         const activity: Activity = await this.findByIdOrThrow(tagId);
         // 검증 2: 유저의 태그 삭제 권한 검증
-        if ((activity.user as unknown as number) !== userId) {
+        if (activity.userId !== userId) {
             throw new BusinessException(ErrorCode.NOT_ACTIVITY_TAG_OWNER);
         }
         // 인사이트 로그와의 연결 삭제
