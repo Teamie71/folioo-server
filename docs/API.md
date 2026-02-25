@@ -240,4 +240,6 @@ Legend:
 
 ### Event
 
-- `/events/*` -> EMPTY (no routes)
+- GET `/events/:eventCode/feedback-modal` -> IMPLEMENTED
+- GET `/events/:eventCode/progress-card` -> IMPLEMENTED
+- POST `/events/admin/:eventCode/feedback-rewards/grants` -> IMPLEMENTED (`x-event-admin-key` 헤더 + JWT 필요)
