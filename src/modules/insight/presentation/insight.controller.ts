@@ -15,7 +15,6 @@ import {
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateInsightLogReqDTO,
@@ -190,8 +189,16 @@ export class InsightController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ACTIVITY_NOT_FOUND)
-    deleteActivityTag(@Param('tagId', ParseIntPipe) tagId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, tagId);
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.NOT_ACTIVITY_TAG_OWNER,
+        ErrorCode.ACTIVITY_NOT_FOUND
+    )
+    async deleteActivityTag(
+        @User('sub') userId: number,
+        @Param('tagId', ParseIntPipe) tagId: number
+    ): Promise<string> {
+        await this.activityService.deleteActivity(userId, tagId);
+        return '활동 분류 태그가 성공적으로 삭제되었습니다.';
     }
 }

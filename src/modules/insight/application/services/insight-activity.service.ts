@@ -64,4 +64,8 @@ export class InsightActivityService {
     async deleteAllByInsightId(insightId: number): Promise<void> {
         await this.insightActivityRepository.deleteAllByInsightId(insightId);
     }
+
+    async deleteAllByActivityId(activityId: number): Promise<void> {
+        await this.insightActivityRepository.deleteAllByActivityId(activityId);
+    }
 }

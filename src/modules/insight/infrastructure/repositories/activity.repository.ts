@@ -19,6 +19,7 @@ export class ActivityRepository {
             where: {
                 id: id,
             },
+            loadRelationIds: true,
         });
     }
 
@@ -56,6 +57,12 @@ export class ActivityRepository {
                     id: userId,
                 },
             },
+        });
+    }
+
+    async deleteById(id: number): Promise<void> {
+        await this.activityRepository.delete({
+            id: id,
         });
     }
 }

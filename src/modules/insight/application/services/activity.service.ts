@@ -5,10 +5,14 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { ActivityNameResDTO } from '../dtos/activity-tag.dto';
 import { Transactional } from 'typeorm-transactional';
+import { InsightActivityService } from './insight-activity.service';
 
 @Injectable()
 export class ActivityService {
-    constructor(private readonly activityRepository: ActivityRepository) {}
+    constructor(
+        private readonly activityRepository: ActivityRepository,
+        private readonly insightActivityService: InsightActivityService
+    ) {}
 
     async findByIdOrThrow(id: number): Promise<Activity> {
         const activity = await this.activityRepository.findById(id);
@@ -49,5 +53,20 @@ export class ActivityService {
         const newActivity: Activity = Activity.create(activityName, userId);
         const savedActivity = await this.activityRepository.save(newActivity);
         return ActivityNameResDTO.of(savedActivity.id, savedActivity.name);
+    }
+
+    @Transactional()
+    async deleteActivity(userId: number, tagId: number): Promise<void> {
+        // 검증 1: 활동 분류 태그 존재 여부 검증
+        const activity: Activity = await this.findByIdOrThrow(tagId);
+        console.log(activity);
+        // 검증 2: 유저의 태그 삭제 권한 검증
+        if ((activity.user as unknown as number) !== userId) {
+            throw new BusinessException(ErrorCode.NOT_ACTIVITY_TAG_OWNER);
+        }
+        // 인사이트 로그와의 연결 삭제
+        await this.insightActivityService.deleteAllByActivityId(activity.id);
+        // 활동 분류 태그 삭제
+        await this.activityRepository.deleteById(activity.id);
     }
 }
