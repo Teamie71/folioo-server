@@ -10,6 +10,11 @@ import { TicketRepository } from '../../infrastructure/repositories/ticket.repos
 import { TicketBalanceResDTO } from '../dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from '../dtos/ticket-expiring.dto';
 
+type EventRewardItem = {
+    type: TicketType;
+    quantity: number;
+};
+
 @Injectable()
 export class TicketService {
     constructor(private readonly ticketRepository: TicketRepository) {}
@@ -36,6 +41,26 @@ export class TicketService {
             ticket.status = TicketStatus.AVAILABLE;
             ticket.source = TicketSource.PURCHASE;
             return ticket;
+        });
+
+        return this.ticketRepository.saveAll(tickets);
+    }
+
+    async issueTicketsForEventReward(
+        userId: number,
+        eventParticipationId: number,
+        rewards: EventRewardItem[]
+    ): Promise<Ticket[]> {
+        const tickets = rewards.flatMap((reward) => {
+            return Array.from({ length: reward.quantity }).map(() => {
+                const ticket = new Ticket();
+                ticket.userId = userId;
+                ticket.eventParticipationId = eventParticipationId;
+                ticket.type = reward.type;
+                ticket.status = TicketStatus.AVAILABLE;
+                ticket.source = TicketSource.EVENT;
+                return ticket;
+            });
         });
 
         return this.ticketRepository.saveAll(tickets);

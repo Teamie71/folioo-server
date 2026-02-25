@@ -33,6 +33,14 @@ export class UserRepository {
         });
     }
 
+    async findByPhoneNum(phoneNum: string): Promise<User | null> {
+        return this.userRepository.findOne({
+            where: {
+                phoneNum,
+            },
+        });
+    }
+
     async findByIdWithProfile(userId: number): Promise<User | null> {
         return this.userRepository.findOne({
             where: {
