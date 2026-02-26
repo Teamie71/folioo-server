@@ -11,15 +11,22 @@ import { InsightActivity } from './domain/entities/insight-activity.entity';
 import { InsightActivityRepository } from './infrastructure/repositories/insight-activity.repository';
 import { InsightActivityService } from './application/services/insight-activity.service';
 import { EmbeddingModule } from '../embedding/embedding.module';
+import { EventModule } from '../event/event.module';
+import { InsightFacade } from './application/facades/insight.facade';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Insight, Activity, InsightActivity]), EmbeddingModule],
+    imports: [
+        TypeOrmModule.forFeature([Insight, Activity, InsightActivity]),
+        EmbeddingModule,
+        EventModule,
+    ],
     controllers: [InsightController],
     providers: [
         InsightRepository,
         InsightActivityRepository,
         ActivityRepository,
         InsightService,
+        InsightFacade,
         InsightActivityService,
         ActivityService,
     ],
