@@ -45,9 +45,9 @@ export class EventParticipation extends BaseEntity {
     })
     rewardStatus: EventRewardStatus;
 
-    @Column({ nullable: true, length: 64 })
+    @Column({ type: 'varchar', nullable: true, length: 64 })
     grantedBy: string | null;
 
-    @Column({ nullable: true, length: 500 })
+    @Column({ type: 'varchar', nullable: true, length: 500 })
     grantReason: string | null;
 }
