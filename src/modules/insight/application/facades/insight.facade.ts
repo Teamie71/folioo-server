@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateInsightLogReqDTO, InsightLogResDTO } from '../dtos/insight-log.dto';
 import { InsightService } from '../services/insight.service';
 import { EventRewardFacade } from 'src/modules/event/application/facades/event-reward.facade';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class InsightFacade {
@@ -10,6 +11,7 @@ export class InsightFacade {
         private readonly eventRewardFacade: EventRewardFacade
     ) {}
 
+    @Transactional()
     async createInsight(userId: number, body: CreateInsightLogReqDTO): Promise<InsightLogResDTO> {
         const insight = await this.insightService.createInsight(userId, body);
         await this.eventRewardFacade.trackInsightChallengeProgress(userId);
