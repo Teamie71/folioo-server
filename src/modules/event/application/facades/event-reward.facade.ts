@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import {
+    ClaimEventRewardResDTO,
     EventProgressCardResDTO,
     FeedbackModalResDTO,
     FeedbackModalVariant,
@@ -21,6 +22,9 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventParticipation } from '../../domain/entities/event-participation.entity';
 import { Event } from '../../domain/entities/event.entity';
+import { isSameSeoulDate } from '../utils/seoul-date.util';
+
+const INSIGHT_LOG_CHALLENGE_EVENT_CODE = 'INSIGHT_LOG_CHALLENGE';
 
 @Injectable()
 export class EventRewardFacade {
@@ -131,6 +135,87 @@ export class EventRewardFacade {
     }
 
     @Transactional()
+    async trackInsightChallengeProgress(userId: number): Promise<void> {
+        const event = await this.eventService.findActiveByCode(INSIGHT_LOG_CHALLENGE_EVENT_CODE);
+        if (!event || !event.goalConfig?.target) {
+            return;
+        }
+
+        const participation = await this.getOrCreateParticipationForUpdate(userId, event.id);
+        if (participation.isCompleted) {
+            return;
+        }
+
+        const now = new Date();
+        const dailyLimit = event.goalConfig.dailyLimit;
+        if (
+            dailyLimit === 1 &&
+            participation.lastProgressedAt &&
+            isSameSeoulDate(participation.lastProgressedAt, now)
+        ) {
+            return;
+        }
+
+        const currentProgress = participation.progress;
+        const nextProgress = Math.min(event.goalConfig.target, currentProgress + 1);
+        if (nextProgress === currentProgress) {
+            return;
+        }
+
+        participation.progress = nextProgress;
+        participation.lastProgressedAt = now;
+
+        if (nextProgress >= event.goalConfig.target) {
+            participation.isCompleted = true;
+            participation.completedAt = participation.completedAt ?? now;
+        }
+
+        await this.eventParticipationService.save(participation);
+    }
+
+    @Transactional()
+    async claimEventReward(userId: number, eventCode: string): Promise<ClaimEventRewardResDTO> {
+        const event = await this.eventService.findActiveByCodeOrThrow(eventCode);
+        if (event.opsConfig?.manualRewardOnly === true) {
+            throw new BusinessException(ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED);
+        }
+
+        const participation = await this.getOrCreateParticipationForUpdate(userId, event.id);
+        if (!participation.isCompleted) {
+            throw new BusinessException(ErrorCode.EVENT_REWARD_NOT_CLAIMABLE);
+        }
+
+        if (
+            participation.rewardStatus === EventRewardStatus.GRANTED ||
+            participation.rewardGrantedAt
+        ) {
+            throw new BusinessException(ErrorCode.EVENT_REWARD_ALREADY_GRANTED);
+        }
+
+        const now = new Date();
+        participation.rewardStatus = EventRewardStatus.GRANTED;
+        participation.rewardGrantedAt = now;
+        participation.grantedBy = 'self-claim';
+        participation.grantReason = '챌린지 보상 직접 수령';
+
+        const savedParticipation = await this.eventParticipationService.save(participation);
+        await this.ticketService.issueTickets(
+            userId,
+            {
+                source: TicketSource.EVENT,
+                eventParticipationId: savedParticipation.id,
+            },
+            event.rewardConfig
+        );
+
+        const dto = new ClaimEventRewardResDTO();
+        dto.eventCode = event.code;
+        dto.rewardStatus = savedParticipation.rewardStatus;
+        dto.rewardGrantedAt = now.toISOString();
+        return dto;
+    }
+
+    @Transactional()
     async grantFeedbackRewardByPhone(
         eventCode: string,
         body: GrantFeedbackRewardReqDTO
@@ -167,29 +252,7 @@ export class EventRewardFacade {
             }
         }
 
-        let participation = await this.eventParticipationService.findByUserIdAndEventIdForUpdate(
-            user.id,
-            event.id
-        );
-        if (!participation) {
-            try {
-                participation = await this.eventParticipationService.create(user.id, event.id);
-            } catch (error) {
-                if (!this.isUniqueViolation(error)) {
-                    throw error;
-                }
-
-                participation =
-                    await this.eventParticipationService.findByUserIdAndEventIdForUpdate(
-                        user.id,
-                        event.id
-                    );
-            }
-        }
-
-        if (!participation) {
-            throw new BusinessException(ErrorCode.EVENT_PARTICIPATION_NOT_FOUND);
-        }
+        const participation = await this.getOrCreateParticipationForUpdate(user.id, event.id);
 
         if (
             participation.rewardStatus === EventRewardStatus.GRANTED ||
@@ -286,5 +349,37 @@ export class EventRewardFacade {
         }
 
         return typeof driverError.code === 'string' && driverError.code === '23505';
+    }
+
+    private async getOrCreateParticipationForUpdate(
+        userId: number,
+        eventId: number
+    ): Promise<EventParticipation> {
+        let participation = await this.eventParticipationService.findByUserIdAndEventIdForUpdate(
+            userId,
+            eventId
+        );
+
+        if (!participation) {
+            try {
+                participation = await this.eventParticipationService.create(userId, eventId);
+            } catch (error) {
+                if (!this.isUniqueViolation(error)) {
+                    throw error;
+                }
+
+                participation =
+                    await this.eventParticipationService.findByUserIdAndEventIdForUpdate(
+                        userId,
+                        eventId
+                    );
+            }
+        }
+
+        if (!participation) {
+            throw new BusinessException(ErrorCode.EVENT_PARTICIPATION_NOT_FOUND);
+        }
+
+        return participation;
     }
 }

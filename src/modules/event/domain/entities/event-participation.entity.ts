@@ -35,6 +35,9 @@ export class EventParticipation extends BaseEntity {
     @Column({ nullable: true })
     rewardGrantedAt: Date;
 
+    @Column({ nullable: true })
+    lastProgressedAt: Date | null;
+
     @Column({
         type: 'enum',
         enum: EventRewardStatus,

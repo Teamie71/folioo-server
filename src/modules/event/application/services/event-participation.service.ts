@@ -47,6 +47,7 @@ export class EventParticipationService {
         participation.eventId = eventId;
         participation.progress = 0;
         participation.isCompleted = false;
+        participation.lastProgressedAt = null;
         return this.eventParticipationRepository.save(participation);
     }
 }

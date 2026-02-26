@@ -5,6 +5,7 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
+    ClaimEventRewardResDTO,
     EventProgressCardResDTO,
     FeedbackModalResDTO,
     GrantFeedbackRewardReqDTO,
@@ -44,6 +45,27 @@ export class EventController {
         @Param('eventCode') eventCode: string
     ): Promise<EventProgressCardResDTO> {
         return this.eventRewardFacade.getProgressCard(userId, eventCode);
+    }
+
+    @Post(':eventCode/reward-claim')
+    @ApiOperation({
+        summary: '이벤트 보상 수령',
+        description:
+            '챌린지 완료 사용자가 이벤트 보상을 직접 수령합니다. 이미 수령했거나 조건 미달성인 경우 실패합니다.',
+    })
+    @ApiCommonResponse(ClaimEventRewardResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EVENT_NOT_FOUND,
+        ErrorCode.EVENT_NOT_ACTIVE,
+        ErrorCode.EVENT_REWARD_NOT_CLAIMABLE,
+        ErrorCode.EVENT_REWARD_ALREADY_GRANTED
+    )
+    async claimEventReward(
+        @User('sub') userId: number,
+        @Param('eventCode') eventCode: string
+    ): Promise<ClaimEventRewardResDTO> {
+        return this.eventRewardFacade.claimEventReward(userId, eventCode);
     }
 
     @Post('admin/:eventCode/feedback-rewards/grants')

@@ -3,6 +3,7 @@ import { EventRepository } from '../../infrastructure/repositories/event.reposit
 import { Event } from '../../domain/entities/event.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { getSeoulDateString } from '../utils/seoul-date.util';
 
 @Injectable()
 export class EventService {
@@ -24,9 +25,13 @@ export class EventService {
         return event;
     }
 
+    async findActiveByCode(code: string): Promise<Event | null> {
+        const today = getSeoulDateString();
+        return this.eventRepository.findActiveByCode(code, today);
+    }
+
     async findActiveByCodeOrThrow(code: string): Promise<Event> {
-        const today = new Date().toISOString().slice(0, 10);
-        const event = await this.eventRepository.findActiveByCode(code, today);
+        const event = await this.findActiveByCode(code);
         if (!event) {
             throw new BusinessException(ErrorCode.EVENT_NOT_ACTIVE);
         }

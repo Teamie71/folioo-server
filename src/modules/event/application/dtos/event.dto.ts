@@ -109,3 +109,14 @@ export class GrantFeedbackRewardResDTO {
     @ApiProperty({ example: '2026-02-25T08:30:00.000Z' })
     rewardGrantedAt: string;
 }
+
+export class ClaimEventRewardResDTO {
+    @ApiProperty({ example: 'INSIGHT_LOG_CHALLENGE' })
+    eventCode: string;
+
+    @ApiProperty({ enum: EventRewardStatus, example: EventRewardStatus.GRANTED })
+    rewardStatus: EventRewardStatus;
+
+    @ApiProperty({ example: '2026-02-26T00:00:00.000Z' })
+    rewardGrantedAt: string;
+}
