@@ -35,7 +35,7 @@ export class EventParticipation extends BaseEntity {
     @Column({ nullable: true })
     rewardGrantedAt: Date;
 
-    @Column({ nullable: true })
+    @Column({ type: 'timestamp', nullable: true })
     lastProgressedAt: Date | null;
 
     @Column({
