@@ -223,7 +223,7 @@ Legend:
 - PATCH `/insights/:insightId` -> IMPLEMENTED (requires existing insightId)
 - DELETE `/insights/:insightId` -> IMPLEMENTED (requires existing insightId)
 - GET `/insights` -> NOT_IMPLEMENTED
-- POST `/insights` -> NOT_IMPLEMENTED
+- POST `/insights` -> IMPLEMENTED (생성 성공 시 `INSIGHT_LOG_CHALLENGE` 진행도 자동 반영)
 - GET `/insights/search` -> NOT_IMPLEMENTED
 - GET `/insights/tags` -> NOT_IMPLEMENTED
 - POST `/insights/tags` -> NOT_IMPLEMENTED
@@ -242,4 +242,5 @@ Legend:
 
 - GET `/events/:eventCode/feedback-modal` -> IMPLEMENTED
 - GET `/events/:eventCode/progress-card` -> IMPLEMENTED
+- POST `/events/:eventCode/reward-claim` -> IMPLEMENTED (챌린지 완료 사용자 보상 수령)
 - POST `/events/admin/:eventCode/feedback-rewards/grants` -> IMPLEMENTED (`@Public`)

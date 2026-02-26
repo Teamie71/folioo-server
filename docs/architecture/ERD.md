@@ -320,20 +320,21 @@ PayType: 'CARD' |
 
 ### event_participation (이벤트 참여)
 
-| 컬럼              | 타입                | 설명                                                    |
-| ----------------- | ------------------- | ------------------------------------------------------- |
-| id                | number              | PK                                                      |
-| user_id           | number              | FK → users.id                                           |
-| event_id          | number              | FK → event.id                                           |
-| progress          | int                 | 챌린지 진행도 (NOT NULL, DEFAULT 0)                     |
-| is_completed      | boolean             | 달성 여부 (NOT NULL, DEFAULT false)                     |
-| completed_at      | datetime            | 달성 일시 (nullable)                                    |
-| reward_granted_at | datetime            | 보상 지급 일시 (nullable)                               |
-| reward_status     | enum                | 보상 상태 — `NOT_GRANTED/UNDER_REVIEW/GRANTED/REJECTED` |
-| granted_by        | varchar(64) (null)  | 지급 처리자 식별자 (운영/PM)                            |
-| grant_reason      | varchar(500) (null) | 지급 사유/메모                                          |
+| 컬럼               | 타입                | 설명                                                    |
+| ------------------ | ------------------- | ------------------------------------------------------- |
+| id                 | number              | PK                                                      |
+| user_id            | number              | FK → users.id                                           |
+| event_id           | number              | FK → event.id                                           |
+| progress           | int                 | 챌린지 진행도 (NOT NULL, DEFAULT 0)                     |
+| is_completed       | boolean             | 달성 여부 (NOT NULL, DEFAULT false)                     |
+| completed_at       | datetime            | 달성 일시 (nullable)                                    |
+| last_progressed_at | datetime (null)     | 마지막 진행도 반영 시각 (dailyLimit 계산용)             |
+| reward_granted_at  | datetime            | 보상 지급 일시 (nullable)                               |
+| reward_status      | enum                | 보상 상태 — `NOT_GRANTED/UNDER_REVIEW/GRANTED/REJECTED` |
+| granted_by         | varchar(64) (null)  | 지급 처리자 식별자 (운영/PM)                            |
+| grant_reason       | varchar(500) (null) | 지급 사유/메모                                          |
 
-> **Note**: 이벤트별 동작 — 최초 가입: `goal_config=null` → 가입 시 즉시 participation 생성 + ticket 발급. 피드백: 관리자 검토 후 `reward_granted_at` 설정. 인사이트 챌린지: 로그 작성마다 `progress++`, `progress == target`이면 `is_completed=true` → ticket 발급.
+> **Note**: 이벤트별 동작 — 최초 가입: `goal_config=null` → 가입 시 즉시 participation 생성 + ticket 발급. 피드백: 관리자 검토 후 `reward_granted_at` 설정. 인사이트 챌린지: `POST /insights` 성공 시 `progress++`, `progress == target`이면 `is_completed=true` (보상은 `POST /events/:eventCode/reward-claim` 호출 시 지급). `dailyLimit` 계산과 이벤트 활성 날짜는 KST(Asia/Seoul) 기준으로 처리.
 
 ### event_feedback_submission (외부 피드백 제출 이력)
 
