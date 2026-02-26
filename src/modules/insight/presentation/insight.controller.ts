@@ -28,11 +28,13 @@ import { ActivityNameReqDTO, ActivityNameResDTO } from '../application/dtos/acti
 import { User } from 'src/common/decorators/user.decorator';
 import { InsightService } from '../application/services/insight.service';
 import { ActivityService } from '../application/services/activity.service';
+import { InsightFacade } from '../application/facades/insight.facade';
 
 @ApiTags('Insight')
 @Controller('insights')
 export class InsightController {
     constructor(
+        private readonly insightFacade: InsightFacade,
         private readonly insightService: InsightService,
         private readonly activityService: ActivityService
     ) {}
@@ -53,7 +55,7 @@ export class InsightController {
         @Body() body: CreateInsightLogReqDTO,
         @User('sub') userId: number
     ): Promise<InsightLogResDTO> {
-        return this.insightService.createInsight(userId, body);
+        return this.insightFacade.createInsight(userId, body);
     }
 
     @Get()

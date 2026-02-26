@@ -7,24 +7,25 @@
 
 ## 테이블 목록
 
-| 도메인                   | 테이블                 | 설명                      |
-| ------------------------ | ---------------------- | ------------------------- |
-| **user**                 | `users`                | 사용자 정보               |
-|                          | `social_user`          | 소셜 로그인 정보          |
-|                          | `user_agreement`       | 약관 동의                 |
-| **experience**           | `experience`           | 경험 정리                 |
-|                          | `experience_source`    | 경험 정리 파일 (OCR 추출) |
-| **portfolio**            | `portfolio`            | 포트폴리오                |
-| **portfolio-correction** | `portfolio_correction` | 포트폴리오 첨삭           |
-|                          | `correction_item`      | 첨삭 항목                 |
-| **insight**              | `insight`              | 인사이트                  |
-|                          | `insight_activity`     | 인사이트-활동 매핑        |
-|                          | `activity`             | 활동                      |
-| **ticket**               | `ticket_product`       | 이용권 상품 (구매용)      |
-|                          | `ticket`               | 이용권 (보유/사용 추적)   |
-| **payment**              | `payment`              | PayApp 결제 건            |
-| **event**                | `event`                | 이벤트 정의               |
-|                          | `event_participation`  | 이벤트 참여/진행도        |
+| 도메인                   | 테이블                      | 설명                      |
+| ------------------------ | --------------------------- | ------------------------- |
+| **user**                 | `users`                     | 사용자 정보               |
+|                          | `social_user`               | 소셜 로그인 정보          |
+|                          | `user_agreement`            | 약관 동의                 |
+| **experience**           | `experience`                | 경험 정리                 |
+|                          | `experience_source`         | 경험 정리 파일 (OCR 추출) |
+| **portfolio**            | `portfolio`                 | 포트폴리오                |
+| **portfolio-correction** | `portfolio_correction`      | 포트폴리오 첨삭           |
+|                          | `correction_item`           | 첨삭 항목                 |
+| **insight**              | `insight`                   | 인사이트                  |
+|                          | `insight_activity`          | 인사이트-활동 매핑        |
+|                          | `activity`                  | 활동                      |
+| **ticket**               | `ticket_product`            | 이용권 상품 (구매용)      |
+|                          | `ticket`                    | 이용권 (보유/사용 추적)   |
+| **payment**              | `payment`                   | PayApp 결제 건            |
+| **event**                | `event`                     | 이벤트 정의               |
+|                          | `event_participation`       | 이벤트 참여/진행도        |
+|                          | `event_feedback_submission` | 이벤트 피드백 제출 이력   |
 
 ---
 
@@ -52,7 +53,9 @@ users
    │
    ├── 1:N ─ payment ─── N:1 ─ ticket_product (이용권 상품)
    │
-   └── 1:N ─ event_participation ─── N:1 ─ event (이벤트 정의)
+   ├── 1:N ─ event_participation ─── N:1 ─ event (이벤트 정의)
+   │
+   └── 1:N ─ event_feedback_submission ─── N:1 ─ event (외부 피드백 이력)
 ```
 
 ---
@@ -295,37 +298,61 @@ PayType: 'CARD' |
 
 ### event (이벤트)
 
-| 컬럼              | 타입         | 설명                                               |
-| ----------------- | ------------ | -------------------------------------------------- |
-| id                | number       | PK                                                 |
-| code              | varchar(50)  | 이벤트 고유 코드 (UNIQUE) — 'SIGNUP_REWARD' 등     |
-| title             | varchar(100) | 이벤트 제목                                        |
-| description       | varchar(500) | 이벤트 설명                                        |
-| cta_text          | varchar(50)  | CTA 버튼 텍스트                                    |
-| cta_link          | varchar(255) | CTA 링크 (nullable)                                |
-| reward_config     | jsonb        | 보상 설정 — `[{type, quantity}]`                   |
-| goal_config       | jsonb (null) | 달성 조건 — `{target, dailyLimit}` (null=즉시지급) |
-| start_date        | date         | 시작일                                             |
-| end_date          | date (null)  | 종료일 (null=무기한)                               |
-| is_active         | boolean      | 활성 여부 (NOT NULL, DEFAULT true)                 |
-| max_participation | int          | 최대 참여 횟수 (NOT NULL, DEFAULT 1)               |
-| display_order     | int          | 표시 순서 (NOT NULL, DEFAULT 0)                    |
+| 컬럼              | 타입         | 설명                                                      |
+| ----------------- | ------------ | --------------------------------------------------------- |
+| id                | number       | PK                                                        |
+| code              | varchar(50)  | 이벤트 고유 코드 (UNIQUE) — 'SIGNUP_REWARD' 등            |
+| title             | varchar(100) | 이벤트 제목                                               |
+| description       | varchar(500) | 이벤트 설명                                               |
+| cta_text          | varchar(50)  | CTA 버튼 텍스트                                           |
+| cta_link          | varchar(255) | CTA 링크 (nullable)                                       |
+| reward_config     | jsonb        | 보상 설정 — `[{type, quantity}]`                          |
+| goal_config       | jsonb (null) | 달성 조건 — `{target, dailyLimit}` (null=즉시지급)        |
+| ui_config         | jsonb (null) | UI 템플릿 설정 — 피드백 모달/진행 카드 문구, CTA 템플릿   |
+| ops_config        | jsonb (null) | 운영 옵션 — 수동 지급 전용 여부, 보상 후 피드백 허용 여부 |
+| start_date        | date         | 시작일                                                    |
+| end_date          | date (null)  | 종료일 (null=무기한)                                      |
+| is_active         | boolean      | 활성 여부 (NOT NULL, DEFAULT true)                        |
+| max_participation | int          | 최대 참여 횟수 (NOT NULL, DEFAULT 1)                      |
+| display_order     | int          | 표시 순서 (NOT NULL, DEFAULT 0)                           |
 
 > **Note**: `reward_config` 예시: `[{"type": "EXPERIENCE", "quantity": 1}, {"type": "PORTFOLIO_CORRECTION", "quantity": 1}]`. `goal_config` 예시: `{"target": 10, "dailyLimit": 1}` (인사이트 로그 10개, 일 1개 인정). jsonb 기반이므로 **이벤트 추가 시 스키마 변경 불필요**.
 
 ### event_participation (이벤트 참여)
 
-| 컬럼              | 타입     | 설명                                |
-| ----------------- | -------- | ----------------------------------- |
-| id                | number   | PK                                  |
-| user_id           | number   | FK → users.id                       |
-| event_id          | number   | FK → event.id                       |
-| progress          | int      | 챌린지 진행도 (NOT NULL, DEFAULT 0) |
-| is_completed      | boolean  | 달성 여부 (NOT NULL, DEFAULT false) |
-| completed_at      | datetime | 달성 일시 (nullable)                |
-| reward_granted_at | datetime | 보상 지급 일시 (nullable)           |
+| 컬럼               | 타입                | 설명                                                    |
+| ------------------ | ------------------- | ------------------------------------------------------- |
+| id                 | number              | PK                                                      |
+| user_id            | number              | FK → users.id                                           |
+| event_id           | number              | FK → event.id                                           |
+| progress           | int                 | 챌린지 진행도 (NOT NULL, DEFAULT 0)                     |
+| is_completed       | boolean             | 달성 여부 (NOT NULL, DEFAULT false)                     |
+| completed_at       | datetime            | 달성 일시 (nullable)                                    |
+| last_progressed_at | datetime (null)     | 마지막 진행도 반영 시각 (dailyLimit 계산용)             |
+| reward_granted_at  | datetime            | 보상 지급 일시 (nullable)                               |
+| reward_status      | enum                | 보상 상태 — `NOT_GRANTED/UNDER_REVIEW/GRANTED/REJECTED` |
+| granted_by         | varchar(64) (null)  | 지급 처리자 식별자 (운영/PM)                            |
+| grant_reason       | varchar(500) (null) | 지급 사유/메모                                          |
 
-> **Note**: 이벤트별 동작 — 최초 가입: `goal_config=null` → 가입 시 즉시 participation 생성 + ticket 발급. 피드백: 관리자 검토 후 `reward_granted_at` 설정. 인사이트 챌린지: 로그 작성마다 `progress++`, `progress == target`이면 `is_completed=true` → ticket 발급.
+> **Note**: 이벤트별 동작 — 최초 가입: `goal_config=null` → 가입 시 즉시 participation 생성 + ticket 발급. 피드백: 관리자 검토 후 `reward_granted_at` 설정. 인사이트 챌린지: `POST /insights` 성공 시 `progress++`, `progress == target`이면 `is_completed=true` (보상은 `POST /events/:eventCode/reward-claim` 호출 시 지급). `dailyLimit` 계산과 이벤트 활성 날짜는 KST(Asia/Seoul) 기준으로 처리.
+
+### event_feedback_submission (외부 피드백 제출 이력)
+
+| 컬럼                      | 타입                | 설명                                             |
+| ------------------------- | ------------------- | ------------------------------------------------ |
+| id                        | number              | PK                                               |
+| event_id                  | number              | FK → event.id                                    |
+| user_id                   | number (null)       | FK → users.id (매칭 실패 시 null 가능)           |
+| phone_num                 | varchar(20)         | 피드백 제출자 전화번호(정규화 값)                |
+| source                    | enum                | 수집 경로 — `GOOGLE_FORM/IN_APP`                 |
+| external_submission_id    | varchar(100) (null) | 외부 제출 건 식별자(멱등 처리용)                 |
+| review_status             | enum                | 검토 상태 — `PENDING/APPROVED/REJECTED/REWARDED` |
+| reviewed_by               | varchar(64) (null)  | 검토자 식별자                                    |
+| reviewed_at               | datetime (null)     | 검토 완료 시각                                   |
+| review_note               | varchar(500) (null) | 검토 메모                                        |
+| rewarded_participation_id | number (null)       | 보상 지급 연결 participation ID                  |
+
+> **Note**: `event_id + external_submission_id` 복합 unique로 외부 폼 제출건을 멱등 처리합니다. 정책상 보상 지급 이후에도 피드백 추가 제출은 허용합니다.
 
 ---
 
@@ -333,21 +360,22 @@ PayType: 'CARD' |
 
 > PostgreSQL은 FK에 자동 인덱스를 생성하지 않음. 아래 FK 컬럼에 `@Index()` 필요.
 
-| 테이블                 | 인덱스 대상 컬럼                                  | 비고           |
-| ---------------------- | ------------------------------------------------- | -------------- |
-| `social_user`          | `user_id`                                         |                |
-| `user_agreement`       | `user_id`                                         |                |
-| `experience`           | `user_id`                                         |                |
-| `experience_source`    | `experience_id`                                   |                |
-| `portfolio`            | `user_id`, `experience_id`                        |                |
-| `portfolio_correction` | `user_id`                                         |                |
-| `correction_item`      | `portfolio_correction_id`, `portfolio_id`         |                |
-| `insight`              | `user_id`                                         |                |
-| `insight_activity`     | `insight_id`, `activity_id`                       |                |
-| `activity`             | `user_id`                                         |                |
-| `ticket`               | `user_id`, `payment_id`, `event_participation_id` |                |
-| `payment`              | `user_id`, `ticket_product_id`                    |                |
-| `event_participation`  | `user_id`, `event_id` — **UNIQUE 복합키**         | 중복 참여 방지 |
+| 테이블                      | 인덱스 대상 컬럼                                                              | 비고                |
+| --------------------------- | ----------------------------------------------------------------------------- | ------------------- |
+| `social_user`               | `user_id`                                                                     |                     |
+| `user_agreement`            | `user_id`                                                                     |                     |
+| `experience`                | `user_id`                                                                     |                     |
+| `experience_source`         | `experience_id`                                                               |                     |
+| `portfolio`                 | `user_id`, `experience_id`                                                    |                     |
+| `portfolio_correction`      | `user_id`                                                                     |                     |
+| `correction_item`           | `portfolio_correction_id`, `portfolio_id`                                     |                     |
+| `insight`                   | `user_id`                                                                     |                     |
+| `insight_activity`          | `insight_id`, `activity_id`                                                   |                     |
+| `activity`                  | `user_id`                                                                     |                     |
+| `ticket`                    | `user_id`, `payment_id`, `event_participation_id`                             |                     |
+| `payment`                   | `user_id`, `ticket_product_id`                                                |                     |
+| `event_participation`       | `user_id`, `event_id` — **UNIQUE 복합키**                                     | 중복 참여 방지      |
+| `event_feedback_submission` | `event_id`, `user_id`, `phone_num`, `event_id+external_submission_id`(UNIQUE) | 외부 제출 이력/멱등 |
 
 ---
 
@@ -355,6 +383,7 @@ PayType: 'CARD' |
 
 | 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                    |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.5.0 | 2026-02-25 | 이벤트 하이브리드 스키마 보강 — `event.ui_config`, `event.ops_config`, `event_participation.reward_status/granted_by/grant_reason` 추가, `event_feedback_submission` 신규(외부 피드백 이력/멱등 처리), 운영 수동 지급 시나리오 반영                                                          |
 | 2.4.0 | 2026-02-09 | 이벤트 도메인 설계 보완 — `event_participation` UNIQUE(user_id, event_id) 추가, jsonb 타입 안전성 가이드 추가, 동시성 처리 가이드 추가                                                                                                                                                       |
 | 2.3.0 | 2026-02-07 | Insight-Activity N:M 관계 재설계 — `insight_activity` 매핑 테이블 추가, `insight.activity_id` 제거. 인사이트는 pgvector 기반으로 관리.                                                                                                                                                       |
 | 2.2.0 | 2026-02-04 | 설계 리뷰 전건 해결 — `user` → `users`(예약어 회피), snake_case 통일, `user_agreement` FK 정리, `portfolio_correction`에 `user_id` 추가, `login_id` bigint→varchar, FK 인덱스 설계 추가. 설계 리뷰 섹션 제거(전건 해결)                                                                      |

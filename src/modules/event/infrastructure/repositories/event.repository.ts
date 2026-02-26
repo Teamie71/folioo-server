@@ -18,6 +18,20 @@ export class EventRepository {
         return this.eventRepository.findOne({ where: { id } });
     }
 
+    async findByCode(code: string): Promise<Event | null> {
+        return this.eventRepository.findOne({ where: { code } });
+    }
+
+    async findActiveByCode(code: string, today: string): Promise<Event | null> {
+        return this.eventRepository
+            .createQueryBuilder('event')
+            .where('event.code = :code', { code })
+            .andWhere('event.isActive = true')
+            .andWhere('event.startDate <= :today', { today })
+            .andWhere('(event.endDate IS NULL OR event.endDate >= :today)', { today })
+            .getOne();
+    }
+
     async existsById(id: number): Promise<boolean> {
         return this.eventRepository.exists({ where: { id } });
     }

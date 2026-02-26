@@ -130,7 +130,7 @@ Some endpoints are auto-skipped when prerequisite data is unavailable:
 
 - `POST /auth/refresh` - always skipped (needs httpOnly `refreshToken` cookie, not Bearer)
 - `POST /payments` - skipped when no ticket products are seeded in the environment
-- `GET /auth/{kakao,google,naver}*` - skipped (OAuth redirect, not meaningful as API call)
+- `GET /auth/kakao`, `GET /auth/google`, `GET /auth/naver`(및 callback 경로) - skipped (OAuth redirect, not meaningful as API call)
 - Multipart endpoints - skipped unless `--file` is provided
 
 ### Output
@@ -178,6 +178,8 @@ Legend:
 ### User
 
 - GET `/users/me` -> IMPLEMENTED
+- GET `/users/me/tickets` -> IMPLEMENTED
+- GET `/users/me/tickets/expiring` -> IMPLEMENTED
 - PATCH `/users/me` -> NOT_IMPLEMENTED
 - PATCH `/users/me/marketing-consent` -> NOT_IMPLEMENTED
 
@@ -185,49 +187,50 @@ Legend:
 
 - POST `/experiences` -> IMPLEMENTED (consumes tickets, can return `TICKET402`)
 - GET `/experiences` -> IMPLEMENTED
-- GET `/experiences/:experienceId` -> IMPLEMENTED
-- PATCH `/experiences/:experienceId` -> IMPLEMENTED
+- GET `/experiences/{experienceId}` -> IMPLEMENTED
+- PATCH `/experiences/{experienceId}` -> IMPLEMENTED
 
 ### Portfolio
 
-- GET `/portfolios/:portfolioId` -> IMPLEMENTED
-- PATCH `/portfolios/:portfolioId` -> NOT_IMPLEMENTED
-- DELETE `/portfolios/:portfolioId` -> NOT_IMPLEMENTED
-- POST `/portfolios/:portfolioId/export` -> NOT_IMPLEMENTED
+- GET `/portfolios/{portfolioId}` -> IMPLEMENTED
+- PATCH `/portfolios/{portfolioId}` -> IMPLEMENTED
+- DELETE `/portfolios/{portfolioId}` -> IMPLEMENTED
+- POST `/portfolios/{portfolioId}/export` -> NOT_IMPLEMENTED
 
 ### Portfolio-Correction
 
 - GET `/portfolio-corrections` -> IMPLEMENTED
 - POST `/portfolio-corrections` -> IMPLEMENTED (consumes tickets, can return `TICKET402`)
-- GET `/portfolio-corrections/:correctionId/status` -> IMPLEMENTED
-- GET `/portfolio-corrections/:correctionId/company-insight` -> IMPLEMENTED
-- GET `/portfolio-corrections/:correctionId` -> IMPLEMENTED
-- POST `/portfolio-corrections/:correctionId/company-insight` -> NOT_IMPLEMENTED
-- PATCH `/portfolio-corrections/:correctionId/company-insight` -> NOT_IMPLEMENTED
-- POST `/portfolio-corrections/:correctionId/regenerate-insight` -> NOT_IMPLEMENTED
-- POST `/portfolio-corrections/:correctionId/select` -> NOT_IMPLEMENTED
-- POST `/portfolio-corrections/:correctionId/generate` -> NOT_IMPLEMENTED
-- PATCH `/portfolio-corrections/:correctionId` -> NOT_IMPLEMENTED
-- DELETE `/portfolio-corrections/:correctionId` -> NOT_IMPLEMENTED
+- GET `/portfolio-corrections/{correctionId}/status` -> IMPLEMENTED
+- GET `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
+- GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
+- POST `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
+- PATCH `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
+- POST `/portfolio-corrections/{correctionId}/regenerate-insight` -> NOT_IMPLEMENTED
+- POST `/portfolio-corrections/{correctionId}/select` -> NOT_IMPLEMENTED
+- POST `/portfolio-corrections/{correctionId}/generate` -> NOT_IMPLEMENTED
+- PATCH `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
+- DELETE `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 
 ### External Portfolios
 
 - GET `/external-portfolios?correctionId=...` -> IMPLEMENTED
 - POST `/external-portfolios` -> IMPLEMENTED
 - POST `/external-portfolios/extract` -> NOT_IMPLEMENTED (multipart PDF)
-- PATCH `/external-portfolios/:portfolioId` -> NOT_IMPLEMENTED
-- DELETE `/external-portfolios/:portfolioId` -> NOT_IMPLEMENTED
+- PATCH `/external-portfolios/{portfolioId}` -> IMPLEMENTED
+- DELETE `/external-portfolios/{portfolioId}` -> IMPLEMENTED
 
 ### Insight
 
-- PATCH `/insights/:insightId` -> IMPLEMENTED (requires existing insightId)
-- DELETE `/insights/:insightId` -> IMPLEMENTED (requires existing insightId)
-- GET `/insights` -> NOT_IMPLEMENTED
-- POST `/insights` -> NOT_IMPLEMENTED
-- GET `/insights/search` -> NOT_IMPLEMENTED
-- GET `/insights/tags` -> NOT_IMPLEMENTED
-- POST `/insights/tags` -> NOT_IMPLEMENTED
-- DELETE `/insights/tags/:tagId` -> NOT_IMPLEMENTED
+- PATCH `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
+- DELETE `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
+- GET `/insights` -> IMPLEMENTED
+- GET `/insights/summary` -> IMPLEMENTED
+- POST `/insights` -> IMPLEMENTED (생성 성공 시 `INSIGHT_LOG_CHALLENGE` 진행도 자동 반영)
+- GET `/insights/search` -> IMPLEMENTED
+- GET `/insights/tags` -> IMPLEMENTED
+- POST `/insights/tags` -> IMPLEMENTED
+- DELETE `/insights/tags/{tagId}` -> IMPLEMENTED
 
 ### Ticket
 
@@ -236,8 +239,13 @@ Legend:
 ### Payment
 
 - POST `/payments` -> IMPLEMENTED (requires valid ticketProductId)
-- GET `/payments/:paymentId` -> IMPLEMENTED
+- GET `/payments/{paymentId}` -> IMPLEMENTED
+- POST `/payments/webhook` -> IMPLEMENTED (Public)
+- POST `/payments/{paymentId}/cancel` -> IMPLEMENTED
 
 ### Event
 
-- `/events/*` -> EMPTY (no routes)
+- GET `/events/{eventCode}/feedback-modal` -> IMPLEMENTED (보상 수령 여부에 따라 피드백 모달 문구/CTA 반환)
+- GET `/events/{eventCode}/progress-card` -> IMPLEMENTED (진행도/남은 개수/동적 문구/CTA 반환)
+- POST `/events/{eventCode}/reward-claim` -> IMPLEMENTED (완료된 챌린지 보상 직접 수령)
+- POST `/events/admin/{eventCode}/feedback-rewards/grants` -> IMPLEMENTED (`@Public`, 운영 수동 지급)

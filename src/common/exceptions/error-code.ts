@@ -168,4 +168,24 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 이벤트 참여 기록을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.EVENT_NOT_ACTIVE]: {
+        message: '현재 활성화된 이벤트가 아닙니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.EVENT_REWARD_ALREADY_GRANTED]: {
+        message: '이미 보상이 지급된 이벤트 참여입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED]: {
+        message: '이미 처리된 외부 피드백 제출건입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED]: {
+        message: '수동 보상 지급이 허용되지 않은 이벤트입니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.EVENT_REWARD_NOT_CLAIMABLE]: {
+        message: '현재 보상 지급 조건을 충족하지 않았습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
 };
