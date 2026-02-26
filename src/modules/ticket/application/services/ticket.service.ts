@@ -10,10 +10,20 @@ import { TicketRepository } from '../../infrastructure/repositories/ticket.repos
 import { TicketBalanceResDTO } from '../dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from '../dtos/ticket-expiring.dto';
 
-type EventRewardItem = {
+type TicketRewardItem = {
     type: TicketType;
     quantity: number;
 };
+
+type TicketIssueSource =
+    | {
+          source: TicketSource.PURCHASE;
+          paymentId: number;
+      }
+    | {
+          source: TicketSource.EVENT;
+          eventParticipationId: number;
+      };
 
 @Injectable()
 export class TicketService {
@@ -33,32 +43,37 @@ export class TicketService {
         type: TicketType,
         quantity: number
     ): Promise<Ticket[]> {
-        const tickets = Array.from({ length: quantity }).map(() => {
-            const ticket = new Ticket();
-            ticket.userId = userId;
-            ticket.paymentId = paymentId;
-            ticket.type = type;
-            ticket.status = TicketStatus.AVAILABLE;
-            ticket.source = TicketSource.PURCHASE;
-            return ticket;
-        });
-
-        return this.ticketRepository.saveAll(tickets);
+        return this.issueTickets(
+            userId,
+            {
+                source: TicketSource.PURCHASE,
+                paymentId,
+            },
+            [{ type, quantity }]
+        );
     }
 
-    async issueTicketsForEventReward(
+    async issueTickets(
         userId: number,
-        eventParticipationId: number,
-        rewards: EventRewardItem[]
+        source: TicketIssueSource,
+        rewards: TicketRewardItem[]
     ): Promise<Ticket[]> {
         const tickets = rewards.flatMap((reward) => {
             return Array.from({ length: reward.quantity }).map(() => {
                 const ticket = new Ticket();
                 ticket.userId = userId;
-                ticket.eventParticipationId = eventParticipationId;
+                ticket.source = source.source;
+
+                if (source.source === TicketSource.PURCHASE) {
+                    ticket.paymentId = source.paymentId;
+                }
+
+                if (source.source === TicketSource.EVENT) {
+                    ticket.eventParticipationId = source.eventParticipationId;
+                }
+
                 ticket.type = reward.type;
                 ticket.status = TicketStatus.AVAILABLE;
-                ticket.source = TicketSource.EVENT;
                 return ticket;
             });
         });

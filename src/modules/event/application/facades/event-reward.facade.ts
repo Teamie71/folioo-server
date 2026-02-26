@@ -16,6 +16,7 @@ import { EventFeedbackSource } from '../../domain/enums/event-feedback-source.en
 import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
 import { UserService } from 'src/modules/user/application/services/user.service';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
+import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventParticipation } from '../../domain/entities/event-participation.entity';
@@ -173,7 +174,11 @@ export class EventRewardFacade {
         if (!participation) {
             try {
                 participation = await this.eventParticipationService.create(user.id, event.id);
-            } catch {
+            } catch (error) {
+                if (!this.isUniqueViolation(error)) {
+                    throw error;
+                }
+
                 participation =
                     await this.eventParticipationService.findByUserIdAndEventIdForUpdate(
                         user.id,
@@ -203,9 +208,12 @@ export class EventRewardFacade {
         participation.grantReason = body.reviewNote ?? null;
         const savedParticipation = await this.eventParticipationService.save(participation);
 
-        await this.ticketService.issueTicketsForEventReward(
+        await this.ticketService.issueTickets(
             user.id,
-            savedParticipation.id,
+            {
+                source: TicketSource.EVENT,
+                eventParticipationId: savedParticipation.id,
+            },
             event.rewardConfig
         );
 
@@ -265,5 +273,18 @@ export class EventRewardFacade {
         return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (full, key: string) => {
             return variables[key] ?? full;
         });
+    }
+
+    private isUniqueViolation(error: unknown): boolean {
+        if (typeof error !== 'object' || error === null || !('driverError' in error)) {
+            return false;
+        }
+
+        const driverError = (error as { driverError?: unknown }).driverError;
+        if (typeof driverError !== 'object' || driverError === null || !('code' in driverError)) {
+            return false;
+        }
+
+        return typeof driverError.code === 'string' && driverError.code === '23505';
     }
 }
