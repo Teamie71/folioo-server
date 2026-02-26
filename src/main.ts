@@ -5,13 +5,21 @@ import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import cookieParser from 'cookie-parser';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
     initializeTransactionalContext();
     const app = await NestFactory.create(AppModule);
 
+    const configService = app.get(ConfigService);
+    const corsOriginsString = configService.get<string>('CORS_ORIGINS', 'http://localhost:3000');
+    const corsOrigins = corsOriginsString
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+
     app.enableCors({
-        origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+        origin: corsOrigins,
         credentials: true,
     });
 
