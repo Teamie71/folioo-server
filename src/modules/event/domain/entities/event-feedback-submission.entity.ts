@@ -22,7 +22,7 @@ export class EventFeedbackSubmission extends BaseEntity {
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @Column({ name: 'user_id', nullable: true })
+    @Column({ name: 'user_id', type: 'int', nullable: true })
     userId: number | null;
 
     @Column({ name: 'phone_num', length: 20 })
@@ -35,7 +35,7 @@ export class EventFeedbackSubmission extends BaseEntity {
     })
     source: EventFeedbackSource;
 
-    @Column({ name: 'external_submission_id', length: 100, nullable: true })
+    @Column({ name: 'external_submission_id', type: 'varchar', length: 100, nullable: true })
     externalSubmissionId: string | null;
 
     @Column({
@@ -46,15 +46,15 @@ export class EventFeedbackSubmission extends BaseEntity {
     })
     reviewStatus: EventFeedbackReviewStatus;
 
-    @Column({ name: 'reviewed_by', nullable: true, length: 64 })
+    @Column({ name: 'reviewed_by', type: 'varchar', nullable: true, length: 64 })
     reviewedBy: string | null;
 
-    @Column({ name: 'reviewed_at', nullable: true })
+    @Column({ name: 'reviewed_at', type: 'timestamp', nullable: true })
     reviewedAt: Date | null;
 
-    @Column({ name: 'review_note', nullable: true, length: 500 })
+    @Column({ name: 'review_note', type: 'varchar', nullable: true, length: 500 })
     reviewNote: string | null;
 
-    @Column({ name: 'rewarded_participation_id', nullable: true })
+    @Column({ name: 'rewarded_participation_id', type: 'int', nullable: true })
     rewardedParticipationId: number | null;
 }
