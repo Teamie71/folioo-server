@@ -3,7 +3,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiSseRelayConnection } from 'src/common/ports/ai-sse-relay.port';
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
-import { SendInterviewChatReqDTO } from '../dtos/interview.dto';
+import { InterviewInternalDTO, SendInterviewChatReqDTO } from '../dtos/interview.dto';
 import { InterviewService } from '../services/interview.service';
 
 @Injectable()
@@ -15,9 +15,10 @@ export class InterviewFacade {
 
     async createSessionStream(userId: number, experienceId: number): Promise<AiSseRelayConnection> {
         const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
+        const interviewInternalDTO = InterviewInternalDTO.of(experience);
         const relayConnection = await this.interviewService.createSessionStream(
             userId,
-            experience.name
+            interviewInternalDTO.experienceName
         );
 
         const sessionId = this.extractSessionId(relayConnection.responseHeaders);
@@ -29,7 +30,11 @@ export class InterviewFacade {
         }
 
         try {
-            await this.experienceService.saveInterviewSessionId(experience, sessionId);
+            await this.experienceService.saveInterviewSessionId(
+                interviewInternalDTO.experienceId,
+                userId,
+                sessionId
+            );
         } catch (error) {
             relayConnection.close();
             throw error;
@@ -44,14 +49,15 @@ export class InterviewFacade {
         dto: SendInterviewChatReqDTO
     ): Promise<AiSseRelayConnection> {
         const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
-        if (!experience.sessionId) {
+        const interviewInternalDTO = InterviewInternalDTO.of(experience);
+        if (!interviewInternalDTO.sessionId) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
                 reason: 'interview session id is not initialized for this experience',
                 experienceId,
             });
         }
 
-        return this.interviewService.sendChatStream(experience.sessionId, dto);
+        return this.interviewService.sendChatStream(interviewInternalDTO.sessionId, dto);
     }
 
     private extractSessionId(headers?: Record<string, string>): string | null {

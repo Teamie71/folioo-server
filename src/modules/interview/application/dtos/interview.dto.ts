@@ -39,4 +39,17 @@ export class SendInterviewChatReqDTO {
 export class InterviewInternalDTO {
     experienceId: number;
     experienceName: string;
+    sessionId: string | null;
+
+    static of(source: {
+        id: number;
+        name: string;
+        sessionId: string | null;
+    }): InterviewInternalDTO {
+        return {
+            experienceId: source.id,
+            experienceName: source.name,
+            sessionId: source.sessionId,
+        };
+    }
 }

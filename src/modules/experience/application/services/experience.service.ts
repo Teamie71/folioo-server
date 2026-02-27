@@ -25,7 +25,12 @@ export class ExperienceService {
         return experience;
     }
 
-    async saveInterviewSessionId(experience: Experience, sessionId: string): Promise<void> {
+    async saveInterviewSessionId(
+        experienceId: number,
+        userId: number,
+        sessionId: string
+    ): Promise<void> {
+        const experience = await this.findByIdOrThrow(experienceId, userId);
         experience.sessionId = sessionId;
         await this.experienceRepository.save(experience);
     }

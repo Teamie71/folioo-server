@@ -1,4 +1,3 @@
-import { Experience } from 'src/modules/experience/domain/experience.entity';
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
 import { AiSseRelayConnection } from 'src/common/ports/ai-sse-relay.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
@@ -17,8 +16,11 @@ class InterviewServiceStub {
 }
 
 class ExperienceServiceStub {
-    readonly findByIdOrThrow = jest.fn<Promise<Experience>, [number, number]>();
-    readonly saveInterviewSessionId = jest.fn<Promise<void>, [Experience, string]>();
+    readonly findByIdOrThrow = jest.fn<
+        Promise<{ id: number; name: string; sessionId?: string | null }>,
+        [number, number]
+    >();
+    readonly saveInterviewSessionId = jest.fn<Promise<void>, [number, number, string]>();
 }
 
 describe('InterviewFacade', () => {
@@ -40,7 +42,8 @@ describe('InterviewFacade', () => {
         const experience = {
             id: 5,
             name: '서비스 기획 인턴십 경험',
-        } as Experience;
+            sessionId: null,
+        };
         const relayConnection: AiSseRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
@@ -60,7 +63,8 @@ describe('InterviewFacade', () => {
             '서비스 기획 인턴십 경험'
         );
         expect(experienceServiceStub.saveInterviewSessionId).toHaveBeenCalledWith(
-            experience,
+            5,
+            42,
             'session_abc'
         );
         expect(result).toBe(relayConnection);
@@ -70,7 +74,8 @@ describe('InterviewFacade', () => {
         const experience = {
             id: 6,
             name: '백엔드 개발 경험',
-        } as Experience;
+            sessionId: null,
+        };
         const relayConnection: AiSseRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
@@ -90,7 +95,8 @@ describe('InterviewFacade', () => {
         const experience = {
             id: 7,
             name: '프론트엔드 개발 경험',
-        } as Experience;
+            sessionId: null,
+        };
         const relayConnection: AiSseRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
@@ -118,7 +124,7 @@ describe('InterviewFacade', () => {
             id: 9,
             name: '백엔드 개발 경험',
             sessionId: 'session_resolved',
-        } as Experience;
+        };
         const relayConnection: AiSseRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
@@ -142,7 +148,7 @@ describe('InterviewFacade', () => {
             id: 10,
             name: '프론트 경험',
             sessionId: null,
-        } as Experience;
+        };
 
         experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
 
