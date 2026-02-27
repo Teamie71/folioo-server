@@ -11,5 +11,6 @@ import { TicketModule } from '../ticket/ticket.module';
     imports: [TypeOrmModule.forFeature([Experience]), TicketModule],
     controllers: [ExperienceController],
     providers: [ExperienceRepository, ExperienceService, ExperienceFacade],
+    exports: [ExperienceService],
 })
 export class ExperienceModule {}
