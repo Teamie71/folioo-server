@@ -16,6 +16,12 @@ export class InterviewFacade {
     async createSessionStream(userId: number, experienceId: number): Promise<AiSseRelayConnection> {
         const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
         const interviewInternalDTO = InterviewInternalDTO.of(experience);
+        if (interviewInternalDTO.sessionId) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS, {
+                experienceId,
+            });
+        }
+
         const relayConnection = await this.interviewService.createSessionStream(
             userId,
             interviewInternalDTO.experienceName

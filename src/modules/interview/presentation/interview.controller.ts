@@ -60,6 +60,7 @@ export class InterviewController {
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BAD_REQUEST,
         ErrorCode.EXPERIENCE_NOT_FOUND,
+        ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS,
         ErrorCode.INTERNAL_SERVER_ERROR
     )
     async createSessionStream(

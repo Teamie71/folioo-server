@@ -1,6 +1,7 @@
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
 import { AiSseRelayConnection } from 'src/common/ports/ai-sse-relay.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { Readable } from 'stream';
 import { InterviewService } from '../services/interview.service';
 import { SendInterviewChatReqDTO } from '../dtos/interview.dto';
@@ -68,6 +69,30 @@ describe('InterviewFacade', () => {
             'session_abc'
         );
         expect(result).toBe(relayConnection);
+    });
+
+    it('throws conflict when experience already has interview session id', async () => {
+        expect.assertions(4);
+
+        const experience = {
+            id: 11,
+            name: '이미 세션이 있는 경험',
+            sessionId: 'session_existing',
+        };
+        experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+
+        try {
+            await interviewFacade.createSessionStream(42, 11);
+        } catch (error) {
+            expect(error).toBeInstanceOf(BusinessException);
+            if (error instanceof BusinessException) {
+                const response = error.getResponse() as { errorCode: ErrorCode };
+                expect(response.errorCode).toBe(ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS);
+            }
+        }
+
+        expect(interviewServiceStub.createSessionStream).not.toHaveBeenCalled();
+        expect(experienceServiceStub.saveInterviewSessionId).not.toHaveBeenCalled();
     });
 
     it('fails when x-session-id header is absent', async () => {

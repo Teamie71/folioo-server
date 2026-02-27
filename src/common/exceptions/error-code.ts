@@ -108,6 +108,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS]: {
+        message: '해당 경험에는 이미 인터뷰 세션이 존재합니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.CORRECTION_MAX_LIMIT]: {
         message: '포트폴리오 첨삭은 최대 15개까지 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
