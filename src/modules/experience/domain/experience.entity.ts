@@ -26,7 +26,7 @@ export class Experience extends BaseEntity {
     })
     status: ExperienceStatus;
 
-    @Column({ name: 'seession_id', type: 'uuid', nullable: true, unique: true })
+    @Column({ name: 'session_id', type: 'uuid', nullable: true, unique: true })
     sessionId: string | null;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
