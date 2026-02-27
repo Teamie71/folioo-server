@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { ExperienceService } from '../services/experience.service';
-import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
+// import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import {
     ExperienceResDTO,
     ExperienceStateResDTO,
     UpdateExperienceReqDTO,
 } from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
-import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
+// import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 
 @Injectable()
 export class ExperienceFacade {
     constructor(
-        private readonly experienceService: ExperienceService,
-        private readonly ticketService: TicketService
+        private readonly experienceService: ExperienceService
+        // private readonly ticketService: TicketService
     ) {}
 
     @Transactional()
@@ -23,7 +23,7 @@ export class ExperienceFacade {
         name: string,
         hopeJob: JobCategory
     ): Promise<ExperienceResDTO> {
-        await this.ticketService.consumeTicket(userId, TicketType.EXPERIENCE);
+        // await this.ticketService.consumeTicket(userId, TicketType.EXPERIENCE);
         await this.experienceService.validateCreation(userId, name);
         return this.experienceService.createExperience(userId, name, hopeJob);
     }
