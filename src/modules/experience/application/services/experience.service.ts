@@ -25,6 +25,16 @@ export class ExperienceService {
         return experience;
     }
 
+    async saveInterviewSessionId(
+        experienceId: number,
+        userId: number,
+        sessionId: string
+    ): Promise<void> {
+        const experience = await this.findByIdOrThrow(experienceId, userId);
+        experience.sessionId = sessionId;
+        await this.experienceRepository.save(experience);
+    }
+
     async getExperiences(userId: number, keyword?: string): Promise<ExperienceResDTO[]> {
         const experiences = await this.experienceRepository.findAllByUserId(userId, keyword);
         return experiences.map((experience) => ExperienceResDTO.from(experience));
