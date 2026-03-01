@@ -5,7 +5,6 @@ import {
     Headers,
     HttpStatus,
     Post,
-    Query,
     Req,
     Res,
     UseGuards,
@@ -215,18 +214,12 @@ export class AuthController {
         status: 302,
         description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
-    naverLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    @UseGuards(AuthGuard('naver'))
+    async naverLogin() {}
 
     @Get('naver/callback')
     @Public()
+    @UseGuards(AuthGuard('naver'))
     @ApiOperation({
         summary: '네이버 로그인 콜백',
         description:
@@ -236,8 +229,23 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    naverCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async naverCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        const refreshToken = await this.loginUsecase.execute(user);
+        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+            '14d') as StringValue;
+        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: isLocal ? 'lax' : 'none',
+            path: '/',
+            maxAge: TimeUtil.toMs(expiresIn),
+        });
+        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
+        res.redirect(`${clientUrl}?status=success`);
     }
 
     @Post('naver/unlink')

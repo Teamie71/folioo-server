@@ -171,8 +171,8 @@ Legend:
 - GET `/auth/google` -> IMPLEMENTED (Public, OAuth redirect)
 - GET `/auth/google/callback` -> IMPLEMENTED (Public, OAuth callback)
 - POST `/auth/google/unlink` -> NOT_IMPLEMENTED
-- GET `/auth/naver` -> NOT_IMPLEMENTED
-- GET `/auth/naver/callback` -> NOT_IMPLEMENTED
+- GET `/auth/naver` -> IMPLEMENTED (Public, OAuth redirect)
+- GET `/auth/naver/callback` -> IMPLEMENTED (Public, OAuth callback)
 - POST `/auth/naver/unlink` -> NOT_IMPLEMENTED
 - POST `/auth/sms/send` -> NOT_IMPLEMENTED
 - POST `/auth/sms/verify` -> NOT_IMPLEMENTED
