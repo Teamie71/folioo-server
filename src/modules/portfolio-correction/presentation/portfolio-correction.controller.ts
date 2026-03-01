@@ -22,7 +22,6 @@ import {
     CorrectionResDTO,
     CorrectionStatusResDTO,
     CreateCorrectionReqDTO,
-    GenerateCorrectionReqDTO,
     MapCorrectionWithPortfoliosReqDTO,
     UpdateCorrectionTitleReqDTO,
 } from '../application/dtos/portfolio-correction.dto';
@@ -230,7 +229,7 @@ export class PortfolioCorrectionController {
     async createCorrectionByAI(
         @User('sub') userId: number,
         @Param('correctionId', ParseIntPipe) correctionId: number,
-        @Body() body: GenerateCorrectionReqDTO
+        @Body() body: MapCorrectionWithPortfoliosReqDTO
     ): Promise<CorrectionItemResDTO[]> {
         return this.portfolioCorrectionFacade.selectAndGenerate(
             correctionId,

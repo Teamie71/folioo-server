@@ -10,7 +10,6 @@ import { CorrectionItemResDTO } from '../dtos/correction-result.dto';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionItemService } from '../services/correction-item.service';
 import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
-import { CorrectionItem } from '../../domain/correction-item.entity';
 
 @Injectable()
 export class PortfolioCorrectionFacade {
@@ -70,21 +69,18 @@ export class PortfolioCorrectionFacade {
             throw new BusinessException(ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED);
         }
 
-        const portfolios = await this.externalPortfolioService.getExternalPortfolios(uniqueIds);
-        if (portfolios.length !== uniqueIds.length) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
-        }
+        const portfolios = await this.externalPortfolioService.getExternalPortfoliosByOwnerOrThrow(
+            uniqueIds,
+            userId
+        );
 
         await this.correctionItemService.deleteByCorrectionId(correctionId);
 
-        const items: CorrectionItem[] = [];
-        for (const portfolio of portfolios) {
-            const item = await this.correctionItemService.createCorrectionItem(
-                portfolio,
-                correction
-            );
-            items.push(item);
-        }
+        const items = await Promise.all(
+            portfolios.map((portfolio) =>
+                this.correctionItemService.createCorrectionItem(portfolio, correction)
+            )
+        );
 
         return items.map((item) => CorrectionItemResDTO.from(item));
     }

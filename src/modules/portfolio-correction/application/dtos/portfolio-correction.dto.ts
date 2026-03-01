@@ -82,11 +82,3 @@ export class UpdateCorrectionTitleReqDTO {
     @MaxLength(20)
     title: string;
 }
-
-export class GenerateCorrectionReqDTO {
-    @ApiProperty({ type: [Number], example: [1, 2, 3] })
-    @IsArray()
-    @ArrayNotEmpty()
-    @IsNumber({}, { each: true })
-    portfolioIds: number[];
-}

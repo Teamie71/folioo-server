@@ -21,6 +21,21 @@ export class ExternalPortfolioService {
         return this.portfolioRepository.findExternalByIds(portfolioIds);
     }
 
+    async getExternalPortfoliosByOwnerOrThrow(
+        portfolioIds: number[],
+        userId: number
+    ): Promise<Portfolio[]> {
+        const uniqueIds = [...new Set(portfolioIds)];
+        const portfolios = await this.portfolioRepository.findExternalByIdsAndUserId(
+            uniqueIds,
+            userId
+        );
+        if (portfolios.length !== uniqueIds.length) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
+        }
+        return portfolios;
+    }
+
     async createEmptyPortfolio(userId: number): Promise<Portfolio> {
         const portfolio = Portfolio.createExternal(userId);
         return this.portfolioRepository.save(portfolio);
