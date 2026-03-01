@@ -10,6 +10,14 @@ export class TransformInterceptor<T> implements NestInterceptor<T, CommonRespons
     constructor(private readonly reflector: Reflector) {}
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<CommonResponse<T>> {
+        const request = context
+            .switchToHttp()
+            .getRequest<{ path?: string; originalUrl?: string }>();
+        const requestPath = request.path ?? request.originalUrl ?? '';
+        if (requestPath === '/admin' || requestPath.startsWith('/admin/')) {
+            return next.handle() as unknown as Observable<CommonResponse<T>>;
+        }
+
         const skip = this.reflector.getAllAndOverride<boolean>(SKIP_TRANSFORM_KEY, [
             context.getHandler(),
             context.getClass(),

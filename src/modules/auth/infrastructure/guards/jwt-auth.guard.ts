@@ -51,6 +51,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        const request = context.switchToHttp().getRequest<{ path?: string }>();
+        const requestPath = request.path ?? '';
+        if (requestPath === '/admin' || requestPath.startsWith('/admin/')) {
+            return true;
+        }
+
         const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
             context.getHandler(),
             context.getClass(),
