@@ -5,6 +5,7 @@ import { CachePort } from './cache.port';
 import { IoRedisCacheAdapter } from './ioredis-cache.adapter';
 import { RedisService } from './redis.service';
 import { REDIS_CLIENT } from './redis.constants';
+import { UpstashCacheAdapter } from './upstash-cache.adapter';
 
 @Global()
 @Module({
@@ -12,8 +13,15 @@ import { REDIS_CLIENT } from './redis.constants';
         RedisConfigService,
         {
             provide: REDIS_CLIENT,
-            useFactory: (redisConfigService: RedisConfigService): Redis => {
+            useFactory: (redisConfigService: RedisConfigService): Redis | null => {
                 const logger = new Logger('RedisModule');
+                const driver = redisConfigService.getCacheDriver();
+
+                if (driver === 'upstash') {
+                    logger.log('Redis 클라이언트 생성 생략 (driver=upstash)');
+                    return null;
+                }
+
                 const options = redisConfigService.createRedisOptions();
                 const client = new Redis(options);
 
@@ -30,34 +38,28 @@ import { REDIS_CLIENT } from './redis.constants';
             inject: [RedisConfigService],
         },
         {
-            provide: IoRedisCacheAdapter,
-            useFactory: (redisClient: Redis): IoRedisCacheAdapter => {
-                return new IoRedisCacheAdapter(redisClient);
-            },
-            inject: [REDIS_CLIENT],
-        },
-        {
             provide: CachePort,
             useFactory: (
                 redisConfigService: RedisConfigService,
-                ioRedisAdapter: IoRedisCacheAdapter
+                redisClient: Redis | null
             ): CachePort => {
                 const logger = new Logger('RedisModule');
                 const driver = redisConfigService.getCacheDriver();
+                redisConfigService.validateProfileRedisRouting(driver);
 
                 if (driver === 'ioredis') {
+                    if (!redisClient) {
+                        throw new Error('ioredis 드라이버 초기화 실패: REDIS_CLIENT가 없습니다.');
+                    }
                     logger.log('CachePort 드라이버: ioredis');
-                    return ioRedisAdapter;
+                    return new IoRedisCacheAdapter(redisClient);
                 }
 
-                redisConfigService.validateUpstashConfig();
-                throw new Error(
-                    'CACHE_DRIVER=upstash는 아직 구현되지 않았습니다. ' +
-                        'UpstashCacheAdapter 구현 후 사용 가능합니다. ' +
-                        '현재는 CACHE_DRIVER=ioredis를 사용하세요.'
-                );
+                const upstashConfig = redisConfigService.validateUpstashConfig();
+                logger.log('CachePort 드라이버: upstash');
+                return new UpstashCacheAdapter(upstashConfig.url, upstashConfig.token);
             },
-            inject: [RedisConfigService, IoRedisCacheAdapter],
+            inject: [RedisConfigService, REDIS_CLIENT],
         },
         RedisService,
     ],

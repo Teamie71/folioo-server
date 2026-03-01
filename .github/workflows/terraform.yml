@@ -1,0 +1,124 @@
+name: Terraform
+
+on:
+    pull_request:
+        paths:
+            - 'infra/**'
+            - '.github/workflows/terraform.yml'
+    push:
+        branches:
+            - dev
+        paths:
+            - 'infra/**'
+            - '.github/workflows/terraform.yml'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    pull-requests: write
+    id-token: write
+
+jobs:
+    terraform:
+        name: Terraform Plan/Apply
+        runs-on: ubuntu-latest
+        concurrency:
+            group: terraform-state
+            cancel-in-progress: false
+        defaults:
+            run:
+                working-directory: ./infra
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+              with:
+                  terraform_version: 1.5.0
+
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              with:
+                  workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+                  service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+            - name: Download Terraform Variables
+              if: github.event_name != 'pull_request'
+              run: gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars
+
+            - name: Terraform Format Check
+              id: fmt
+              run: terraform fmt -check -recursive
+              continue-on-error: true
+
+            - name: Terraform Init (PR)
+              if: github.event_name == 'pull_request'
+              id: init_pr
+              run: terraform init -backend=false
+
+            - name: Terraform Init
+              if: github.event_name != 'pull_request'
+              id: init
+              run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+
+            - name: Terraform Validate
+              id: validate
+              run: terraform validate -no-color
+
+            - name: Terraform Plan
+              if: github.event_name != 'pull_request'
+              id: plan
+              run: |
+                  terraform plan -no-color -input=false -var-file=terraform.tfvars -lock-timeout=5m -detailed-exitcode || EXIT_CODE=$?
+                  if [ "${EXIT_CODE:-0}" -eq 1 ]; then
+                    echo "Terraform plan failed with error"
+                    exit 1
+                  elif [ "${EXIT_CODE:-0}" -eq 2 ]; then
+                    echo "Terraform plan succeeded with changes"
+                    exit 0
+                  else
+                    echo "Terraform plan succeeded with no changes"
+                    exit 0
+                  fi
+
+            - name: Comment PR with Plan
+              if: github.event_name == 'pull_request'
+              uses: actions/github-script@v7
+              continue-on-error: true
+              with:
+                  script: |
+                      const output = `#### Terraform Format and Style \`${{ steps.fmt.outcome }}\`
+                      #### Terraform Initialization \`${{ steps.init.outcome }}\`
+                      #### Terraform Validation \`${{ steps.validate.outcome }}\`
+                      <details><summary>Validation Output</summary>
+
+                      \`\`\`
+                      ${{ steps.validate.outputs.stdout }}
+                      \`\`\`
+
+                      </details>
+
+                      #### Terraform Plan \`${{ steps.plan.outcome }}\`
+
+                      > Plan details are available in the [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) (accessible to team members only)
+
+                      *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+                      github.rest.issues.createComment({
+                        issue_number: context.issue.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        body: output
+                      })
+
+            - name: Terraform Plan Status
+              if: github.event_name != 'pull_request' && steps.plan.outcome == 'failure'
+              run: |
+                  echo "Terraform plan failed"
+                  exit 1
+
+            - name: Terraform Apply
+              if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+              run: terraform apply -auto-approve -input=false -var-file=terraform.tfvars -lock-timeout=5m
