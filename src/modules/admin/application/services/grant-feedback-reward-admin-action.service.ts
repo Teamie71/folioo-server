@@ -1,4 +1,5 @@
 import type { ActionRequest } from 'adminjs';
+import { Injectable } from '@nestjs/common';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { EventRewardFacade } from 'src/modules/event/application/facades/event-reward.facade';
 
@@ -10,6 +11,7 @@ type AdminActionResponse = {
     data?: unknown;
 };
 
+@Injectable()
 export class GrantFeedbackRewardAdminActionService {
     constructor(private readonly eventRewardFacade: EventRewardFacade) {}
 

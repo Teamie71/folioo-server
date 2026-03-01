@@ -2,7 +2,6 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import type { ActionRequest } from 'adminjs';
 import { join } from 'path';
-import { EventRewardFacade } from '../event/application/facades/event-reward.facade';
 import { Event } from '../event/domain/entities/event.entity';
 import { EventModule } from '../event/event.module';
 import { GrantFeedbackRewardAdminActionService } from './application/services/grant-feedback-reward-admin-action.service';
@@ -37,21 +36,18 @@ type AdminJsTypeOrmModuleExports = {
 };
 
 @Module({
+    providers: [GrantFeedbackRewardAdminActionService],
     imports: [
         EventModule,
         ConfigModule,
         nativeDynamicImport('@adminjs/nestjs').then((adminNestModule) =>
             (adminNestModule as AdminNestModuleExports).AdminModule.createAdminAsync({
                 imports: [EventModule, ConfigModule],
-                inject: [ConfigService, EventRewardFacade],
+                inject: [ConfigService, GrantFeedbackRewardAdminActionService],
                 useFactory: async (
                     configService: ConfigService,
-                    eventRewardFacade: EventRewardFacade
+                    actionService: GrantFeedbackRewardAdminActionService
                 ) => {
-                    const actionService = new GrantFeedbackRewardAdminActionService(
-                        eventRewardFacade
-                    );
-
                     const [adminJsModule, adminJsTypeOrmModule] = await Promise.all([
                         nativeDynamicImport('adminjs'),
                         nativeDynamicImport('@adminjs/typeorm'),
