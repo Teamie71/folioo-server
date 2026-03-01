@@ -38,33 +38,28 @@ export class UserService {
         await this.findByIdOrThrow(userId);
 
         const now = new Date();
-        const existingAgreement = await this.userAgreementRepository.findLatestByUserIdAndTermType(
+        let agreement = await this.userAgreementRepository.findLatestByUserIdAndTermType(
             userId,
             TermType.MARKETING
         );
+        const agreeAt = isMarketingAgreed ? now : null;
 
-        let agreement = existingAgreement;
         if (!agreement) {
             const latestAgreement = await this.userAgreementRepository.findLatestByUserId(userId);
             agreement = UserAgreement.createMarketingAgreement(
                 userId,
                 latestAgreement?.version ?? DEFAULT_TERMS_VERSION,
                 isMarketingAgreed,
-                now
+                agreeAt
             );
-        }
-
-        agreement.isAgree = isMarketingAgreed;
-        if (isMarketingAgreed) {
-            agreement.agreeAt = now;
+        } else {
+            agreement.isAgree = isMarketingAgreed;
+            agreement.agreeAt = agreeAt;
         }
 
         const savedAgreement = await this.userAgreementRepository.save(agreement);
 
-        return AgreeMarketingResDTO.from(
-            savedAgreement.isAgree,
-            savedAgreement.isAgree ? savedAgreement.agreeAt : null
-        );
+        return AgreeMarketingResDTO.from(savedAgreement.isAgree, savedAgreement.agreeAt);
     }
 
     async findByPhoneNumOrThrow(phoneNum: string): Promise<User> {
