@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-google-oauth20';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { LoginType } from 'src/modules/user/domain/enums/login-type.enum';
 import { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
+import {
+    getOptionalSocialProfileField,
+    requireSocialProfileField,
+} from './social-profile-validation.util';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
@@ -19,18 +21,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
     }
 
     validate(_accessToken: string, _refreshToken: string, profile: Profile): SocialUserAfterOAuth {
-        try {
-            const email = profile.emails?.[0]?.value ?? '';
-            const nickname = profile.displayName || profile.name?.givenName || '';
-            const user: SocialUserAfterOAuth = {
-                id: String(profile.id),
-                nickname,
-                email,
-                socialType: LoginType.GOOGLE,
-            };
-            return user;
-        } catch (error) {
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, error);
-        }
+        const email = getOptionalSocialProfileField(profile.emails?.[0]?.value);
+        const nickname =
+            getOptionalSocialProfileField(profile.displayName) ||
+            getOptionalSocialProfileField(profile.name?.givenName);
+        const user: SocialUserAfterOAuth = {
+            id: requireSocialProfileField(profile.id, 'id', LoginType.GOOGLE),
+            nickname,
+            email,
+            socialType: LoginType.GOOGLE,
+        };
+        return user;
     }
 }

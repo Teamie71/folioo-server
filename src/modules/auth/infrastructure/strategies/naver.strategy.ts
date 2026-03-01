@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-naver-v2';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { LoginType } from 'src/modules/user/domain/enums/login-type.enum';
 import { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
+import {
+    getOptionalSocialProfileField,
+    requireSocialProfileField,
+} from './social-profile-validation.util';
 
 @Injectable()
 export class NaverStrategy extends PassportStrategy(Strategy, 'naver') {
@@ -18,16 +20,14 @@ export class NaverStrategy extends PassportStrategy(Strategy, 'naver') {
     }
 
     validate(_accessToken: string, _refreshToken: string, profile: Profile): SocialUserAfterOAuth {
-        try {
-            const user: SocialUserAfterOAuth = {
-                id: profile.id,
-                nickname: profile.nickname ?? profile.name ?? '',
-                email: profile.email ?? '',
-                socialType: LoginType.NAVER,
-            };
-            return user;
-        } catch (error) {
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, error);
-        }
+        const user: SocialUserAfterOAuth = {
+            id: requireSocialProfileField(profile.id, 'id', LoginType.NAVER),
+            nickname:
+                getOptionalSocialProfileField(profile.nickname) ||
+                getOptionalSocialProfileField(profile.name),
+            email: getOptionalSocialProfileField(profile.email),
+            socialType: LoginType.NAVER,
+        };
+        return user;
     }
 }

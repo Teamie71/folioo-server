@@ -24,6 +24,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '아직 구현되지 않은 기능입니다.',
         statusCode: HttpStatus.NOT_IMPLEMENTED,
     },
+    [ErrorCode.INVALID_SOCIAL_PROFILE]: {
+        message: '소셜 로그인 프로필 정보가 유효하지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
     [ErrorCode.REFRESH_TOKEN_EXPIRED]: {
         message: '리프레시 토큰이 만료되었습니다. 다시 로그인해주세요.',
         statusCode: HttpStatus.UNAUTHORIZED,
