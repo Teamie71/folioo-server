@@ -1,4 +1,4 @@
-name: CD (Deploy to Lightsail - Dev)
+name: CD (Deploy to GCP - Dev)
 
 on:
     push:
@@ -6,10 +6,11 @@ on:
 
 permissions:
     contents: read
+    id-token: write
 
 env:
-    DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE }}
-    BRANCH_TAG: ${{ github.ref_name }}
+    DOCKER_IMAGE: asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/folioo-docker/folioo-server
+    CONTAINER_NAME: folioo-server
 
 concurrency:
     group: deploy-dev
@@ -22,29 +23,32 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v4
 
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              with:
+                  workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+                  service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+            - name: Set up Cloud SDK
+              uses: google-github-actions/setup-gcloud@v2
+              with:
+                  project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+            - name: Authenticate to Artifact Registry
+              run: |
+                  gcloud auth configure-docker asia-northeast3-docker.pkg.dev
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
-            - name: Login to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{ secrets.DOCKERHUB_USERNAME }}
-                  password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-            - name: Set Docker tags
-              run: |
-                  echo "DOCKER_TAGS<<EOF" >> $GITHUB_ENV
-                  echo "${{ env.DOCKER_IMAGE }}:${{ github.sha }}" >> $GITHUB_ENV
-                  echo "${{ env.DOCKER_IMAGE }}:${{ env.BRANCH_TAG }}" >> $GITHUB_ENV
-                  echo "EOF" >> $GITHUB_ENV
-
-            - name: Build and Push
+            - name: Build and Push to Artifact Registry
               uses: docker/build-push-action@v5
               with:
                   context: .
                   push: true
                   tags: |
-                      ${{ env.DOCKER_TAGS }}
+                      ${{ env.DOCKER_IMAGE }}:dev
+                      ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
 
@@ -55,63 +59,153 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v4
 
-            - name: Copy docker-compose.dev.yml to Server
-              uses: appleboy/scp-action@master
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
               with:
-                  host: ${{ secrets.LIGHTSAIL_HOST }}
-                  username: ${{ secrets.LIGHTSAIL_USERNAME }}
-                  key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-                  port: 22
-                  source: 'docker-compose.dev.yml'
-                  target: '~/docker'
-                  strip_components: 0
+                  workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+                  service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
-            - name: Deploy via SSH
-              uses: appleboy/ssh-action@master
-              env:
-                  ENV_DEV: ${{ secrets.ENV_DEV }}
+            - name: Set up Cloud SDK
+              uses: google-github-actions/setup-gcloud@v2
               with:
-                  host: ${{ secrets.LIGHTSAIL_HOST }}
-                  username: ${{ secrets.LIGHTSAIL_USERNAME }}
-                  key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-                  port: 22
-                  envs: ENV_DEV
-                  script: |
-                      set -e
-                      echo "🚀 Starting dev deployment..."
+                  project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-                      cd ~/docker
+            - name: Load Deploy Config from Terraform
+              run: |
+                  gcloud storage cp gs://${{ secrets.TF_STATE_BUCKET }}/deploy-config.json /tmp/deploy-config.json
+                  echo "GCE_NAME=$(jq -r .dev_gce_name /tmp/deploy-config.json)" >> $GITHUB_ENV
+                  echo "GCE_ZONE=$(jq -r .dev_gce_zone /tmp/deploy-config.json)" >> $GITHUB_ENV
 
-                      # Deploy lock (prevents concurrent docker compose runs)
-                      LOCK_FILE="/tmp/folioo-deploy.lock"
-                      exec 9>"$LOCK_FILE"
-                      flock 9
-                      echo "🔒 Acquired lock: $LOCK_FILE"
+            - name: Refresh Environment Variables from Secret Manager
+              run: |
+                  gcloud secrets versions access latest \
+                    --project='${{ secrets.GCP_PROJECT_ID }}' \
+                    --secret='folioo-dev-config' \
+                  | jq -r 'to_entries[] | "\(.key | ascii_upcase)=\(.value)"' \
+                  > .env.dev
 
-                      # .env.dev 파일 생성 (GitHub Secrets에서)
-                      echo "$ENV_DEV" > .env.dev
+                  gcloud compute scp .env.dev ${{ env.GCE_NAME }}:~/.env.dev \
+                    --zone=${{ env.GCE_ZONE }} \
+                    --project=${{ secrets.GCP_PROJECT_ID }} \
+                    --tunnel-through-iap \
+                    --quiet
 
-                      # Defensive cleanup for fixed container names
-                      docker compose --env-file .env.dev -f docker-compose.dev.yml down --remove-orphans 2>/dev/null || true
-                      docker rm -f folioo-server 2>/dev/null || true
-                      docker rm -f folioo-postgres 2>/dev/null || true
+                  gcloud compute ssh ${{ env.GCE_NAME }} \
+                    --zone=${{ env.GCE_ZONE }} \
+                    --project=${{ secrets.GCP_PROJECT_ID }} \
+                    --tunnel-through-iap \
+                    --quiet \
+                    --command="
+                      sudo mv ~/.env.dev /home/folioo/.env.dev
+                      sudo chmod 600 /home/folioo/.env.dev
+                    "
 
-                      # 최신 이미지 Pull & 재시작 (헬스체크 통과까지 대기)
-                      docker compose --env-file .env.dev -f docker-compose.dev.yml pull
-                      docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --force-recreate --wait
+            - name: Deploy to GCE via IAP (Blue-Green)
+              run: |
+                  # A. Create server directory if needed
+                  gcloud compute ssh ${{ env.GCE_NAME }} \
+                    --zone=${{ env.GCE_ZONE }} \
+                    --project=${{ secrets.GCP_PROJECT_ID }} \
+                    --tunnel-through-iap \
+                    --quiet \
+                    --command="sudo mkdir -p /home/folioo"
 
-                      # 헬스체크 추가 확인
-                      echo "🔍 Verifying health..."
-                      sleep 5
-                      if curl -sf http://localhost:3000/health > /dev/null; then
-                        echo "✅ Health check passed!"
+                  # B-1. Copy docker-compose.infra.yml
+                  gcloud compute scp docker-compose.infra.yml ${{ env.GCE_NAME }}:~/docker-compose.infra.yml \
+                    --zone=${{ env.GCE_ZONE }} \
+                    --project=${{ secrets.GCP_PROJECT_ID }} \
+                    --tunnel-through-iap \
+                    --quiet
+
+                  # B-2. Copy docker-compose.dev.bluegreen.yml
+                  gcloud compute scp docker-compose.dev.bluegreen.yml ${{ env.GCE_NAME }}:~/docker-compose.dev.bluegreen.yml \
+                    --zone=${{ env.GCE_ZONE }} \
+                    --project=${{ secrets.GCP_PROJECT_ID }} \
+                    --tunnel-through-iap \
+                    --quiet
+
+                  # C. Execute blue-green deployment
+                  gcloud compute ssh ${{ env.GCE_NAME }} \
+                    --zone=${{ env.GCE_ZONE }} \
+                    --project=${{ secrets.GCP_PROJECT_ID }} \
+                    --tunnel-through-iap \
+                    --quiet \
+                    --command="
+                      sudo mv ~/docker-compose.infra.yml /home/folioo/docker-compose.infra.yml
+                      sudo mv ~/docker-compose.dev.bluegreen.yml /home/folioo/docker-compose.dev.bluegreen.yml
+
+                      cd /home/folioo
+                      IMAGE_REPO='${{ env.DOCKER_IMAGE }}'
+                      IMAGE_REPO="${IMAGE_REPO%:*}"
+                      export DOCKER_IMAGE="$IMAGE_REPO"
+                      gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://asia-northeast3-docker.pkg.dev
+                      DC='sudo -E docker compose --env-file .env.dev -f docker-compose.infra.yml -f docker-compose.dev.bluegreen.yml'
+
+                      sudo docker network create folioo-network || true
+
+                      # ── Detect current active slot ──
+                      ACTIVE_SLOT=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[].Service' 2>/dev/null | grep -E 'dev-blue|dev-green' | head -1)
+                      ACTIVE_SLOT=\${ACTIVE_SLOT:-none}
+
+                      if [[ \"\$ACTIVE_SLOT\" == 'dev-blue' ]]; then
+                        GREEN_SLOT='green'
+                        BLUE_SLOT='blue'
                       else
-                        echo "❌ Health check failed!"
-                        docker compose --env-file .env.dev -f docker-compose.dev.yml logs --tail=50
-                        exit 1
+                        GREEN_SLOT='blue'
+                        BLUE_SLOT='green'
+                      fi
+                      echo \"Current: \$ACTIVE_SLOT / New slot: dev-\$GREEN_SLOT / Old: dev-\$BLUE_SLOT\"
+
+                      # ── Start base infra on first deploy ──
+                      if [[ \"\$ACTIVE_SLOT\" == 'none' ]]; then
+                        echo 'First deploy: starting base infra'
+                        \$DC up -d traefik cloudflared
+                        sleep 10
                       fi
 
-                      # 사용하지 않는 이미지 정리
-                      docker image prune -f
+                      \$DC --profile blue --profile green pull
+                      echo \"Starting green slot (dev-\$GREEN_SLOT)\"
+                      \$DC --profile \$GREEN_SLOT up -d
 
-                      echo "✅ Dev deployment completed!"
+                      # ── Health Check (Docker native health status) ──
+                      GREEN_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr \".[] | select(.Service == \\\"dev-\$GREEN_SLOT\\\") | .Name\")
+                      echo \"Health check starting... (container: \$GREEN_CONTAINER)\"
+
+                      for i in {1..36}; do
+                        STATUS=\$(sudo docker inspect --format='{{.State.Health.Status}}' \"\$GREEN_CONTAINER\" 2>/dev/null || echo 'not_found')
+
+                        if [[ \"\$STATUS\" == 'healthy' ]]; then
+                          echo \"✅ Green slot healthy! (\${i}th check)\"
+                          break
+                        fi
+
+                        if [[ \"\$STATUS\" == 'unhealthy' ]]; then
+                          echo '❌ Container unhealthy - rolling back'
+                          sudo docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' \"\$GREEN_CONTAINER\" 2>/dev/null || true
+                          sudo docker logs --tail 80 \"\$GREEN_CONTAINER\" 2>/dev/null || true
+                          sudo docker stop \"\$GREEN_CONTAINER\" 2>/dev/null && sudo docker rm -f \"\$GREEN_CONTAINER\" 2>/dev/null
+                          exit 1
+                        fi
+
+                        if [ \$i -eq 36 ]; then
+                          echo '❌ Health check timeout (180s) - rolling back'
+                          sudo docker logs --tail 80 \"\$GREEN_CONTAINER\" 2>/dev/null || true
+                          sudo docker stop \"\$GREEN_CONTAINER\" 2>/dev/null && sudo docker rm -f \"\$GREEN_CONTAINER\" 2>/dev/null
+                          exit 1
+                        fi
+
+                        echo \"Waiting... (\$i/36) status=\$STATUS\"
+                        sleep 5
+                      done
+
+                      # ── Stop old blue slot (keep infra) ──
+                      if [[ \"\$ACTIVE_SLOT\" != 'none' ]]; then
+                        OLD_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr \".[] | select(.Service == \\\"dev-\$BLUE_SLOT\\\") | .Name\")
+                        if [[ -n \"\$OLD_CONTAINER\" ]]; then
+                          echo \"Stopping old slot(\$OLD_CONTAINER)...\"
+                          sudo docker stop \"\$OLD_CONTAINER\" 2>/dev/null && sudo docker rm -f \"\$OLD_CONTAINER\" 2>/dev/null
+                        fi
+                      fi
+
+                      echo \"✅ Dev deployment completed!\"
+                    "

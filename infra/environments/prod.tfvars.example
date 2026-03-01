@@ -1,0 +1,12 @@
+project_id = "your-gcp-project-id"
+region     = "asia-northeast3"
+zone       = "asia-northeast3-a"
+
+enable_cloudflare     = true
+cloudflare_api_token  = "your-cloudflare-api-token"
+cloudflare_account_id = "e61cd7c90c2c4fad044ae66bd000514e"
+cloudflare_zone_id    = "bb0f9ec50891af6ea95b7a9d889f3add"
+prod_hostname         = "prod-api.folioo.ai.kr"
+prod_tunnel_service   = "http://localhost:3000"
+
+github_repository = "owner/folioo-server"
