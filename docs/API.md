@@ -207,8 +207,8 @@ Legend:
 - POST `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - PATCH `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - POST `/portfolio-corrections/{correctionId}/regenerate-insight` -> NOT_IMPLEMENTED
-- POST `/portfolio-corrections/{correctionId}/select` -> NOT_IMPLEMENTED
-- POST `/portfolio-corrections/{correctionId}/generate` -> NOT_IMPLEMENTED
+- POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택만 수행, generate로 선택+생성 준비 한번에 가능)
+- POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (portfolioIds 선택 + 생성 준비를 한번에 수행)
 - PATCH `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 - DELETE `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 
