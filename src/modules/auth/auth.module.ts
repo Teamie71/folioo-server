@@ -7,6 +7,7 @@ import { UserModule } from '../user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { JwtRefreshGuard } from './infrastructure/guards/jwt-refresh.guard';
@@ -36,6 +37,10 @@ import { AuthTokenStoreService } from './infrastructure/services/auth-token-stor
         TokenService,
         AuthTokenStoreService,
         JwtAuthGuard,
+        {
+            provide: APP_GUARD,
+            useExisting: JwtAuthGuard,
+        },
         JwtStrategy,
         JwtRefreshGuard,
         JwtRefreshStrategy,
