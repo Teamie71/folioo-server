@@ -35,7 +35,6 @@ import { User } from 'src/common/decorators/user.decorator';
 import { StringValue } from 'ms';
 import { TimeUtil } from 'src/common/utils/time.util';
 import { LogoutUsecase } from '../application/usecases/logout.usecase';
-import { JwtAuthGuard } from '../infrastructure/guards/jwt-auth.guard';
 import { extractAccessTokenFromAuthorization } from '../infrastructure/utils/access-token.util';
 
 @ApiTags('Auth')
@@ -284,7 +283,6 @@ export class AuthController {
     }
 
     @Post('logout')
-    @UseGuards(JwtAuthGuard)
     @ApiOperation({
         summary: '로그아웃',
         description: 'JWT 토큰을 만료시키고 서버에서 로그아웃을 수행합니다.',
@@ -307,6 +305,10 @@ export class AuthController {
     ): Promise<string> {
         const refreshToken = req.cookies?.refreshToken as string | undefined;
         const accessToken = extractAccessTokenFromAuthorization(authorization);
+
+        if (!accessToken) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
 
         await this.logoutUsecase.execute({
             accessToken,
