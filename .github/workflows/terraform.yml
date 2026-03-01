@@ -45,30 +45,21 @@ jobs:
                   service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
             - name: Download Terraform Variables
-              run: |
-                  set -euo pipefail
-                  if gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars; then
-                    echo "Loaded terraform.tfvars from state bucket"
-                    exit 0
-                  fi
-
-                  if [ "${{ github.event_name }}" = "pull_request" ]; then
-                    echo "terraform.tfvars not found in bucket for PR; generating safe fallback vars"
-                    printf 'project_id = "%s"\ngithub_repository = "%s"\nenable_cloudflare = false\n' \
-                      '${{ secrets.GCP_PROJECT_ID }}' \
-                      '${{ github.repository }}' > terraform.tfvars
-                    exit 0
-                  fi
-
-                  echo "terraform.tfvars missing and this is not a pull_request event"
-                  exit 1
+              if: github.event_name != 'pull_request'
+              run: gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars
 
             - name: Terraform Format Check
               id: fmt
               run: terraform fmt -check -recursive
               continue-on-error: true
 
+            - name: Terraform Init (PR)
+              if: github.event_name == 'pull_request'
+              id: init_pr
+              run: terraform init -backend=false
+
             - name: Terraform Init
+              if: github.event_name != 'pull_request'
               id: init
               run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
@@ -77,6 +68,7 @@ jobs:
               run: terraform validate -no-color
 
             - name: Terraform Plan
+              if: github.event_name != 'pull_request'
               id: plan
               run: |
                   terraform plan -no-color -input=false -var-file=terraform.tfvars -lock-timeout=5m -detailed-exitcode || EXIT_CODE=$?
@@ -122,7 +114,7 @@ jobs:
                       })
 
             - name: Terraform Plan Status
-              if: steps.plan.outcome == 'failure'
+              if: github.event_name != 'pull_request' && steps.plan.outcome == 'failure'
               run: |
                   echo "Terraform plan failed"
                   exit 1
