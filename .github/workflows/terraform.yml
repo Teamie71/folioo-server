@@ -45,7 +45,23 @@ jobs:
                   service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
             - name: Download Terraform Variables
-              run: gcloud storage cp gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars terraform.tfvars
+              run: |
+                  set -euo pipefail
+                  if gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars; then
+                    echo "Loaded terraform.tfvars from state bucket"
+                    exit 0
+                  fi
+
+                  if [ "${{ github.event_name }}" = "pull_request" ]; then
+                    echo "terraform.tfvars not found in bucket for PR; generating safe fallback vars"
+                    printf 'project_id = "%s"\ngithub_repository = "%s"\nenable_cloudflare = false\n' \
+                      '${{ secrets.GCP_PROJECT_ID }}' \
+                      '${{ github.repository }}' > terraform.tfvars
+                    exit 0
+                  fi
+
+                  echo "terraform.tfvars missing and this is not a pull_request event"
+                  exit 1
 
             - name: Terraform Format Check
               id: fmt
