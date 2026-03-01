@@ -26,7 +26,7 @@ export class UserAgreement extends BaseEntity {
     @Column({ name: 'is_agree' })
     isAgree: boolean;
 
-    @Column({ name: 'agree_at', nullable: true })
+    @Column({ name: 'agree_at', type: 'timestamptz', nullable: true })
     agreeAt: Date | null;
 
     static createMarketingAgreement(
