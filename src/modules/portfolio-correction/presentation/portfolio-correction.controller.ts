@@ -191,39 +191,51 @@ export class PortfolioCorrectionController {
     @Post(':correctionId/select')
     @ApiOperation({
         summary: '포트폴리오 선택',
-        description: '첨삭을 진행할 포트폴리오를 선택합니다.',
+        description:
+            '첨삭을 진행할 포트폴리오를 선택합니다. generate 엔드포인트로 선택과 생성 준비를 한번에 수행할 수 있습니다.',
     })
     @ApiCommonResponseArray(CorrectionItemResDTO)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.CORRECTION_NOT_FOUND,
-        ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED
+        ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED,
+        ErrorCode.PORTFOLIO_NOT_FOUND
     )
-    mapCorrectionWithPortfolios(
+    async mapCorrectionWithPortfolios(
+        @User('sub') userId: number,
         @Param('correctionId', ParseIntPipe) correctionId: number,
         @Body() body: MapCorrectionWithPortfoliosReqDTO
-    ): CorrectionItemResDTO[] {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, { correctionId, body });
+    ): Promise<CorrectionItemResDTO[]> {
+        return this.portfolioCorrectionFacade.selectPortfolios(
+            correctionId,
+            userId,
+            body.portfolioIds
+        );
     }
 
     @Post(':correctionId/generate')
     @ApiOperation({
         summary: 'AI 첨삭 생성',
-        description: '선택한 포트폴리오에 대해 첨삭을 생성합니다.',
+        description:
+            '선택한 포트폴리오에 대해 포트폴리오 선택과 AI 첨삭 생성 준비를 한번에 수행합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'AI 포트폴리오 첨삭 결과를 생성합니다.',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    createCorrectionByAI(@Param('correctionId', ParseIntPipe) correctionId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
+    @ApiCommonResponseArray(CorrectionItemResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.CORRECTION_NOT_FOUND,
+        ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED,
+        ErrorCode.PORTFOLIO_NOT_FOUND
+    )
+    async createCorrectionByAI(
+        @User('sub') userId: number,
+        @Param('correctionId', ParseIntPipe) correctionId: number,
+        @Body() body: MapCorrectionWithPortfoliosReqDTO
+    ): Promise<CorrectionItemResDTO[]> {
+        return this.portfolioCorrectionFacade.selectAndGenerate(
+            correctionId,
+            userId,
+            body.portfolioIds
+        );
     }
 
     @Get(':correctionId')

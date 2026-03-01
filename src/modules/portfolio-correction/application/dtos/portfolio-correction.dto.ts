@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+    ArrayNotEmpty,
     IsArray,
     IsEnum,
     IsNumber,
@@ -67,8 +68,9 @@ export class CorrectionStatusResDTO {
 }
 
 export class MapCorrectionWithPortfoliosReqDTO {
-    @ApiProperty({ isArray: true, example: [1, 2, 3] })
+    @ApiProperty({ type: [Number], example: [1, 2, 3] })
     @IsArray()
+    @ArrayNotEmpty()
     @IsNumber({}, { each: true })
     portfolioIds: number[];
 }

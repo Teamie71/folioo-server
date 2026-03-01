@@ -78,6 +78,12 @@ export class PortfolioCorrectionService {
         return correction;
     }
 
+    async transitionToGenerating(correctionId: number): Promise<void> {
+        await this.portfolioCorrectionRepository.updateById(correctionId, {
+            status: CorrectionStatus.GENERATING,
+        });
+    }
+
     async getStatus(correctionId: number, userId: number): Promise<CorrectionStatusResDTO> {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
         return CorrectionStatusResDTO.from(correction);
