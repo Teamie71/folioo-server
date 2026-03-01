@@ -7,8 +7,8 @@ export class UserProfileResDTO {
     @ApiProperty({ description: '사용자 닉네임', example: '폴리오유저' })
     name: string;
 
-    @ApiProperty({ description: '사용자 이메일', example: 'folioo@example.com' })
-    email: string;
+    @ApiProperty({ description: '사용자 이메일', example: 'folioo@example.com', nullable: true })
+    email: string | null;
 
     @ApiProperty({ description: '사용자 전화번호', example: '01012345678', nullable: true })
     phoneNum: string | null;
@@ -16,10 +16,10 @@ export class UserProfileResDTO {
     @ApiProperty({ description: '마케팅 정보 수신 동의 여부', example: true })
     isMarketingAgreed: boolean;
 
-    static from(user: User, isMarketingAgreed: boolean): UserProfileResDTO {
+    static from(user: User, email: string | null, isMarketingAgreed: boolean): UserProfileResDTO {
         const dto = new UserProfileResDTO();
         dto.name = user.name;
-        dto.email = user.email;
+        dto.email = email;
         dto.phoneNum = user.phoneNum;
         dto.isMarketingAgreed = isMarketingAgreed;
         return dto;

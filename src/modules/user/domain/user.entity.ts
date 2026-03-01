@@ -1,17 +1,11 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity } from 'typeorm';
-import { LoginType } from './enums/login-type.enum';
+import { UserStatus } from './enums/user-status.enum';
 
 @Entity('users')
 export class User extends BaseEntity {
     @Column({ length: 10 })
     name: string;
-
-    @Column({
-        unique: true,
-        length: 255,
-    })
-    email: string;
 
     @Column({
         unique: true,
@@ -21,16 +15,12 @@ export class User extends BaseEntity {
     phoneNum: string;
 
     @Column({
-        type: 'varchar',
-        length: 255,
-    })
-    socialId: string;
-
-    @Column({
         type: 'enum',
-        enum: LoginType,
+        enum: UserStatus,
+        enumName: 'users_status_enum',
+        default: UserStatus.PENDING,
     })
-    socialType: LoginType;
+    status: UserStatus;
 
     @Column({ default: true })
     isActive: boolean;
@@ -38,17 +28,10 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     deactivatedAt: Date;
 
-    static createSocialUser(
-        name: string,
-        email: string,
-        socialId: string,
-        socialType: LoginType
-    ): User {
+    static createPendingUser(name: string): User {
         const user = new User();
         user.name = name;
-        user.email = email;
-        user.socialId = socialId;
-        user.socialType = socialType;
+        user.status = UserStatus.PENDING;
         return user;
     }
 }

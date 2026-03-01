@@ -19,7 +19,6 @@ export class TokenService {
     async generateRefreshToken(user: User): Promise<string> {
         const payload: JwtPayload = {
             sub: user.id,
-            email: user.email,
         };
 
         return this.jwtService.signAsync(payload, {

@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { SocialUser } from 'src/modules/user/domain/social-user.entity';
 import { User } from 'src/modules/user/domain/user.entity';
+import { SocialUserRepository } from 'src/modules/user/infrastructure/repositories/social-user.repository';
 import { UserRepository } from 'src/modules/user/infrastructure/repositories/user.repository';
 import { TokenService } from '../../infrastructure/services/token.service';
 import { AuthTokenStoreService } from '../../infrastructure/services/auth-token-store.service';
@@ -10,30 +12,41 @@ import type { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
 export class LoginUsecase {
     constructor(
         private readonly userRepository: UserRepository,
+        private readonly socialUserRepository: SocialUserRepository,
         private readonly tokenService: TokenService,
         private readonly authTokenStoreService: AuthTokenStoreService
     ) {}
 
     @Transactional()
     async execute(command: SocialUserAfterOAuth): Promise<string> {
-        // 1. DB에 사용자가 있는지 확인
-        let existingUser = await this.userRepository.findBySocialIdAndSocialType(
-            command.id,
-            command.socialType
+        const existingSocialUser = await this.socialUserRepository.findByLoginTypeAndLoginId(
+            command.socialType,
+            command.id
         );
-        // 2. 해당하는 사용자가 없다면 유저 등록
-        if (!existingUser) {
-            const newUser = User.createSocialUser(
-                command.nickname,
-                command.email,
+
+        let user: User;
+        if (existingSocialUser) {
+            user = existingSocialUser.user;
+
+            if (existingSocialUser.email !== command.email) {
+                existingSocialUser.email = command.email;
+                await this.socialUserRepository.save(existingSocialUser);
+            }
+        } else {
+            const newUser = User.createPendingUser(command.nickname);
+            user = await this.userRepository.save(newUser);
+
+            const socialUser = SocialUser.create(
+                user.id,
+                command.socialType,
                 command.id,
-                command.socialType
+                command.email
             );
-            existingUser = await this.userRepository.save(newUser);
+            await this.socialUserRepository.save(socialUser);
         }
-        // 3. JWT 토큰 발급
-        const refreshToken = await this.tokenService.generateRefreshToken(existingUser);
-        await this.authTokenStoreService.whitelistRefreshToken(refreshToken, existingUser.id);
+
+        const refreshToken = await this.tokenService.generateRefreshToken(user);
+        await this.authTokenStoreService.whitelistRefreshToken(refreshToken, user.id);
         return refreshToken;
     }
 }

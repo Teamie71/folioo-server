@@ -286,7 +286,6 @@ export class AuthController {
     async handleRefresh(@User() user: UserAfterAuth) {
         const accessToken = await this.tokenService.generateAccessToken({
             sub: user.sub,
-            email: user.email,
         });
         return accessToken;
     }

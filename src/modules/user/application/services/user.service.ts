@@ -5,6 +5,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { User } from '../../domain/user.entity';
 import { UserAgreementRepository } from '../../infrastructure/repositories/user-agreement.repository';
+import { SocialUserRepository } from '../../infrastructure/repositories/social-user.repository';
 import { TermType } from '../../domain/enums/term-type.enum';
 import { UserAgreement } from '../../domain/user-agreement.entity';
 import { AgreeMarketingResDTO } from '../dtos/marketing-agree.dto';
@@ -15,21 +16,24 @@ const DEFAULT_TERMS_VERSION = 'v1.0';
 export class UserService {
     constructor(
         private readonly userRepository: UserRepository,
-        private readonly userAgreementRepository: UserAgreementRepository
+        private readonly userAgreementRepository: UserAgreementRepository,
+        private readonly socialUserRepository: SocialUserRepository
     ) {}
 
     async getProfile(userId: number): Promise<UserProfileResDTO> {
         const user = await this.findByIdOrThrow(userId);
+        const email = await this.socialUserRepository.findLatestEmailByUserId(userId);
         const isMarketingAgreed = await this.getMarketingConsent(userId);
-        return UserProfileResDTO.from(user, isMarketingAgreed);
+        return UserProfileResDTO.from(user, email, isMarketingAgreed);
     }
 
     async updateProfile(userId: number, name: string): Promise<UserProfileResDTO> {
         const user = await this.findByIdOrThrow(userId);
         user.name = name;
         await this.userRepository.save(user);
+        const email = await this.socialUserRepository.findLatestEmailByUserId(userId);
         const isMarketingAgreed = await this.getMarketingConsent(userId);
-        return UserProfileResDTO.from(user, isMarketingAgreed);
+        return UserProfileResDTO.from(user, email, isMarketingAgreed);
     }
 
     async updateMarketingConsent(
