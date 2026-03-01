@@ -4,7 +4,7 @@ export const extractAccessTokenFromAuthorization = (authorization?: string): str
     }
 
     const [scheme, token] = authorization.split(' ');
-    if (scheme !== 'Bearer' || !token) {
+    if (scheme.toLowerCase() !== 'bearer' || !token) {
         return null;
     }
 

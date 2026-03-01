@@ -67,8 +67,7 @@ export class AuthTokenStoreService {
             return Math.max(expFromToken - nowSeconds, 0);
         }
 
-        const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1h';
-        return TimeUtil.toSec(expiresIn);
+        return 0;
     }
 
     private getAccessTokenExp(accessToken: string): number | null {
