@@ -85,19 +85,7 @@ export class AuthController {
         @SocialUser() user: SocialUserAfterOAuth,
         @Res() res: Response
     ): Promise<void> {
-        const refreshToken = await this.loginUsecase.execute(user);
-        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
-            '14d') as StringValue;
-        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: !isLocal,
-            sameSite: isLocal ? 'lax' : 'none',
-            path: '/',
-            maxAge: TimeUtil.toMs(expiresIn),
-        });
-        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
-        res.redirect(`${clientUrl}?status=success`);
+        await this.handleSocialLoginRedirect(user, res);
     }
 
     @Get('google')
@@ -139,19 +127,7 @@ export class AuthController {
         @SocialUser() user: SocialUserAfterOAuth,
         @Res() res: Response
     ): Promise<void> {
-        const refreshToken = await this.loginUsecase.execute(user);
-        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
-            '14d') as StringValue;
-        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: !isLocal,
-            sameSite: isLocal ? 'lax' : 'none',
-            path: '/',
-            maxAge: TimeUtil.toMs(expiresIn),
-        });
-        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
-        res.redirect(`${clientUrl}?status=success`);
+        await this.handleSocialLoginRedirect(user, res);
     }
 
     @Get('naver')
@@ -192,6 +168,13 @@ export class AuthController {
     async naverCallback(
         @SocialUser() user: SocialUserAfterOAuth,
         @Res() res: Response
+    ): Promise<void> {
+        await this.handleSocialLoginRedirect(user, res);
+    }
+
+    private async handleSocialLoginRedirect(
+        user: SocialUserAfterOAuth,
+        res: Response
     ): Promise<void> {
         const refreshToken = await this.loginUsecase.execute(user);
         const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
