@@ -5,6 +5,7 @@ import { LoginType } from './enums/login-type.enum';
 
 @Entity('social_user')
 @Index(['userId'])
+@Index(['loginType', 'loginId'])
 export class SocialUser extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
@@ -25,4 +26,18 @@ export class SocialUser extends BaseEntity {
 
     @Column({ length: 255 })
     email: string;
+
+    static create(
+        userId: number,
+        loginType: LoginType,
+        loginId: string,
+        email: string
+    ): SocialUser {
+        const socialUser = new SocialUser();
+        socialUser.userId = userId;
+        socialUser.loginType = loginType;
+        socialUser.loginId = loginId;
+        socialUser.email = email;
+        return socialUser;
+    }
 }

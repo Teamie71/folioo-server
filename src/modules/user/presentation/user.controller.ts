@@ -27,7 +27,23 @@ export class UserController {
         summary: '사용자 프로필 조회',
         description: '사용자의 프로필을 조회합니다.',
     })
-    @ApiCommonResponse(UserProfileResDTO)
+    @ApiCommonResponse(UserProfileResDTO, {
+        exampleResult: {
+            name: '폴리오유저',
+            socialAccounts: [
+                {
+                    socialType: 'KAKAO',
+                    socialEmail: 'folioo-kakao@example.com',
+                },
+                {
+                    socialType: 'GOOGLE',
+                    socialEmail: 'folioo-google@example.com',
+                },
+            ],
+            phoneNum: '01012345678',
+            isMarketingAgreed: true,
+        },
+    })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.USER_NOT_FOUND)
     async getProfile(@User('sub') userId: number): Promise<UserProfileResDTO> {
         return await this.userService.getProfile(userId);

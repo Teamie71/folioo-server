@@ -5,7 +5,6 @@ import {
     Headers,
     HttpStatus,
     Post,
-    Query,
     Req,
     Res,
     UseGuards,
@@ -86,43 +85,12 @@ export class AuthController {
         @SocialUser() user: SocialUserAfterOAuth,
         @Res() res: Response
     ): Promise<void> {
-        const refreshToken = await this.loginUsecase.execute(user);
-        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
-            '14d') as StringValue;
-        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: !isLocal,
-            sameSite: isLocal ? 'lax' : 'none',
-            path: '/',
-            maxAge: TimeUtil.toMs(expiresIn),
-        });
-        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
-        res.redirect(`${clientUrl}?status=success`);
-    }
-
-    @Post('kakao/unlink')
-    @ApiOperation({
-        summary: '서비스 내 카카오 로그인 사용자 탈퇴',
-        description: '카카오 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    kakaoUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        await this.handleSocialLoginRedirect(user, res);
     }
 
     @Get('google')
     @Public()
+    @UseGuards(AuthGuard('google'))
     @ApiOperation({
         summary: '구글 로그인 트리거',
         description: '구글 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -141,18 +109,11 @@ export class AuthController {
         status: 302,
         description: '구글 로그인 페이지로 리다이렉트됨.',
     })
-    googleLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    async googleLogin() {}
 
     @Get('google/callback')
     @Public()
+    @UseGuards(AuthGuard('google'))
     @ApiOperation({
         summary: '구글 로그인 콜백',
         description:
@@ -162,28 +123,11 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    googleCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
-    }
-
-    @Post('google/unlink')
-    @ApiOperation({
-        summary: '서비스 내 구글 로그인 사용자 탈퇴',
-        description: '구글 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    googleUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async googleCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        await this.handleSocialLoginRedirect(user, res);
     }
 
     @Get('naver')
@@ -206,18 +150,12 @@ export class AuthController {
         status: 302,
         description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
-    naverLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    @UseGuards(AuthGuard('naver'))
+    async naverLogin() {}
 
     @Get('naver/callback')
     @Public()
+    @UseGuards(AuthGuard('naver'))
     @ApiOperation({
         summary: '네이버 로그인 콜백',
         description:
@@ -227,28 +165,30 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    naverCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async naverCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        await this.handleSocialLoginRedirect(user, res);
     }
 
-    @Post('naver/unlink')
-    @ApiOperation({
-        summary: '서비스 내 네이버 로그인 사용자 탈퇴',
-        description: '네이버 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    naverUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    private async handleSocialLoginRedirect(
+        user: SocialUserAfterOAuth,
+        res: Response
+    ): Promise<void> {
+        const refreshToken = await this.loginUsecase.execute(user);
+        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+            '14d') as StringValue;
+        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: isLocal ? 'lax' : 'none',
+            path: '/',
+            maxAge: TimeUtil.toMs(expiresIn),
+        });
+        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
+        res.redirect(`${clientUrl}?status=success`);
     }
 
     @Post('refresh')
@@ -277,7 +217,6 @@ export class AuthController {
     async handleRefresh(@User() user: UserAfterAuth) {
         const accessToken = await this.tokenService.generateAccessToken({
             sub: user.sub,
-            email: user.email,
         });
         return accessToken;
     }

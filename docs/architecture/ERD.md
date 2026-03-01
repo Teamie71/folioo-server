@@ -113,20 +113,18 @@ PayType: 'CARD' |
 
 ### users (사용자)
 
-| 컬럼           | 타입         | 설명                                  |
-| -------------- | ------------ | ------------------------------------- |
-| id             | number       | PK                                    |
-| name           | varchar(10)  | 이름                                  |
-| email          | varchar(255) | 이메일                                |
-| phone_num      | varchar(11)  | 전화번호 (nullable)                   |
-| social_id      | bigint       | (LEGACY) 소셜 로그인 ID (추후 제거)   |
-| social_type    | ENUM         | (LEGACY) 소셜 로그인 타입 (추후 제거) |
-| is_active      | boolean      | 활성 여부                             |
-| deactivated_at | datetime     | 비활성화 일시 (nullable)              |
+| 컬럼           | 타입        | 설명                        |
+| -------------- | ----------- | --------------------------- |
+| id             | number      | PK                          |
+| name           | varchar(10) | 이름                        |
+| phone_num      | varchar(11) | 전화번호 (nullable)         |
+| status         | ENUM        | 인증 상태 (PENDING, ACTIVE) |
+| is_active      | boolean     | 활성 여부                   |
+| deactivated_at | datetime    | 비활성화 일시 (nullable)    |
 
 > **Note**: 테이블명 `users`는 PostgreSQL 예약어 `user` 회피.
-> 소셜 로그인 정보의 소스 오브 트루스는 `social_user`이며, `users.social_id/social_type`는 과도기 레거시 컬럼입니다.
-> 레거시 제거(데이터 마이그레이션 포함)는 별도 작업으로 진행합니다.
+> `status`는 전화번호 인증 진행 상태를 나타내며, 소셜 회원가입 초기값은 `PENDING`입니다.
+> 이메일은 `social_user.email`에서 관리합니다.
 
 ### social_user (소셜 로그인)
 

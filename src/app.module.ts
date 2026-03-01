@@ -18,7 +18,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { EventModule } from './modules/event/event.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
-import { addTransactionalDataSource } from 'typeorm-transactional';
+import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
 @Module({
@@ -34,7 +34,11 @@ import { DataSource } from 'typeorm';
                 if (!options) {
                     throw new Error('Invalid options passed');
                 }
-                return Promise.resolve(addTransactionalDataSource(new DataSource(options)));
+
+                return Promise.resolve(
+                    getDataSourceByName('default') ||
+                        addTransactionalDataSource(new DataSource(options))
+                );
             },
         }),
         RedisModule,

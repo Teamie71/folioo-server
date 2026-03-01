@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-kakao';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { LoginType } from 'src/modules/user/domain/enums/login-type.enum';
 import { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
+import {
+    getOptionalSocialProfileField,
+    requireSocialProfileField,
+} from './social-profile-validation.util';
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy) {
@@ -18,32 +20,30 @@ export class KakaoStrategy extends PassportStrategy(Strategy) {
     }
 
     validate(_accessToken: string, _refreshToken: string, profile: Profile): SocialUserAfterOAuth {
-        try {
-            const raw = profile._json as unknown as KakaoRawData;
-            const user: SocialUserAfterOAuth = {
-                id: String(raw.id),
-                nickname: raw.kakao_account?.profile?.nickname || raw.properties?.nickname || '',
-                email: raw.kakao_account?.email || '',
-                socialType: LoginType.KAKAO,
-            };
-            return user;
-        } catch (error) {
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, error);
-        }
+        const raw = profile._json as unknown as KakaoRawData;
+        const user: SocialUserAfterOAuth = {
+            id: requireSocialProfileField(raw.id, 'id', LoginType.KAKAO),
+            nickname:
+                getOptionalSocialProfileField(raw.kakao_account?.profile?.nickname) ||
+                getOptionalSocialProfileField(raw.properties?.nickname),
+            email: getOptionalSocialProfileField(raw.kakao_account?.email),
+            socialType: LoginType.KAKAO,
+        };
+        return user;
     }
 }
 
 interface KakaoAccount {
     profile?: {
-        nickname?: string;
+        nickname?: unknown;
     };
-    email?: string;
+    email?: unknown;
 }
 
 interface KakaoRawData {
-    id: number;
+    id?: unknown;
     properties?: {
-        nickname?: string;
+        nickname?: unknown;
     };
     kakao_account?: KakaoAccount;
 }
