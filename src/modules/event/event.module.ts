@@ -13,6 +13,7 @@ import { EventController } from './presentation/event.controller';
 import { EventRewardFacade } from './application/facades/event-reward.facade';
 import { UserModule } from '../user/user.module';
 import { TicketModule } from '../ticket/ticket.module';
+import { EventAdminApiKeyGuard } from './infrastructure/guards/event-admin-api-key.guard';
 
 @Module({
     imports: [
@@ -29,6 +30,7 @@ import { TicketModule } from '../ticket/ticket.module';
         EventParticipationService,
         EventFeedbackSubmissionService,
         EventRewardFacade,
+        EventAdminApiKeyGuard,
     ],
     exports: [
         EventService,

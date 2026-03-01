@@ -1,7 +1,6 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
-import { Public } from 'src/common/decorators/public.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
@@ -12,6 +11,7 @@ import {
     GrantFeedbackRewardResDTO,
 } from '../application/dtos/event.dto';
 import { EventRewardFacade } from '../application/facades/event-reward.facade';
+import { EventAdminApiKeyGuard } from '../infrastructure/guards/event-admin-api-key.guard';
 
 @ApiTags('Event')
 @Controller('events')
@@ -69,7 +69,7 @@ export class EventController {
     }
 
     @Post('admin/:eventCode/feedback-rewards/grants')
-    @Public()
+    @UseGuards(EventAdminApiKeyGuard)
     @ApiOperation({
         summary: '피드백 이벤트 수동 보상 지급',
         description:
