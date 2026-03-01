@@ -33,3 +33,16 @@ docker-compose.override.yml
 
 # SSH 키 (절대 커밋 금지)
 *.pem
+
+# local planning/session artifacts
+.sisyphus/
+
+# terraform
+infra/.terraform/
+infra/tfplan
+infra/environments/*.tfvars
+!infra/environments/*.tfvars.example
+
+# local server access notes (never commit)
+infra/.server.info
+infra/.server.*
