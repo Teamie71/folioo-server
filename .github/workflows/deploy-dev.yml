@@ -139,7 +139,7 @@ jobs:
                       IMAGE_REPO="${IMAGE_REPO%:*}"
                       export DOCKER_IMAGE="$IMAGE_REPO"
                       gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://asia-northeast3-docker.pkg.dev
-                      DC='sudo -E docker compose --env-file .env.dev -f docker-compose.infra.yml -f docker-compose.dev.bluegreen.yml'
+                      DC='sudo DOCKER_IMAGE="$DOCKER_IMAGE" docker compose --env-file .env.dev -f docker-compose.infra.yml -f docker-compose.dev.bluegreen.yml'
 
                       sudo docker network create folioo-network || true
 
