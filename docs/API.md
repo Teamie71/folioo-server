@@ -180,8 +180,8 @@ Legend:
 - GET `/users/me` -> IMPLEMENTED
 - GET `/users/me/tickets` -> IMPLEMENTED
 - GET `/users/me/tickets/expiring` -> IMPLEMENTED
-- PATCH `/users/me` -> NOT_IMPLEMENTED
-- PATCH `/users/me/marketing-consent` -> NOT_IMPLEMENTED
+- PATCH `/users/me` -> IMPLEMENTED
+- PATCH `/users/me/marketing-consent` -> IMPLEMENTED
 
 ### Experience
 
