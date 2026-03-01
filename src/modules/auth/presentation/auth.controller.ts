@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpStatus, Post, Query, Res, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    Headers,
+    HttpStatus,
+    Post,
+    Query,
+    Req,
+    Res,
+    UseGuards,
+} from '@nestjs/common';
 import {
     ApiBody,
     ApiOkResponse,
@@ -14,7 +25,7 @@ import { SendSmsReqDTO, VerifySmsReqDTO } from '../application/dtos/sms-auth.dto
 import { AuthGuard } from '@nestjs/passport';
 import { SocialUser } from 'src/common/decorators/social-user.decorator';
 import type { SocialUserAfterOAuth, UserAfterAuth } from '../domain/types/jwt-payload.type';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { LoginUsecase } from '../application/usecases/login.usecase';
 import { ConfigService } from '@nestjs/config';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -23,6 +34,9 @@ import { TokenService } from '../infrastructure/services/token.service';
 import { User } from 'src/common/decorators/user.decorator';
 import { StringValue } from 'ms';
 import { TimeUtil } from 'src/common/utils/time.util';
+import { LogoutUsecase } from '../application/usecases/logout.usecase';
+import { JwtAuthGuard } from '../infrastructure/guards/jwt-auth.guard';
+import { extractAccessTokenFromAuthorization } from '../infrastructure/utils/access-token.util';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -30,7 +44,8 @@ export class AuthController {
     constructor(
         private readonly configService: ConfigService,
         private readonly loginUsecase: LoginUsecase,
-        private readonly tokenService: TokenService
+        private readonly tokenService: TokenService,
+        private readonly logoutUsecase: LogoutUsecase
     ) {}
 
     @Get('kakao')
@@ -269,6 +284,7 @@ export class AuthController {
     }
 
     @Post('logout')
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({
         summary: '로그아웃',
         description: 'JWT 토큰을 만료시키고 서버에서 로그아웃을 수행합니다.',
@@ -284,8 +300,28 @@ export class AuthController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    handleLogout() {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async handleLogout(
+        @Headers('authorization') authorization: string | undefined,
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<string> {
+        const refreshToken = req.cookies?.refreshToken as string | undefined;
+        const accessToken = extractAccessTokenFromAuthorization(authorization);
+
+        await this.logoutUsecase.execute({
+            accessToken,
+            refreshToken: refreshToken ?? null,
+        });
+
+        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: isLocal ? 'lax' : 'none',
+            path: '/',
+        });
+
+        return 'Logout from Server';
     }
 
     @Post('sms/send')

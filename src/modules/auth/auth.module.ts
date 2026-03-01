@@ -14,6 +14,7 @@ import { JwtRefreshGuard } from './infrastructure/guards/jwt-refresh.guard';
 import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.strategy';
 import { StringValue } from 'ms';
 import { AuthTokenStoreService } from './infrastructure/services/auth-token-store.service';
+import { LogoutUsecase } from './application/usecases/logout.usecase';
 
 @Module({
     imports: [
@@ -33,6 +34,7 @@ import { AuthTokenStoreService } from './infrastructure/services/auth-token-stor
     controllers: [AuthController],
     providers: [
         LoginUsecase,
+        LogoutUsecase,
         KakaoStrategy,
         TokenService,
         AuthTokenStoreService,

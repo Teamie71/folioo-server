@@ -164,7 +164,7 @@ Legend:
 - GET `/auth/kakao` -> IMPLEMENTED (Public, OAuth redirect)
 - GET `/auth/kakao/callback` -> IMPLEMENTED (Public, OAuth callback)
 - POST `/auth/refresh` -> IMPLEMENTED (Public, requires refreshToken cookie)
-- POST `/auth/logout` -> NOT_IMPLEMENTED
+- POST `/auth/logout` -> IMPLEMENTED
 - POST `/auth/kakao/unlink` -> NOT_IMPLEMENTED
 - GET `/auth/google` -> NOT_IMPLEMENTED
 - GET `/auth/google/callback` -> NOT_IMPLEMENTED
