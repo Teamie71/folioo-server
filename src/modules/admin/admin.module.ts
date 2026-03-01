@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import type { ActionRequest } from 'adminjs';
 import { join } from 'path';
@@ -6,6 +6,35 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { EventRewardFacade } from '../event/application/facades/event-reward.facade';
 import { Event } from '../event/domain/entities/event.entity';
 import { EventModule } from '../event/event.module';
+
+// eslint-disable-next-line @typescript-eslint/no-implied-eval
+const nativeDynamicImport = Function('specifier', 'return import(specifier)') as (
+    specifier: string
+) => Promise<unknown>;
+
+type AdminNestModuleExports = {
+    AdminModule: {
+        createAdminAsync: (options: {
+            imports: unknown[];
+            inject: unknown[];
+            useFactory: (...args: unknown[]) => Promise<unknown>;
+        }) => DynamicModule;
+    };
+};
+
+type AdminJsModuleExports = {
+    default: {
+        registerAdapter: (adapter: { Database: unknown; Resource: unknown }) => void;
+    };
+    ComponentLoader: new () => {
+        add: (name: string, filePath: string) => string;
+    };
+};
+
+type AdminJsTypeOrmModuleExports = {
+    Database: unknown;
+    Resource: unknown;
+};
 
 function getErrorMessage(error: unknown): string {
     if (error instanceof BusinessException) {
@@ -33,16 +62,22 @@ function getErrorMessage(error: unknown): string {
     imports: [
         EventModule,
         ConfigModule,
-        import('@adminjs/nestjs').then(({ AdminModule }) =>
-            AdminModule.createAdminAsync({
+        nativeDynamicImport('@adminjs/nestjs').then((adminNestModule) =>
+            (adminNestModule as AdminNestModuleExports).AdminModule.createAdminAsync({
                 imports: [EventModule, ConfigModule],
                 inject: [ConfigService, EventRewardFacade],
                 useFactory: async (
                     configService: ConfigService,
                     eventRewardFacade: EventRewardFacade
                 ) => {
-                    const [{ default: AdminJS, ComponentLoader }, { Database, Resource }] =
-                        await Promise.all([import('adminjs'), import('@adminjs/typeorm')]);
+                    const [adminJsModule, adminJsTypeOrmModule] = await Promise.all([
+                        nativeDynamicImport('adminjs'),
+                        nativeDynamicImport('@adminjs/typeorm'),
+                    ]);
+                    const { default: AdminJS, ComponentLoader } =
+                        adminJsModule as AdminJsModuleExports;
+                    const { Database, Resource } =
+                        adminJsTypeOrmModule as AdminJsTypeOrmModuleExports;
 
                     AdminJS.registerAdapter({ Database, Resource });
 
