@@ -7,6 +7,8 @@ import { TokenService } from '../../infrastructure/services/token.service';
 import { AuthTokenStoreService } from '../../infrastructure/services/auth-token-store.service';
 import { Transactional } from 'typeorm-transactional';
 import type { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class LoginUsecase {
@@ -27,6 +29,9 @@ export class LoginUsecase {
         let user: User;
         if (existingSocialUser) {
             user = existingSocialUser.user;
+            if (user.isDeactivated()) {
+                throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+            }
 
             if (existingSocialUser.email !== command.email) {
                 existingSocialUser.email = command.email;

@@ -28,6 +28,10 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     deactivatedAt: Date;
 
+    isDeactivated(): boolean {
+        return !this.isActive;
+    }
+
     static createPendingUser(name: string): User {
         const user = new User();
         user.name = name;

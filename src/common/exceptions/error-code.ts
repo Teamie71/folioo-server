@@ -36,6 +36,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '유효하지 않은 토큰입니다.',
         statusCode: HttpStatus.UNAUTHORIZED,
     },
+    [ErrorCode.DEACTIVATED_USER]: {
+        message: '탈퇴한 사용자입니다.',
+        statusCode: HttpStatus.UNAUTHORIZED,
+    },
     [ErrorCode.ALREADY_VERIFY_USER]: {
         message: '이미 인증 이력이 있는 번호입니다.',
         statusCode: HttpStatus.CONFLICT,
