@@ -21,8 +21,19 @@ export class ExternalPortfolioFacade {
         private readonly pdfExtractService: PdfExtractService
     ) {}
 
-    async extractPortfolio(fileBuffer: Buffer, fileName: string): Promise<string> {
-        return this.pdfExtractService.extractText(fileBuffer, fileName);
+    async extractPortfolio(
+        userId: number,
+        correctionId: number,
+        fileBuffer: Buffer,
+        fileName: string
+    ): Promise<string> {
+        const extractedText = await this.pdfExtractService.extractText(fileBuffer, fileName);
+        await this.portfolioCorrectionService.saveExtractedText(
+            correctionId,
+            userId,
+            extractedText
+        );
+        return extractedText;
     }
 
     async getExternalPortfolios(correctionId: number): Promise<StructuredPortfolioResDTO[]> {

@@ -216,7 +216,7 @@ Legend:
 
 - GET `/external-portfolios?correctionId=...` -> IMPLEMENTED
 - POST `/external-portfolios` -> IMPLEMENTED
-- POST `/external-portfolios/extract` -> IMPLEMENTED (multipart PDF, forwards to AI server)
+- POST `/external-portfolios/extract` -> IMPLEMENTED (multipart PDF + `correctionId`, busboy 파싱, AI 추출 후 DB 저장)
 - PATCH `/external-portfolios/{portfolioId}` -> IMPLEMENTED
 - DELETE `/external-portfolios/{portfolioId}` -> IMPLEMENTED
 

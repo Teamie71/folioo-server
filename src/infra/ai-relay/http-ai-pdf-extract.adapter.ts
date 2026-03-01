@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { isAxiosError } from 'axios';
 import { AiPdfExtractPort, AiPdfExtractResult } from 'src/common/ports/ai-pdf-extract.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -51,6 +52,14 @@ export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
                 throw error;
             }
 
+            if (isAxiosError(error)) {
+                this.logger.error(`AI server request failed: ${error.message}`, {
+                    status: error.response?.status,
+                    data: this.safeStringify(error.response?.data),
+                });
+                throw new BusinessException(ErrorCode.PORTFOLIO_EXTRACT_FAILED);
+            }
+
             const errorMessage = error instanceof Error ? error.message : 'Unknown extract error';
             this.logger.error(`Failed to extract text from PDF via AI server: ${errorMessage}`);
             throw new BusinessException(ErrorCode.PORTFOLIO_EXTRACT_FAILED);
@@ -68,5 +77,13 @@ export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
         const blob = new Blob([new Uint8Array(fileBuffer)], { type: 'application/pdf' });
         formData.append('file', blob, fileName);
         return formData;
+    }
+
+    private safeStringify(value: unknown): string {
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return '[unserializable-response-data]';
+        }
     }
 }

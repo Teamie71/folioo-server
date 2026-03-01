@@ -33,6 +33,12 @@ export class PortfolioCorrection extends BaseEntity {
     @Column({ length: 200, nullable: true })
     highlightPoint: string;
 
+    @Column({ type: 'text', nullable: true })
+    extractedText: string;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    extractedAt: Date;
+
     @Column({
         type: 'enum',
         enum: CorrectionStatus,
