@@ -44,9 +44,27 @@ jobs:
                   workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
                   service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
-            - name: Download Terraform Variables
-              if: github.event_name != 'pull_request'
-              run: gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars
+            - name: Prepare Terraform Variables
+              id: vars
+              run: |
+                  set -euo pipefail
+                  if gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars; then
+                    echo "has_tfvars=true" >> "$GITHUB_OUTPUT"
+                    echo "Loaded terraform.tfvars from state bucket"
+                    exit 0
+                  fi
+
+                  if [ "${{ github.event_name }}" = "pull_request" ]; then
+                    echo "terraform.tfvars not found in bucket for PR; generating safe fallback vars"
+                    printf 'project_id = "%s"\ngithub_repository = "%s"\nenable_cloudflare = false\n' \
+                      '${{ secrets.GCP_PROJECT_ID }}' \
+                      '${{ github.repository }}' > terraform.tfvars
+                    echo "has_tfvars=true" >> "$GITHUB_OUTPUT"
+                    exit 0
+                  fi
+
+                  echo "terraform.tfvars not found in bucket; skipping non-PR Terraform plan/apply"
+                  echo "has_tfvars=false" >> "$GITHUB_OUTPUT"
 
             - name: Terraform Format Check
               id: fmt
@@ -59,16 +77,17 @@ jobs:
               run: terraform init -backend=false
 
             - name: Terraform Init
-              if: github.event_name != 'pull_request'
+              if: github.event_name != 'pull_request' && steps.vars.outputs.has_tfvars == 'true'
               id: init
               run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
             - name: Terraform Validate
+              if: github.event_name == 'pull_request' || steps.vars.outputs.has_tfvars == 'true'
               id: validate
               run: terraform validate -no-color
 
             - name: Terraform Plan
-              if: github.event_name != 'pull_request'
+              if: github.event_name != 'pull_request' && steps.vars.outputs.has_tfvars == 'true'
               id: plan
               run: |
                   terraform plan -no-color -input=false -var-file=terraform.tfvars -lock-timeout=5m -detailed-exitcode || EXIT_CODE=$?
@@ -119,6 +138,10 @@ jobs:
                   echo "Terraform plan failed"
                   exit 1
 
+            - name: Terraform Plan Skipped
+              if: github.event_name != 'pull_request' && steps.vars.outputs.has_tfvars != 'true'
+              run: echo "terraform.tfvars missing in bucket - plan/apply skipped"
+
             - name: Terraform Apply
-              if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+              if: github.ref == 'refs/heads/dev' && github.event_name == 'push' && steps.vars.outputs.has_tfvars == 'true'
               run: terraform apply -auto-approve -input=false -var-file=terraform.tfvars -lock-timeout=5m
