@@ -123,6 +123,7 @@ export class AuthController {
 
     @Get('google')
     @Public()
+    @UseGuards(AuthGuard('google'))
     @ApiOperation({
         summary: '구글 로그인 트리거',
         description: '구글 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -141,18 +142,11 @@ export class AuthController {
         status: 302,
         description: '구글 로그인 페이지로 리다이렉트됨.',
     })
-    googleLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    async googleLogin() {}
 
     @Get('google/callback')
     @Public()
+    @UseGuards(AuthGuard('google'))
     @ApiOperation({
         summary: '구글 로그인 콜백',
         description:
@@ -162,8 +156,23 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    googleCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async googleCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        const refreshToken = await this.loginUsecase.execute(user);
+        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+            '14d') as StringValue;
+        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: isLocal ? 'lax' : 'none',
+            path: '/',
+            maxAge: TimeUtil.toMs(expiresIn),
+        });
+        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
+        res.redirect(`${clientUrl}?status=success`);
     }
 
     @Post('google/unlink')

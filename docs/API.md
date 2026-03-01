@@ -36,15 +36,17 @@ Open:
 
 This may prompt for Basic Auth credentials (configured by `SWAGGER_USER` / `SWAGGER_PASSWORD` in non-local).
 
-### Step 2. Do Kakao login in the browser
+### Step 2. Do Kakao or Google login in the browser
 
 Do NOT try to execute OAuth redirects from Swagger.
 
-Open this in a new browser tab:
+Open one of these in a new browser tab:
 
 `https://folioo-dev-api.log8.kr/auth/kakao`
 
-After completing the Kakao flow, the server sets an `httpOnly` cookie `refreshToken` and redirects to the client.
+`https://folioo-dev-api.log8.kr/auth/google`
+
+After completing the social login flow, the server sets an `httpOnly` cookie `refreshToken` and redirects to the client.
 
 ### Step 3. Issue access token using refresh cookie
 
@@ -166,8 +168,8 @@ Legend:
 - POST `/auth/refresh` -> IMPLEMENTED (Public, requires refreshToken cookie)
 - POST `/auth/logout` -> IMPLEMENTED
 - POST `/auth/kakao/unlink` -> NOT_IMPLEMENTED
-- GET `/auth/google` -> NOT_IMPLEMENTED
-- GET `/auth/google/callback` -> NOT_IMPLEMENTED
+- GET `/auth/google` -> IMPLEMENTED (Public, OAuth redirect)
+- GET `/auth/google/callback` -> IMPLEMENTED (Public, OAuth callback)
 - POST `/auth/google/unlink` -> NOT_IMPLEMENTED
 - GET `/auth/naver` -> NOT_IMPLEMENTED
 - GET `/auth/naver/callback` -> NOT_IMPLEMENTED

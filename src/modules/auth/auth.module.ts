@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './presentation/auth.controller';
 import { LoginUsecase } from './application/usecases/login.usecase';
 import { KakaoStrategy } from './infrastructure/strategies/kakao.strategy';
+import { GoogleStrategy } from './infrastructure/strategies/google.strategy';
 import { TokenService } from './infrastructure/services/token.service';
 import { UserModule } from '../user/user.module';
 import { PassportModule } from '@nestjs/passport';
@@ -36,6 +37,7 @@ import { LogoutUsecase } from './application/usecases/logout.usecase';
         LoginUsecase,
         LogoutUsecase,
         KakaoStrategy,
+        GoogleStrategy,
         TokenService,
         AuthTokenStoreService,
         JwtAuthGuard,

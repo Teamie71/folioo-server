@@ -21,7 +21,8 @@ export class User extends BaseEntity {
     phoneNum: string;
 
     @Column({
-        type: 'bigint',
+        type: 'varchar',
+        length: 255,
     })
     socialId: string;
 

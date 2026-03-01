@@ -119,7 +119,7 @@ PayType: 'CARD' |
 | name           | varchar(10)  | 이름                                  |
 | email          | varchar(255) | 이메일                                |
 | phone_num      | varchar(11)  | 전화번호 (nullable)                   |
-| social_id      | bigint       | (LEGACY) 소셜 로그인 ID (추후 제거)   |
+| social_id      | varchar(255) | (LEGACY) 소셜 로그인 ID (추후 제거)   |
 | social_type    | ENUM         | (LEGACY) 소셜 로그인 타입 (추후 제거) |
 | is_active      | boolean      | 활성 여부                             |
 | deactivated_at | datetime     | 비활성화 일시 (nullable)              |
@@ -138,7 +138,7 @@ PayType: 'CARD' |
 | login_id   | varchar(255) | 소셜 로그인 ID                     |
 | email      | varchar(255) | 이메일                             |
 
-> **Note**: `login_id`는 `varchar(255)`. 소셜 플랫폼 ID가 JS `number` 범위(2^53)를 초과할 수 있어 문자열로 저장.
+> **Note**: `social_id`, `login_id`는 모두 `varchar(255)`. 소셜 플랫폼 ID가 JS `number` 범위(2^53)를 초과할 수 있어 문자열로 저장.
 
 ### user_agreement (약관 동의)
 
