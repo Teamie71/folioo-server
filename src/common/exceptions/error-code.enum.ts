@@ -35,6 +35,7 @@ export enum ErrorCode {
     //Portfolio
     PORTFOLIO_NOT_FOUND = 'PORTFOLIO404',
     PORTFOLIO_NOT_EMPTY = 'PORTFOLIO409',
+    PORTFOLIO_EXTRACT_FAILED = 'PORTFOLIO502',
 
     //Portfolio-Correction
     CORRECTION_NOT_FOUND = 'CORRECTION404',

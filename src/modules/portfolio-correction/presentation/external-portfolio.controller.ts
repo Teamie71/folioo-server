@@ -1,18 +1,17 @@
 import {
-    Body,
     Controller,
     Delete,
     Get,
     Param,
-    ParseFilePipeBuilder,
     ParseIntPipe,
     Patch,
     Post,
     Query,
-    UploadedFile,
-    UseInterceptors,
+    Req,
+    Body,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import Busboy from 'busboy';
+import type { Request } from 'express';
 import {
     ApiBody,
     ApiConsumes,
@@ -41,6 +40,8 @@ import { ExternalPortfolioFacade } from '../application/facades/external-portfol
 export class ExternalPortfolioController {
     constructor(private readonly externalPortfolioFacade: ExternalPortfolioFacade) {}
 
+    private static readonly MAX_PDF_SIZE = 10 * 1024 * 1024;
+
     @Post('extract')
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 추출',
@@ -51,6 +52,10 @@ export class ExternalPortfolioController {
         schema: {
             type: 'object',
             properties: {
+                correctionId: {
+                    type: 'number',
+                    example: 1,
+                },
                 file: {
                     type: 'string',
                     format: 'binary',
@@ -68,24 +73,155 @@ export class ExternalPortfolioController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @UseInterceptors(FileInterceptor('file'))
-    extractPortfolios(
-        @UploadedFile(
-            new ParseFilePipeBuilder()
-                .addFileTypeValidator({
-                    fileType: 'pdf',
-                })
-                .addMaxSizeValidator({
-                    maxSize: 1024 * 1024 * 10,
-                })
-                .build({
-                    fileIsRequired: true,
-                })
-        )
-        file: Express.Multer.File
-    ): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, file);
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_EXTRACT_FAILED)
+    async extractPortfolios(@User('sub') userId: number, @Req() req: Request): Promise<string> {
+        const { correctionId, fileBuffer, fileName } = await this.parseExtractMultipart(req);
+        return this.externalPortfolioFacade.extractPortfolio(
+            userId,
+            correctionId,
+            fileBuffer,
+            fileName
+        );
+    }
+
+    private async parseExtractMultipart(req: Request): Promise<{
+        correctionId: number;
+        fileBuffer: Buffer;
+        fileName: string;
+    }> {
+        const contentType = req.headers['content-type'];
+        if (!contentType || !contentType.includes('multipart/form-data')) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                reason: 'content-type must be multipart/form-data',
+            });
+        }
+
+        return await new Promise((resolve, reject) => {
+            const parser = Busboy({
+                headers: req.headers,
+                limits: {
+                    files: 1,
+                    fields: 10,
+                    fileSize: ExternalPortfolioController.MAX_PDF_SIZE,
+                },
+            });
+
+            const chunks: Buffer[] = [];
+            let parsedCorrectionId: number | null = null;
+            let parsedFileName: string | null = null;
+            let hasFile = false;
+            let settled = false;
+
+            const fail = (errorCode: ErrorCode, detail: Record<string, unknown>): void => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                req.unpipe(parser);
+                reject(new BusinessException(errorCode, detail));
+            };
+
+            parser.on('field', (fieldName: string, value: string) => {
+                if (fieldName !== 'correctionId') {
+                    return;
+                }
+
+                const correctionId = Number.parseInt(value, 10);
+                if (!Number.isInteger(correctionId) || correctionId <= 0) {
+                    fail(ErrorCode.BAD_REQUEST, {
+                        reason: 'correctionId must be a positive integer',
+                    });
+                    return;
+                }
+
+                parsedCorrectionId = correctionId;
+            });
+
+            parser.on('file', (fieldName, fileStream, info) => {
+                if (fieldName !== 'file') {
+                    fileStream.resume();
+                    fail(ErrorCode.BAD_REQUEST, { reason: 'file field is required' });
+                    return;
+                }
+
+                if (hasFile) {
+                    fileStream.resume();
+                    fail(ErrorCode.BAD_REQUEST, { reason: 'only one file is allowed' });
+                    return;
+                }
+
+                if (info.mimeType !== 'application/pdf') {
+                    fileStream.resume();
+                    fail(ErrorCode.BAD_REQUEST, {
+                        reason: 'only application/pdf is allowed',
+                        mimeType: info.mimeType,
+                    });
+                    return;
+                }
+
+                hasFile = true;
+                parsedFileName = info.filename || 'upload.pdf';
+
+                fileStream.on('data', (chunk: Buffer) => {
+                    chunks.push(chunk);
+                });
+
+                fileStream.on('limit', () => {
+                    fileStream.resume();
+                    fail(ErrorCode.BAD_REQUEST, {
+                        reason: 'file size exceeds 10MB limit',
+                    });
+                });
+
+                fileStream.on('error', () => {
+                    fail(ErrorCode.PORTFOLIO_EXTRACT_FAILED, {
+                        reason: 'failed while reading uploaded file stream',
+                    });
+                });
+            });
+
+            parser.on('filesLimit', () => {
+                fail(ErrorCode.BAD_REQUEST, { reason: 'only one file is allowed' });
+            });
+
+            parser.on('error', () => {
+                fail(ErrorCode.PORTFOLIO_EXTRACT_FAILED, {
+                    reason: 'failed to parse multipart payload',
+                });
+            });
+
+            parser.on('finish', () => {
+                if (settled) {
+                    return;
+                }
+
+                if (!hasFile || !parsedFileName) {
+                    fail(ErrorCode.BAD_REQUEST, { reason: 'file is required' });
+                    return;
+                }
+
+                if (parsedCorrectionId === null) {
+                    fail(ErrorCode.BAD_REQUEST, { reason: 'correctionId is required' });
+                    return;
+                }
+
+                const fileBuffer = Buffer.concat(chunks);
+                const pdfSignature = fileBuffer.subarray(0, 4).toString();
+                if (pdfSignature !== '%PDF') {
+                    fail(ErrorCode.BAD_REQUEST, { reason: 'uploaded file is not a valid PDF' });
+                    return;
+                }
+
+                settled = true;
+                resolve({
+                    correctionId: parsedCorrectionId,
+                    fileBuffer,
+                    fileName: parsedFileName,
+                });
+            });
+
+            req.pipe(parser);
+        });
     }
 
     @Post()

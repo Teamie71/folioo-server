@@ -41,6 +41,9 @@ importers:
       axios:
         specifier: ^1.13.5
         version: 1.13.5
+      busboy:
+        specifier: ^1.6.0
+        version: 1.6.0
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -111,6 +114,9 @@ importers:
       '@swc/core':
         specifier: ^1.15.3
         version: 1.15.3
+      '@types/busboy':
+        specifier: ^1.5.4
+        version: 1.5.4
       '@types/cookie-parser':
         specifier: ^1.4.10
         version: 1.4.10(@types/express@5.0.5)
@@ -1422,6 +1428,9 @@ packages:
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
+
+  '@types/busboy@1.5.4':
+    resolution: {integrity: sha512-kG7WrUuAKK0NoyxfQHsVE6j1m01s6kMma64E+OZenQABMQyTJop1DumUWcLwAQ2JzpefU7PDYoRDKl8uZosFjw==}
 
   '@types/cls-hooked@4.3.9':
     resolution: {integrity: sha512-CMtHMz6Q/dkfcHarq9nioXH8BDPP+v5xvd+N90lBQ2bdmu06UvnLDqxTKoOJzz4SzIwb/x9i4UXGAAcnUDuIvg==}
@@ -5921,6 +5930,10 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
+      '@types/node': 22.19.1
+
+  '@types/busboy@1.5.4':
+    dependencies:
       '@types/node': 22.19.1
 
   '@types/cls-hooked@4.3.9':

@@ -3,6 +3,7 @@ import { Transactional } from 'typeorm-transactional';
 import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionItemService } from '../services/correction-item.service';
+import { PdfExtractService } from '../services/pdf-extract.service';
 import {
     StructuredPortfolioResDTO,
     UpdatePortfolioBlockReqDTO,
@@ -16,8 +17,24 @@ export class ExternalPortfolioFacade {
     constructor(
         private readonly externalPortfolioService: ExternalPortfolioService,
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
-        private readonly correctionItemService: CorrectionItemService
+        private readonly correctionItemService: CorrectionItemService,
+        private readonly pdfExtractService: PdfExtractService
     ) {}
+
+    async extractPortfolio(
+        userId: number,
+        correctionId: number,
+        fileBuffer: Buffer,
+        fileName: string
+    ): Promise<string> {
+        const extractedText = await this.pdfExtractService.extractText(fileBuffer, fileName);
+        await this.portfolioCorrectionService.saveExtractedText(
+            correctionId,
+            userId,
+            extractedText
+        );
+        return extractedText;
+    }
 
     async getExternalPortfolios(correctionId: number): Promise<StructuredPortfolioResDTO[]> {
         await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
