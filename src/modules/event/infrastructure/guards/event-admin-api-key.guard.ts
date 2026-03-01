@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BusinessException } from 'src/common/exceptions/business.exception';
@@ -20,10 +21,21 @@ export class EventAdminApiKeyGuard implements CanActivate {
         const headerValue = request.headers['x-event-admin-api-key'];
         const requestApiKey = Array.isArray(headerValue) ? headerValue[0] : headerValue;
 
-        if (!requestApiKey || requestApiKey !== configuredApiKey) {
+        if (!requestApiKey || !this.isSameApiKey(requestApiKey, configuredApiKey)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
         return true;
+    }
+
+    private isSameApiKey(requestApiKey: string, configuredApiKey: string): boolean {
+        const requestBuffer = Buffer.from(requestApiKey);
+        const configuredBuffer = Buffer.from(configuredApiKey);
+
+        if (requestBuffer.length !== configuredBuffer.length) {
+            return false;
+        }
+
+        return timingSafeEqual(requestBuffer, configuredBuffer);
     }
 }

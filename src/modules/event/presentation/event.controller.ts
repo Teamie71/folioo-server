@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
+import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
@@ -69,6 +71,8 @@ export class EventController {
     }
 
     @Post('admin/:eventCode/feedback-rewards/grants')
+    @Public()
+    @SkipTransform()
     @UseGuards(EventAdminApiKeyGuard)
     @ApiOperation({
         summary: '피드백 이벤트 수동 보상 지급',

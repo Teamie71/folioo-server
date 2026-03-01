@@ -2,10 +2,9 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import type { ActionRequest } from 'adminjs';
 import { join } from 'path';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { EventRewardFacade } from '../event/application/facades/event-reward.facade';
 import { Event } from '../event/domain/entities/event.entity';
 import { EventModule } from '../event/event.module';
+import { GrantFeedbackRewardAdminActionService } from './application/services/grant-feedback-reward-admin-action.service';
 
 // eslint-disable-next-line @typescript-eslint/no-implied-eval
 const nativeDynamicImport = Function('specifier', 'return import(specifier)') as (
@@ -36,39 +35,18 @@ type AdminJsTypeOrmModuleExports = {
     Resource: unknown;
 };
 
-function getErrorMessage(error: unknown): string {
-    if (error instanceof BusinessException) {
-        const response = error.getResponse();
-        if (
-            typeof response === 'object' &&
-            response !== null &&
-            'reason' in response &&
-            typeof response.reason === 'string'
-        ) {
-            return response.reason;
-        }
-
-        return error.message;
-    }
-
-    if (error instanceof Error) {
-        return error.message;
-    }
-
-    return '보상 지급 처리 중 알 수 없는 오류가 발생했습니다.';
-}
-
 @Module({
+    providers: [GrantFeedbackRewardAdminActionService],
     imports: [
         EventModule,
         ConfigModule,
         nativeDynamicImport('@adminjs/nestjs').then((adminNestModule) =>
             (adminNestModule as AdminNestModuleExports).AdminModule.createAdminAsync({
                 imports: [EventModule, ConfigModule],
-                inject: [ConfigService, EventRewardFacade],
+                inject: [ConfigService, GrantFeedbackRewardAdminActionService],
                 useFactory: async (
                     configService: ConfigService,
-                    eventRewardFacade: EventRewardFacade
+                    actionService: GrantFeedbackRewardAdminActionService
                 ) => {
                     const [adminJsModule, adminJsTypeOrmModule] = await Promise.all([
                         nativeDynamicImport('adminjs'),
@@ -119,81 +97,8 @@ function getErrorMessage(error: unknown): string {
                                                 label: '전화번호 보상 지급',
                                                 component: grantRewardActionComponent,
                                                 guard: '전화번호 기준 보상을 지급합니다. 계속하시겠습니까?',
-                                                handler: async (request: ActionRequest) => {
-                                                    if (request.method?.toLowerCase() !== 'post') {
-                                                        return {
-                                                            notice: {
-                                                                message:
-                                                                    '이 액션은 폼 제출(POST)로만 실행됩니다.',
-                                                                type: 'info',
-                                                            },
-                                                        };
-                                                    }
-
-                                                    const payload = request.payload;
-                                                    const eventCode =
-                                                        typeof payload?.eventCode === 'string'
-                                                            ? payload.eventCode.trim()
-                                                            : '';
-                                                    const phoneNum =
-                                                        typeof payload?.phoneNum === 'string'
-                                                            ? payload.phoneNum.trim()
-                                                            : '';
-                                                    const externalSubmissionId =
-                                                        typeof payload?.externalSubmissionId ===
-                                                        'string'
-                                                            ? payload.externalSubmissionId.trim()
-                                                            : undefined;
-                                                    const reviewedBy =
-                                                        typeof payload?.reviewedBy === 'string'
-                                                            ? payload.reviewedBy.trim()
-                                                            : undefined;
-                                                    const reviewNote =
-                                                        typeof payload?.reviewNote === 'string'
-                                                            ? payload.reviewNote.trim()
-                                                            : undefined;
-
-                                                    if (!eventCode || !phoneNum) {
-                                                        return {
-                                                            notice: {
-                                                                message:
-                                                                    'eventCode와 phoneNum은 필수 입력값입니다.',
-                                                                type: 'error',
-                                                            },
-                                                        };
-                                                    }
-
-                                                    try {
-                                                        const result =
-                                                            await eventRewardFacade.grantFeedbackRewardByPhone(
-                                                                eventCode,
-                                                                {
-                                                                    phoneNum,
-                                                                    externalSubmissionId,
-                                                                    reviewedBy,
-                                                                    reviewNote,
-                                                                }
-                                                            );
-
-                                                        return {
-                                                            notice: {
-                                                                message:
-                                                                    '보상 지급이 완료되었습니다. 결과를 확인해주세요.',
-                                                                type: 'success',
-                                                            },
-                                                            data: result,
-                                                        };
-                                                    } catch (error) {
-                                                        const message = getErrorMessage(error);
-
-                                                        return {
-                                                            notice: {
-                                                                message,
-                                                                type: 'error',
-                                                            },
-                                                        };
-                                                    }
-                                                },
+                                                handler: (request: ActionRequest) =>
+                                                    actionService.handle(request),
                                             },
                                         },
                                     },

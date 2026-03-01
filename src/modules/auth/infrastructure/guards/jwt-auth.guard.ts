@@ -39,10 +39,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-        const request = context
-            .switchToHttp()
-            .getRequest<{ path?: string; originalUrl?: string }>();
-        const requestPath = request.path ?? request.originalUrl ?? '';
+        const request = context.switchToHttp().getRequest<{ path?: string }>();
+        const requestPath = request.path ?? '';
         if (requestPath === '/admin' || requestPath.startsWith('/admin/')) {
             return true;
         }
