@@ -1,15 +1,19 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UserAfterAuth } from 'src/modules/auth/domain/types/jwt-payload.type';
+import { AuthTokenStoreService } from '../services/auth-token-store.service';
+import { extractAccessTokenFromAuthorization } from '../utils/access-token.util';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-    constructor(private reflector: Reflector) {
+    constructor(
+        private readonly reflector: Reflector,
+        private readonly authTokenStoreService: AuthTokenStoreService
+    ) {
         super();
     }
 
@@ -38,7 +42,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         return user;
     }
 
-    canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+    private extractAccessToken(context: ExecutionContext): string | null {
+        const request = context
+            .switchToHttp()
+            .getRequest<{ headers?: { authorization?: string } }>();
+        const authorization = request.headers?.authorization;
+        return extractAccessTokenFromAuthorization(authorization);
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
         const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
             context.getHandler(),
             context.getClass(),
@@ -46,6 +58,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         if (isPublic) {
             return true;
         }
-        return super.canActivate(context) as Promise<boolean> | boolean;
+
+        const canActivate = (await super.canActivate(context)) as boolean;
+        if (!canActivate) {
+            return false;
+        }
+
+        const accessToken = this.extractAccessToken(context);
+        if (accessToken) {
+            const isBlacklisted =
+                await this.authTokenStoreService.isAccessTokenBlacklisted(accessToken);
+            if (isBlacklisted) {
+                throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+
+        return true;
     }
 }

@@ -3,9 +3,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UserAfterAuth } from 'src/modules/auth/domain/types/jwt-payload.type';
+import { AuthTokenStoreService } from '../services/auth-token-store.service';
 
 @Injectable()
 export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {
+    constructor(private readonly authTokenStoreService: AuthTokenStoreService) {
+        super();
+    }
+
     handleRequest<TUser = UserAfterAuth>(
         err: unknown,
         user: TUser,
@@ -34,5 +39,27 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {
         }
 
         return user;
+    }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const canActivate = (await super.canActivate(context)) as boolean;
+        if (!canActivate) {
+            return false;
+        }
+
+        const request = context.switchToHttp().getRequest<{ user?: UserAfterAuth }>();
+        const refreshToken = request.user?.refreshToken;
+
+        if (!refreshToken) {
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_MISSING);
+        }
+
+        const isWhitelisted =
+            await this.authTokenStoreService.isRefreshTokenWhitelisted(refreshToken);
+        if (!isWhitelisted) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        return true;
     }
 }

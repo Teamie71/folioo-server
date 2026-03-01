@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { TypeOrmConfigService } from './config/typeorm-config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AppController } from './app.controller';
@@ -20,7 +20,6 @@ import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
-import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guard';
 
 @Module({
     imports: [
@@ -54,10 +53,6 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guar
         {
             provide: APP_FILTER,
             useClass: GlobalExceptionFilter,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: JwtAuthGuard,
         },
         {
             provide: APP_INTERCEPTOR,
