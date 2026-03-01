@@ -216,7 +216,7 @@ Legend:
 
 - GET `/external-portfolios?correctionId=...` -> IMPLEMENTED
 - POST `/external-portfolios` -> IMPLEMENTED
-- POST `/external-portfolios/extract` -> NOT_IMPLEMENTED (multipart PDF)
+- POST `/external-portfolios/extract` -> IMPLEMENTED (multipart PDF, forwards to AI server)
 - PATCH `/external-portfolios/{portfolioId}` -> IMPLEMENTED
 - DELETE `/external-portfolios/{portfolioId}` -> IMPLEMENTED
 

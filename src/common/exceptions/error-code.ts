@@ -80,6 +80,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '내용이 있는 활동블록은 삭제할 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.PORTFOLIO_EXTRACT_FAILED]: {
+        message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
+    },
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,

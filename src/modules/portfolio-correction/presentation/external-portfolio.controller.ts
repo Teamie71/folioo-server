@@ -27,7 +27,6 @@ import {
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
 import { User } from 'src/common/decorators/user.decorator';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateExternalPortfolioReqDTO,
@@ -68,9 +67,9 @@ export class ExternalPortfolioController {
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_EXTRACT_FAILED)
     @UseInterceptors(FileInterceptor('file'))
-    extractPortfolios(
+    async extractPortfolios(
         @UploadedFile(
             new ParseFilePipeBuilder()
                 .addFileTypeValidator({
@@ -84,8 +83,8 @@ export class ExternalPortfolioController {
                 })
         )
         file: Express.Multer.File
-    ): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, file);
+    ): Promise<string> {
+        return this.externalPortfolioFacade.extractPortfolio(file.buffer, file.originalname);
     }
 
     @Post()
