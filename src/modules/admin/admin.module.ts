@@ -1,7 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import type { ActionRequest } from 'adminjs';
-import { createRequire } from 'module';
 import { join } from 'path';
 import { EventRewardFacade } from '../event/application/facades/event-reward.facade';
 import { Event } from '../event/domain/entities/event.entity';
@@ -12,7 +11,6 @@ import { GrantFeedbackRewardAdminActionService } from './application/services/gr
 const nativeDynamicImport = Function('specifier', 'return import(specifier)') as (
     specifier: string
 ) => Promise<unknown>;
-const requireModule = createRequire(__filename);
 
 type AdminNestModuleExports = {
     AdminModule: {
@@ -46,7 +44,7 @@ type AdminJsTypeOrmModuleExports = {
             (adminNestModule as AdminNestModuleExports).AdminModule.createAdminAsync({
                 imports: [EventModule, ConfigModule],
                 inject: [ConfigService, EventRewardFacade],
-                useFactory: (
+                useFactory: async (
                     configService: ConfigService,
                     eventRewardFacade: EventRewardFacade
                 ) => {
@@ -54,12 +52,14 @@ type AdminJsTypeOrmModuleExports = {
                         eventRewardFacade
                     );
 
-                    const adminJsModule = requireModule('adminjs') as AdminJsModuleExports;
-                    const adminJsTypeOrmModule = requireModule(
-                        '@adminjs/typeorm'
-                    ) as AdminJsTypeOrmModuleExports;
-                    const { default: AdminJS, ComponentLoader } = adminJsModule;
-                    const { Database, Resource } = adminJsTypeOrmModule;
+                    const [adminJsModule, adminJsTypeOrmModule] = await Promise.all([
+                        nativeDynamicImport('adminjs'),
+                        nativeDynamicImport('@adminjs/typeorm'),
+                    ]);
+                    const { default: AdminJS, ComponentLoader } =
+                        adminJsModule as AdminJsModuleExports;
+                    const { Database, Resource } =
+                        adminJsTypeOrmModule as AdminJsTypeOrmModuleExports;
 
                     AdminJS.registerAdapter({ Database, Resource });
 
@@ -79,7 +79,7 @@ type AdminJsTypeOrmModuleExports = {
                         );
                     }
 
-                    return Promise.resolve({
+                    return {
                         adminJsOptions: {
                             rootPath: '/admin',
                             componentLoader,
@@ -136,7 +136,7 @@ type AdminJsTypeOrmModuleExports = {
                                 secure: configService.get<string>('NODE_ENV') === 'production',
                             },
                         },
-                    });
+                    };
                 },
             })
         ),
