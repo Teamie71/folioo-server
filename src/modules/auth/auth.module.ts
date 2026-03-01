@@ -12,6 +12,7 @@ import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { JwtRefreshGuard } from './infrastructure/guards/jwt-refresh.guard';
 import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.strategy';
 import { StringValue } from 'ms';
+import { AuthTokenStoreService } from './infrastructure/services/auth-token-store.service';
 
 @Module({
     imports: [
@@ -33,6 +34,7 @@ import { StringValue } from 'ms';
         LoginUsecase,
         KakaoStrategy,
         TokenService,
+        AuthTokenStoreService,
         JwtAuthGuard,
         JwtStrategy,
         JwtRefreshGuard,

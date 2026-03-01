@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { User } from 'src/modules/user/domain/user.entity';
 import { UserRepository } from 'src/modules/user/infrastructure/repositories/user.repository';
 import { TokenService } from '../../infrastructure/services/token.service';
+import { AuthTokenStoreService } from '../../infrastructure/services/auth-token-store.service';
 import { Transactional } from 'typeorm-transactional';
 import type { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
 
@@ -9,7 +10,8 @@ import type { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
 export class LoginUsecase {
     constructor(
         private readonly userRepository: UserRepository,
-        private readonly tokenService: TokenService
+        private readonly tokenService: TokenService,
+        private readonly authTokenStoreService: AuthTokenStoreService
     ) {}
 
     @Transactional()
@@ -31,6 +33,7 @@ export class LoginUsecase {
         }
         // 3. JWT 토큰 발급
         const refreshToken = await this.tokenService.generateRefreshToken(existingUser);
+        await this.authTokenStoreService.whitelistRefreshToken(refreshToken, existingUser.id);
         return refreshToken;
     }
 }
