@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserProfileResDTO } from '../dtos/user-profile.dto';
+import { UserProfileResDTO, UserSocialAccountResDTO } from '../dtos/user-profile.dto';
 import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -22,18 +22,18 @@ export class UserService {
 
     async getProfile(userId: number): Promise<UserProfileResDTO> {
         const user = await this.findByIdOrThrow(userId);
-        const email = await this.socialUserRepository.findLatestEmailByUserId(userId);
+        const socialAccounts = await this.getUserSocialAccounts(userId);
         const isMarketingAgreed = await this.getMarketingConsent(userId);
-        return UserProfileResDTO.from(user, email, isMarketingAgreed);
+        return UserProfileResDTO.from(user, socialAccounts, isMarketingAgreed);
     }
 
     async updateProfile(userId: number, name: string): Promise<UserProfileResDTO> {
         const user = await this.findByIdOrThrow(userId);
         user.name = name;
         await this.userRepository.save(user);
-        const email = await this.socialUserRepository.findLatestEmailByUserId(userId);
+        const socialAccounts = await this.getUserSocialAccounts(userId);
         const isMarketingAgreed = await this.getMarketingConsent(userId);
-        return UserProfileResDTO.from(user, email, isMarketingAgreed);
+        return UserProfileResDTO.from(user, socialAccounts, isMarketingAgreed);
     }
 
     async updateMarketingConsent(
@@ -91,5 +91,14 @@ export class UserService {
         );
 
         return marketingAgreement?.isAgree ?? false;
+    }
+
+    private async getUserSocialAccounts(userId: number): Promise<UserSocialAccountResDTO[]> {
+        const socialAccounts =
+            await this.socialUserRepository.findProfileSocialAccountsByUserId(userId);
+
+        return socialAccounts.map((socialAccount) =>
+            UserSocialAccountResDTO.from(socialAccount.loginType, socialAccount.email)
+        );
     }
 }

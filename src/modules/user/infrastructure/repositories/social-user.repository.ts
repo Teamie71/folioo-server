@@ -4,6 +4,11 @@ import { Repository } from 'typeorm';
 import { LoginType } from '../../domain/enums/login-type.enum';
 import { SocialUser } from '../../domain/social-user.entity';
 
+export interface UserProfileSocialAccountProjection {
+    loginType: LoginType;
+    email: string;
+}
+
 @Injectable()
 export class SocialUserRepository {
     constructor(
@@ -30,19 +35,21 @@ export class SocialUserRepository {
         });
     }
 
-    async findLatestEmailByUserId(userId: number): Promise<string | null> {
-        const socialUser = await this.socialUserRepository.findOne({
+    async findProfileSocialAccountsByUserId(
+        userId: number
+    ): Promise<UserProfileSocialAccountProjection[]> {
+        const socialUsers = await this.socialUserRepository.find({
             where: {
                 userId,
             },
-            select: {
-                email: true,
-            },
             order: {
-                id: 'DESC',
+                id: 'ASC',
             },
         });
 
-        return socialUser?.email ?? null;
+        return socialUsers.map((socialUser) => ({
+            loginType: socialUser.loginType,
+            email: socialUser.email,
+        }));
     }
 }
