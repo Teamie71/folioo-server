@@ -17,7 +17,6 @@ import { TicketModule } from './modules/ticket/ticket.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { EventModule } from './modules/event/event.module';
 import { InterviewModule } from './modules/interview/interview.module';
-import { AdminPanelModule } from './modules/admin/admin.module';
 import { RedisModule } from './common/redis';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
@@ -49,7 +48,6 @@ import { DataSource } from 'typeorm';
         PaymentModule,
         EventModule,
         InterviewModule,
-        AdminPanelModule,
     ],
     providers: [
         {
