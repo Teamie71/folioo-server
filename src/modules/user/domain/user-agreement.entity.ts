@@ -28,4 +28,19 @@ export class UserAgreement extends BaseEntity {
 
     @Column({ name: 'agree_at' })
     agreeAt: Date;
+
+    static createMarketingAgreement(
+        userId: number,
+        version: string,
+        isMarketingAgreed: boolean,
+        agreedAt: Date
+    ): UserAgreement {
+        const agreement = new UserAgreement();
+        agreement.userId = userId;
+        agreement.termType = TermType.MARKETING;
+        agreement.version = version;
+        agreement.isAgree = isMarketingAgreed;
+        agreement.agreeAt = agreedAt;
+        return agreement;
+    }
 }

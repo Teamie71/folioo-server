@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Patch, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UpdateUserNameReqDTO, UserProfileResDTO } from '../application/dtos/user-profile.dto';
 import {
@@ -29,7 +28,7 @@ export class UserController {
         description: '사용자의 프로필을 조회합니다.',
     })
     @ApiCommonResponse(UserProfileResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.USER_NOT_FOUND)
     async getProfile(@User('sub') userId: number): Promise<UserProfileResDTO> {
         return await this.userService.getProfile(userId);
     }
@@ -67,9 +66,12 @@ export class UserController {
     })
     @ApiBody({ type: UpdateUserNameReqDTO })
     @ApiCommonResponse(UserProfileResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    updateProfile(@Body() body: UpdateUserNameReqDTO): UserProfileResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.USER_NOT_FOUND)
+    async updateProfile(
+        @User('sub') userId: number,
+        @Body() body: UpdateUserNameReqDTO
+    ): Promise<UserProfileResDTO> {
+        return this.userService.updateProfile(userId, body.name);
     }
 
     @Patch('me/marketing-consent')
@@ -80,8 +82,11 @@ export class UserController {
     })
     @ApiBody({ type: AgreeMarketingReqDTO })
     @ApiCommonResponse(AgreeMarketingResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    updateMarketingConsent(@Body() body: AgreeMarketingReqDTO): AgreeMarketingResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.USER_NOT_FOUND)
+    async updateMarketingConsent(
+        @User('sub') userId: number,
+        @Body() body: AgreeMarketingReqDTO
+    ): Promise<AgreeMarketingResDTO> {
+        return this.userService.updateMarketingConsent(userId, body.isMarketingAgreed);
     }
 }
