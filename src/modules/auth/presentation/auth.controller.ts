@@ -100,26 +100,6 @@ export class AuthController {
         res.redirect(`${clientUrl}?status=success`);
     }
 
-    @Post('kakao/unlink')
-    @ApiOperation({
-        summary: '서비스 내 카카오 로그인 사용자 탈퇴',
-        description: '카카오 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    kakaoUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
-    }
-
     @Get('google')
     @Public()
     @UseGuards(AuthGuard('google'))
@@ -174,26 +154,6 @@ export class AuthController {
         res.redirect(`${clientUrl}?status=success`);
     }
 
-    @Post('google/unlink')
-    @ApiOperation({
-        summary: '서비스 내 구글 로그인 사용자 탈퇴',
-        description: '구글 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    googleUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
-    }
-
     @Get('naver')
     @Public()
     @ApiOperation({
@@ -246,26 +206,6 @@ export class AuthController {
         });
         const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
         res.redirect(`${clientUrl}?status=success`);
-    }
-
-    @Post('naver/unlink')
-    @ApiOperation({
-        summary: '서비스 내 네이버 로그인 사용자 탈퇴',
-        description: '네이버 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    naverUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
     @Post('refresh')
