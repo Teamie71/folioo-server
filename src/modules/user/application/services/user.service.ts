@@ -28,7 +28,8 @@ export class UserService {
         const user = await this.findByIdOrThrow(userId);
         user.name = name;
         await this.userRepository.save(user);
-        return this.getProfile(userId);
+        const isMarketingAgreed = await this.getMarketingConsent(userId);
+        return UserProfileResDTO.from(user, isMarketingAgreed);
     }
 
     async updateMarketingConsent(
