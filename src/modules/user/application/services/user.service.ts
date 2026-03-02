@@ -81,20 +81,27 @@ export class UserService {
             await this.socialAccountUnlinkClient.unlinkSocialAccount(socialUser);
         }
 
-        await this.finalizeWithdrawal(userId);
+        await this.finalizeWithdrawal(user);
     }
 
     @Transactional()
-    private async finalizeWithdrawal(userId: number): Promise<void> {
-        const user = await this.findByIdOrThrow(userId);
-        if (user.isDeactivated()) {
-            throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+    private async finalizeWithdrawal(user: User): Promise<void> {
+        const now = new Date();
+        const isDeactivated = await this.userRepository.deactivateById(user.id, now);
+        if (!isDeactivated) {
+            const latestUser = await this.userRepository.findById(user.id);
+            if (!latestUser) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+
+            if (latestUser.isDeactivated()) {
+                throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+            }
+
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
-        user.isActive = false;
-        user.deactivatedAt = new Date();
-        await this.userRepository.save(user);
-        await this.socialUserRepository.deleteByUserId(userId);
+        await this.socialUserRepository.deleteByUserId(user.id);
     }
 
     async findByPhoneNumOrThrow(phoneNum: string): Promise<User> {
