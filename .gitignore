@@ -33,7 +33,6 @@ docker-compose.override.yml
 
 # SSH 키 (절대 커밋 금지)
 *.pem
-lightsail-keypair.pem
 
 # local planning/session artifacts
 .sisyphus/

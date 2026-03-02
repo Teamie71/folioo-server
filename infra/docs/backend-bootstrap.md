@@ -29,7 +29,7 @@ a manual bootstrap sequence is required.
 
 ```bash
 gcloud auth login
-gcloud config set project <your-gcp-project-id>
+gcloud config set project folioo-ai
 gcloud auth application-default login
 ```
 
@@ -37,10 +37,10 @@ gcloud auth application-default login
 
 ```bash
 # Bucket name must be globally unique
-export TF_STATE_BUCKET="<your-tf-state-bucket>"
+export TF_STATE_BUCKET="folioo-ai-tfstate"
 
 gcloud storage buckets create "gs://${TF_STATE_BUCKET}" \
-  --project=<your-gcp-project-id> \
+  --project=folioo-ai \
   --location=asia-northeast3 \
   --uniform-bucket-level-access \
   --public-access-prevention
@@ -54,7 +54,7 @@ gcloud storage buckets update "gs://${TF_STATE_BUCKET}" \
 
 ```bash
 cat > /tmp/terraform.tfvars <<'EOF'
-project_id = "<your-gcp-project-id>"
+project_id = "folioo-ai"
 region     = "asia-northeast3"
 zone       = "asia-northeast3-a"
 
@@ -81,7 +81,7 @@ gcloud services enable \
   artifactregistry.googleapis.com \
   secretmanager.googleapis.com \
   compute.googleapis.com \
-  --project=<your-gcp-project-id>
+  --project=folioo-ai
 ```
 
 ### 5. Local Terraform apply
@@ -116,25 +116,25 @@ terraform output -raw wif_provider
 
 # Service account email
 terraform output -raw github_actions_sa_email
-# → github-actions@<your-gcp-project-id>.iam.gserviceaccount.com
+# → github-actions@folioo-ai.iam.gserviceaccount.com
 
 # Artifact Registry URL prefix
 terraform output -raw artifact_registry_url
-# → asia-northeast3-docker.pkg.dev/<your-gcp-project-id>/folioo-docker
+# → asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker
 ```
 
 Set these as GitHub repository secrets:
 
 | GitHub Secret         | Value Source                               |
 | --------------------- | ------------------------------------------ |
-| `GCP_PROJECT_ID`      | `<your-gcp-project-id>`                    |
+| `GCP_PROJECT_ID`      | `folioo-ai`                                |
 | `WIF_PROVIDER`        | `terraform output wif_provider`            |
 | `WIF_SERVICE_ACCOUNT` | `terraform output github_actions_sa_email` |
-| `TF_STATE_BUCKET`     | `<your-tf-state-bucket>`                   |
+| `TF_STATE_BUCKET`     | `folioo-ai-tfstate`                        |
 
 ```bash
 # Using GitHub CLI
-gh secret set GCP_PROJECT_ID --body "<your-gcp-project-id>"
+gh secret set GCP_PROJECT_ID --body "folioo-ai"
 gh secret set WIF_PROVIDER --body "$(terraform output -raw wif_provider)"
 gh secret set WIF_SERVICE_ACCOUNT --body "$(terraform output -raw github_actions_sa_email)"
 gh secret set TF_STATE_BUCKET --body "${TF_STATE_BUCKET}"
@@ -145,16 +145,16 @@ gh secret set TF_STATE_BUCKET --body "${TF_STATE_BUCKET}"
 ```bash
 # Verify WIF pool exists
 gcloud iam workload-identity-pools list \
-  --project=<your-gcp-project-id> --location=global \
+  --project=folioo-ai --location=global \
   --format="value(name)"
 
 # Verify AR repo exists
 gcloud artifacts repositories list \
-  --project=<your-gcp-project-id> --location=asia-northeast3
+  --project=folioo-ai --location=asia-northeast3
 
 # Verify SA exists
 gcloud iam service-accounts list \
-  --project=<your-gcp-project-id> \
+  --project=folioo-ai \
   --filter="email:github-actions@"
 ```
 
@@ -179,7 +179,7 @@ terraform init -backend-config="bucket=${TF_STATE_BUCKET}"
 Ensure you have `roles/owner` or sufficient IAM roles on the project:
 
 ```bash
-gcloud projects get-iam-policy <your-gcp-project-id> \
+gcloud projects get-iam-policy folioo-ai \
   --flatten="bindings[].members" \
   --filter="bindings.members:$(gcloud config get-value account)"
 ```

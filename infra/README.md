@@ -35,11 +35,6 @@ infra/
     env-contract.md       # Environment/secret contract
 ```
 
-## Related Docs
-
-- `docs/infrastructure/ENV_MANAGEMENT.md`
-- `docs/infrastructure/COST_ESTIMATE.md`
-
 ## Required Inputs
 
 - GCP: `project_id`, `region`, `zone`

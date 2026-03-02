@@ -49,9 +49,7 @@ REDIS_PORT=6379
 dev/prod는 Secret Manager에서 내려오는 env로 Upstash를 우선 사용합니다.
 
 ```bash
-# CI/CD에서 자동 실행 (dev/prod workflow)
-# - .github/workflows/deploy-dev.yml
-# - .github/workflows/deploy.yml
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 `.env.dev` 파일:
@@ -64,16 +62,10 @@ UPSTASH_REDIS_REST_TOKEN=your-upstash-rest-token
 
 `CACHE_DRIVER`를 비워두더라도 APP_PROFILE이 `dev`/`prod`이고 Upstash REST 키가 있으면 `upstash`가 자동 선택됩니다.
 
-현재 운영 규칙:
-
-- `local`: `CACHE_DRIVER=ioredis` + 로컬 Docker Redis
-- `dev`: `CACHE_DRIVER=upstash` + dev Upstash
-- `prod`: `CACHE_DRIVER=upstash` + prod Upstash
-
 ## Prod 배포
 
 `ioredis` 경로를 사용할 때 dev/prod에서 `REDIS_HOST=localhost`는 금지됩니다.
-실수 설정은 배포 시 컨테이너 부팅/헬스체크 단계에서 즉시 드러납니다.
+실수 설정은 `scripts/validate-env-contract.py`에서 즉시 실패 처리합니다.
 
 ## 연결 확인
 

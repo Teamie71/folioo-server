@@ -9,9 +9,8 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
 
     createTypeOrmOptions(): TypeOrmModuleOptions {
         const profile = this.configService.get<string>('APP_PROFILE', 'local');
-        const isLocal = profile === 'local';
         const isProd = profile === 'prod';
-        const supabaseOptions = isLocal ? null : this.resolveRequiredSupabaseOptions(profile);
+        const supabaseOptions = this.resolveSupabaseOptions(profile);
 
         return {
             type: 'postgres',
@@ -28,26 +27,24 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
         };
     }
 
-    private resolveRequiredSupabaseOptions(
+    private resolveSupabaseOptions(
         profile: string
     ): { host: string; port: number; username: string; password: string; database: string } | null {
+        if (profile === 'local') {
+            return null;
+        }
+
         const supabaseDbUrl = this.configService.get<string>('SUPABASE_DB_URL');
         if (!supabaseDbUrl) {
-            throw new Error(
-                `${profile} profile requires SUPABASE_DB_URL. ` +
-                    'Direct DB_HOST fallback is disabled for non-local environments.'
-            );
+            return null;
         }
 
         try {
             const parsed = new URL(supabaseDbUrl);
             const databasePath = parsed.pathname.replace(/^\//, '');
 
-            if (!parsed.hostname || !databasePath || !parsed.username || !parsed.password) {
-                throw new Error(
-                    `${profile} profile has invalid SUPABASE_DB_URL. ` +
-                        'Host, username, password, and database path are required.'
-                );
+            if (!databasePath) {
+                return null;
             }
 
             return {
@@ -57,11 +54,8 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
                 password: decodeURIComponent(parsed.password),
                 database: databasePath,
             };
-        } catch (error) {
-            if (error instanceof Error) {
-                throw error;
-            }
-            throw new Error(`${profile} profile has invalid SUPABASE_DB_URL format.`);
+        } catch {
+            return null;
         }
     }
 }
