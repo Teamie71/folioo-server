@@ -33,6 +33,11 @@ services:
             start_period: 10s
         labels:
             - 'traefik.enable=false'
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '10m'
+                max-file: '3'
         networks:
             - folioo-network
 
@@ -47,6 +52,11 @@ services:
         depends_on:
             traefik:
                 condition: service_healthy
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '10m'
+                max-file: '3'
         networks:
             - folioo-network
 

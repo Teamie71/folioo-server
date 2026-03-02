@@ -1,121 +1,120 @@
 # ========================================
-# Folioo Server - 개발 서버 환경 (Dev)
+# Folioo Server - Dev Blue-Green (GCE 배포용)
 # ========================================
+# docker-compose.infra.yml (base) 위에 덮어쓰는 override 파일
+#
 # 사용법:
-#   1. 이미지 최신화:
-#      docker compose -f docker-compose.dev.yml pull
+#   # Blue 슬롯 실행:
+#   docker compose -f docker-compose.infra.yml -f docker-compose.dev.yml --profile blue up -d
 #
-#   2. 컨테이너 실행 (재배포):
-#      docker compose -f docker-compose.dev.yml up -d
+#   # Green 슬롯 실행:
+#   docker compose -f docker-compose.infra.yml -f docker-compose.dev.yml --profile green up -d
 #
-#   3. 로그 확인:
-#      docker compose -f docker-compose.dev.yml logs -f
-#
-#   4. 종료:
-#      docker compose -f docker-compose.dev.yml down
+# Note:
+#   로컬 개발용 파일은 docker-compose.yml 을 참고하세요.
 # ========================================
 
 services:
-    # ========================================
-    # PostgreSQL Database (개발 서버)
-    # ========================================
-    postgres:
-        image: pgvector/pgvector:pg15
-        container_name: folioo-postgres
+    # ── Redis (dev 전용) ──
+    redis-dev:
+        image: redis:8-alpine
+        container_name: folioo-redis-dev
         restart: unless-stopped
-        env_file:
-            - .env.dev
-        environment:
-            POSTGRES_USER: ${DB_USERNAME}
-            POSTGRES_PASSWORD: ${DB_PASSWORD}
-            POSTGRES_DB: ${DB_SCHEMA}
-            TZ: Asia/Seoul
+        command: redis-server --save 60 1 --loglevel warning --maxmemory 128mb --maxmemory-policy allkeys-lru
         volumes:
-            - postgres-data:/var/lib/postgresql/data
-        healthcheck:
-            test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME}']
-            interval: 10s
-            timeout: 5s
-            retries: 5
+            - redis-dev-data:/data
         deploy:
             resources:
                 limits:
                     memory: 256M
                 reservations:
                     memory: 128M
-        logging:
-            driver: 'json-file'
-            options:
-                max-size: '10m'
-                max-file: '3'
-
-    # ========================================
-    # Redis (개발 서버)
-    # ========================================
-    redis:
-        image: redis:8-alpine
-        container_name: folioo-redis
-        restart: unless-stopped
-        volumes:
-            - redis-data:/data
         healthcheck:
             test: ['CMD', 'redis-cli', 'ping']
             interval: 10s
             timeout: 5s
             retries: 5
-        deploy:
-            resources:
-                limits:
-                    memory: 128M
-                reservations:
-                    memory: 64M
         logging:
             driver: 'json-file'
             options:
                 max-size: '10m'
                 max-file: '3'
+        networks:
+            - folioo-network
 
-    # ========================================
-    # NestJS Backend (개발 서버)
-    # ========================================
-    backend:
-        image: hyoinkang/folioo:dev
-        container_name: folioo-server
+    # ── Dev Blue Slot ──
+    dev-blue:
+        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:dev
         restart: unless-stopped
         depends_on:
-            postgres:
+            redis-dev:
                 condition: service_healthy
-            redis:
-                condition: service_healthy
-        ports:
-            - '3000:3000'
         env_file:
-            - .env.dev
+            - path: .env.dev
+              required: false
         environment:
             APP_PROFILE: dev
             TZ: Asia/Seoul
+            REDIS_HOST: folioo-redis-dev
+            REDIS_PORT: 6379
         healthcheck:
             test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
-            interval: 30s
-            timeout: 10s
-            retries: 3
+            interval: 20s
+            timeout: 5s
+            retries: 5
             start_period: 30s
-        deploy:
-            resources:
-                limits:
-                    memory: 512M
-                reservations:
-                    memory: 256M
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.dev.rule=Host(`dev-api.folioo.ai.kr`)'
+            - 'traefik.http.routers.dev.entrypoints=web'
+            - 'traefik.http.services.dev.loadbalancer.server.port=3000'
+            - 'traefik.http.services.dev.loadbalancer.server.scheme=http'
         logging:
             driver: 'json-file'
             options:
                 max-size: '10m'
                 max-file: '3'
+        profiles:
+            - blue
+        networks:
+            - folioo-network
+
+    # ── Dev Green Slot ──
+    dev-green:
+        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:dev
+        restart: unless-stopped
+        depends_on:
+            redis-dev:
+                condition: service_healthy
+        env_file:
+            - path: .env.dev
+              required: false
+        environment:
+            APP_PROFILE: dev
+            TZ: Asia/Seoul
+            REDIS_HOST: folioo-redis-dev
+            REDIS_PORT: 6379
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+            interval: 20s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.dev.rule=Host(`dev-api.folioo.ai.kr`)'
+            - 'traefik.http.routers.dev.entrypoints=web'
+            - 'traefik.http.services.dev.loadbalancer.server.port=3000'
+            - 'traefik.http.services.dev.loadbalancer.server.scheme=http'
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '10m'
+                max-file: '3'
+        profiles:
+            - green
+        networks:
+            - folioo-network
 
 volumes:
-    postgres-data:
-    redis-data:
-
-networks:
-    default:
-        driver: bridge
+    redis-dev-data:

@@ -3,6 +3,16 @@ output "project_number" {
   value       = data.google_project.current.number
 }
 
+output "deploy_config" {
+  description = "Deployment configuration for CD workflows (JSON format). Exported to GCS by terraform.yml after apply."
+  value = jsonencode({
+    dev_gce_name  = module.compute.dev_instance_name
+    dev_gce_zone  = module.compute.dev_instance_zone
+    prod_gce_name = module.compute.prod_instance_name
+    prod_gce_zone = module.compute.prod_instance_zone
+  })
+}
+
 output "wif_provider" {
   description = "Full resource name of the WIF provider (set as GitHub secret WIF_PROVIDER)"
   value       = google_iam_workload_identity_pool_provider.github.name
@@ -16,7 +26,6 @@ output "github_actions_sa_email" {
 output "artifact_registry_url" {
   description = "Docker image URL prefix for Artifact Registry"
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.api_docker.repository_id}"
-  sensitive   = true
 }
 
 output "dev_vm_name" {
