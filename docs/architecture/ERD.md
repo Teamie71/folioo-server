@@ -7,25 +7,26 @@
 
 ## 테이블 목록
 
-| 도메인                   | 테이블                      | 설명                      |
-| ------------------------ | --------------------------- | ------------------------- |
-| **user**                 | `users`                     | 사용자 정보               |
-|                          | `social_user`               | 소셜 로그인 정보          |
-|                          | `user_agreement`            | 약관 동의                 |
-| **experience**           | `experience`                | 경험 정리                 |
-|                          | `experience_source`         | 경험 정리 파일 (OCR 추출) |
-| **portfolio**            | `portfolio`                 | 포트폴리오                |
-| **portfolio-correction** | `portfolio_correction`      | 포트폴리오 첨삭           |
-|                          | `correction_item`           | 첨삭 항목                 |
-| **insight**              | `insight`                   | 인사이트                  |
-|                          | `insight_activity`          | 인사이트-활동 매핑        |
-|                          | `activity`                  | 활동                      |
-| **ticket**               | `ticket_product`            | 이용권 상품 (구매용)      |
-|                          | `ticket`                    | 이용권 (보유/사용 추적)   |
-| **payment**              | `payment`                   | PayApp 결제 건            |
-| **event**                | `event`                     | 이벤트 정의               |
-|                          | `event_participation`       | 이벤트 참여/진행도        |
-|                          | `event_feedback_submission` | 이벤트 피드백 제출 이력   |
+| 도메인                   | 테이블                           | 설명                      |
+| ------------------------ | -------------------------------- | ------------------------- |
+| **user**                 | `users`                          | 사용자 정보               |
+|                          | `social_user`                    | 소셜 로그인 정보          |
+|                          | `user_agreement`                 | 약관 동의                 |
+| **experience**           | `experience`                     | 경험 정리                 |
+|                          | `experience_source`              | 경험 정리 파일 (OCR 추출) |
+| **portfolio**            | `portfolio`                      | 포트폴리오                |
+| **portfolio-correction** | `portfolio_correction`           | 포트폴리오 첨삭           |
+|                          | `correction_portfolio_selection` | 첨삭-포트폴리오 선택 매핑 |
+|                          | `correction_item`                | 첨삭 항목                 |
+| **insight**              | `insight`                        | 인사이트                  |
+|                          | `insight_activity`               | 인사이트-활동 매핑        |
+|                          | `activity`                       | 활동                      |
+| **ticket**               | `ticket_product`                 | 이용권 상품 (구매용)      |
+|                          | `ticket`                         | 이용권 (보유/사용 추적)   |
+| **payment**              | `payment`                        | PayApp 결제 건            |
+| **event**                | `event`                          | 이벤트 정의               |
+|                          | `event_participation`            | 이벤트 참여/진행도        |
+|                          | `event_feedback_submission`      | 이벤트 피드백 제출 이력   |
 
 ---
 
@@ -41,6 +42,9 @@ users
    ├── 1:N ─ experience ─── 1:N ─ experience_source (OCR 추출)
    │
    ├── 1:N ─ portfolio ─── N:1 ─ experience (경험에서 생성, nullable)
+   │
+   ├── 1:N ─ portfolio_correction ─── 1:N ─ correction_portfolio_selection
+   │                                        └─── N:1 ─ portfolio
    │
    ├── 1:N ─ portfolio_correction ─── 1:N ─ correction_item
    │                                        └─── N:1 ─ portfolio
@@ -214,6 +218,17 @@ PayType: 'CARD' |
 | portfolio_correction_id | number           | FK → portfolio_correction.id |
 | portfolio_id            | number           | FK → portfolio.id            |
 
+### correction_portfolio_selection (첨삭-포트폴리오 선택 매핑)
+
+| 컬럼                    | 타입    | 설명                         |
+| ----------------------- | ------- | ---------------------------- |
+| id                      | number  | PK                           |
+| portfolio_correction_id | number  | FK → portfolio_correction.id |
+| portfolio_id            | number  | FK → portfolio.id            |
+| is_active               | boolean | 선택 활성화 여부             |
+
+> **Note**: `portfolio_correction_id + portfolio_id` 복합 unique로 동일 첨삭 내 중복 선택 매핑을 방지합니다.
+
 ### insight (인사이트)
 
 | 컬럼        | 타입         | 설명          |
@@ -358,22 +373,23 @@ PayType: 'CARD' |
 
 > PostgreSQL은 FK에 자동 인덱스를 생성하지 않음. 아래 FK 컬럼에 `@Index()` 필요.
 
-| 테이블                      | 인덱스 대상 컬럼                                                              | 비고                |
-| --------------------------- | ----------------------------------------------------------------------------- | ------------------- |
-| `social_user`               | `user_id`                                                                     |                     |
-| `user_agreement`            | `user_id`                                                                     |                     |
-| `experience`                | `user_id`                                                                     |                     |
-| `experience_source`         | `experience_id`                                                               |                     |
-| `portfolio`                 | `user_id`, `experience_id`                                                    |                     |
-| `portfolio_correction`      | `user_id`                                                                     |                     |
-| `correction_item`           | `portfolio_correction_id`, `portfolio_id`                                     |                     |
-| `insight`                   | `user_id`                                                                     |                     |
-| `insight_activity`          | `insight_id`, `activity_id`                                                   |                     |
-| `activity`                  | `user_id`                                                                     |                     |
-| `ticket`                    | `user_id`, `payment_id`, `event_participation_id`                             |                     |
-| `payment`                   | `user_id`, `ticket_product_id`                                                |                     |
-| `event_participation`       | `user_id`, `event_id` — **UNIQUE 복합키**                                     | 중복 참여 방지      |
-| `event_feedback_submission` | `event_id`, `user_id`, `phone_num`, `event_id+external_submission_id`(UNIQUE) | 외부 제출 이력/멱등 |
+| 테이블                           | 인덱스 대상 컬럼                                                               | 비고                |
+| -------------------------------- | ------------------------------------------------------------------------------ | ------------------- |
+| `social_user`                    | `user_id`                                                                      |                     |
+| `user_agreement`                 | `user_id`                                                                      |                     |
+| `experience`                     | `user_id`                                                                      |                     |
+| `experience_source`              | `experience_id`                                                                |                     |
+| `portfolio`                      | `user_id`, `experience_id`                                                     |                     |
+| `portfolio_correction`           | `user_id`                                                                      |                     |
+| `correction_portfolio_selection` | `portfolio_correction_id`, `portfolio_id`, `portfolio_correction_id+is_active` | 선택 조회 최적화    |
+| `correction_item`                | `portfolio_correction_id`, `portfolio_id`                                      |                     |
+| `insight`                        | `user_id`                                                                      |                     |
+| `insight_activity`               | `insight_id`, `activity_id`                                                    |                     |
+| `activity`                       | `user_id`                                                                      |                     |
+| `ticket`                         | `user_id`, `payment_id`, `event_participation_id`                              |                     |
+| `payment`                        | `user_id`, `ticket_product_id`                                                 |                     |
+| `event_participation`            | `user_id`, `event_id` — **UNIQUE 복합키**                                      | 중복 참여 방지      |
+| `event_feedback_submission`      | `event_id`, `user_id`, `phone_num`, `event_id+external_submission_id`(UNIQUE)  | 외부 제출 이력/멱등 |
 
 ---
 
@@ -381,6 +397,7 @@ PayType: 'CARD' |
 
 | 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                    |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.6.0 | 2026-03-03 | 포트폴리오 첨삭 선택 매핑 테이블(`correction_portfolio_selection`) 추가 및 관련 인덱스 설계 반영                                                                                                                                                                                             |
 | 2.5.0 | 2026-02-25 | 이벤트 하이브리드 스키마 보강 — `event.ui_config`, `event.ops_config`, `event_participation.reward_status/granted_by/grant_reason` 추가, `event_feedback_submission` 신규(외부 피드백 이력/멱등 처리), 운영 수동 지급 시나리오 반영                                                          |
 | 2.4.0 | 2026-02-09 | 이벤트 도메인 설계 보완 — `event_participation` UNIQUE(user_id, event_id) 추가, jsonb 타입 안전성 가이드 추가, 동시성 처리 가이드 추가                                                                                                                                                       |
 | 2.3.0 | 2026-02-07 | Insight-Activity N:M 관계 재설계 — `insight_activity` 매핑 테이블 추가, `insight.activity_id` 제거. 인사이트는 pgvector 기반으로 관리.                                                                                                                                                       |
