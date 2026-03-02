@@ -45,3 +45,9 @@ Output files are ignored by `.gitignore`.
 - `local`: Docker Postgres + Docker Redis (`CACHE_DRIVER=ioredis`)
 - `dev`: Upstash Redis (`CACHE_DRIVER=upstash`) + `SUPABASE_DB_URL` (required)
 - `prod`: Upstash Redis (`CACHE_DRIVER=upstash`) + `SUPABASE_DB_URL` (required)
+
+### Internal API keys (AI integration)
+
+- `AI_BASE_URL`: main backend -> AI server base URL
+- `AI_SERVICE_API_KEY`: main backend -> AI server `X-API-Key`
+- `MAIN_BACKEND_API_KEY`: AI server -> main backend internal API `X-API-Key` (main backend validates)

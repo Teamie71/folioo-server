@@ -40,6 +40,8 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `CLIENT_REDIRECT_URI`
 - `CORS_ORIGINS`
 - `AI_BASE_URL`
+- `AI_SERVICE_API_KEY`
+- `MAIN_BACKEND_API_KEY`
 - `SWAGGER_USER`
 - `SWAGGER_PASSWORD`
 - `OPENROUTER_API_KEY`
