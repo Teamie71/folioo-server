@@ -29,26 +29,6 @@ output "deploy_config" {
   })
 }
 
-output "dev_vm_name" {
-  description = "Dev VM name"
-  value       = module.compute.dev_instance_name
-}
-
-output "dev_vm_zone" {
-  description = "Dev VM zone"
-  value       = module.compute.dev_instance_zone
-}
-
-output "prod_vm_name" {
-  description = "Prod VM name"
-  value       = module.compute.prod_instance_name
-}
-
-output "prod_vm_zone" {
-  description = "Prod VM zone"
-  value       = module.compute.prod_instance_zone
-}
-
 output "nat_static_egress_ip" {
   description = "Static egress IP reserved for Cloud NAT"
   value       = module.networking.nat_static_egress_ip

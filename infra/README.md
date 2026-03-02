@@ -4,9 +4,7 @@ This directory is the Terraform skeleton for Folioo's GCP migration.
 
 ## Scope
 
-- Included: Terraform foundation, provider setup, backend contract, module contracts.
-- Implemented: WIF (Workload Identity Federation), Artifact Registry, CI identity.
-- Deferred: concrete networking/compute/cloudflare implementation.
+- Implemented: WIF, Artifact Registry, CI identity, GCE compute (dev/prod), networking (Cloud NAT), Cloudflare tunnel.
 - Excluded:
     - Cloud SQL: Folioo uses Supabase as fixed external DB.
     - GCS storage module: not required by current Folioo server architecture.
@@ -73,8 +71,12 @@ Required GitHub Secrets: `GCP_PROJECT_ID`, `WIF_PROVIDER`, `WIF_SERVICE_ACCOUNT`
 
 ## Key Outputs
 
-| Output                    | Purpose                                    |
-| ------------------------- | ------------------------------------------ |
-| `wif_provider`            | WIF provider resource name (GitHub secret) |
-| `github_actions_sa_email` | SA email for CI (GitHub secret)            |
-| `artifact_registry_url`   | Docker image URL prefix                    |
+| Output                    | Purpose                                                      |
+| ------------------------- | ------------------------------------------------------------ |
+| `wif_provider`            | WIF provider resource name (GitHub secret)                   |
+| `github_actions_sa_email` | SA email for CI (GitHub secret)                              |
+| `artifact_registry_url`   | Docker image URL prefix                                      |
+| `deploy_config`           | JSON with GCE names/zones — exported to GCS for CD workflows |
+| `nat_static_egress_ip`    | Static egress IP for Cloud NAT                               |
+| `dev_tunnel_token`        | Cloudflare tunnel token for dev cloudflared                  |
+| `prod_tunnel_token`       | Cloudflare tunnel token for prod cloudflared                 |
