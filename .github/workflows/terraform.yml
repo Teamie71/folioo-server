@@ -50,19 +50,15 @@ jobs:
                   set -euo pipefail
                   if gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars; then
                     echo "has_tfvars=true" >> "$GITHUB_OUTPUT"
-                    echo "from_bucket=true" >> "$GITHUB_OUTPUT"
                     echo "Loaded terraform.tfvars from state bucket"
                     exit 0
                   fi
 
                   if [ "${{ github.event_name }}" = "pull_request" ]; then
                     echo "terraform.tfvars not found in bucket for PR; generating safe fallback vars"
-                    cat > terraform.tfvars <<EOF
-                  project_id           = "${{ secrets.GCP_PROJECT_ID }}"
-                  github_repository    = "${{ github.repository }}"
-                  enable_cloudflare    = false
-                  cloudflare_api_token = "00000000000000000000000000000000000000-1"
-                  EOF
+                    printf 'project_id = "%s"\ngithub_repository = "%s"\nenable_cloudflare = false\n' \
+                      '${{ secrets.GCP_PROJECT_ID }}' \
+                      '${{ github.repository }}' > terraform.tfvars
                     echo "has_tfvars=true" >> "$GITHUB_OUTPUT"
                     exit 0
                   fi
@@ -75,28 +71,26 @@ jobs:
               run: terraform fmt -check -recursive
               continue-on-error: true
 
+            - name: Terraform Init (PR)
+              if: github.event_name == 'pull_request'
+              id: init_pr
+              run: terraform init -backend=false
+
             - name: Terraform Init
-              if: steps.vars.outputs.has_tfvars == 'true'
+              if: github.event_name != 'pull_request' && steps.vars.outputs.has_tfvars == 'true'
               id: init
               run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
             - name: Terraform Validate
-              if: steps.vars.outputs.has_tfvars == 'true'
+              if: github.event_name == 'pull_request' || steps.vars.outputs.has_tfvars == 'true'
               id: validate
               run: terraform validate -no-color
 
             - name: Terraform Plan
-              if: steps.vars.outputs.has_tfvars == 'true'
+              if: github.event_name != 'pull_request' && steps.vars.outputs.has_tfvars == 'true'
               id: plan
               run: |
-                  # PR fallback vars: -refresh=false로 외부 API 호출 없이 코드 변경만 검사
-                  REFRESH_FLAG=""
-                  if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ steps.vars.outputs.from_bucket }}" != "true" ]; then
-                    REFRESH_FLAG="-refresh=false"
-                    echo "Using -refresh=false (PR fallback mode, no real credentials)"
-                  fi
-
-                  terraform plan -no-color -input=false -var-file=terraform.tfvars $REFRESH_FLAG -lock-timeout=5m -detailed-exitcode || EXIT_CODE=$?
+                  terraform plan -no-color -input=false -var-file=terraform.tfvars -lock-timeout=5m -detailed-exitcode || EXIT_CODE=$?
                   if [ "${EXIT_CODE:-0}" -eq 1 ]; then
                     echo "Terraform plan failed with error"
                     exit 1
@@ -139,26 +133,15 @@ jobs:
                       })
 
             - name: Terraform Plan Status
-              if: steps.plan.outcome == 'failure'
+              if: github.event_name != 'pull_request' && steps.plan.outcome == 'failure'
               run: |
                   echo "Terraform plan failed"
                   exit 1
 
             - name: Terraform Plan Skipped
-              if: steps.vars.outputs.has_tfvars != 'true'
+              if: github.event_name != 'pull_request' && steps.vars.outputs.has_tfvars != 'true'
               run: echo "terraform.tfvars missing in bucket - plan/apply skipped"
 
             - name: Terraform Apply
               if: github.ref == 'refs/heads/dev' && github.event_name == 'push' && steps.vars.outputs.has_tfvars == 'true'
               run: terraform apply -auto-approve -input=false -var-file=terraform.tfvars -lock-timeout=5m
-
-            - name: Export Deploy Config to GCS
-              if: >-
-                  steps.vars.outputs.has_tfvars == 'true' && (
-                    (github.ref == 'refs/heads/dev' && github.event_name == 'push') ||
-                    github.event_name == 'workflow_dispatch'
-                  )
-              run: |
-                  terraform output -raw deploy_config > /tmp/deploy-config.json
-                  gcloud storage cp /tmp/deploy-config.json gs://${{ secrets.TF_STATE_BUCKET }}/deploy-config.json
-                  echo "deploy-config.json uploaded to GCS"

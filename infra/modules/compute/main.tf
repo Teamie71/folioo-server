@@ -93,7 +93,7 @@ resource "google_compute_instance" "server" {
     set -euxo pipefail
 
     apt-get update -y
-    apt-get install -y ca-certificates curl gnupg lsb-release jq python3
+    apt-get install -y ca-certificates curl gnupg lsb-release
 
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -106,8 +106,12 @@ resource "google_compute_instance" "server" {
     systemctl enable docker
     systemctl restart docker
 
-    # 배포 디렉토리 생성 (CD 워크플로우에서 사용)
-    mkdir -p /home/folioo
+    mkdir -p /opt/folioo
+    cat > /opt/folioo/runtime.env <<EOT
+    APP_ENV=${each.value.env}
+    APP_PORT=${var.app_port}
+    APP_HEALTH_PATH=${var.health_check_path}
+    EOT
 
     touch /var/run/folioo-startup-complete
   EOF
