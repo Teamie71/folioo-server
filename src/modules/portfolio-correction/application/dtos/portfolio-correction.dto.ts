@@ -13,6 +13,7 @@ import {
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
+import { CorrectionPortfolioSelection } from '../../domain/correction-portfolio-selection.entity';
 
 export class CorrectionResDTO {
     id: number;
@@ -54,6 +55,11 @@ export class CreateCorrectionReqDTO {
     jobDescriptionType: JobDescriptionType;
 }
 
+export class CreateCorrectionResDTO {
+    correctionId: number;
+    message: string;
+}
+
 export class CorrectionStatusResDTO {
     id: number;
     @ApiProperty({ enum: CorrectionStatus, example: CorrectionStatus.GENERATING })
@@ -73,6 +79,18 @@ export class MapCorrectionWithPortfoliosReqDTO {
     @ArrayNotEmpty()
     @IsNumber({}, { each: true })
     portfolioIds: number[];
+}
+
+export class CorrectionSelectionResDTO {
+    portfolioId: number;
+    isActive: boolean;
+
+    static from(selection: CorrectionPortfolioSelection): CorrectionSelectionResDTO {
+        const dto = new CorrectionSelectionResDTO();
+        dto.portfolioId = selection.portfolio.id;
+        dto.isActive = selection.isActive;
+        return dto;
+    }
 }
 
 export class UpdateCorrectionTitleReqDTO {

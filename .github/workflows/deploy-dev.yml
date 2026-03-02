@@ -69,7 +69,14 @@ jobs:
                     exit 1
                   fi
 
-                  supabase db push --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}"
+                  DB_URL="${{ secrets.SUPABASE_DEV_DB_URL }}"
+                  if printf '%s' "$DB_URL" | grep -q ':6543'; then
+                    echo "::error::SUPABASE_DEV_DB_URL points to transaction pooler port 6543."
+                    echo "::error::Use a migration-safe connection string (direct DB or session-mode 5432)."
+                    exit 1
+                  fi
+
+                  supabase db push --db-url "$DB_URL"
 
             - name: Authenticate to Google Cloud
               uses: google-github-actions/auth@v2

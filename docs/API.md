@@ -161,6 +161,10 @@ Legend:
 
 - GET `/health` -> IMPLEMENTED (Public)
 
+### Internal
+
+- GET `/api/v1/internal/health` -> IMPLEMENTED (Public + X-API-Key required)
+
 ### Auth
 
 - GET `/auth/kakao` -> IMPLEMENTED (Public, OAuth redirect)
@@ -208,8 +212,8 @@ Legend:
 - POST `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - PATCH `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - POST `/portfolio-corrections/{correctionId}/regenerate-insight` -> NOT_IMPLEMENTED
-- POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택만 수행, generate로 선택+생성 준비 한번에 가능)
-- POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (portfolioIds 선택 + 생성 준비를 한번에 수행)
+- POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택 포트폴리오를 매핑 테이블에 활성화 상태로 저장)
+- POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (요청 본문 없이 활성화된 매핑 기준으로 생성 준비 수행)
 - PATCH `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 - DELETE `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 

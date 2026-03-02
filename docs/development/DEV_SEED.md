@@ -1,7 +1,7 @@
 # Dev Seed
 
-This project does not use database migrations yet.
-In `local`/`dev` profiles, TypeORM runs with `synchronize: true` (see `src/config/typeorm-config.ts`).
+This project uses Supabase SQL migrations for schema changes.
+TypeORM `synchronize` is disabled in all profiles (see `src/config/typeorm-config.ts`).
 
 To avoid empty dev databases blocking manual tests and smoke tests, we seed minimal reference data on app startup.
 
@@ -82,7 +82,7 @@ If the seed ran correctly, preflight succeeds and subsequent `POST /payments` us
 ## After a DB reset
 
 If the dev database is wiped (see `docs/development/DEV_DB_RESET.md`), simply restart the server.
-TypeORM `synchronize: true` recreates tables, and the seed service re-inserts all 6 products on the next startup.
+After applying required migrations, the seed service re-inserts all 6 products on the next startup.
 
 **로컬** 환경에서 DB를 초기화하려면:
 
