@@ -11,25 +11,34 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 - **Runtime**: Node.js 20+
 - **Framework**: NestJS 10.x
 - **ORM**: TypeORM
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (로컬: Docker, dev/prod: Supabase 외부 연결)
+- **Cache**: Upstash Redis REST API (dev/prod) / ioredis Docker (로컬)
 - **Package Manager**: pnpm
 - **Language**: TypeScript (Strict Mode)
+- **배포**: GCE Blue-Green (docker-compose.infra.yml + dev/prod overlay)
+- **이미지 레지스트리**: GCP Artifact Registry (`asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server`)
 
 ## 문서 경로
 
 상세한 내용은 아래 문서 참조:
 
-| 문서          | 경로                                     |
-| ------------- | ---------------------------------------- |
-| 아키텍처      | `docs/architecture/ARCHITECTURE.md`      |
-| 도메인 전략   | `docs/architecture/DOMAIN_STRATEGY.md`   |
-| ERD/DB 설계   | `docs/architecture/ERD.md`               |
-| 코드 스타일   | `docs/development/CODE_STYLE.md`         |
-| 예외 처리     | `docs/development/ERROR_HANDLING.md`     |
-| Git 컨벤션    | `docs/development/GIT_CONVENTIONS.md`    |
-| 네이밍 컨벤션 | `docs/development/NAMING_CONVENTIONS.md` |
-| PR 템플릿     | `.github/PULL_REQUEST_TEMPLATE.md`       |
-| Issue 템플릿  | `.github/ISSUE_TEMPLATE/`                |
+| 문서              | 경로                                     |
+| ----------------- | ---------------------------------------- |
+| 아키텍처          | `docs/architecture/ARCHITECTURE.md`      |
+| 도메인 전략       | `docs/architecture/DOMAIN_STRATEGY.md`   |
+| ERD/DB 설계       | `docs/architecture/ERD.md`               |
+| 코드 스타일       | `docs/development/CODE_STYLE.md`         |
+| 예외 처리         | `docs/development/ERROR_HANDLING.md`     |
+| Git 컨벤션        | `docs/development/GIT_CONVENTIONS.md`    |
+| 네이밍 컨벤션     | `docs/development/NAMING_CONVENTIONS.md` |
+| API 현황          | `docs/API.md`                            |
+| 환경변수 관리     | `docs/infrastructure/ENV_MANAGEMENT.md`  |
+| Redis/Cache       | `docs/infrastructure/REDIS.md`           |
+| 비용 추정         | `docs/infrastructure/COST_ESTIMATE.md`   |
+| 인프라(Terraform) | `infra/README.md`                        |
+| Env 계약          | `infra/docs/env-contract.md`             |
+| PR 템플릿         | `.github/PULL_REQUEST_TEMPLATE.md`       |
+| Issue 템플릿      | `.github/ISSUE_TEMPLATE/`                |
 
 ## 핵심 규칙
 

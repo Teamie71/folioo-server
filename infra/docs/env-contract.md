@@ -9,14 +9,27 @@ This contract defines environment keys for local, dev, and prod.
 
 Both secret payloads must keep the same key names used by Finders-style runtime loading.
 
-## Required Keys
+## GitHub Secrets (CI/CD 전용)
+
+앱 런타임 env와는 별개로 GitHub Actions 워크플로우에서 직접 사용하는 secrets:
+
+| Secret                 | Used by          | Purpose                              |
+| ---------------------- | ---------------- | ------------------------------------ |
+| `SUPABASE_DEV_DB_URL`  | `deploy-dev.yml` | `supabase db push` 마이그레이션 실행 |
+| `SUPABASE_PROD_DB_URL` | `deploy.yml`     | `supabase db push` 마이그레이션 실행 |
+
+## Required Keys (Secret Manager payload)
 
 - `APP_PROFILE`
-- `DB_HOST` (fallback)
-- `DB_PORT` (fallback)
-- `DB_USERNAME` (fallback)
-- `DB_PASSWORD` (fallback)
-- `DB_SCHEMA` (fallback)
+- `SUPABASE_DB_URL` (dev/prod 필수 — 앱 런타임 DB 연결)
+- `CACHE_DRIVER` (`upstash` for dev/prod)
+- `UPSTASH_REDIS_REST_URL` (dev/prod 필수)
+- `UPSTASH_REDIS_REST_TOKEN` (dev/prod 필수)
+- `DB_HOST` (local fallback only)
+- `DB_PORT` (local fallback only)
+- `DB_USERNAME` (local fallback only)
+- `DB_PASSWORD` (local fallback only)
+- `DB_SCHEMA` (local fallback only)
 - `REDIS_HOST` (ioredis fallback)
 - `REDIS_PORT` (ioredis fallback)
 - `JWT_SECRET_TOKEN`
