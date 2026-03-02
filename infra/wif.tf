@@ -72,3 +72,24 @@ resource "google_project_iam_member" "github_actions_iap_tunnel" {
   role    = "roles/iap.tunnelResourceAccessor"
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
+
+# IAM: Manage service accounts (needed for Terraform plan/apply of IAM resources)
+resource "google_project_iam_member" "github_actions_sa_admin" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# IAM: Manage Workload Identity pools (needed for Terraform plan/apply of WIF)
+resource "google_project_iam_member" "github_actions_wif_admin" {
+  project = var.project_id
+  role    = "roles/iam.workloadIdentityPoolAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# IAM: Manage project-level IAM policies (needed for Terraform plan/apply of IAM bindings)
+resource "google_project_iam_member" "github_actions_iam_admin" {
+  project = var.project_id
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
