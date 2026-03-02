@@ -141,9 +141,33 @@ jobs:
 
                       sudo docker network create folioo-network || true
 
-                      # ── Detect current active slot ──
-                      ACTIVE_SLOT=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[].Service' 2>/dev/null | grep -E 'prod-blue|prod-green' | head -1)
-                      ACTIVE_SLOT=\${ACTIVE_SLOT:-none}
+                      # ── Detect current active slot (deterministic) ──
+                      PROD_BLUE_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[] | select(.Service == "prod-blue") | .Name' | head -1)
+                      PROD_GREEN_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[] | select(.Service == "prod-green") | .Name' | head -1)
+
+                      PROD_BLUE_STATUS=\$(sudo docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "\$PROD_BLUE_CONTAINER" 2>/dev/null || echo 'not_found')
+                      PROD_GREEN_STATUS=\$(sudo docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "\$PROD_GREEN_CONTAINER" 2>/dev/null || echo 'not_found')
+
+                      PROD_BLUE_STARTED=\$(sudo docker inspect --format='{{.State.StartedAt}}' "\$PROD_BLUE_CONTAINER" 2>/dev/null || echo '')
+                      PROD_GREEN_STARTED=\$(sudo docker inspect --format='{{.State.StartedAt}}' "\$PROD_GREEN_CONTAINER" 2>/dev/null || echo '')
+
+                      if [[ "\$PROD_BLUE_STATUS" == 'healthy' && "\$PROD_GREEN_STATUS" == 'healthy' ]]; then
+                        if [[ "\$PROD_BLUE_STARTED" > "\$PROD_GREEN_STARTED" ]]; then
+                          ACTIVE_SLOT='prod-blue'
+                        else
+                          ACTIVE_SLOT='prod-green'
+                        fi
+                      elif [[ "\$PROD_BLUE_STATUS" == 'healthy' ]]; then
+                        ACTIVE_SLOT='prod-blue'
+                      elif [[ "\$PROD_GREEN_STATUS" == 'healthy' ]]; then
+                        ACTIVE_SLOT='prod-green'
+                      elif [[ "\$PROD_BLUE_STATUS" == 'running' ]]; then
+                        ACTIVE_SLOT='prod-blue'
+                      elif [[ "\$PROD_GREEN_STATUS" == 'running' ]]; then
+                        ACTIVE_SLOT='prod-green'
+                      else
+                        ACTIVE_SLOT='none'
+                      fi
 
                       if [[ \"\$ACTIVE_SLOT\" == 'prod-blue' ]]; then
                         GREEN_SLOT='green'

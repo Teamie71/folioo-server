@@ -143,9 +143,33 @@ jobs:
 
                       sudo docker network create folioo-network || true
 
-                      # ── Detect current active slot ──
-                      ACTIVE_SLOT=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[].Service' 2>/dev/null | grep -E 'dev-blue|dev-green' | head -1)
-                      ACTIVE_SLOT=\${ACTIVE_SLOT:-none}
+                      # ── Detect current active slot (deterministic) ──
+                      DEV_BLUE_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[] | select(.Service == "dev-blue") | .Name' | head -1)
+                      DEV_GREEN_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[] | select(.Service == "dev-green") | .Name' | head -1)
+
+                      DEV_BLUE_STATUS=\$(sudo docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "\$DEV_BLUE_CONTAINER" 2>/dev/null || echo 'not_found')
+                      DEV_GREEN_STATUS=\$(sudo docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "\$DEV_GREEN_CONTAINER" 2>/dev/null || echo 'not_found')
+
+                      DEV_BLUE_STARTED=\$(sudo docker inspect --format='{{.State.StartedAt}}' "\$DEV_BLUE_CONTAINER" 2>/dev/null || echo '')
+                      DEV_GREEN_STARTED=\$(sudo docker inspect --format='{{.State.StartedAt}}' "\$DEV_GREEN_CONTAINER" 2>/dev/null || echo '')
+
+                      if [[ "\$DEV_BLUE_STATUS" == 'healthy' && "\$DEV_GREEN_STATUS" == 'healthy' ]]; then
+                        if [[ "\$DEV_BLUE_STARTED" > "\$DEV_GREEN_STARTED" ]]; then
+                          ACTIVE_SLOT='dev-blue'
+                        else
+                          ACTIVE_SLOT='dev-green'
+                        fi
+                      elif [[ "\$DEV_BLUE_STATUS" == 'healthy' ]]; then
+                        ACTIVE_SLOT='dev-blue'
+                      elif [[ "\$DEV_GREEN_STATUS" == 'healthy' ]]; then
+                        ACTIVE_SLOT='dev-green'
+                      elif [[ "\$DEV_BLUE_STATUS" == 'running' ]]; then
+                        ACTIVE_SLOT='dev-blue'
+                      elif [[ "\$DEV_GREEN_STATUS" == 'running' ]]; then
+                        ACTIVE_SLOT='dev-green'
+                      else
+                        ACTIVE_SLOT='none'
+                      fi
 
                       if [[ \"\$ACTIVE_SLOT\" == 'dev-blue' ]]; then
                         GREEN_SLOT='green'
