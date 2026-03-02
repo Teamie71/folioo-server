@@ -4,7 +4,7 @@ import { UserStatus } from './enums/user-status.enum';
 
 @Entity('users')
 export class User extends BaseEntity {
-    @Column({ length: 10 })
+    @Column({ length: 30 })
     name: string;
 
     @Column({
