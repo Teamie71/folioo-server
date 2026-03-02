@@ -20,16 +20,25 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    validate(_accessToken: string, _refreshToken: string, profile: Profile): SocialUserAfterOAuth {
+    authorizationParams(): Record<string, string> {
+        return {
+            access_type: 'offline',
+            prompt: 'consent',
+        };
+    }
+
+    validate(_accessToken: string, refreshToken: string, profile: Profile): SocialUserAfterOAuth {
         const email = getOptionalSocialProfileField(profile.emails?.[0]?.value);
         const nickname =
             getOptionalSocialProfileField(profile.displayName) ||
             getOptionalSocialProfileField(profile.name?.givenName);
+        const normalizedRefreshToken = getOptionalSocialProfileField(refreshToken);
         const user: SocialUserAfterOAuth = {
             id: requireSocialProfileField(profile.id, 'id', LoginType.GOOGLE),
             nickname,
             email,
             socialType: LoginType.GOOGLE,
+            refreshToken: normalizedRefreshToken || undefined,
         };
         return user;
     }

@@ -27,17 +27,22 @@ export class SocialUser extends BaseEntity {
     @Column({ length: 255 })
     email: string;
 
+    @Column({ name: 'oauth_refresh_token', type: 'text', nullable: true })
+    oauthRefreshToken: string | null;
+
     static create(
         userId: number,
         loginType: LoginType,
         loginId: string,
-        email: string
+        email: string,
+        oauthRefreshToken?: string
     ): SocialUser {
         const socialUser = new SocialUser();
         socialUser.userId = userId;
         socialUser.loginType = loginType;
         socialUser.loginId = loginId;
         socialUser.email = email;
+        socialUser.oauthRefreshToken = oauthRefreshToken ?? null;
         return socialUser;
     }
 }
