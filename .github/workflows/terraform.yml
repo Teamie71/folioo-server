@@ -50,6 +50,7 @@ jobs:
                   set -euo pipefail
                   if gcloud storage cp "gs://${{ secrets.TF_STATE_BUCKET }}/terraform.tfvars" terraform.tfvars; then
                     echo "has_tfvars=true" >> "$GITHUB_OUTPUT"
+                    echo "from_bucket=true" >> "$GITHUB_OUTPUT"
                     echo "Loaded terraform.tfvars from state bucket"
                     exit 0
                   fi
@@ -88,7 +89,14 @@ jobs:
               if: steps.vars.outputs.has_tfvars == 'true'
               id: plan
               run: |
-                  terraform plan -no-color -input=false -var-file=terraform.tfvars -lock-timeout=5m -detailed-exitcode || EXIT_CODE=$?
+                  # PR fallback vars: -refresh=false로 외부 API 호출 없이 코드 변경만 검사
+                  REFRESH_FLAG=""
+                  if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ steps.vars.outputs.from_bucket }}" != "true" ]; then
+                    REFRESH_FLAG="-refresh=false"
+                    echo "Using -refresh=false (PR fallback mode, no real credentials)"
+                  fi
+
+                  terraform plan -no-color -input=false -var-file=terraform.tfvars $REFRESH_FLAG -lock-timeout=5m -detailed-exitcode || EXIT_CODE=$?
                   if [ "${EXIT_CODE:-0}" -eq 1 ]; then
                     echo "Terraform plan failed with error"
                     exit 1
