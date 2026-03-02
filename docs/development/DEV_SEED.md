@@ -1,7 +1,8 @@
 # Dev Seed
 
-This project does not use database migrations yet.
-In `local`/`dev` profiles, TypeORM runs with `synchronize: true` (see `src/config/typeorm-config.ts`).
+This document covers runtime seed behavior only.
+Schema change workflow is documented in `docs/development/DB_MIGRATION_WORKFLOW.md`.
+In `local`/`dev` profiles, TypeORM currently runs with `synchronize: true` (see `src/config/typeorm-config.ts`).
 
 To avoid empty dev databases blocking manual tests and smoke tests, we seed minimal reference data on app startup.
 

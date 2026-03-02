@@ -59,6 +59,18 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v4
 
+            - name: Set up Supabase CLI
+              uses: supabase/setup-cli@v1
+
+            - name: Apply Supabase migrations (dev)
+              run: |
+                  if [ -z "${{ secrets.SUPABASE_DEV_DB_URL }}" ]; then
+                    echo "::error::Missing required secret SUPABASE_DEV_DB_URL"
+                    exit 1
+                  fi
+
+                  supabase db push --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}"
+
             - name: Authenticate to Google Cloud
               uses: google-github-actions/auth@v2
               with:

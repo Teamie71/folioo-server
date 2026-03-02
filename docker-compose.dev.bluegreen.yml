@@ -16,37 +16,6 @@
 # ========================================
 
 services:
-    # ── PostgreSQL (dev 전용) ──
-    postgres-dev:
-        image: pgvector/pgvector:pg15
-        container_name: folioo-postgres-dev
-        restart: unless-stopped
-        environment:
-            POSTGRES_USER: ${DB_USERNAME:-folioo}
-            POSTGRES_PASSWORD: ${DB_PASSWORD:-folioo}
-            POSTGRES_DB: ${DB_SCHEMA:-folioo}
-            TZ: Asia/Seoul
-        volumes:
-            - postgres-dev-data:/var/lib/postgresql/data
-        healthcheck:
-            test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-folioo}']
-            interval: 10s
-            timeout: 5s
-            retries: 5
-        deploy:
-            resources:
-                limits:
-                    memory: 256M
-                reservations:
-                    memory: 128M
-        logging:
-            driver: 'json-file'
-            options:
-                max-size: '10m'
-                max-file: '3'
-        networks:
-            - folioo-network
-
     # ── Redis (dev 전용) ──
     redis-dev:
         image: redis:8-alpine
@@ -79,8 +48,6 @@ services:
         image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:dev
         restart: unless-stopped
         depends_on:
-            postgres-dev:
-                condition: service_healthy
             redis-dev:
                 condition: service_healthy
         env_file:
@@ -89,7 +56,6 @@ services:
         environment:
             APP_PROFILE: dev
             TZ: Asia/Seoul
-            DB_HOST: folioo-postgres-dev
             REDIS_HOST: folioo-redis-dev
             REDIS_PORT: 6379
         healthcheck:
@@ -119,8 +85,6 @@ services:
         image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:dev
         restart: unless-stopped
         depends_on:
-            postgres-dev:
-                condition: service_healthy
             redis-dev:
                 condition: service_healthy
         env_file:
@@ -129,7 +93,6 @@ services:
         environment:
             APP_PROFILE: dev
             TZ: Asia/Seoul
-            DB_HOST: folioo-postgres-dev
             REDIS_HOST: folioo-redis-dev
             REDIS_PORT: 6379
         healthcheck:
@@ -155,5 +118,4 @@ services:
             - folioo-network
 
 volumes:
-    postgres-dev-data:
     redis-dev-data:

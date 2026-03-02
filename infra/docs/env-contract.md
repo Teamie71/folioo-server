@@ -2,21 +2,29 @@
 
 This contract defines environment keys for local, dev, and prod.
 
+## Source of Truth
+
+- Runtime source of truth: GCP Secret Manager
+- Secrets:
+    - `folioo-dev-config`
+    - `folioo-prod-config`
+- GitHub Actions never stores full `.env` blobs anymore (`ENV_DEV`/`ENV_PROD` removed).
+
 ## Secret Manager Naming
 
 - `folioo-dev-config`
 - `folioo-prod-config`
 
-Both secret payloads must keep the same key names used by Finders-style runtime loading.
+Both secret payloads must keep the same key names used by workflow/env loading.
 
 ## Required Keys
 
 - `APP_PROFILE`
-- `DB_HOST` (fallback)
-- `DB_PORT` (fallback)
-- `DB_USERNAME` (fallback)
-- `DB_PASSWORD` (fallback)
-- `DB_SCHEMA` (fallback)
+- `DB_PORT`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `DB_SCHEMA`
+- `SUPABASE_DB_URL`
 - `REDIS_HOST` (ioredis fallback)
 - `REDIS_PORT` (ioredis fallback)
 - `JWT_SECRET_TOKEN`
@@ -35,7 +43,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 
 - `SENTRY_DSN`
 - `CACHE_DRIVER`
-- `SUPABASE_DB_URL`
+- `DB_HOST` (local profile only)
 - `PAYAPP_USER_ID`
 - `PAYAPP_LINK_KEY`
 - `PAYAPP_LINK_VALUE`
@@ -51,7 +59,21 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - dev/prod에서 `CACHE_DRIVER`를 생략해도 Upstash REST 키가 모두 있으면 자동으로 `upstash`로 라우팅된다.
 - local 프로필은 Upstash를 강제하지 않으며 기본값은 ioredis다.
 - dev/prod에서 ioredis 경로를 사용할 경우 `REDIS_HOST=localhost` / `127.0.0.1`는 잘못된 값으로 간주한다.
-- Supabase is external and fixed. Only connection values change per env; provider and ownership do not change.
+- Dev/prod requires `SUPABASE_DB_URL` and does not allow DB_HOST fallback.
+
+## Local Sync (git-ignored)
+
+To manage current runtime values locally without committing them:
+
+```bash
+gcloud secrets versions access latest --project="${GCP_PROJECT_ID}" --secret="folioo-dev-config" \
+  | jq -r 'to_entries[] | "\(.key | ascii_upcase)=\(.value)"' > .env.dev
+
+gcloud secrets versions access latest --project="${GCP_PROJECT_ID}" --secret="folioo-prod-config" \
+  | jq -r 'to_entries[] | "\(.key | ascii_upcase)=\(.value)"' > .env.prod
+```
+
+Both files are ignored by `.gitignore` (`.env.*`).
 
 ## Input Values You Must Provide
 
@@ -69,13 +91,16 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `cloudflare_zone_id`
 - API token with DNS + Tunnel + Access permissions
 
-### Supabase (dev/prod each)
+### PostgreSQL Connection (dev/prod each)
 
-- `DB_HOST`
 - `DB_PORT`
 - `DB_USERNAME`
 - `DB_PASSWORD`
 - `DB_SCHEMA`
+- `SUPABASE_DB_URL`
+
+Current deployment policy for dev/prod is Supabase-only via `SUPABASE_DB_URL`.
+GCE-hosted PostgreSQL is not used as runtime DB for dev/prod.
 
 ### Upstash (dev/prod each)
 
