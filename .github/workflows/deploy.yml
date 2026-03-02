@@ -96,6 +96,7 @@ jobs:
                     --tunnel-through-iap \
                     --quiet \
                     --command="
+                      sudo mkdir -p /home/folioo
                       sudo mv ~/.env.prod /home/folioo/.env.prod
                       sudo chmod 600 /home/folioo/.env.prod
                     "
