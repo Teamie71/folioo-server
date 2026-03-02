@@ -54,6 +54,7 @@ Required OAuth keys:
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
 - `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`, `NAVER_CALLBACK_URL`
 - `CLIENT_REDIRECT_URI`
+- `OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY` (dev/prod 필수)
 
 After changing secrets, trigger deployment so each server rewrites `/home/folioo/.env.dev` or `/home/folioo/.env.prod` from Secret Manager latest.
 

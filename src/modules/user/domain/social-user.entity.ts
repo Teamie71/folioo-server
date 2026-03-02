@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { User } from './user.entity';
 import { LoginType } from './enums/login-type.enum';
+import { oauthRefreshTokenTransformer } from './transformers/oauth-refresh-token.transformer';
 
 @Entity('social_user')
 @Index(['userId'])
@@ -27,7 +28,12 @@ export class SocialUser extends BaseEntity {
     @Column({ length: 255 })
     email: string;
 
-    @Column({ name: 'oauth_refresh_token', type: 'text', nullable: true })
+    @Column({
+        name: 'oauth_refresh_token',
+        type: 'text',
+        nullable: true,
+        transformer: oauthRefreshTokenTransformer,
+    })
     oauthRefreshToken: string | null;
 
     static create(

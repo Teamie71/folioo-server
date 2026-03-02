@@ -11,6 +11,17 @@ const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 const NAVER_TOKEN_URL = 'https://nid.naver.com/oauth2.0/token';
 const SOCIAL_UNLINK_TIMEOUT_MS = 10000;
 
+interface RefreshAccessTokenOptions {
+    tokenUrl: string;
+    clientId: string;
+    clientSecret: string;
+    requestFailureReason: string;
+    responseReadFailureReason: string;
+    httpErrorReason: string;
+    apiErrorReason: string;
+    missingAccessTokenReason: string;
+}
+
 @Injectable()
 export class SocialAccountUnlinkClient {
     private readonly logger = new Logger(SocialAccountUnlinkClient.name);
@@ -129,19 +140,21 @@ export class SocialAccountUnlinkClient {
         );
 
         if (!response.ok) {
+            this.logProviderResponseError(
+                socialUser,
+                'naver_delete_token_http_error',
+                response.status,
+                bodyText
+            );
             throw this.unlinkFailure(socialUser, 'naver_delete_token_http_error', {
                 httpStatus: response.status,
-                responseBody: bodyText.slice(0, 200),
             });
         }
 
         const parsed = this.parseJson(bodyText);
         if (parsed && typeof parsed.error === 'string') {
-            throw this.unlinkFailure(socialUser, 'naver_delete_token_api_error', {
-                providerError: parsed.error,
-                providerErrorDescription:
-                    typeof parsed.error_description === 'string' ? parsed.error_description : null,
-            });
+            this.logProviderApiError(socialUser, 'naver_delete_token_api_error', bodyText);
+            throw this.unlinkFailure(socialUser, 'naver_delete_token_api_error');
         }
     }
 
@@ -149,71 +162,49 @@ export class SocialAccountUnlinkClient {
         socialUser: SocialUser,
         refreshToken: string
     ): Promise<string> {
-        const body = new URLSearchParams({
-            grant_type: 'refresh_token',
-            client_id: this.kakaoClientId,
-            client_secret: this.kakaoClientSecret,
-            refresh_token: refreshToken,
+        return this.refreshAccessToken(socialUser, refreshToken, {
+            tokenUrl: KAKAO_TOKEN_URL,
+            clientId: this.kakaoClientId,
+            clientSecret: this.kakaoClientSecret,
+            requestFailureReason: 'kakao_refresh_token_request_failed',
+            responseReadFailureReason: 'kakao_refresh_token_response_read_failed',
+            httpErrorReason: 'kakao_refresh_token_http_error',
+            apiErrorReason: 'kakao_refresh_token_api_error',
+            missingAccessTokenReason: 'kakao_refresh_token_missing_access_token',
         });
-
-        const response = await this.request(
-            () =>
-                fetch(KAKAO_TOKEN_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-                    },
-                    body,
-                    signal: AbortSignal.timeout(SOCIAL_UNLINK_TIMEOUT_MS),
-                }),
-            socialUser,
-            'kakao_refresh_token_request_failed'
-        );
-
-        const bodyText = await this.readResponseText(
-            response,
-            socialUser,
-            'kakao_refresh_token_response_read_failed'
-        );
-
-        if (!response.ok) {
-            throw this.unlinkFailure(socialUser, 'kakao_refresh_token_http_error', {
-                httpStatus: response.status,
-                responseBody: bodyText.slice(0, 200),
-            });
-        }
-
-        const parsed = this.parseJson(bodyText);
-        if (parsed && typeof parsed.error === 'string') {
-            throw this.unlinkFailure(socialUser, 'kakao_refresh_token_api_error', {
-                providerError: parsed.error,
-                providerErrorDescription:
-                    typeof parsed.error_description === 'string' ? parsed.error_description : null,
-            });
-        }
-
-        const refreshedAccessToken = this.getStringValue(parsed, 'access_token');
-        if (!refreshedAccessToken) {
-            throw this.unlinkFailure(socialUser, 'kakao_refresh_token_missing_access_token');
-        }
-
-        return refreshedAccessToken;
     }
 
     private async refreshNaverAccessToken(
         socialUser: SocialUser,
         refreshToken: string
     ): Promise<string> {
+        return this.refreshAccessToken(socialUser, refreshToken, {
+            tokenUrl: NAVER_TOKEN_URL,
+            clientId: this.naverClientId,
+            clientSecret: this.naverClientSecret,
+            requestFailureReason: 'naver_refresh_token_request_failed',
+            responseReadFailureReason: 'naver_refresh_token_response_read_failed',
+            httpErrorReason: 'naver_refresh_token_http_error',
+            apiErrorReason: 'naver_refresh_token_api_error',
+            missingAccessTokenReason: 'naver_refresh_token_missing_access_token',
+        });
+    }
+
+    private async refreshAccessToken(
+        socialUser: SocialUser,
+        refreshToken: string,
+        options: RefreshAccessTokenOptions
+    ): Promise<string> {
         const body = new URLSearchParams({
             grant_type: 'refresh_token',
-            client_id: this.naverClientId,
-            client_secret: this.naverClientSecret,
+            client_id: options.clientId,
+            client_secret: options.clientSecret,
             refresh_token: refreshToken,
         });
 
         const response = await this.request(
             () =>
-                fetch(NAVER_TOKEN_URL, {
+                fetch(options.tokenUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
@@ -222,34 +213,42 @@ export class SocialAccountUnlinkClient {
                     signal: AbortSignal.timeout(SOCIAL_UNLINK_TIMEOUT_MS),
                 }),
             socialUser,
-            'naver_refresh_token_request_failed'
+            options.requestFailureReason
         );
 
         const bodyText = await this.readResponseText(
             response,
             socialUser,
-            'naver_refresh_token_response_read_failed'
+            options.responseReadFailureReason
         );
 
         if (!response.ok) {
-            throw this.unlinkFailure(socialUser, 'naver_refresh_token_http_error', {
+            this.logProviderResponseError(
+                socialUser,
+                options.httpErrorReason,
+                response.status,
+                bodyText
+            );
+            throw this.unlinkFailure(socialUser, options.httpErrorReason, {
                 httpStatus: response.status,
-                responseBody: bodyText.slice(0, 200),
             });
         }
 
         const parsed = this.parseJson(bodyText);
         if (parsed && typeof parsed.error === 'string') {
-            throw this.unlinkFailure(socialUser, 'naver_refresh_token_api_error', {
-                providerError: parsed.error,
-                providerErrorDescription:
-                    typeof parsed.error_description === 'string' ? parsed.error_description : null,
-            });
+            this.logProviderApiError(socialUser, options.apiErrorReason, bodyText);
+            throw this.unlinkFailure(socialUser, options.apiErrorReason);
         }
 
         const refreshedAccessToken = this.getStringValue(parsed, 'access_token');
         if (!refreshedAccessToken) {
-            throw this.unlinkFailure(socialUser, 'naver_refresh_token_missing_access_token');
+            this.logProviderResponseError(
+                socialUser,
+                options.missingAccessTokenReason,
+                response.status,
+                bodyText
+            );
+            throw this.unlinkFailure(socialUser, options.missingAccessTokenReason);
         }
 
         return refreshedAccessToken;
@@ -294,10 +293,32 @@ export class SocialAccountUnlinkClient {
             `${reason}_response_read_failed`
         );
 
+        this.logProviderResponseError(socialUser, reason, response.status, bodyText);
+
         throw this.unlinkFailure(socialUser, reason, {
             httpStatus: response.status,
-            responseBody: bodyText.slice(0, 200),
         });
+    }
+
+    private logProviderResponseError(
+        socialUser: SocialUser,
+        reason: string,
+        httpStatus: number,
+        responseBody: string
+    ): void {
+        this.logger.error(
+            `Social unlink provider response error: provider=${socialUser.loginType}, userId=${socialUser.userId}, socialUserId=${socialUser.id}, reason=${reason}, httpStatus=${httpStatus}, responseBody=${responseBody}`
+        );
+    }
+
+    private logProviderApiError(
+        socialUser: SocialUser,
+        reason: string,
+        responseBody: string
+    ): void {
+        this.logger.error(
+            `Social unlink provider api error: provider=${socialUser.loginType}, userId=${socialUser.userId}, socialUserId=${socialUser.id}, reason=${reason}, responseBody=${responseBody}`
+        );
     }
 
     private async readResponseText(
