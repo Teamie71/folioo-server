@@ -12,15 +12,15 @@ Region baseline: GCP `asia-northeast3`
 
 ### Line Items
 
-| Category      | Service                | Low | Expected | High | Notes                                                 |
-| ------------- | ---------------------- | --: | -------: | ---: | ----------------------------------------------------- |
-| Compute       | GCE VM(s)              |  30 |       60 |  140 | Depends on machine size/count                         |
-| Registry      | Artifact Registry      |   1 |        3 |   10 | Image storage + pull operations                       |
-| Network       | GCP egress             |   0 |        8 |   35 | Varies by traffic and cache hit                       |
-| Tunnel/CDN    | Cloudflare Tunnel      |   0 |        0 |    0 | Free tier baseline                                    |
-| Cache         | Upstash Redis          |   0 |       10 |   30 | Plan and command volume dependent                     |
-| Database      | PostgreSQL on GCE host |   0 |        0 |   20 | Included in VM baseline; storage/backup overhead only |
-| Observability | Cloud Logging, etc.    |   0 |        5 |   20 | Log ingestion/retention dependent                     |
+| Category      | Service             | Low | Expected | High | Notes                                                       |
+| ------------- | ------------------- | --: | -------: | ---: | ----------------------------------------------------------- |
+| Compute       | GCE VM(s)           |  30 |       60 |  140 | Depends on machine size/count                               |
+| Registry      | Artifact Registry   |   1 |        3 |   10 | Image storage + pull operations                             |
+| Network       | GCP egress          |   0 |        8 |   35 | Varies by traffic and cache hit                             |
+| Tunnel/CDN    | Cloudflare Tunnel   |   0 |        0 |    0 | Free tier baseline                                          |
+| Cache         | Upstash Redis       |   0 |       10 |   30 | Plan and command volume dependent                           |
+| Database      | Supabase (external) |   0 |       25 |   75 | Free tier → Pro plan; storage and API call volume dependent |
+| Observability | Cloud Logging, etc. |   0 |        5 |   20 | Log ingestion/retention dependent                           |
 
 ### Total
 

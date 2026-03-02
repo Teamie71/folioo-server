@@ -145,3 +145,14 @@ jobs:
             - name: Terraform Apply
               if: github.ref == 'refs/heads/dev' && github.event_name == 'push' && steps.vars.outputs.has_tfvars == 'true'
               run: terraform apply -auto-approve -input=false -var-file=terraform.tfvars -lock-timeout=5m
+
+            - name: Export Deploy Config to GCS
+              if: >-
+                  steps.vars.outputs.has_tfvars == 'true' && (
+                    (github.ref == 'refs/heads/dev' && github.event_name == 'push') ||
+                    github.event_name == 'workflow_dispatch'
+                  )
+              run: |
+                  terraform output -raw deploy_config > /tmp/deploy-config.json
+                  gcloud storage cp /tmp/deploy-config.json gs://${{ secrets.TF_STATE_BUCKET }}/deploy-config.json
+                  echo "deploy-config.json uploaded to GCS"

@@ -175,13 +175,13 @@ jobs:
                       # ── 최초 배포: 베이스 인프라 시작 ──
                       if [[ \"\$ACTIVE_SLOT\" == 'none' ]]; then
                         echo 'First deploy: starting base infra'
-                        \$DC up -d traefik cloudflared redis-dev
+                        \$DC up -d traefik cloudflared
                         sleep 10
                       fi
 
                       \$DC --profile blue --profile green pull
                       echo \"Starting green slot (dev-\$GREEN_SLOT)\"
-                      \$DC --profile \$GREEN_SLOT up -d
+                      \$DC --profile \$GREEN_SLOT up -d --remove-orphans
 
                       # ── Health Check ──
                       GREEN_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr \".[] | select(.Service == \\\"dev-\$GREEN_SLOT\\\") | .Name\")
