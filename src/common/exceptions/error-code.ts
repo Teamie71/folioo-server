@@ -44,6 +44,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '탈퇴한 사용자입니다.',
         statusCode: HttpStatus.UNAUTHORIZED,
     },
+    [ErrorCode.SOCIAL_UNLINK_FAILED]: {
+        message: '소셜 계정 연결 해제에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
+    },
     [ErrorCode.ALREADY_VERIFY_USER]: {
         message: '이미 인증 이력이 있는 번호입니다.',
         statusCode: HttpStatus.CONFLICT,

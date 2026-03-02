@@ -9,6 +9,8 @@ import { SocialUserRepository } from '../../infrastructure/repositories/social-u
 import { TermType } from '../../domain/enums/term-type.enum';
 import { UserAgreement } from '../../domain/user-agreement.entity';
 import { AgreeMarketingResDTO } from '../dtos/marketing-agree.dto';
+import { SocialAccountUnlinkClient } from '../../infrastructure/clients/social-account-unlink.client';
+import { Transactional } from 'typeorm-transactional';
 
 const DEFAULT_TERMS_VERSION = 'v1.0';
 
@@ -17,7 +19,8 @@ export class UserService {
     constructor(
         private readonly userRepository: UserRepository,
         private readonly userAgreementRepository: UserAgreementRepository,
-        private readonly socialUserRepository: SocialUserRepository
+        private readonly socialUserRepository: SocialUserRepository,
+        private readonly socialAccountUnlinkClient: SocialAccountUnlinkClient
     ) {}
 
     async getProfile(userId: number): Promise<UserProfileResDTO> {
@@ -67,12 +70,57 @@ export class UserService {
         return AgreeMarketingResDTO.from(savedAgreement.isAgree, savedAgreement.agreeAt);
     }
 
+    async withdraw(userId: number): Promise<void> {
+        const user = await this.findByIdOrThrow(userId);
+        if (user.isDeactivated()) {
+            throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+        }
+
+        const socialUsers = await this.socialUserRepository.findByUserId(userId);
+        for (const socialUser of socialUsers) {
+            await this.socialAccountUnlinkClient.unlinkSocialAccount(socialUser);
+        }
+
+        await this.finalizeWithdrawal(user);
+    }
+
+    @Transactional()
+    private async finalizeWithdrawal(user: User): Promise<void> {
+        const now = new Date();
+        const isDeactivated = await this.userRepository.deactivateById(user.id, now);
+        if (!isDeactivated) {
+            const latestUser = await this.userRepository.findById(user.id);
+            if (!latestUser) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+
+            if (latestUser.isDeactivated()) {
+                throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+            }
+
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        await this.socialUserRepository.deleteByUserId(user.id);
+    }
+
     async findByPhoneNumOrThrow(phoneNum: string): Promise<User> {
         const user = await this.userRepository.findByPhoneNum(phoneNum);
         if (!user) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         return user;
+    }
+
+    async checkUserActive(userId: number): Promise<void> {
+        const user = await this.userRepository.findById(userId);
+        if (!user) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (user.isDeactivated()) {
+            throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+        }
     }
 
     private async findByIdOrThrow(userId: number): Promise<User> {

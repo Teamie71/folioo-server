@@ -33,8 +33,21 @@ export class LoginUsecase {
                 throw new BusinessException(ErrorCode.DEACTIVATED_USER);
             }
 
+            let shouldSaveSocialUser = false;
             if (existingSocialUser.email !== command.email) {
                 existingSocialUser.email = command.email;
+                shouldSaveSocialUser = true;
+            }
+
+            if (
+                command.refreshToken &&
+                existingSocialUser.oauthRefreshToken !== command.refreshToken
+            ) {
+                existingSocialUser.oauthRefreshToken = command.refreshToken;
+                shouldSaveSocialUser = true;
+            }
+
+            if (shouldSaveSocialUser) {
                 await this.socialUserRepository.save(existingSocialUser);
             }
         } else {
@@ -45,7 +58,8 @@ export class LoginUsecase {
                 user.id,
                 command.socialType,
                 command.id,
-                command.email
+                command.email,
+                command.refreshToken
             );
             await this.socialUserRepository.save(socialUser);
         }

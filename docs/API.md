@@ -185,6 +185,8 @@ Legend:
 - GET `/users/me/tickets/expiring` -> IMPLEMENTED
 - PATCH `/users/me` -> IMPLEMENTED
 - PATCH `/users/me/marketing-consent` -> IMPLEMENTED
+- DELETE `/users/me` -> IMPLEMENTED (soft delete + social unlink policy)
+    - Provider behavior: Google/Kakao/Naver unlink uses stored OAuth refresh token (Naver/Kakao refresh access token first when needed).
 
 ### Experience
 

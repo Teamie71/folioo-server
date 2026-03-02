@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Patch, Query } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Headers, Patch, Query, Req } from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UpdateUserNameReqDTO, UserProfileResDTO } from '../application/dtos/user-profile.dto';
@@ -12,14 +12,18 @@ import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
 import { TicketExpiringQueryReqDTO } from 'src/modules/ticket/application/dtos/ticket-expiring-query.dto';
+import { extractAccessTokenFromAuthorization } from 'src/modules/auth/infrastructure/utils/access-token.util';
+import type { Request } from 'express';
 import { UserTicketFacade } from '../application/facades/user-ticket.facade';
+import { UserAuthFacade } from '../application/facades/user-auth.facade';
 
 @ApiTags('User')
 @Controller('users')
 export class UserController {
     constructor(
         private readonly userService: UserService,
-        private readonly userTicketFacade: UserTicketFacade
+        private readonly userTicketFacade: UserTicketFacade,
+        private readonly userAuthFacade: UserAuthFacade
     ) {}
 
     @Get('me')
@@ -104,5 +108,40 @@ export class UserController {
         @Body() body: AgreeMarketingReqDTO
     ): Promise<AgreeMarketingResDTO> {
         return this.userService.updateMarketingConsent(userId, body.isMarketingAgreed);
+    }
+
+    @Delete('me')
+    @ApiOperation({
+        summary: '회원 탈퇴',
+        description:
+            '사용자의 계정을 탈퇴 처리하고 연결된 소셜 로그인 계정을 저장된 OAuth 리프레시 토큰 기반으로 연결 해제합니다.',
+    })
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: '회원 탈퇴가 완료되었습니다.',
+            },
+        },
+    })
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.USER_NOT_FOUND,
+        ErrorCode.DEACTIVATED_USER,
+        ErrorCode.SOCIAL_UNLINK_FAILED
+    )
+    async withdraw(
+        @User('sub') userId: number,
+        @Headers('authorization') authorization: string | undefined,
+        @Req() req: Request
+    ): Promise<string> {
+        const accessToken = extractAccessTokenFromAuthorization(authorization)!;
+
+        const refreshToken = req.cookies?.refreshToken as string | undefined;
+
+        await this.userAuthFacade.withdraw(userId, accessToken, refreshToken ?? null);
+        return '회원 탈퇴가 완료되었습니다.';
     }
 }

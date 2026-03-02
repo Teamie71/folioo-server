@@ -39,4 +39,19 @@ export class UserRepository {
             },
         });
     }
+
+    async deactivateById(userId: number, deactivatedAt: Date): Promise<boolean> {
+        const result = await this.userRepository
+            .createQueryBuilder()
+            .update(User)
+            .set({
+                isActive: false,
+                deactivatedAt,
+            })
+            .where('id = :userId', { userId })
+            .andWhere('isActive = :isActive', { isActive: true })
+            .execute();
+
+        return (result.affected ?? 0) > 0;
+    }
 }

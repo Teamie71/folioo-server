@@ -37,6 +37,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `REDIS_PORT` (ioredis fallback)
 - `JWT_SECRET_TOKEN`
 - `JWT_REFRESH_TOKEN`
+- `OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY` (dev/prod 필수)
 - `KAKAO_CLIENT_ID`
 - `KAKAO_CLIENT_SECRET`
 - `KAKAO_CALLBACK_URL`
@@ -129,6 +130,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "NAVER_CALLBACK_URL": "https://dev-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
+    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key",
     "OPENROUTER_API_KEY": "openrouter-api-key"
 }
 ```
@@ -154,6 +156,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "NAVER_CALLBACK_URL": "https://prod-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
+    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key",
     "OPENROUTER_API_KEY": "openrouter-api-key"
 }
 ```
@@ -164,6 +167,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - Google client id/secret
 - Naver client id/secret
 - JWT access/refresh secrets
+- OAuth refresh token encryption key
 - OpenRouter API key
 - Sentry DSN (if enabled)
 - PayApp keys (if enabled)
