@@ -37,6 +37,12 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `KAKAO_CLIENT_ID`
 - `KAKAO_CLIENT_SECRET`
 - `KAKAO_CALLBACK_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_CALLBACK_URL`
+- `NAVER_CLIENT_ID`
+- `NAVER_CLIENT_SECRET`
+- `NAVER_CALLBACK_URL`
 - `CLIENT_REDIRECT_URI`
 - `CORS_ORIGINS`
 - `AI_BASE_URL`
@@ -110,6 +116,12 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "REDIS_PORT": "6379",
     "KAKAO_CLIENT_ID": "kakao-client-id",
     "KAKAO_CLIENT_SECRET": "kakao-client-secret",
+    "GOOGLE_CLIENT_ID": "google-client-id",
+    "GOOGLE_CLIENT_SECRET": "google-client-secret",
+    "GOOGLE_CALLBACK_URL": "https://dev-api.folioo.ai.kr/auth/google/callback",
+    "NAVER_CLIENT_ID": "naver-client-id",
+    "NAVER_CLIENT_SECRET": "naver-client-secret",
+    "NAVER_CALLBACK_URL": "https://dev-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
     "OPENROUTER_API_KEY": "openrouter-api-key"
@@ -129,6 +141,12 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "REDIS_PORT": "6379",
     "KAKAO_CLIENT_ID": "kakao-client-id",
     "KAKAO_CLIENT_SECRET": "kakao-client-secret",
+    "GOOGLE_CLIENT_ID": "google-client-id",
+    "GOOGLE_CLIENT_SECRET": "google-client-secret",
+    "GOOGLE_CALLBACK_URL": "https://prod-api.folioo.ai.kr/auth/google/callback",
+    "NAVER_CLIENT_ID": "naver-client-id",
+    "NAVER_CLIENT_SECRET": "naver-client-secret",
+    "NAVER_CALLBACK_URL": "https://prod-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
     "OPENROUTER_API_KEY": "openrouter-api-key"
@@ -138,6 +156,8 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 ### OAuth and app secrets
 
 - Kakao client id/secret
+- Google client id/secret
+- Naver client id/secret
 - JWT access/refresh secrets
 - OpenRouter API key
 - Sentry DSN (if enabled)
