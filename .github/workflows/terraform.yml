@@ -56,9 +56,12 @@ jobs:
 
                   if [ "${{ github.event_name }}" = "pull_request" ]; then
                     echo "terraform.tfvars not found in bucket for PR; generating safe fallback vars"
-                    printf 'project_id = "%s"\ngithub_repository = "%s"\nenable_cloudflare = false\n' \
-                      '${{ secrets.GCP_PROJECT_ID }}' \
-                      '${{ github.repository }}' > terraform.tfvars
+                    cat > terraform.tfvars <<EOF
+                  project_id           = "${{ secrets.GCP_PROJECT_ID }}"
+                  github_repository    = "${{ github.repository }}"
+                  enable_cloudflare    = false
+                  cloudflare_api_token = "00000000000000000000000000000000000000-1"
+                  EOF
                     echo "has_tfvars=true" >> "$GITHUB_OUTPUT"
                     exit 0
                   fi
