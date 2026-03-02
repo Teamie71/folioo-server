@@ -39,6 +39,13 @@ Both secret payloads must keep the same key names used by workflow/env loading.
 - `SWAGGER_PASSWORD`
 - `OPENROUTER_API_KEY`
 
+## Required Keys (Infrastructure)
+
+> 이 키들은 GCP Secret Manager의 app config secret이 아닌, **인프라 레벨 환경변수**입니다.
+> `docker-compose.infra.yml`의 `cloudflared` 컨테이너가 읽습니다.
+
+- `TUNNEL_TOKEN` — Cloudflare Tunnel 토큰. Terraform apply 후 `terraform output -raw dev_tunnel_token` (또는 `prod_tunnel_token`)으로 획득하여 Secret Manager의 `folioo-dev-config`/`folioo-prod-config`에 추가해야 합니다.
+
 ## Optional Keys
 
 - `SENTRY_DSN`
