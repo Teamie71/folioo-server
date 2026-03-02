@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Patch, Query } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Patch, Query } from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UpdateUserNameReqDTO, UserProfileResDTO } from '../application/dtos/user-profile.dto';
@@ -104,5 +104,32 @@ export class UserController {
         @Body() body: AgreeMarketingReqDTO
     ): Promise<AgreeMarketingResDTO> {
         return this.userService.updateMarketingConsent(userId, body.isMarketingAgreed);
+    }
+
+    @Delete('me')
+    @ApiOperation({
+        summary: '회원 탈퇴',
+        description:
+            '사용자의 계정을 탈퇴 처리하고 연결된 소셜 로그인 계정을 저장된 OAuth 리프레시 토큰 기반으로 연결 해제합니다.',
+    })
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: '회원 탈퇴가 완료되었습니다.',
+            },
+        },
+    })
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.USER_NOT_FOUND,
+        ErrorCode.DEACTIVATED_USER,
+        ErrorCode.SOCIAL_UNLINK_FAILED
+    )
+    async withdraw(@User('sub') userId: number): Promise<string> {
+        await this.userService.withdraw(userId);
+        return '회원 탈퇴가 완료되었습니다.';
     }
 }

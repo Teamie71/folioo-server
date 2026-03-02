@@ -10,6 +10,7 @@ import { SocialUserRepository } from './infrastructure/repositories/social-user.
 import { UserService } from './application/services/user.service';
 import { TicketModule } from '../ticket/ticket.module';
 import { UserTicketFacade } from './application/facades/user-ticket.facade';
+import { SocialAccountUnlinkClient } from './infrastructure/clients/social-account-unlink.client';
 
 @Module({
     imports: [TypeOrmModule.forFeature([User, SocialUser, UserAgreement]), TicketModule],
@@ -18,6 +19,7 @@ import { UserTicketFacade } from './application/facades/user-ticket.facade';
         UserRepository,
         SocialUserRepository,
         UserAgreementRepository,
+        SocialAccountUnlinkClient,
         UserService,
         UserTicketFacade,
     ],

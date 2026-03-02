@@ -9,6 +9,8 @@ import { SocialUserRepository } from '../../infrastructure/repositories/social-u
 import { TermType } from '../../domain/enums/term-type.enum';
 import { UserAgreement } from '../../domain/user-agreement.entity';
 import { AgreeMarketingResDTO } from '../dtos/marketing-agree.dto';
+import { SocialAccountUnlinkClient } from '../../infrastructure/clients/social-account-unlink.client';
+import { Transactional } from 'typeorm-transactional';
 
 const DEFAULT_TERMS_VERSION = 'v1.0';
 
@@ -17,7 +19,8 @@ export class UserService {
     constructor(
         private readonly userRepository: UserRepository,
         private readonly userAgreementRepository: UserAgreementRepository,
-        private readonly socialUserRepository: SocialUserRepository
+        private readonly socialUserRepository: SocialUserRepository,
+        private readonly socialAccountUnlinkClient: SocialAccountUnlinkClient
     ) {}
 
     async getProfile(userId: number): Promise<UserProfileResDTO> {
@@ -65,6 +68,33 @@ export class UserService {
         const savedAgreement = await this.userAgreementRepository.save(agreement);
 
         return AgreeMarketingResDTO.from(savedAgreement.isAgree, savedAgreement.agreeAt);
+    }
+
+    async withdraw(userId: number): Promise<void> {
+        const user = await this.findByIdOrThrow(userId);
+        if (user.isDeactivated()) {
+            throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+        }
+
+        const socialUsers = await this.socialUserRepository.findByUserId(userId);
+        for (const socialUser of socialUsers) {
+            await this.socialAccountUnlinkClient.unlinkSocialAccount(socialUser);
+        }
+
+        await this.finalizeWithdrawal(userId);
+    }
+
+    @Transactional()
+    private async finalizeWithdrawal(userId: number): Promise<void> {
+        const user = await this.findByIdOrThrow(userId);
+        if (user.isDeactivated()) {
+            throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+        }
+
+        user.isActive = false;
+        user.deactivatedAt = new Date();
+        await this.userRepository.save(user);
+        await this.socialUserRepository.deleteByUserId(userId);
     }
 
     async findByPhoneNumOrThrow(phoneNum: string): Promise<User> {
