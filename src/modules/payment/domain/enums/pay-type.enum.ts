@@ -1,0 +1,9 @@
+export enum PayType {
+    CARD = 'CARD',
+    PHONE = 'PHONE',
+    BANK_TRANSFER = 'BANK_TRANSFER',
+    VIRTUAL_ACCOUNT = 'VIRTUAL_ACCOUNT',
+    KAKAO_PAY = 'KAKAO_PAY',
+    NAVER_PAY = 'NAVER_PAY',
+    TOSS_PAY = 'TOSS_PAY',
+}

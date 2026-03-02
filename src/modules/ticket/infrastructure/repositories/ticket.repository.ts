@@ -1,0 +1,118 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Ticket } from '../../domain/entities/ticket.entity';
+import { TicketStatus } from '../../domain/enums/ticket-status.enum';
+import { TicketType } from '../../domain/enums/ticket-type.enum';
+
+interface TicketCountByType {
+    type: TicketType;
+    count: number;
+}
+
+interface ExpiringTicketInfo {
+    type: TicketType;
+    count: number;
+    earliestExpiredAt: string | Date | null;
+}
+
+@Injectable()
+export class TicketRepository {
+    constructor(
+        @InjectRepository(Ticket)
+        private readonly ticketRepository: Repository<Ticket>
+    ) {}
+
+    async save(entity: Ticket): Promise<Ticket> {
+        return this.ticketRepository.save(entity);
+    }
+
+    async saveAll(entities: Ticket[]): Promise<Ticket[]> {
+        return this.ticketRepository.save(entities);
+    }
+
+    async findById(id: number): Promise<Ticket | null> {
+        return this.ticketRepository.findOne({ where: { id } });
+    }
+
+    async findOneAvailableForConsume(
+        userId: number,
+        type: TicketType,
+        now: Date
+    ): Promise<Ticket | null> {
+        const qb = this.ticketRepository
+            .createQueryBuilder('ticket')
+            .where('ticket.userId = :userId', { userId })
+            .andWhere('ticket.type = :type', { type })
+            .andWhere('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .andWhere('(ticket.expiredAt IS NULL OR ticket.expiredAt > :now)', { now })
+            .orderBy('ticket.expiredAt', 'ASC', 'NULLS LAST')
+            .addOrderBy('ticket.id', 'ASC')
+            .setLock('pessimistic_write');
+
+        if (typeof qb.setOnLocked === 'function') {
+            qb.setOnLocked('skip_locked');
+        }
+
+        return qb.getOne();
+    }
+
+    async existsById(id: number): Promise<boolean> {
+        return this.ticketRepository.exists({ where: { id } });
+    }
+
+    async countUsedByPaymentId(paymentId: number): Promise<number> {
+        return this.ticketRepository.count({
+            where: {
+                paymentId,
+                status: TicketStatus.USED,
+            },
+        });
+    }
+
+    async expireAvailableByPaymentId(paymentId: number, expiredAt: Date): Promise<void> {
+        await this.ticketRepository.update(
+            {
+                paymentId,
+                status: TicketStatus.AVAILABLE,
+            },
+            {
+                status: TicketStatus.EXPIRED,
+                expiredAt,
+            }
+        );
+    }
+
+    async countAvailableByUserIdGroupByType(userId: number): Promise<TicketCountByType[]> {
+        const rows = await this.ticketRepository
+            .createQueryBuilder('ticket')
+            .select('ticket.type', 'type')
+            .addSelect('COUNT(*)::int', 'count')
+            .where('ticket.userId = :userId', { userId })
+            .andWhere('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .groupBy('ticket.type')
+            .getRawMany<TicketCountByType>();
+
+        return rows;
+    }
+
+    async findExpiringByUserIdGroupByType(
+        userId: number,
+        now: Date,
+        expiredBefore: Date
+    ): Promise<ExpiringTicketInfo[]> {
+        const rows = await this.ticketRepository
+            .createQueryBuilder('ticket')
+            .select('ticket.type', 'type')
+            .addSelect('COUNT(*)::int', 'count')
+            .addSelect('MIN(ticket.expiredAt)', 'earliestExpiredAt')
+            .where('ticket.userId = :userId', { userId })
+            .andWhere('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .andWhere('ticket.expiredAt > :now', { now })
+            .andWhere('ticket.expiredAt <= :expiredBefore', { expiredBefore })
+            .groupBy('ticket.type')
+            .getRawMany<ExpiringTicketInfo>();
+
+        return rows;
+    }
+}

@@ -10,26 +10,58 @@ const baseResponseSchema = {
     error: { type: 'object', nullable: true, example: null },
 };
 
+interface ApiCommonResponseOptions {
+    description?: string;
+    exampleResult?: unknown;
+}
+
 // 단일 객체 응답
-export const ApiCommonResponse = <T extends Type<any>>(model: T) => {
+export const ApiCommonResponse = <T extends Type<unknown>>(
+    model: T,
+    options?: ApiCommonResponseOptions
+) => {
+    const schema: {
+        properties: {
+            timestamp: { type: string; example: string };
+            isSuccess: { type: string; example: boolean };
+            error: { type: string; nullable: boolean; example: null };
+            result: { $ref: string };
+        };
+        example?: {
+            timestamp: string;
+            isSuccess: boolean;
+            error: null;
+            result: unknown;
+        };
+    } = {
+        properties: {
+            ...baseResponseSchema,
+            result: {
+                $ref: getSchemaPath(model),
+            },
+        },
+    };
+
+    if (options?.exampleResult !== undefined) {
+        schema.example = {
+            timestamp: '2024-01-02T12:34:56.000Z',
+            isSuccess: true,
+            error: null,
+            result: options.exampleResult,
+        };
+    }
+
     return applyDecorators(
         ApiExtraModels(CommonResponse, model),
         ApiOkResponse({
-            description: '성공 응답',
-            schema: {
-                properties: {
-                    ...baseResponseSchema,
-                    result: {
-                        $ref: getSchemaPath(model),
-                    },
-                },
-            },
+            description: options?.description ?? '성공 응답',
+            schema,
         })
     );
 };
 
 // 배열 응답
-export const ApiCommonResponseArray = <T extends Type<any>>(model: T) => {
+export const ApiCommonResponseArray = <T extends Type<unknown>>(model: T) => {
     return applyDecorators(
         ApiExtraModels(CommonResponse, model),
         ApiOkResponse({

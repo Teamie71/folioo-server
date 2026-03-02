@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsPhoneNumber, IsString, Length } from 'class-validator';
 
-export class SendSmsReqDto {
+export class SendSmsReqDTO {
     @ApiProperty({ description: '전화번호', example: '01012345678' })
     @IsString()
     @IsPhoneNumber('KR')
     phoneNum: string;
 }
 
-export class VerifySmsReqDto {
+export class VerifySmsReqDTO {
     @ApiProperty({ description: '전화번호', example: '01012345678' })
     @IsString()
     @IsPhoneNumber('KR')

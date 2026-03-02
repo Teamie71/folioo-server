@@ -1,0 +1,141 @@
+import { Injectable } from '@nestjs/common';
+import { Transactional } from 'typeorm-transactional';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { Ticket } from '../../domain/entities/ticket.entity';
+import { TicketSource } from '../../domain/enums/ticket-source.enum';
+import { TicketStatus } from '../../domain/enums/ticket-status.enum';
+import { TicketType } from '../../domain/enums/ticket-type.enum';
+import { TicketRepository } from '../../infrastructure/repositories/ticket.repository';
+import { TicketBalanceResDTO } from '../dtos/ticket-balance.dto';
+import { TicketExpiringResDTO } from '../dtos/ticket-expiring.dto';
+
+type TicketRewardItem = {
+    type: TicketType;
+    quantity: number;
+};
+
+type TicketIssueSource =
+    | {
+          source: TicketSource.PURCHASE;
+          paymentId: number;
+      }
+    | {
+          source: TicketSource.EVENT;
+          eventParticipationId: number;
+      };
+
+@Injectable()
+export class TicketService {
+    constructor(private readonly ticketRepository: TicketRepository) {}
+
+    async findByIdOrThrow(id: number): Promise<Ticket> {
+        const ticket = await this.ticketRepository.findById(id);
+        if (!ticket) {
+            throw new BusinessException(ErrorCode.TICKET_NOT_FOUND);
+        }
+        return ticket;
+    }
+
+    async issueTicketsForPayment(
+        userId: number,
+        paymentId: number,
+        type: TicketType,
+        quantity: number
+    ): Promise<Ticket[]> {
+        return this.issueTickets(
+            userId,
+            {
+                source: TicketSource.PURCHASE,
+                paymentId,
+            },
+            [{ type, quantity }]
+        );
+    }
+
+    async issueTickets(
+        userId: number,
+        source: TicketIssueSource,
+        rewards: TicketRewardItem[]
+    ): Promise<Ticket[]> {
+        const tickets = rewards.flatMap((reward) => {
+            return Array.from({ length: reward.quantity }).map(() => {
+                const ticket = new Ticket();
+                ticket.userId = userId;
+                ticket.source = source.source;
+
+                if (source.source === TicketSource.PURCHASE) {
+                    ticket.paymentId = source.paymentId;
+                }
+
+                if (source.source === TicketSource.EVENT) {
+                    ticket.eventParticipationId = source.eventParticipationId;
+                }
+
+                ticket.type = reward.type;
+                ticket.status = TicketStatus.AVAILABLE;
+                return ticket;
+            });
+        });
+
+        return this.ticketRepository.saveAll(tickets);
+    }
+
+    async revokeAvailableTicketsForPayment(paymentId: number): Promise<void> {
+        const usedCount = await this.ticketRepository.countUsedByPaymentId(paymentId);
+        if (usedCount > 0) {
+            throw new BusinessException(ErrorCode.PAYMENT_CANCEL_NOT_ALLOWED);
+        }
+
+        await this.ticketRepository.expireAvailableByPaymentId(paymentId, new Date());
+    }
+
+    @Transactional()
+    async consumeTicket(userId: number, type: TicketType): Promise<Ticket> {
+        const now = new Date();
+        const ticket = await this.ticketRepository.findOneAvailableForConsume(userId, type, now);
+
+        if (!ticket) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_TICKETS);
+        }
+
+        ticket.status = TicketStatus.USED;
+        ticket.usedAt = now;
+        return this.ticketRepository.save(ticket);
+    }
+
+    async getBalance(userId: number): Promise<TicketBalanceResDTO> {
+        const rows = await this.ticketRepository.countAvailableByUserIdGroupByType(userId);
+
+        const countMap = new Map(rows.map((r) => [r.type, r.count]));
+
+        return TicketBalanceResDTO.from(
+            countMap.get(TicketType.EXPERIENCE) ?? 0,
+            countMap.get(TicketType.PORTFOLIO_CORRECTION) ?? 0
+        );
+    }
+
+    async getExpiring(userId: number, days: number): Promise<TicketExpiringResDTO> {
+        const now = new Date();
+        const expiredBefore = new Date(now);
+        expiredBefore.setDate(expiredBefore.getDate() + days);
+
+        const rows = await this.ticketRepository.findExpiringByUserIdGroupByType(
+            userId,
+            now,
+            expiredBefore
+        );
+
+        const infoMap = new Map(rows.map((r) => [r.type, r]));
+
+        const experienceInfo = infoMap.get(TicketType.EXPERIENCE);
+        const correctionInfo = infoMap.get(TicketType.PORTFOLIO_CORRECTION);
+
+        return TicketExpiringResDTO.from(
+            experienceInfo?.count ?? 0,
+            experienceInfo?.earliestExpiredAt ? new Date(experienceInfo.earliestExpiredAt) : null,
+            correctionInfo?.count ?? 0,
+            correctionInfo?.earliestExpiredAt ? new Date(correctionInfo.earliestExpiredAt) : null
+        );
+    }
+}

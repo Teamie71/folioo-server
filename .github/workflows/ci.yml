@@ -1,4 +1,4 @@
-name: CI (Lint & Build)
+name: CI (Lint & Build & Docker)
 
 on:
   pull_request:
@@ -22,7 +22,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       # pnpm 캐싱 (빌드 속도 향상)
       - name: Get pnpm store directory
@@ -46,3 +46,24 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+  # =========================================================
+  # Docker 빌드 테스트 (실제 CD 환경과 동일하게 검증)
+  # =========================================================
+  docker-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image (Test Only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: folioo-server:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

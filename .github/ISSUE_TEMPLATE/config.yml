@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 문서 참고
+    url: https://github.com/Teamie71/folioo-server/tree/dev/docs
+    about: 프로젝트 아키텍처, 컨벤션, 코드 스타일 문서를 확인하세요.

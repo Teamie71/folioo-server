@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    Headers,
+    HttpStatus,
+    Post,
+    Req,
+    Res,
+    UseGuards,
+} from '@nestjs/common';
 import {
     ApiBody,
     ApiOkResponse,
@@ -10,11 +20,35 @@ import {
 import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { SendSmsReqDto, VerifySmsReqDto } from '../application/dtos/sms-auth.dto';
+import { SendSmsReqDTO, VerifySmsReqDTO } from '../application/dtos/sms-auth.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { SocialUser } from 'src/common/decorators/social-user.decorator';
+import type { SocialUserAfterOAuth, UserAfterAuth } from '../domain/types/jwt-payload.type';
+import type { Request, Response } from 'express';
+import { LoginUsecase } from '../application/usecases/login.usecase';
+import { ConfigService } from '@nestjs/config';
+import { Public } from 'src/common/decorators/public.decorator';
+import { JwtRefreshGuard } from '../infrastructure/guards/jwt-refresh.guard';
+import { TokenService } from '../infrastructure/services/token.service';
+import { User } from 'src/common/decorators/user.decorator';
+import { StringValue } from 'ms';
+import { TimeUtil } from 'src/common/utils/time.util';
+import { LogoutUsecase } from '../application/usecases/logout.usecase';
+import { extractAccessTokenFromAuthorization } from '../infrastructure/utils/access-token.util';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly loginUsecase: LoginUsecase,
+        private readonly tokenService: TokenService,
+        private readonly logoutUsecase: LogoutUsecase
+    ) {}
+
+    @Get('kakao')
+    @Public()
+    @UseGuards(AuthGuard('kakao'))
     @ApiOperation({
         summary: '카카오 로그인 트리거',
         description: '카카오 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -33,17 +67,11 @@ export class AuthController {
         status: 302,
         description: '카카오 로그인 페이지로 리다이렉트됨.',
     })
-    @Get('kakao')
-    kakaoLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    async kakaoLogin() {}
 
+    @Get('kakao/callback')
+    @Public()
+    @UseGuards(AuthGuard('kakao'))
     @ApiOperation({
         summary: '카카오 로그인 콜백',
         description:
@@ -53,31 +81,16 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    @Get('kakao/callback')
-    kakaoCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async kakaoCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        await this.handleSocialLoginRedirect(user, res);
     }
 
-    @ApiOperation({
-        summary: '서비스 내 카카오 로그인 사용자 탈퇴',
-        description: '카카오 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('kakao/unlink')
-    kakaoUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
-    }
-
+    @Get('google')
+    @Public()
+    @UseGuards(AuthGuard('google'))
     @ApiOperation({
         summary: '구글 로그인 트리거',
         description: '구글 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -96,17 +109,11 @@ export class AuthController {
         status: 302,
         description: '구글 로그인 페이지로 리다이렉트됨.',
     })
-    @Get('google')
-    googleLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    async googleLogin() {}
 
+    @Get('google/callback')
+    @Public()
+    @UseGuards(AuthGuard('google'))
     @ApiOperation({
         summary: '구글 로그인 콜백',
         description:
@@ -116,31 +123,15 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    @Get('google/callback')
-    googleCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async googleCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        await this.handleSocialLoginRedirect(user, res);
     }
 
-    @ApiOperation({
-        summary: '서비스 내 구글 로그인 사용자 탈퇴',
-        description: '구글 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('google/unlink')
-    googleUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
-    }
-
+    @Get('naver')
+    @Public()
     @ApiOperation({
         summary: '네이버 로그인 트리거',
         description: '네이버 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -159,17 +150,12 @@ export class AuthController {
         status: 302,
         description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
-    @Get('naver')
-    naverLogin(
-        @Query('redirect_url') redirect_url?: string,
-        @Query('redirect_path') redirect_path?: string
-    ) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, {
-            url: redirect_url,
-            path: redirect_path,
-        });
-    }
+    @UseGuards(AuthGuard('naver'))
+    async naverLogin() {}
 
+    @Get('naver/callback')
+    @Public()
+    @UseGuards(AuthGuard('naver'))
     @ApiOperation({
         summary: '네이버 로그인 콜백',
         description:
@@ -179,51 +165,63 @@ export class AuthController {
         status: 302,
         description: '프론트엔드 페이지로 리다이렉트됨',
     })
-    @Get('naver/callback')
-    naverCallback(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async naverCallback(
+        @SocialUser() user: SocialUserAfterOAuth,
+        @Res() res: Response
+    ): Promise<void> {
+        await this.handleSocialLoginRedirect(user, res);
     }
 
-    @ApiOperation({
-        summary: '서비스 내 네이버 로그인 사용자 탈퇴',
-        description: '네이버 연결을 끊고, 서비스 내 계정을 비활성화합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Unlinked & Deactivated',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('naver/unlink')
-    naverUnlink(): Promise<void> {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    private async handleSocialLoginRedirect(
+        user: SocialUserAfterOAuth,
+        res: Response
+    ): Promise<void> {
+        const refreshToken = await this.loginUsecase.execute(user);
+        const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+            '14d') as StringValue;
+        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: isLocal ? 'lax' : 'none',
+            path: '/',
+            maxAge: TimeUtil.toMs(expiresIn),
+        });
+        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
+        res.redirect(`${clientUrl}?status=success`);
     }
 
+    @Post('refresh')
+    @Public()
+    @UseGuards(JwtRefreshGuard)
     @ApiOperation({
         summary: '토큰 재발급',
-        description: '유효한 refreshToken을 사용해 accessToken을 재발급 받습니다.',
+        description: '유효한 refreshToken을 사용해 accessToken을 발급 받습니다.',
     })
-    @ApiOkResponse({
+    @ApiResponse({
+        status: HttpStatus.CREATED,
         schema: {
             example: {
                 timestamp: '2026-01-02T14:56:23.295Z',
                 isSuccess: true,
                 error: null,
-                result: 'Generate New AccessToken',
+                result: 'new AccessToken',
             },
         },
     })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('refresh')
-    handleRefresh() {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    @ApiCommonErrorResponse(
+        ErrorCode.REFRESH_TOKEN_EXPIRED,
+        ErrorCode.REFRESH_TOKEN_MISSING,
+        ErrorCode.INVALID_REFRESH_TOKEN
+    )
+    async handleRefresh(@User() user: UserAfterAuth) {
+        const accessToken = await this.tokenService.generateAccessToken({
+            sub: user.sub,
+        });
+        return accessToken;
     }
 
+    @Post('logout')
     @ApiOperation({
         summary: '로그아웃',
         description: 'JWT 토큰을 만료시키고 서버에서 로그아웃을 수행합니다.',
@@ -239,11 +237,35 @@ export class AuthController {
         },
     })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    @Post('logout')
-    handleLogout() {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    async handleLogout(
+        @Headers('authorization') authorization: string | undefined,
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<string> {
+        const refreshToken = req.cookies?.refreshToken as string | undefined;
+        const accessToken = extractAccessTokenFromAuthorization(authorization);
+
+        if (!accessToken) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        await this.logoutUsecase.execute({
+            accessToken,
+            refreshToken: refreshToken ?? null,
+        });
+
+        const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: isLocal ? 'lax' : 'none',
+            path: '/',
+        });
+
+        return 'Logout from Server';
     }
 
+    @Post('sms/send')
     @ApiOperation({
         summary: '전화번호 인증번호 발송',
         description: '전화번호 인증번호를 발송합니다.',
@@ -258,13 +280,13 @@ export class AuthController {
             },
         },
     })
-    @ApiBody({ type: SendSmsReqDto })
+    @ApiBody({ type: SendSmsReqDTO })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ALREADY_VERIFY_USER)
-    @Post('sms/send')
-    handleSmsSend(@Body() body: SendSmsReqDto): string {
+    handleSmsSend(@Body() body: SendSmsReqDTO): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 
+    @Post('sms/verify')
     @ApiOperation({
         summary: '전화번호 인증번호 검증',
         description: '발송된 인증정보가 올바른지 확인합니다.',
@@ -279,14 +301,13 @@ export class AuthController {
             },
         },
     })
-    @ApiBody({ type: VerifySmsReqDto })
+    @ApiBody({ type: VerifySmsReqDTO })
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.SMS_CODE_MISMATCH,
         ErrorCode.SMS_CODE_NOT_FOUND
     )
-    @Post('sms/verify')
-    handleSmsVerify(@Body() body: VerifySmsReqDto): string {
+    handleSmsVerify(@Body() body: VerifySmsReqDTO): string {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 }
