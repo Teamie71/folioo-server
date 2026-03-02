@@ -161,6 +161,10 @@ Legend:
 
 - GET `/health` -> IMPLEMENTED (Public)
 
+### Internal
+
+- GET `/api/v1/internal/health` -> IMPLEMENTED (Public + X-API-Key required)
+
 ### Auth
 
 - GET `/auth/kakao` -> IMPLEMENTED (Public, OAuth redirect)
