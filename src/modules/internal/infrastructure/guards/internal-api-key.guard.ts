@@ -35,14 +35,11 @@ export class InternalApiKeyGuard implements CanActivate {
     }
 
     private extractApiKey(rawApiKey: string | string[] | undefined): string | null {
-        if (typeof rawApiKey === 'string') {
-            const trimmed = rawApiKey.trim();
-            return trimmed.length > 0 ? trimmed : null;
-        }
+        const normalizedApiKey = Array.isArray(rawApiKey) ? rawApiKey[0] : rawApiKey;
 
-        if (Array.isArray(rawApiKey)) {
-            const firstValue = rawApiKey[0]?.trim();
-            return firstValue && firstValue.length > 0 ? firstValue : null;
+        if (typeof normalizedApiKey === 'string') {
+            const trimmed = normalizedApiKey.trim();
+            return trimmed.length > 0 ? trimmed : null;
         }
 
         return null;

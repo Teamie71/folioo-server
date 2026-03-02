@@ -22,7 +22,7 @@ export class InternalController {
         description: 'Verifies internal API key authentication and routing.',
     })
     @ApiCommonResponse(InternalHealthResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.INTERNAL_SERVER_ERROR)
     getHealth(): InternalHealthResDTO {
         return InternalHealthResDTO.ok();
     }

@@ -2,15 +2,17 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class InternalHealthResDTO {
     @ApiProperty({ example: 'folioo-server' })
-    service: string;
+    readonly service: string;
 
     @ApiProperty({ example: 'ok' })
-    status: string;
+    readonly status: string;
+
+    constructor(service: string, status: string) {
+        this.service = service;
+        this.status = status;
+    }
 
     static ok(): InternalHealthResDTO {
-        const dto = new InternalHealthResDTO();
-        dto.service = 'folioo-server';
-        dto.status = 'ok';
-        return dto;
+        return new InternalHealthResDTO('folioo-server', 'ok');
     }
 }
