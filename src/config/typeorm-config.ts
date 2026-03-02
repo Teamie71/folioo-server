@@ -21,7 +21,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
             password: supabaseOptions?.password ?? this.configService.get<string>('DB_PASSWORD'),
             database: supabaseOptions?.database ?? this.configService.get<string>('DB_SCHEMA'),
             autoLoadEntities: true,
-            synchronize: !isProd,
+            synchronize: false,
             logging: !isProd ? ['error', 'query'] : false,
             namingStrategy: new SnakeNamingStrategy(),
         };
