@@ -40,6 +40,22 @@ gcloud secrets versions access latest --project="${GCP_PROJECT_ID}" --secret="fo
 
 Output files are ignored by `.gitignore`.
 
+### Backend handoff checklist (OAuth env changes)
+
+When backend adds/changes OAuth values (Kakao/Google/Naver), update both Secret Manager payloads first:
+
+- `folioo-dev-config`
+- `folioo-prod-config`
+
+Required OAuth keys:
+
+- `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`, `KAKAO_CALLBACK_URL`
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
+- `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`, `NAVER_CALLBACK_URL`
+- `CLIENT_REDIRECT_URI`
+
+After changing secrets, trigger deployment so each server rewrites `/home/folioo/.env.dev` or `/home/folioo/.env.prod` from Secret Manager latest.
+
 ### Profile policy
 
 - `local`: Docker Postgres + Docker Redis (`CACHE_DRIVER=ioredis`)
