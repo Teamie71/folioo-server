@@ -5,8 +5,8 @@
 #
 # 사용법:
 #   이 파일은 단독 실행하지 않고, override 파일과 함께 사용합니다.
-#   docker compose -f docker-compose.infra.yml -f docker-compose.prod.bluegreen.yml --profile blue up -d
-#   docker compose -f docker-compose.infra.yml -f docker-compose.dev.bluegreen.yml --profile blue up -d
+#   docker compose -f docker-compose.infra.yml -f docker-compose.prod.yml --profile blue up -d
+#   docker compose -f docker-compose.infra.yml -f docker-compose.dev.yml --profile blue up -d
 #
 # Note:
 #   로컬 개발용 파일은 docker-compose.yml 을 참고하세요.

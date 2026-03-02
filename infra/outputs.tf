@@ -19,6 +19,16 @@ output "artifact_registry_url" {
   sensitive   = true
 }
 
+output "deploy_config" {
+  description = "Deployment configuration for CD workflows (JSON). Exported to GCS by terraform.yml after apply."
+  value = jsonencode({
+    dev_gce_name  = module.compute.dev_instance_name
+    dev_gce_zone  = module.compute.dev_instance_zone
+    prod_gce_name = module.compute.prod_instance_name
+    prod_gce_zone = module.compute.prod_instance_zone
+  })
+}
+
 output "dev_vm_name" {
   description = "Dev VM name"
   value       = module.compute.dev_instance_name
