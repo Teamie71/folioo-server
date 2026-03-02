@@ -212,7 +212,8 @@ export class AuthController {
     @ApiCommonErrorResponse(
         ErrorCode.REFRESH_TOKEN_EXPIRED,
         ErrorCode.REFRESH_TOKEN_MISSING,
-        ErrorCode.INVALID_REFRESH_TOKEN
+        ErrorCode.INVALID_REFRESH_TOKEN,
+        ErrorCode.DEACTIVATED_USER
     )
     async handleRefresh(@User() user: UserAfterAuth) {
         const accessToken = await this.tokenService.generateAccessToken({

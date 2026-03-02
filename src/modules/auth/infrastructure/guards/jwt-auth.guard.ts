@@ -5,6 +5,7 @@ import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UserAfterAuth } from 'src/modules/auth/domain/types/jwt-payload.type';
+import { UserRepository } from 'src/modules/user/infrastructure/repositories/user.repository';
 import { AuthTokenStoreService } from '../services/auth-token-store.service';
 import { extractAccessTokenFromAuthorization } from '../utils/access-token.util';
 
@@ -12,7 +13,8 @@ import { extractAccessTokenFromAuthorization } from '../utils/access-token.util'
 export class JwtAuthGuard extends AuthGuard('jwt') {
     constructor(
         private readonly reflector: Reflector,
-        private readonly authTokenStoreService: AuthTokenStoreService
+        private readonly authTokenStoreService: AuthTokenStoreService,
+        private readonly userRepository: UserRepository
     ) {
         super();
     }
@@ -71,6 +73,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             if (isBlacklisted) {
                 throw new BusinessException(ErrorCode.UNAUTHORIZED);
             }
+        }
+
+        const request = context.switchToHttp().getRequest<{ user?: UserAfterAuth }>();
+        const userId = request.user?.sub;
+        if (!userId) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        const user = await this.userRepository.findById(userId);
+        if (!user) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (user.isDeactivated()) {
+            throw new BusinessException(ErrorCode.DEACTIVATED_USER);
         }
 
         return true;
