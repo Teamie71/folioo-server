@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Patch, Query, Req } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -12,6 +12,9 @@ import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
 import { TicketExpiringQueryReqDTO } from 'src/modules/ticket/application/dtos/ticket-expiring-query.dto';
+import { LogoutUsecase } from 'src/modules/auth/application/usecases/logout.usecase';
+import { extractAccessTokenFromAuthorization } from 'src/modules/auth/infrastructure/utils/access-token.util';
+import type { Request } from 'express';
 import { UserTicketFacade } from '../application/facades/user-ticket.facade';
 
 @ApiTags('User')
@@ -19,7 +22,8 @@ import { UserTicketFacade } from '../application/facades/user-ticket.facade';
 export class UserController {
     constructor(
         private readonly userService: UserService,
-        private readonly userTicketFacade: UserTicketFacade
+        private readonly userTicketFacade: UserTicketFacade,
+        private readonly logoutUsecase: LogoutUsecase
     ) {}
 
     @Get('me')
@@ -128,8 +132,20 @@ export class UserController {
         ErrorCode.DEACTIVATED_USER,
         ErrorCode.SOCIAL_UNLINK_FAILED
     )
-    async withdraw(@User('sub') userId: number): Promise<string> {
+    async withdraw(
+        @User('sub') userId: number,
+        @Headers('authorization') authorization: string | undefined,
+        @Req() req: Request
+    ): Promise<string> {
+        const accessToken = extractAccessTokenFromAuthorization(authorization)!;
+
+        const refreshToken = req.cookies?.refreshToken as string | undefined;
+
         await this.userService.withdraw(userId);
+        await this.logoutUsecase.execute({
+            accessToken,
+            refreshToken: refreshToken ?? null,
+        });
         return '회원 탈퇴가 완료되었습니다.';
     }
 }

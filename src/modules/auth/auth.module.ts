@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuthController } from './presentation/auth.controller';
 import { LoginUsecase } from './application/usecases/login.usecase';
 import { KakaoStrategy } from './infrastructure/strategies/kakao.strategy';
@@ -31,7 +31,7 @@ import { LogoutUsecase } from './application/usecases/logout.usecase';
             }),
             inject: [ConfigService],
         }),
-        UserModule,
+        forwardRef(() => UserModule),
     ],
     controllers: [AuthController],
     providers: [
@@ -51,6 +51,6 @@ import { LogoutUsecase } from './application/usecases/logout.usecase';
         JwtRefreshGuard,
         JwtRefreshStrategy,
     ],
-    exports: [JwtAuthGuard],
+    exports: [JwtAuthGuard, LogoutUsecase],
 })
 export class AuthModule {}
