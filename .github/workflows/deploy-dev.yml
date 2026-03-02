@@ -10,7 +10,6 @@ permissions:
 
 env:
     DOCKER_IMAGE: asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/folioo-docker/folioo-server
-    CONTAINER_NAME: folioo-server
 
 concurrency:
     group: deploy-dev
@@ -35,8 +34,7 @@ jobs:
                   project_id: ${{ secrets.GCP_PROJECT_ID }}
 
             - name: Authenticate to Artifact Registry
-              run: |
-                  gcloud auth configure-docker asia-northeast3-docker.pkg.dev
+              run: gcloud auth configure-docker asia-northeast3-docker.pkg.dev
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
@@ -59,6 +57,20 @@ jobs:
             - name: Checkout Code
               uses: actions/checkout@v4
 
+            - name: Set up Supabase CLI
+              uses: supabase/setup-cli@v1
+              with:
+                  version: 2.75.0
+
+            - name: Apply Supabase migrations (dev)
+              run: |
+                  if [ -z "${{ secrets.SUPABASE_DEV_DB_URL }}" ]; then
+                    echo "::error::Missing required secret SUPABASE_DEV_DB_URL"
+                    exit 1
+                  fi
+
+                  supabase db push --db-url "${{ secrets.SUPABASE_DEV_DB_URL }}"
+
             - name: Authenticate to Google Cloud
               uses: google-github-actions/auth@v2
               with:
@@ -78,6 +90,14 @@ jobs:
 
             - name: Refresh Environment Variables from Secret Manager
               run: |
+                  # 디렉토리 먼저 생성 (첫 배포 포함 모든 경우에 안전)
+                  gcloud compute ssh ${{ env.GCE_NAME }} \
+                    --zone=${{ env.GCE_ZONE }} \
+                    --project=${{ secrets.GCP_PROJECT_ID }} \
+                    --tunnel-through-iap \
+                    --quiet \
+                    --command="sudo mkdir -p /home/folioo"
+
                   gcloud secrets versions access latest \
                     --project='${{ secrets.GCP_PROJECT_ID }}' \
                     --secret='folioo-dev-config' \
@@ -102,29 +122,15 @@ jobs:
 
             - name: Deploy to GCE via IAP (Blue-Green)
               run: |
-                  # A. Create server directory if needed
-                  gcloud compute ssh ${{ env.GCE_NAME }} \
-                    --zone=${{ env.GCE_ZONE }} \
-                    --project=${{ secrets.GCP_PROJECT_ID }} \
-                    --tunnel-through-iap \
-                    --quiet \
-                    --command="sudo mkdir -p /home/folioo"
-
-                  # B-1. Copy docker-compose.infra.yml
-                  gcloud compute scp docker-compose.infra.yml ${{ env.GCE_NAME }}:~/docker-compose.infra.yml \
+                  # B. compose 파일 전송
+                  gcloud compute scp docker-compose.infra.yml docker-compose.dev.yml \
+                    ${{ env.GCE_NAME }}:~ \
                     --zone=${{ env.GCE_ZONE }} \
                     --project=${{ secrets.GCP_PROJECT_ID }} \
                     --tunnel-through-iap \
                     --quiet
 
-                  # B-2. Copy docker-compose.dev.bluegreen.yml
-                  gcloud compute scp docker-compose.dev.bluegreen.yml ${{ env.GCE_NAME }}:~/docker-compose.dev.bluegreen.yml \
-                    --zone=${{ env.GCE_ZONE }} \
-                    --project=${{ secrets.GCP_PROJECT_ID }} \
-                    --tunnel-through-iap \
-                    --quiet
-
-                  # C. Execute blue-green deployment
+                  # C. Blue-Green 배포 실행
                   gcloud compute ssh ${{ env.GCE_NAME }} \
                     --zone=${{ env.GCE_ZONE }} \
                     --project=${{ secrets.GCP_PROJECT_ID }} \
@@ -132,19 +138,29 @@ jobs:
                     --quiet \
                     --command="
                       sudo mv ~/docker-compose.infra.yml /home/folioo/docker-compose.infra.yml
-                      sudo mv ~/docker-compose.dev.bluegreen.yml /home/folioo/docker-compose.dev.bluegreen.yml
+                      sudo mv ~/docker-compose.dev.yml /home/folioo/docker-compose.dev.yml
 
                       cd /home/folioo
-                      IMAGE_REPO='${{ env.DOCKER_IMAGE }}'
-                      IMAGE_REPO="${IMAGE_REPO%:*}"
-                      export DOCKER_IMAGE="$IMAGE_REPO"
-                      gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://asia-northeast3-docker.pkg.dev
-                      DC='sudo DOCKER_IMAGE="$DOCKER_IMAGE" docker compose --env-file .env.dev -f docker-compose.infra.yml -f docker-compose.dev.bluegreen.yml'
+
+                      # jq 설치 확인 (없으면 설치)
+                      if ! command -v jq &>/dev/null; then
+                        sudo apt-get update -y -qq && sudo apt-get install -y -qq jq
+                      fi
+
+                      export DOCKER_IMAGE='${{ env.DOCKER_IMAGE }}'
+
+                      # GCE 메타데이터 서버로 Docker 인증 (gcloud 불필요)
+                      curl -sf 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token' \
+                        -H 'Metadata-Flavor: Google' \
+                        | python3 -c 'import sys, json; print(json.load(sys.stdin)[\"access_token\"])' \
+                        | docker login -u oauth2accesstoken --password-stdin https://asia-northeast3-docker.pkg.dev
+
+                      DC='sudo -E docker compose --env-file .env.dev -f docker-compose.infra.yml -f docker-compose.dev.yml'
 
                       sudo docker network create folioo-network || true
 
-                      # ── Detect current active slot ──
-                      ACTIVE_SLOT=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[].Service' 2>/dev/null | grep -E 'dev-blue|dev-green' | head -1)
+                      # ── 현재 활성 슬롯 감지 ──
+                      ACTIVE_SLOT=\$(\$DC ps --format json 2>/dev/null | jq -sr '.[].Service' 2>/dev/null | grep -E 'dev-blue|dev-green' | head -1 || true)
                       ACTIVE_SLOT=\${ACTIVE_SLOT:-none}
 
                       if [[ \"\$ACTIVE_SLOT\" == 'dev-blue' ]]; then
@@ -156,10 +172,10 @@ jobs:
                       fi
                       echo \"Current: \$ACTIVE_SLOT / New slot: dev-\$GREEN_SLOT / Old: dev-\$BLUE_SLOT\"
 
-                      # ── Start base infra on first deploy ──
+                      # ── 최초 배포: 베이스 인프라 시작 ──
                       if [[ \"\$ACTIVE_SLOT\" == 'none' ]]; then
                         echo 'First deploy: starting base infra'
-                        \$DC up -d traefik cloudflared
+                        \$DC up -d traefik cloudflared redis-dev
                         sleep 10
                       fi
 
@@ -167,7 +183,7 @@ jobs:
                       echo \"Starting green slot (dev-\$GREEN_SLOT)\"
                       \$DC --profile \$GREEN_SLOT up -d
 
-                      # ── Health Check (Docker native health status) ──
+                      # ── Health Check ──
                       GREEN_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr \".[] | select(.Service == \\\"dev-\$GREEN_SLOT\\\") | .Name\")
                       echo \"Health check starting... (container: \$GREEN_CONTAINER)\"
 
@@ -198,14 +214,15 @@ jobs:
                         sleep 5
                       done
 
-                      # ── Stop old blue slot (keep infra) ──
+                      # ── 구 슬롯 종료 (인프라는 유지) ──
                       if [[ \"\$ACTIVE_SLOT\" != 'none' ]]; then
                         OLD_CONTAINER=\$(\$DC ps --format json 2>/dev/null | jq -sr \".[] | select(.Service == \\\"dev-\$BLUE_SLOT\\\") | .Name\")
                         if [[ -n \"\$OLD_CONTAINER\" ]]; then
-                          echo \"Stopping old slot(\$OLD_CONTAINER)...\"
+                          echo \"Stopping old slot (\$OLD_CONTAINER)...\"
                           sudo docker stop \"\$OLD_CONTAINER\" 2>/dev/null && sudo docker rm -f \"\$OLD_CONTAINER\" 2>/dev/null
                         fi
                       fi
 
-                      echo \"✅ Dev deployment completed!\"
+                      sudo docker image prune -f
+                      echo '✅ Dev deployment completed!'
                     "
