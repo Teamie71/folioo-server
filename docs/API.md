@@ -15,10 +15,10 @@ Notes:
 
 ## Environments
 
-- Dev base URL: `https://folioo-dev-api.log8.kr`
-- Swagger UI: `https://folioo-dev-api.log8.kr/api`
-- OpenAPI JSON: `https://folioo-dev-api.log8.kr/api-json`
-- Health check (public): `https://folioo-dev-api.log8.kr/health`
+- Dev base URL: `https://dev-api.folioo.ai.kr`
+- Swagger UI: `https://dev-api.folioo.ai.kr/api`
+- OpenAPI JSON: `https://dev-api.folioo.ai.kr/api-json`
+- Health check (public): `https://dev-api.folioo.ai.kr/health`
 
 ## Auth Model (How Requests Are Authorized)
 
@@ -32,7 +32,7 @@ Notes:
 
 Open:
 
-`https://folioo-dev-api.log8.kr/api`
+`https://dev-api.folioo.ai.kr/api`
 
 This may prompt for Basic Auth credentials (configured by `SWAGGER_USER` / `SWAGGER_PASSWORD` in non-local).
 
@@ -42,9 +42,9 @@ Do NOT try to execute OAuth redirects from Swagger.
 
 Open one of these in a new browser tab:
 
-`https://folioo-dev-api.log8.kr/auth/kakao`
+`https://dev-api.folioo.ai.kr/auth/kakao`
 
-`https://folioo-dev-api.log8.kr/auth/google`
+`https://dev-api.folioo.ai.kr/auth/google`
 
 After completing the social login flow, the server sets an `httpOnly` cookie `refreshToken` and redirects to the client.
 
@@ -100,7 +100,7 @@ node scripts/smoke-dev-api.mjs --mutate --file ./sample.pdf
 
 | Option               | Default                           | Description                        |
 | -------------------- | --------------------------------- | ---------------------------------- |
-| `--base <url>`       | `https://folioo-dev-api.log8.kr`  | Dev server base URL                |
+| `--base <url>`       | `https://dev-api.folioo.ai.kr`    | Dev server base URL                |
 | `--token-env <name>` | `FOLIOO_ACCESS_TOKEN`             | Env var containing access token    |
 | `--mutate`           | off                               | Enable POST/PATCH/DELETE endpoints |
 | `--file <path>`      | _(none)_                          | Attach file to multipart endpoints |

@@ -7,14 +7,21 @@ This project manages runtime env values with GCP Secret Manager.
 - `folioo-dev-config`
 - `folioo-prod-config`
 
-### GitHub Secrets (minimum set)
+### GitHub Secrets (current set)
 
-- `GCP_PROJECT_ID`
-- `WIF_PROVIDER`
-- `WIF_SERVICE_ACCOUNT`
-- `TF_STATE_BUCKET`
+| Secret                 | Purpose                                                         |
+| ---------------------- | --------------------------------------------------------------- |
+| `GCP_PROJECT_ID`       | GCP 프로젝트 ID (`folioo-488916`)                               |
+| `WIF_PROVIDER`         | Workload Identity Federation provider 리소스명                  |
+| `WIF_SERVICE_ACCOUNT`  | GitHub Actions 서비스 계정 이메일                               |
+| `TF_STATE_BUCKET`      | Terraform state / deploy-config GCS 버킷명                      |
+| `SUPABASE_DEV_DB_URL`  | 마이그레이션 전용 dev DB URL (`supabase db push` 실행 시 사용)  |
+| `SUPABASE_PROD_DB_URL` | 마이그레이션 전용 prod DB URL (`supabase db push` 실행 시 사용) |
 
-Legacy secrets (`ENV_DEV`, `ENV_PROD`, `LIGHTSAIL_*`, `DOCKERHUB_*`, `DOCKER_IMAGE`) are removed.
+> `SUPABASE_*_DB_URL` GitHub Secrets는 CI/CD에서 `supabase db push` 마이그레이션 전용입니다.
+> 앱 런타임에서 사용하는 DB 연결 정보는 Secret Manager의 `folioo-dev-config` / `folioo-prod-config`에 있습니다.
+
+Removed legacy secrets: `ENV_DEV`, `ENV_PROD`, `LIGHTSAIL_*`, `DOCKERHUB_*`, `DOCKER_IMAGE`
 
 ### How CI/CD loads env
 

@@ -18,7 +18,7 @@
 services:
     # ── Dev Blue Slot ──
     dev-blue:
-        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:dev
+        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server}:dev
         restart: unless-stopped
         env_file:
             - path: .env.dev
@@ -50,7 +50,7 @@ services:
 
     # ── Dev Green Slot ──
     dev-green:
-        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:dev
+        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server}:dev
         restart: unless-stopped
         env_file:
             - path: .env.dev
