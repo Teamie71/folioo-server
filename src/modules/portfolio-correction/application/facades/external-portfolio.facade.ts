@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
-import { CorrectionItemService } from '../services/correction-item.service';
+import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
 import {
     StructuredPortfolioResDTO,
@@ -17,7 +17,7 @@ export class ExternalPortfolioFacade {
     constructor(
         private readonly externalPortfolioService: ExternalPortfolioService,
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
-        private readonly correctionItemService: CorrectionItemService,
+        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
         private readonly pdfExtractService: PdfExtractService
     ) {}
 
@@ -38,8 +38,16 @@ export class ExternalPortfolioFacade {
 
     async getExternalPortfolios(correctionId: number): Promise<StructuredPortfolioResDTO[]> {
         await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
+
         const portfolioIds =
-            await this.correctionItemService.findPortfolioIdsByCorrectionId(correctionId);
+            await this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
+                correctionId
+            );
+
+        if (portfolioIds.length === 0) {
+            return [];
+        }
+
         const portfolios = await this.externalPortfolioService.getExternalPortfolios(portfolioIds);
         return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
     }
@@ -49,16 +57,34 @@ export class ExternalPortfolioFacade {
         correctionId: number,
         userId: number
     ): Promise<StructuredPortfolioResDTO> {
-        const correction = await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
+        const correction = await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(
+            correctionId,
+            userId
+        );
 
-        const currentCount =
-            await this.correctionItemService.countItemsByCorrectionId(correctionId);
+        const activePortfolioIds =
+            await this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
+                correctionId
+            );
+        const currentCount = activePortfolioIds.length;
+
         if (currentCount >= MAX_EXTERNAL_PORTFOLIO_BLOCKS) {
             throw new BusinessException(ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED);
         }
 
+        const activePortfolios =
+            activePortfolioIds.length === 0
+                ? []
+                : await this.externalPortfolioService.getExternalPortfoliosByOwnerOrThrow(
+                      activePortfolioIds,
+                      userId
+                  );
+
         const savedPortfolio = await this.externalPortfolioService.createEmptyPortfolio(userId);
-        await this.correctionItemService.createCorrectionItem(savedPortfolio, correction);
+        await this.correctionPortfolioSelectionService.activateSelections(correction, [
+            ...activePortfolios,
+            savedPortfolio,
+        ]);
 
         return StructuredPortfolioResDTO.from(savedPortfolio);
     }
