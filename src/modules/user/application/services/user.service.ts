@@ -112,6 +112,17 @@ export class UserService {
         return user;
     }
 
+    async checkUserActive(userId: number): Promise<void> {
+        const user = await this.userRepository.findById(userId);
+        if (!user) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (user.isDeactivated()) {
+            throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+        }
+    }
+
     private async findByIdOrThrow(userId: number): Promise<User> {
         const user = await this.userRepository.findById(userId);
         if (!user) {

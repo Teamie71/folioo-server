@@ -12,10 +12,10 @@ import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
 import { TicketExpiringQueryReqDTO } from 'src/modules/ticket/application/dtos/ticket-expiring-query.dto';
-import { LogoutUsecase } from 'src/modules/auth/application/usecases/logout.usecase';
 import { extractAccessTokenFromAuthorization } from 'src/modules/auth/infrastructure/utils/access-token.util';
 import type { Request } from 'express';
 import { UserTicketFacade } from '../application/facades/user-ticket.facade';
+import { UserAuthFacade } from '../application/facades/user-auth.facade';
 
 @ApiTags('User')
 @Controller('users')
@@ -23,7 +23,7 @@ export class UserController {
     constructor(
         private readonly userService: UserService,
         private readonly userTicketFacade: UserTicketFacade,
-        private readonly logoutUsecase: LogoutUsecase
+        private readonly userAuthFacade: UserAuthFacade
     ) {}
 
     @Get('me')
@@ -141,11 +141,7 @@ export class UserController {
 
         const refreshToken = req.cookies?.refreshToken as string | undefined;
 
-        await this.userService.withdraw(userId);
-        await this.logoutUsecase.execute({
-            accessToken,
-            refreshToken: refreshToken ?? null,
-        });
+        await this.userAuthFacade.withdraw(userId, accessToken, refreshToken ?? null);
         return '회원 탈퇴가 완료되었습니다.';
     }
 }
