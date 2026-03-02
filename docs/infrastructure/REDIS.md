@@ -47,12 +47,9 @@ REDIS_PORT=6379
 ## Dev/Prod 배포 (Secret Manager)
 
 dev/prod는 Secret Manager에서 내려오는 env로 Upstash를 우선 사용합니다.
+배포는 CI/CD (GitHub Actions)를 통해 Blue-Green 방식으로 자동 수행됩니다.
 
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-`.env.dev` 파일:
+`.env.dev` 파일 (Secret Manager에서 자동 생성):
 
 ```env
 CACHE_DRIVER=upstash

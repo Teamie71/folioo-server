@@ -34,8 +34,8 @@
 
 ### 배포 구성
 
-- 개발 서버: `docker-compose.dev.yml` + `.env.dev`
-- 프로덕션 서버: `docker-compose.prod.yml` + `.env.prod`
+- 개발 서버: `docker-compose.infra.yml` + `docker-compose.dev.yml` + `.env.dev` (Blue-Green)
+- 프로덕션 서버: `docker-compose.infra.yml` + `docker-compose.prod.yml` + `.env.prod` (Blue-Green)
 
 ### 릴리스 흐름
 

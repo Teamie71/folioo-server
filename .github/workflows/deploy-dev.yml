@@ -175,7 +175,7 @@ jobs:
                       # ── 최초 배포: 베이스 인프라 시작 ──
                       if [[ \"\$ACTIVE_SLOT\" == 'none' ]]; then
                         echo 'First deploy: starting base infra'
-                        \$DC up -d traefik cloudflared redis-dev
+                        \$DC up -d traefik cloudflared
                         sleep 10
                       fi
 
