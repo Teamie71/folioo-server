@@ -13,10 +13,13 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 
 앱 런타임 env와는 별개로 GitHub Actions 워크플로우에서 직접 사용하는 secrets:
 
-| Secret                 | Used by          | Purpose                              |
-| ---------------------- | ---------------- | ------------------------------------ |
-| `SUPABASE_DEV_DB_URL`  | `deploy-dev.yml` | `supabase db push` 마이그레이션 실행 |
-| `SUPABASE_PROD_DB_URL` | `deploy.yml`     | `supabase db push` 마이그레이션 실행 |
+| Secret                 | Used by          | Purpose                                             |
+| ---------------------- | ---------------- | --------------------------------------------------- |
+| `SUPABASE_DEV_DB_URL`  | `deploy-dev.yml` | `supabase db push` 마이그레이션 실행 (`:6543` 금지) |
+| `SUPABASE_PROD_DB_URL` | `deploy.yml`     | `supabase db push` 마이그레이션 실행 (`:6543` 금지) |
+
+> Migration URL rule: `SUPABASE_*_DB_URL` must not use transaction pooler port `6543`.
+> Use direct/session `5432` connection for migration jobs.
 
 ## Required Keys (Secret Manager payload)
 
