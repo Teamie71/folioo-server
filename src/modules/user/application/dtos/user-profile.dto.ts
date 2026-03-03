@@ -75,6 +75,6 @@ export class UpdateUserNameReqDTO {
     @IsString()
     @IsNotEmpty()
     @MinLength(1)
-    @MaxLength(30)
+    @MaxLength(25)
     name: string;
 }
