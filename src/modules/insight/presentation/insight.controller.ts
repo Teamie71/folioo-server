@@ -9,7 +9,7 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
     ApiCommonResponse,
@@ -122,28 +122,6 @@ export class InsightController {
         return DeletedInsightLogResDTO.from(
             await this.insightService.deleteInsight(userId, insightId)
         );
-    }
-
-    @Get('search')
-    @ApiOperation({
-        summary: '인사이트 로그 유사도 검색',
-        description: '키워드를 통해 인사이트 로그를 검색합니다.',
-    })
-    @ApiQuery({ name: 'keyword', required: true })
-    @ApiQuery({
-        name: 'threshold',
-        required: false,
-        description: '유사도 거리 임계값 (기본 0.7, 작을수록 일치도 높음)',
-    })
-    @ApiCommonResponseArray(InsightLogResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async searchVector(
-        @User('sub') userId: number,
-        @Query('keyword') keyword: string,
-        @Query('threshold') threshold?: number
-    ): Promise<InsightLogResDTO[]> {
-        const targetThreshold = threshold ?? 0.7;
-        return await this.insightService.searchInsight(userId, keyword, targetThreshold);
     }
 
     @Post('tags')

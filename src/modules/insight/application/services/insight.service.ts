@@ -157,12 +157,12 @@ export class InsightService {
         return InsightLogResDTO.from(savedLog, activityNames);
     }
 
-    async searchInsight(
+    async searchInsightWithSimilarity(
         userId: number,
         searchText: string,
         targetThreshold: number,
-        limit: number = 3
-    ): Promise<InsightLogResDTO[]> {
+        limit: number = 5
+    ): Promise<InternalInsightDetailResDTO[]> {
         if (!searchText || searchText.trim() === '') {
             return [];
         }
@@ -173,10 +173,13 @@ export class InsightService {
             targetThreshold,
             limit
         );
-        const insightIds = similarInsights.map((i) => i.id);
+        const insightIds = similarInsights.map((result) => result.insight.id);
         const activitiesMap = await this.insightActivityService.getNamesByInsightIds(insightIds);
-        return similarInsights.map((insight) =>
-            InsightLogResDTO.from(insight, activitiesMap[insight.id] || [])
+        return similarInsights.map(({ insight, similarityScore }) =>
+            InternalInsightDetailResDTO.fromLogRes(
+                InsightLogResDTO.from(insight, activitiesMap[insight.id] || []),
+                similarityScore
+            )
         );
     }
 

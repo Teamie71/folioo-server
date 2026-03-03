@@ -64,17 +64,33 @@ export class InsightRepository {
         embedding: number[],
         threshold: number,
         limit: number
-    ): Promise<Insight[]> {
+    ): Promise<Array<{ insight: Insight; similarityScore: number }>> {
         const embeddingString = `[${embedding.join(',')}]`;
-        return await this.insightRepository
+        const queryBuilder = this.insightRepository
             .createQueryBuilder('insight')
             .where('insight.user = :userId', { userId })
             .andWhere('insight.embedding <=> :embedding <= :threshold', { threshold })
+            .addSelect('insight.embedding <=> :embedding', 'cosineDistance')
             // <=> : 코사인 거리(Cosine Distance). 0에 가까울수록 유사함.
             .orderBy('insight.embedding <=> :embedding', 'ASC')
             .setParameters({ embedding: embeddingString })
-            .limit(limit)
-            .getMany();
+            .limit(limit);
+
+        const { entities, raw } = await queryBuilder.getRawAndEntities();
+        return entities.map((insight, index) => ({
+            insight,
+            similarityScore: this.distanceToSimilarity(
+                Number((raw?.[index] as { cosineDistance?: number })?.cosineDistance ?? 0)
+            ),
+        }));
+    }
+
+    private distanceToSimilarity(distance: number): number {
+        const similarity = 1 - distance;
+        if (Number.isNaN(similarity)) {
+            return 0;
+        }
+        return Math.max(-1, Math.min(1, similarity));
     }
 
     async existsByTitleAndUser(title: string, userId: number): Promise<boolean> {
