@@ -164,6 +164,7 @@ Legend:
 ### Internal
 
 - GET `/api/v1/internal/health` -> IMPLEMENTED (Public + X-API-Key required)
+- GET `/api/v1/internal/insights/{insightId}` -> IMPLEMENTED (AI 서버용 인사이트 단건 조회)
 
 ### Auth
 
@@ -229,6 +230,7 @@ Legend:
 
 - PATCH `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
 - DELETE `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
+- ~~GET `/insights/{insightId}` -> IMPLEMENTED (단건 조회, 소유자 검증)~~ (Internal route로 이전)
 - GET `/insights` -> IMPLEMENTED
 - GET `/insights/summary` -> IMPLEMENTED
 - POST `/insights` -> IMPLEMENTED (생성 성공 시 `INSIGHT_LOG_CHALLENGE` 진행도 자동 반영)

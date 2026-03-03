@@ -3,6 +3,7 @@ import { InsightRepository } from '../../infrastructure/repositories/insight.rep
 import { Insight, MAX_INSIGHTS_PER_USER } from '../../domain/entities/insight.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { InternalInsightDetailResDTO } from '../../../internal/application/dtos/internal-insight.dto';
 import {
     CreateInsightLogReqDTO,
     InsightLogResDTO,
@@ -34,6 +35,12 @@ export class InsightService {
             throw new BusinessException(ErrorCode.LOG_NOT_FOUND);
         }
         return insight;
+    }
+
+    async getInsightById(insightId: number): Promise<InternalInsightDetailResDTO> {
+        const log = await this.findByIdOrThrow(insightId);
+        const activityNames = await this.insightActivityService.findActivitiesByInsight(insightId);
+        return InternalInsightDetailResDTO.from(log, activityNames);
     }
 
     async validateDuplicationOfTitle(title: string, userId: number) {
