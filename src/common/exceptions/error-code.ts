@@ -152,6 +152,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '기업 분석 정보가 아직 생성되지 않았습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.CORRECTION_INVALID_STATUS_TRANSITION]: {
+        message: '유효하지 않은 첨삭 상태 전이입니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
     [ErrorCode.TICKET_NOT_FOUND]: {
         message: '해당하는 티켓을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
