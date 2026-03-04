@@ -4,6 +4,7 @@ import { Portfolio } from '../../domain/portfolio.entity';
 import { PortfolioDetailResDTO, UpdatePortfolioReqDTO } from '../dtos/portfolio.dto';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 
 @Injectable()
 export class PortfolioService {
@@ -11,6 +12,14 @@ export class PortfolioService {
 
     async findByIdOrThrow(id: number, userId: number): Promise<Portfolio> {
         const portfolio = await this.portfolioRepository.findByIdAndUserId(id, userId);
+        if (!portfolio) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
+        }
+        return portfolio;
+    }
+
+    async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
+        const portfolio = await this.portfolioRepository.findByIdWithExperience(id);
         if (!portfolio) {
             throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
         }
@@ -36,5 +45,39 @@ export class PortfolioService {
     async deletePortfolio(portfolioId: number, userId: number): Promise<void> {
         const portfolio = await this.findByIdOrThrow(portfolioId, userId);
         await this.portfolioRepository.deleteById(portfolio.id);
+    }
+
+    async completeGeneration(
+        portfolioId: number,
+        content: {
+            description: string;
+            responsibilities: string;
+            problemSolving: string;
+            learnings: string;
+        }
+    ): Promise<void> {
+        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
+        if (portfolio.status !== PortfolioStatus.GENERATING) {
+            return;
+        }
+        portfolio.complete(content);
+        await this.portfolioRepository.save(portfolio);
+    }
+
+    async failGeneration(portfolioId: number): Promise<void> {
+        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
+        if (portfolio.status !== PortfolioStatus.GENERATING) {
+            return;
+        }
+        portfolio.fail();
+        await this.portfolioRepository.save(portfolio);
+    }
+
+    private async findByIdInternalOrThrow(id: number): Promise<Portfolio> {
+        const portfolio = await this.portfolioRepository.findById(id);
+        if (!portfolio) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
+        }
+        return portfolio;
     }
 }

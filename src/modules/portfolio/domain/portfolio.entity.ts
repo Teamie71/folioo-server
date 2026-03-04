@@ -1,8 +1,16 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { SourceType } from './enums/source-type.enum';
+import { PortfolioStatus } from './enums/portfolio-status.enum';
 import { User } from '../../user/domain/user.entity';
 import { Experience } from '../../experience/domain/experience.entity';
+
+interface PortfolioContent {
+    description: string;
+    responsibilities: string;
+    problemSolving: string;
+    learnings: string;
+}
 
 export const MAX_EXTERNAL_PORTFOLIO_BLOCKS = 5;
 
@@ -25,6 +33,13 @@ export class Portfolio extends BaseEntity {
 
     @Column({ nullable: true })
     contributionRate: number;
+
+    @Column({
+        type: 'enum',
+        enum: PortfolioStatus,
+        default: PortfolioStatus.NOT_STARTED,
+    })
+    status: PortfolioStatus;
 
     @Column({
         type: 'enum',
@@ -59,5 +74,17 @@ export class Portfolio extends BaseEntity {
         if (updates.contributionRate !== undefined) {
             this.contributionRate = updates.contributionRate;
         }
+    }
+
+    complete(content: PortfolioContent): void {
+        this.description = content.description;
+        this.responsibilities = content.responsibilities;
+        this.problemSolving = content.problemSolving;
+        this.learnings = content.learnings;
+        this.status = PortfolioStatus.COMPLETED;
+    }
+
+    fail(): void {
+        this.status = PortfolioStatus.FAILED;
     }
 }
