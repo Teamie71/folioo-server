@@ -17,6 +17,14 @@ export class PortfolioService {
         return portfolio;
     }
 
+    async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
+        const portfolio = await this.portfolioRepository.findByIdWithExperience(id);
+        if (!portfolio) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
+        }
+        return portfolio;
+    }
+
     async getPortfolio(portfolioId: number, userId: number): Promise<PortfolioDetailResDTO> {
         const portfolio = await this.findByIdOrThrow(portfolioId, userId);
         return PortfolioDetailResDTO.from(portfolio);

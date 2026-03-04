@@ -21,6 +21,13 @@ export class PortfolioRepository {
         });
     }
 
+    async findByIdWithExperience(id: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: { id },
+            relations: { experience: true, user: true },
+        });
+    }
+
     async findByIdAndUserId(id: number, userId: number): Promise<Portfolio | null> {
         return this.portfolioRepository.findOne({
             where: { id, user: { id: userId } },

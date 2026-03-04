@@ -1,6 +1,7 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { SourceType } from './enums/source-type.enum';
+import { PortfolioStatus } from './enums/portfolio-status.enum';
 import { User } from '../../user/domain/user.entity';
 import { Experience } from '../../experience/domain/experience.entity';
 
@@ -28,6 +29,13 @@ export class Portfolio extends BaseEntity {
 
     @Column({
         type: 'enum',
+        enum: PortfolioStatus,
+        default: PortfolioStatus.NOT_STARTED,
+    })
+    status: PortfolioStatus;
+
+    @Column({
+        type: 'enum',
         enum: SourceType,
         default: SourceType.INTERNAL,
     })
@@ -39,6 +47,19 @@ export class Portfolio extends BaseEntity {
     @OneToOne(() => Experience, { nullable: true })
     @JoinColumn()
     experience: Experience;
+
+    static createInternal(userId: number, experienceId: number): Portfolio {
+        const portfolio = new Portfolio();
+        portfolio.name = '';
+        portfolio.description = '';
+        portfolio.responsibilities = '';
+        portfolio.problemSolving = '';
+        portfolio.learnings = '';
+        portfolio.sourceType = SourceType.INTERNAL;
+        portfolio.user = { id: userId } as User;
+        portfolio.experience = { id: experienceId } as Experience;
+        return portfolio;
+    }
 
     static createExternal(userId: number): Portfolio {
         const portfolio = new Portfolio();

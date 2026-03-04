@@ -15,11 +15,16 @@ import {
     InternalInsightSearchQueryDTO,
     InternalInsightSearchResDTO,
 } from '../application/dtos/internal-insight-search.dto';
+import { InternalPortfolioDetailResDTO } from '../application/dtos/internal-portfolio.dto';
+import { InternalPortfolioFacade } from '../application/facades/internal-portfolio.facade';
 
 @ApiTags('Internal')
 @Controller('internal')
 export class InternalController {
-    constructor(private readonly insightService: InsightService) {}
+    constructor(
+        private readonly insightService: InsightService,
+        private readonly internalPortfolioFacade: InternalPortfolioFacade
+    ) {}
 
     @Get('health')
     @Public()
@@ -89,5 +94,25 @@ export class InternalController {
     ): Promise<InternalInsightDetailResDTO> {
         const payload: InsightDetailPayload = await this.insightService.getInsightById(insightId);
         return InternalInsightDetailResDTO.from(payload);
+    }
+
+    @Get('portfolios/:portfolioId')
+    @Public()
+    @UseGuards(InternalApiKeyGuard)
+    @ApiHeader({
+        name: 'X-API-Key',
+        required: true,
+        description: 'Internal API key for AI server callbacks',
+    })
+    @ApiOperation({
+        summary: '포트폴리오 원문 조회 (Internal)',
+        description: 'AI 서버가 첨삭 생성 시 원문 조회를 위해 사용합니다.',
+    })
+    @ApiCommonResponse(InternalPortfolioDetailResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
+    async getInternalPortfolio(
+        @Param('portfolioId', ParseIntPipe) portfolioId: number
+    ): Promise<InternalPortfolioDetailResDTO> {
+        return this.internalPortfolioFacade.getPortfolioDetail(portfolioId);
     }
 }
