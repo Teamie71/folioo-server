@@ -3,7 +3,6 @@ import { InsightRepository } from '../../infrastructure/repositories/insight.rep
 import { Insight, MAX_INSIGHTS_PER_USER } from '../../domain/entities/insight.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { InternalInsightDetailResDTO } from '../../../internal/application/dtos/internal-insight.dto';
 import {
     CreateInsightLogReqDTO,
     InsightLogResDTO,
@@ -12,6 +11,7 @@ import {
     SummaryLogResDTO,
     UpdateInsightReqDTO,
 } from '../dtos/insight-log.dto';
+import { InsightDetailPayload, InsightSimilarityPayload } from '../dtos/insight-internal.dto';
 import { ActivityService } from './activity.service';
 import { InsightActivityService } from './insight-activity.service';
 import { Transactional } from 'typeorm-transactional';
@@ -37,10 +37,10 @@ export class InsightService {
         return insight;
     }
 
-    async getInsightById(insightId: number): Promise<InternalInsightDetailResDTO> {
+    async getInsightById(insightId: number): Promise<InsightDetailPayload> {
         const log = await this.findByIdOrThrow(insightId);
         const activityNames = await this.insightActivityService.findActivitiesByInsight(insightId);
-        return InternalInsightDetailResDTO.from(log, activityNames);
+        return { insight: log, activityNames };
     }
 
     async validateDuplicationOfTitle(title: string, userId: number) {
@@ -162,7 +162,7 @@ export class InsightService {
         searchText: string,
         targetThreshold: number,
         limit: number = 5
-    ): Promise<InternalInsightDetailResDTO[]> {
+    ): Promise<InsightSimilarityPayload[]> {
         if (!searchText || searchText.trim() === '') {
             return [];
         }
@@ -175,12 +175,11 @@ export class InsightService {
         );
         const insightIds = similarInsights.map((result) => result.insight.id);
         const activitiesMap = await this.insightActivityService.getNamesByInsightIds(insightIds);
-        return similarInsights.map(({ insight, similarityScore }) =>
-            InternalInsightDetailResDTO.fromLogRes(
-                InsightLogResDTO.from(insight, activitiesMap[insight.id] || []),
-                similarityScore
-            )
-        );
+        return similarInsights.map(({ insight, similarityScore }) => ({
+            insight,
+            activityNames: activitiesMap[insight.id] || [],
+            similarityScore,
+        }));
     }
 
     async updateInsight(

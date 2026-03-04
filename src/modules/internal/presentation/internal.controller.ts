@@ -8,6 +8,10 @@ import { InternalApiKeyGuard } from '../infrastructure/guards/internal-api-key.g
 import { InsightService } from 'src/modules/insight/application/services/insight.service';
 import { InternalInsightDetailResDTO } from '../application/dtos/internal-insight.dto';
 import {
+    InsightDetailPayload,
+    InsightSimilarityPayload,
+} from 'src/modules/insight/application/dtos/insight-internal.dto';
+import {
     InternalInsightSearchQueryDTO,
     InternalInsightSearchResDTO,
 } from '../application/dtos/internal-insight-search.dto';
@@ -54,15 +58,16 @@ export class InternalController {
     ): Promise<InternalInsightSearchResDTO> {
         const similarityThreshold = query.threshold ?? 0.6;
         const distanceThreshold = 1 - similarityThreshold;
-        const limit = query.topK ?? 5;
-        return InternalInsightSearchResDTO.from(
+        const limit = query.topK;
+        const results: InsightSimilarityPayload[] =
             await this.insightService.searchInsightWithSimilarity(
                 query.userId,
                 query.keyword,
                 distanceThreshold,
                 limit
-            )
-        );
+            );
+        const mapped = results.map((result) => InternalInsightDetailResDTO.fromSimilarity(result));
+        return InternalInsightSearchResDTO.from(mapped);
     }
 
     @Get('insights/:insightId')
@@ -82,6 +87,7 @@ export class InternalController {
     async getInternalInsight(
         @Param('insightId', ParseIntPipe) insightId: number
     ): Promise<InternalInsightDetailResDTO> {
-        return await this.insightService.getInsightById(insightId);
+        const payload: InsightDetailPayload = await this.insightService.getInsightById(insightId);
+        return InternalInsightDetailResDTO.from(payload);
     }
 }
