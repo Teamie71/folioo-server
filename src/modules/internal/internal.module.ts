@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { InternalController } from './presentation/internal.controller';
+import { InternalCorrectionController } from './presentation/internal-correction.controller';
 import { InternalApiKeyGuard } from './infrastructure/guards/internal-api-key.guard';
 import { InsightModule } from '../insight/insight.module';
 import { PortfolioModule } from '../portfolio/portfolio.module';
 import { InternalPortfolioFacade } from './application/facades/internal-portfolio.facade';
+import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-correction.module';
 
 @Module({
-    imports: [InsightModule, PortfolioModule],
-    controllers: [InternalController],
+    imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule],
+    controllers: [InternalController, InternalCorrectionController],
     providers: [InternalApiKeyGuard, InternalPortfolioFacade],
     exports: [InternalApiKeyGuard],
 })
