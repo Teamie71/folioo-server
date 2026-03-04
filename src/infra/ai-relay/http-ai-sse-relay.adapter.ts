@@ -25,17 +25,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
     }
 
     async openPostStream(request: AiRelayRequest): Promise<AiRelayConnection> {
-        const baseUrl = this.configService.get<string>('AI_BASE_URL');
-        if (!baseUrl) {
-            this.logger.error('AI_BASE_URL is not configured');
-            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
-        }
-
-        const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
-        if (!apiKey) {
-            this.logger.error('AI_SERVICE_API_KEY is not configured');
-            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
-        }
+        const { baseUrl, apiKey } = this.getAiServiceConfig();
 
         const abortController = new AbortController();
         const requestUrl = this.buildRequestUrl(baseUrl, request.path);
@@ -74,17 +64,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
     }
 
     async getJson<T = unknown>(request: AiRelayGetRequest): Promise<AiRelayJsonResponse<T>> {
-        const baseUrl = this.configService.get<string>('AI_BASE_URL');
-        if (!baseUrl) {
-            this.logger.error('AI_BASE_URL is not configured');
-            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
-        }
-
-        const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
-        if (!apiKey) {
-            this.logger.error('AI_SERVICE_API_KEY is not configured');
-            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
-        }
+        const { baseUrl, apiKey } = this.getAiServiceConfig();
 
         const requestUrl = this.buildRequestUrl(baseUrl, request.path);
 
@@ -155,5 +135,21 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
         }
 
         return null;
+    }
+
+    private getAiServiceConfig(): { baseUrl: string; apiKey: string } {
+        const baseUrl = this.configService.get<string>('AI_BASE_URL');
+        if (!baseUrl) {
+            this.logger.error('AI_BASE_URL is not configured');
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+        }
+
+        const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
+        if (!apiKey) {
+            this.logger.error('AI_SERVICE_API_KEY is not configured');
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+        }
+
+        return { baseUrl, apiKey };
     }
 }
