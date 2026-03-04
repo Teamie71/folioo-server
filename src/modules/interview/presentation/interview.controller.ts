@@ -11,6 +11,10 @@ import {
     InterviewSessionStateResDTO,
     SendInterviewChatReqDTO,
 } from '../application/dtos/interview.dto';
+import {
+    ApiInterviewStreamResponse,
+    ApiInterviewStreamStartResponse,
+} from './decorators/api-interview-stream.decorator';
 
 @ApiTags('Interview')
 @Controller('interview/experiences')
@@ -32,6 +36,7 @@ export class InterviewController {
     })
     @ApiParam({ name: 'experienceId', description: '경험 정리 ID', example: 42 })
     @ApiProduces('text/event-stream')
+    @ApiInterviewStreamStartResponse()
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
@@ -68,6 +73,7 @@ export class InterviewController {
     @ApiParam({ name: 'experienceId', description: '경험 정리 ID', example: 42 })
     @ApiProduces('text/event-stream')
     @ApiBody({ type: SendInterviewChatReqDTO })
+    @ApiInterviewStreamResponse()
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
