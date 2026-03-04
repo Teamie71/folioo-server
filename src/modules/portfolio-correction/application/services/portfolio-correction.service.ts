@@ -15,13 +15,22 @@ import {
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItemService } from './correction-item.service';
+import { CorrectionPortfolioSelectionService } from './correction-portfolio-selection.service';
 import { UpdateCorrectionTitleReqDTO } from '../dtos/portfolio-correction.dto';
+import { CorrectionItem } from '../../domain/correction-item.entity';
+
+export interface InternalCorrectionPayload {
+    correction: PortfolioCorrection;
+    portfolioIds: number[];
+    items: CorrectionItem[];
+}
 
 @Injectable()
 export class PortfolioCorrectionService {
     constructor(
         private readonly portfolioCorrectionRepository: PortfolioCorrectionRepository,
-        private readonly correctionItemService: CorrectionItemService
+        private readonly correctionItemService: CorrectionItemService,
+        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService
     ) {}
 
     async getCorrections(userId: number, keyword?: string): Promise<CorrectionResDTO[]> {
@@ -163,6 +172,65 @@ export class PortfolioCorrectionService {
         correction.title = body.title;
         const saved = await this.portfolioCorrectionRepository.save(correction);
         return CorrectionResDTO.from(saved);
+    }
+
+    async findByIdWithUser(correctionId: number): Promise<PortfolioCorrection> {
+        const correction = await this.portfolioCorrectionRepository.findByIdWithUser(correctionId);
+        if (!correction) {
+            throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
+        }
+        return correction;
+    }
+
+    async getInternalCorrectionDetail(correctionId: number): Promise<InternalCorrectionPayload> {
+        const correction = await this.findByIdWithUser(correctionId);
+        const [portfolioIds, items] = await Promise.all([
+            this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
+                correctionId
+            ),
+            this.correctionItemService.findByCorrectionId(correctionId),
+        ]);
+        return { correction, portfolioIds, items };
+    }
+
+    async updateStatusWithTransition(
+        correctionId: number,
+        newStatus: CorrectionStatus
+    ): Promise<void> {
+        const correction = await this.findByIdOrThrow(correctionId);
+        this.validateStatusTransition(correction.status, newStatus);
+        await this.portfolioCorrectionRepository.updateById(correctionId, { status: newStatus });
+    }
+
+    async saveCompanyInsightInternal(correctionId: number, companyInsight: string): Promise<void> {
+        const correction = await this.findByIdOrThrow(correctionId);
+        this.validateStatusTransition(correction.status, CorrectionStatus.COMPANY_INSIGHT);
+        correction.companyInsight = companyInsight;
+        correction.status = CorrectionStatus.COMPANY_INSIGHT;
+        await this.portfolioCorrectionRepository.save(correction);
+    }
+
+    private validateStatusTransition(
+        currentStatus: CorrectionStatus,
+        newStatus: CorrectionStatus
+    ): void {
+        if (newStatus === CorrectionStatus.FAILED) {
+            return;
+        }
+
+        const allowedTransitions: Record<CorrectionStatus, CorrectionStatus[]> = {
+            [CorrectionStatus.NOT_STARTED]: [CorrectionStatus.DOING_RAG],
+            [CorrectionStatus.DOING_RAG]: [CorrectionStatus.COMPANY_INSIGHT],
+            [CorrectionStatus.COMPANY_INSIGHT]: [CorrectionStatus.GENERATING],
+            [CorrectionStatus.GENERATING]: [CorrectionStatus.DONE],
+            [CorrectionStatus.DONE]: [],
+            [CorrectionStatus.FAILED]: [],
+        };
+
+        const allowed = allowedTransitions[currentStatus] ?? [];
+        if (!allowed.includes(newStatus)) {
+            throw new BusinessException(ErrorCode.CORRECTION_INVALID_STATUS_TRANSITION);
+        }
     }
 
     async deleteCorrection(correctionId: number, userId: number): Promise<void> {

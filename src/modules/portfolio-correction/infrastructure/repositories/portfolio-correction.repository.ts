@@ -30,6 +30,13 @@ export class PortfolioCorrectionRepository {
         });
     }
 
+    async findByIdWithUser(id: number): Promise<PortfolioCorrection | null> {
+        return this.portfolioCorrectionRepository.findOne({
+            where: { id },
+            relations: ['user'],
+        });
+    }
+
     async findByIdAndUserId(id: number, userId: number): Promise<PortfolioCorrection | null> {
         return this.portfolioCorrectionRepository.findOne({
             where: { id, user: { id: userId } },
