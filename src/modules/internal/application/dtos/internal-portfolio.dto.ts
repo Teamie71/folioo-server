@@ -1,5 +1,6 @@
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 import { PortfolioStatus } from 'src/modules/portfolio/domain/enums/portfolio-status.enum';
+import { IsString, IsEnum, ValidateIf } from 'class-validator';
 
 export class InternalPortfolioDetailResDTO {
     id: number;
@@ -27,4 +28,42 @@ export class InternalPortfolioDetailResDTO {
         dto.contributionRate = portfolio.contributionRate ?? null;
         return dto;
     }
+}
+
+export enum PortfolioGenerationStatus {
+    COMPLETED = 'completed',
+    FAILED = 'failed',
+}
+
+export class UpdatePortfolioResultReqDTO {
+    @IsEnum(PortfolioGenerationStatus)
+    status: PortfolioGenerationStatus;
+
+    @ValidateIf(
+        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
+    )
+    @IsString()
+    description?: string;
+
+    @ValidateIf(
+        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
+    )
+    @IsString()
+    responsibilities?: string;
+
+    @ValidateIf(
+        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
+    )
+    @IsString()
+    problemSolving?: string;
+
+    @ValidateIf(
+        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
+    )
+    @IsString()
+    learnings?: string;
+
+    @ValidateIf((o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.FAILED)
+    @IsString()
+    errorMessage?: string;
 }

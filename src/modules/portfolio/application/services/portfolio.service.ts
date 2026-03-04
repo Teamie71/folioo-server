@@ -45,4 +45,32 @@ export class PortfolioService {
         const portfolio = await this.findByIdOrThrow(portfolioId, userId);
         await this.portfolioRepository.deleteById(portfolio.id);
     }
+
+    async completeGeneration(
+        portfolioId: number,
+        content: {
+            description: string;
+            responsibilities: string;
+            problemSolving: string;
+            learnings: string;
+        }
+    ): Promise<void> {
+        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
+        portfolio.complete(content);
+        await this.portfolioRepository.save(portfolio);
+    }
+
+    async failGeneration(portfolioId: number): Promise<void> {
+        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
+        portfolio.fail();
+        await this.portfolioRepository.save(portfolio);
+    }
+
+    private async findByIdInternalOrThrow(id: number): Promise<Portfolio> {
+        const portfolio = await this.portfolioRepository.findById(id);
+        if (!portfolio) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
+        }
+        return portfolio;
+    }
 }
