@@ -96,6 +96,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,
     },
+    [ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED]: {
+        message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_AI_RELAY_FAILED]: {
+        message: 'AI 인터뷰 세션 중계에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
+    },
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
