@@ -16,7 +16,7 @@ interface ApiCommonResponseOptions {
 }
 
 // 단일 객체 응답
-export const ApiCommonResponse = <T extends Type<unknown>>(
+export const ApiCommonResponse = <T extends Type<unknown> | null>(
     model: T,
     options?: ApiCommonResponseOptions
 ) => {
@@ -25,7 +25,7 @@ export const ApiCommonResponse = <T extends Type<unknown>>(
             timestamp: { type: string; example: string };
             isSuccess: { type: string; example: boolean };
             error: { type: string; nullable: boolean; example: null };
-            result: { $ref: string };
+            result: { $ref?: string; type?: string; example?: unknown };
         };
         example?: {
             timestamp: string;
@@ -36,9 +36,13 @@ export const ApiCommonResponse = <T extends Type<unknown>>(
     } = {
         properties: {
             ...baseResponseSchema,
-            result: {
-                $ref: getSchemaPath(model),
-            },
+            result: model
+                ? {
+                      $ref: getSchemaPath(model),
+                  }
+                : {
+                      type: 'object',
+                  },
         },
     };
 
@@ -51,8 +55,12 @@ export const ApiCommonResponse = <T extends Type<unknown>>(
         };
     }
 
+    const decorators = model
+        ? [ApiExtraModels(CommonResponse, model)]
+        : [ApiExtraModels(CommonResponse)];
+
     return applyDecorators(
-        ApiExtraModels(CommonResponse, model),
+        ...decorators,
         ApiOkResponse({
             description: options?.description ?? '성공 응답',
             schema,

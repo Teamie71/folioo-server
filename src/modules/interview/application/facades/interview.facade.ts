@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { AiSseRelayConnection } from 'src/common/ports/ai-sse-relay.port';
+import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
-import { InterviewInternalDTO, SendInterviewChatReqDTO } from '../dtos/interview.dto';
+import {
+    InterviewInternalDTO,
+    InterviewSessionStateResDTO,
+    SendInterviewChatReqDTO,
+} from '../dtos/interview.dto';
 import { InterviewService } from '../services/interview.service';
 
 @Injectable()
@@ -13,7 +17,7 @@ export class InterviewFacade {
         private readonly experienceService: ExperienceService
     ) {}
 
-    async createSessionStream(userId: number, experienceId: number): Promise<AiSseRelayConnection> {
+    async createSessionStream(userId: number, experienceId: number): Promise<AiRelayConnection> {
         const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
         const interviewInternalDTO = InterviewInternalDTO.of(experience);
         if (interviewInternalDTO.sessionId) {
@@ -30,7 +34,7 @@ export class InterviewFacade {
         const sessionId = this.extractSessionId(relayConnection.responseHeaders);
         if (!sessionId) {
             relayConnection.close();
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, {
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED, {
                 reason: 'x-session-id header is missing from AI response',
             });
         }
@@ -53,17 +57,34 @@ export class InterviewFacade {
         userId: number,
         experienceId: number,
         dto: SendInterviewChatReqDTO
-    ): Promise<AiSseRelayConnection> {
+    ): Promise<AiRelayConnection> {
         const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
         const interviewInternalDTO = InterviewInternalDTO.of(experience);
         if (!interviewInternalDTO.sessionId) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+            throw new BusinessException(ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED, {
                 reason: 'interview session id is not initialized for this experience',
                 experienceId,
             });
         }
 
         return this.interviewService.sendChatStream(interviewInternalDTO.sessionId, dto);
+    }
+
+    async getSessionState(
+        userId: number,
+        experienceId: number
+    ): Promise<InterviewSessionStateResDTO> {
+        const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
+        const interviewInternalDTO = InterviewInternalDTO.of(experience);
+
+        if (!interviewInternalDTO.sessionId) {
+            throw new BusinessException(ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED, {
+                reason: 'interview session id is not initialized for this experience',
+                experienceId,
+            });
+        }
+
+        return this.interviewService.getSessionState(interviewInternalDTO.sessionId);
     }
 
     private extractSessionId(headers?: Record<string, string>): string | null {

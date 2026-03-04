@@ -53,3 +53,54 @@ export class InterviewInternalDTO {
         };
     }
 }
+
+export interface AiInterviewMessagePayload {
+    type: string;
+    content: string;
+}
+
+export interface AiInterviewSessionStateResponse {
+    messages: AiInterviewMessagePayload[];
+    experience_name: string;
+    current_stage: number;
+    all_complete: boolean;
+}
+
+export class InterviewMessageResDTO {
+    @ApiProperty({ example: 'ai', description: '메시지를 보낸 주체 (ai/human 등)' })
+    type: string;
+
+    @ApiProperty({ example: '안녕하세요! 경험 정리를 도와드릴게요.', description: '메시지 본문' })
+    content: string;
+}
+
+export class InterviewSessionStateResDTO {
+    static fromAiPayload(payload: {
+        messages: { type: string; content: string }[];
+        experience_name: string;
+        current_stage: number;
+        all_complete: boolean;
+    }): InterviewSessionStateResDTO {
+        return {
+            messages: payload.messages.map((message) => ({
+                type: message.type,
+                content: message.content,
+            })),
+            experienceName: payload.experience_name,
+            currentStage: payload.current_stage,
+            allComplete: payload.all_complete,
+        };
+    }
+
+    @ApiProperty({ type: [InterviewMessageResDTO], description: '현재까지의 인터뷰 메시지 목록' })
+    messages: InterviewMessageResDTO[];
+
+    @ApiProperty({ example: '마케팅 인턴 경험', description: '경험 정리 이름' })
+    experienceName: string;
+
+    @ApiProperty({ example: 1, description: '현재 인터뷰 단계 (1~n)' })
+    currentStage: number;
+
+    @ApiProperty({ example: false, description: '인터뷰 전 과정을 모두 완료했는지 여부' })
+    allComplete: boolean;
+}
