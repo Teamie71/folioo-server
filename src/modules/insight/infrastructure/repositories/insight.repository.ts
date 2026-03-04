@@ -90,7 +90,7 @@ export class InsightRepository {
         if (Number.isNaN(similarity)) {
             return 0;
         }
-        return Math.max(-1, Math.min(1, similarity));
+        return Math.max(0, Math.min(1, similarity));
     }
 
     async existsByTitleAndUser(title: string, userId: number): Promise<boolean> {
