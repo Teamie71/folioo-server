@@ -1,19 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
-import { AiSseRelayConnection } from 'src/common/ports/ai-sse-relay.port';
+import { InsightService } from 'src/modules/insight/application/services/insight.service';
+import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { Readable } from 'stream';
 import { InterviewService } from '../services/interview.service';
-import { SendInterviewChatReqDTO } from '../dtos/interview.dto';
+import { InterviewSessionStateResDTO, SendInterviewChatReqDTO } from '../dtos/interview.dto';
 import { InterviewFacade } from './interview.facade';
 
 class InterviewServiceStub {
-    readonly createSessionStream = jest.fn<Promise<AiSseRelayConnection>, [number, string]>();
+    readonly createSessionStream = jest.fn<Promise<AiRelayConnection>, [number, string]>();
 
-    readonly sendChatStream = jest.fn<
-        Promise<AiSseRelayConnection>,
-        [string, SendInterviewChatReqDTO]
-    >();
+    readonly sendChatStream = jest.fn<Promise<AiRelayConnection>, [string, string, number[]]>();
+
+    readonly getSessionState = jest.fn<Promise<InterviewSessionStateResDTO>, [string]>();
 }
 
 class ExperienceServiceStub {
@@ -24,18 +25,25 @@ class ExperienceServiceStub {
     readonly saveInterviewSessionId = jest.fn<Promise<void>, [number, number, string]>();
 }
 
+class InsightServiceStub {
+    readonly findByIdAndUserOrThrow = jest.fn<Promise<{ id: number }>, [number, number]>();
+}
+
 describe('InterviewFacade', () => {
     let interviewFacade: InterviewFacade;
     let interviewServiceStub: InterviewServiceStub;
     let experienceServiceStub: ExperienceServiceStub;
+    let insightServiceStub: InsightServiceStub;
 
     beforeEach(() => {
         interviewServiceStub = new InterviewServiceStub();
         experienceServiceStub = new ExperienceServiceStub();
+        insightServiceStub = new InsightServiceStub();
 
         interviewFacade = new InterviewFacade(
             interviewServiceStub as unknown as InterviewService,
-            experienceServiceStub as unknown as ExperienceService
+            experienceServiceStub as unknown as ExperienceService,
+            insightServiceStub as unknown as InsightService
         );
     });
 
@@ -45,7 +53,7 @@ describe('InterviewFacade', () => {
             name: '서비스 기획 인턴십 경험',
             sessionId: null,
         };
-        const relayConnection: AiSseRelayConnection = {
+        const relayConnection: AiRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
             responseHeaders: {
@@ -101,15 +109,19 @@ describe('InterviewFacade', () => {
             name: '백엔드 개발 경험',
             sessionId: null,
         };
-        const relayConnection: AiSseRelayConnection = {
+        const relayConnection: AiRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
         };
         experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
         interviewServiceStub.createSessionStream.mockResolvedValue(relayConnection);
 
-        await expect(interviewFacade.createSessionStream(42, 6)).rejects.toBeInstanceOf(
-            BusinessException
+        await expect(interviewFacade.createSessionStream(42, 6)).rejects.toMatchObject(
+            expect.objectContaining({
+                response: expect.objectContaining({
+                    errorCode: ErrorCode.INTERVIEW_AI_RELAY_FAILED,
+                }),
+            })
         );
 
         expect(experienceServiceStub.saveInterviewSessionId).not.toHaveBeenCalled();
@@ -122,7 +134,7 @@ describe('InterviewFacade', () => {
             name: '프론트엔드 개발 경험',
             sessionId: null,
         };
-        const relayConnection: AiSseRelayConnection = {
+        const relayConnection: AiRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
             responseHeaders: {
@@ -142,30 +154,36 @@ describe('InterviewFacade', () => {
     it('resolves sessionId from experience before sending chat stream', async () => {
         const dto: SendInterviewChatReqDTO = {
             message: '안녕하세요',
-            fileIds: ['file_1'],
-            insightIds: [1],
+            insightId: 1,
         };
         const experience = {
             id: 9,
             name: '백엔드 개발 경험',
             sessionId: 'session_resolved',
         };
-        const relayConnection: AiSseRelayConnection = {
+        const relayConnection: AiRelayConnection = {
             stream: Readable.from([]),
             close: jest.fn(),
         };
 
         experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
         interviewServiceStub.sendChatStream.mockResolvedValue(relayConnection);
+        insightServiceStub.findByIdAndUserOrThrow.mockResolvedValue({ id: 1 });
 
         const result = await interviewFacade.sendChatStream(42, 9, dto);
 
         expect(experienceServiceStub.findByIdOrThrow).toHaveBeenCalledWith(9, 42);
-        expect(interviewServiceStub.sendChatStream).toHaveBeenCalledWith('session_resolved', dto);
+        expect(insightServiceStub.findByIdAndUserOrThrow).toHaveBeenCalledTimes(1);
+        expect(insightServiceStub.findByIdAndUserOrThrow).toHaveBeenCalledWith(1, 42);
+        expect(interviewServiceStub.sendChatStream).toHaveBeenCalledWith(
+            'session_resolved',
+            '안녕하세요',
+            [1]
+        );
         expect(result).toBe(relayConnection);
     });
 
-    it('throws bad request when experience sessionId is missing for chat stream', async () => {
+    it('throws domain error when experience sessionId is missing for chat stream', async () => {
         const dto: SendInterviewChatReqDTO = {
             message: '추가 질문입니다',
         };
@@ -177,9 +195,54 @@ describe('InterviewFacade', () => {
 
         experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
 
-        await expect(interviewFacade.sendChatStream(42, 10, dto)).rejects.toBeInstanceOf(
-            BusinessException
+        await expect(interviewFacade.sendChatStream(42, 10, dto)).rejects.toMatchObject(
+            expect.objectContaining({
+                response: expect.objectContaining({
+                    errorCode: ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
+                }),
+            })
         );
         expect(interviewServiceStub.sendChatStream).not.toHaveBeenCalled();
+    });
+
+    it('throws domain error when experience sessionId is missing for session state request', async () => {
+        const experience = {
+            id: 13,
+            name: '모바일 개발 경험',
+            sessionId: null,
+        };
+
+        experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+
+        await expect(interviewFacade.getSessionState(55, 13)).rejects.toMatchObject(
+            expect.objectContaining({
+                response: expect.objectContaining({
+                    errorCode: ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
+                }),
+            })
+        );
+    });
+
+    it('delegates session state retrieval to interview service after resolving session id', async () => {
+        const experience = {
+            id: 12,
+            name: '데이터 분석 경험',
+            sessionId: 'session_state_123',
+        };
+        const sessionState: InterviewSessionStateResDTO = {
+            messages: [],
+            experienceName: experience.name,
+            currentStage: 1,
+            allComplete: false,
+        };
+
+        experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+        interviewServiceStub.getSessionState.mockResolvedValue(sessionState);
+
+        const result = await interviewFacade.getSessionState(99, 12);
+
+        expect(experienceServiceStub.findByIdOrThrow).toHaveBeenCalledWith(12, 99);
+        expect(interviewServiceStub.getSessionState).toHaveBeenCalledWith('session_state_123');
+        expect(result).toBe(sessionState);
     });
 });

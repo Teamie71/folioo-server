@@ -1,22 +1,21 @@
 import { HttpStatus, LoggerService } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { AiSseRelayConnection } from 'src/common/ports/ai-sse-relay.port';
+import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 
 export interface RelaySseStreamOptions {
-    connection: AiSseRelayConnection;
+    connection: AiRelayConnection;
     request: Request;
     response: Response;
     logger: LoggerService;
     errorLogPrefix: string;
     errorEventPayload: string;
-    passThroughHeaders?: string[];
 }
 
 export class SseRelayUtil {
     static relayStream(options: RelaySseStreamOptions): void {
-        const { connection, request, response, passThroughHeaders = [] } = options;
+        const { connection, request, response } = options;
 
-        this.initializeResponse(response, connection, passThroughHeaders);
+        this.initializeResponse(response);
 
         const upstreamStream = connection.stream;
         let isFinalized = false;
@@ -85,23 +84,12 @@ export class SseRelayUtil {
         upstreamStream.on('end', onEnd);
     }
 
-    private static initializeResponse(
-        response: Response,
-        connection: AiSseRelayConnection,
-        passThroughHeaders: string[]
-    ): void {
+    private static initializeResponse(response: Response): void {
         response.status(HttpStatus.OK);
         response.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
         response.setHeader('Cache-Control', 'no-cache, no-transform');
         response.setHeader('Connection', 'keep-alive');
         response.setHeader('X-Accel-Buffering', 'no');
-
-        for (const headerName of passThroughHeaders) {
-            const headerValue = connection.responseHeaders?.[headerName.toLowerCase()];
-            if (headerValue) {
-                response.setHeader(headerName, headerValue);
-            }
-        }
 
         response.flushHeaders();
     }
