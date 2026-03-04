@@ -55,19 +55,6 @@ export class Portfolio extends BaseEntity {
     @JoinColumn()
     experience: Experience;
 
-    static createInternal(userId: number, experienceId: number): Portfolio {
-        const portfolio = new Portfolio();
-        portfolio.name = '';
-        portfolio.description = '';
-        portfolio.responsibilities = '';
-        portfolio.problemSolving = '';
-        portfolio.learnings = '';
-        portfolio.sourceType = SourceType.INTERNAL;
-        portfolio.user = { id: userId } as User;
-        portfolio.experience = { id: experienceId } as Experience;
-        return portfolio;
-    }
-
     static createExternal(userId: number): Portfolio {
         const portfolio = new Portfolio();
         portfolio.name = '';

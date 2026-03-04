@@ -4,6 +4,7 @@ import { Portfolio } from '../../domain/portfolio.entity';
 import { PortfolioDetailResDTO, UpdatePortfolioReqDTO } from '../dtos/portfolio.dto';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 
 @Injectable()
 export class PortfolioService {
@@ -56,12 +57,18 @@ export class PortfolioService {
         }
     ): Promise<void> {
         const portfolio = await this.findByIdInternalOrThrow(portfolioId);
+        if (portfolio.status !== PortfolioStatus.GENERATING) {
+            return;
+        }
         portfolio.complete(content);
         await this.portfolioRepository.save(portfolio);
     }
 
     async failGeneration(portfolioId: number): Promise<void> {
         const portfolio = await this.findByIdInternalOrThrow(portfolioId);
+        if (portfolio.status !== PortfolioStatus.GENERATING) {
+            return;
+        }
         portfolio.fail();
         await this.portfolioRepository.save(portfolio);
     }

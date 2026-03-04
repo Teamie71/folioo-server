@@ -140,7 +140,16 @@ export class InternalController {
         summary: '포트폴리오 AI 생성 결과 저장 (Internal)',
         description: 'AI 서버의 생성 결과를 저장하기 위한 콜백 API',
     })
-    @ApiOkResponse()
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2024-01-01T00:00:00.000Z',
+                isSuccess: true,
+                error: null,
+                result: 'portfolio generation result saved',
+            },
+        },
+    })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     async updateInternalPortfolio(
         @Body() body: UpdatePortfolioResultReqDTO,

@@ -23,10 +23,10 @@ export class InternalPortfolioFacade {
     ): Promise<void> {
         if (body.status === PortfolioGenerationStatus.COMPLETED) {
             await this.portfolioService.completeGeneration(portfolioId, {
-                description: body.description!,
-                responsibilities: body.responsibilities!,
-                problemSolving: body.problemSolving!,
-                learnings: body.learnings!,
+                description: body.description ?? '',
+                responsibilities: body.responsibilities ?? '',
+                problemSolving: body.problemSolving ?? '',
+                learnings: body.learnings ?? '',
             });
             return;
         }
