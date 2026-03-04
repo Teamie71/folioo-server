@@ -37,6 +37,14 @@ export class InsightService {
         return insight;
     }
 
+    async findByIdAndUserOrThrow(id: number, userId: number): Promise<Insight> {
+        const insight = await this.findByIdOrThrow(id);
+        if (insight.user.id !== userId) {
+            throw new BusinessException(ErrorCode.NOT_LOG_OWNER);
+        }
+        return insight;
+    }
+
     async getInsightById(insightId: number): Promise<InsightDetailPayload> {
         const log = await this.findByIdOrThrow(insightId);
         const activityNames = await this.insightActivityService.findActivitiesByInsight(insightId);

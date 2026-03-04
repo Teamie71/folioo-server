@@ -3,7 +3,6 @@ import { AiRelayConnection, AiRelayPort } from 'src/common/ports/ai-relay.port';
 import {
     AiInterviewSessionStateResponse,
     InterviewSessionStateResDTO,
-    SendInterviewChatReqDTO,
 } from '../dtos/interview.dto';
 
 const CREATE_SESSION_STREAM_PATH = '/api/v1/interview/sessions/stream';
@@ -28,14 +27,14 @@ export class InterviewService {
 
     async sendChatStream(
         sessionId: string,
-        dto: SendInterviewChatReqDTO
+        message: string,
+        mentionedInsightIds: number[]
     ): Promise<AiRelayConnection> {
         return this.aiRelayPort.openPostStream({
             path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/chat/stream`,
             body: {
-                message: dto.message,
-                file_ids: dto.fileIds ?? [],
-                mentioned_insight_ids: dto.insightIds ?? [],
+                message,
+                mentioned_insight_ids: mentionedInsightIds,
             },
         });
     }

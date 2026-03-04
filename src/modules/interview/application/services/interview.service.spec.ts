@@ -6,7 +6,7 @@ import {
     AiRelayPort,
     AiRelayRequest,
 } from 'src/common/ports/ai-relay.port';
-import { InterviewSessionStateResDTO, SendInterviewChatReqDTO } from '../dtos/interview.dto';
+import { InterviewSessionStateResDTO } from '../dtos/interview.dto';
 import { InterviewService } from './interview.service';
 
 class AiRelayPortStub extends AiRelayPort {
@@ -52,36 +52,24 @@ describe('InterviewService', () => {
     });
 
     it('maps chat stream request to AI server schema', async () => {
-        const dto: SendInterviewChatReqDTO = {
-            message: '안녕하세요',
-            fileIds: ['file_1'],
-            insightIds: [1],
-        };
-
-        await interviewService.sendChatStream('session_123', dto);
+        await interviewService.sendChatStream('session_123', '안녕하세요', [1]);
 
         expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
             path: '/api/v1/interview/sessions/session_123/chat/stream',
             body: {
                 message: '안녕하세요',
-                file_ids: ['file_1'],
                 mentioned_insight_ids: [1],
             },
         });
     });
 
     it('uses empty arrays when optional chat arrays are omitted', async () => {
-        const dto: SendInterviewChatReqDTO = {
-            message: '추가 질문입니다.',
-        };
-
-        await interviewService.sendChatStream('session 1/2', dto);
+        await interviewService.sendChatStream('session 1/2', '추가 질문입니다.', []);
 
         expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
             path: '/api/v1/interview/sessions/session%201%2F2/chat/stream',
             body: {
                 message: '추가 질문입니다.',
-                file_ids: [],
                 mentioned_insight_ids: [],
             },
         });

@@ -3,6 +3,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
+import { InsightService } from 'src/modules/insight/application/services/insight.service';
 import {
     InterviewInternalDTO,
     InterviewSessionStateResDTO,
@@ -14,7 +15,8 @@ import { InterviewService } from '../services/interview.service';
 export class InterviewFacade {
     constructor(
         private readonly interviewService: InterviewService,
-        private readonly experienceService: ExperienceService
+        private readonly experienceService: ExperienceService,
+        private readonly insightService: InsightService
     ) {}
 
     async createSessionStream(userId: number, experienceId: number): Promise<AiRelayConnection> {
@@ -67,7 +69,24 @@ export class InterviewFacade {
             });
         }
 
-        return this.interviewService.sendChatStream(interviewInternalDTO.sessionId, dto);
+        const validatedInsightIds = await this.resolveInsightIds(userId, dto.insightId);
+
+        return this.interviewService.sendChatStream(
+            interviewInternalDTO.sessionId,
+            dto.message,
+            validatedInsightIds
+        );
+    }
+
+    private async resolveInsightIds(userId: number, insightId?: number): Promise<number[]> {
+        if (!insightId) {
+            return [];
+        }
+
+        await this.insightService.findByIdAndUserOrThrow(insightId, userId);
+        return [];
+        // TODO: AI 서버 측 스펙 변경 이후 코드 수정
+        //return [insightId];
     }
 
     async getSessionState(

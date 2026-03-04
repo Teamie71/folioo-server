@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
+import { InsightService } from 'src/modules/insight/application/services/insight.service';
 import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -11,10 +12,7 @@ import { InterviewFacade } from './interview.facade';
 class InterviewServiceStub {
     readonly createSessionStream = jest.fn<Promise<AiRelayConnection>, [number, string]>();
 
-    readonly sendChatStream = jest.fn<
-        Promise<AiRelayConnection>,
-        [string, SendInterviewChatReqDTO]
-    >();
+    readonly sendChatStream = jest.fn<Promise<AiRelayConnection>, [string, string, number[]]>();
 
     readonly getSessionState = jest.fn<Promise<InterviewSessionStateResDTO>, [string]>();
 }
@@ -27,18 +25,25 @@ class ExperienceServiceStub {
     readonly saveInterviewSessionId = jest.fn<Promise<void>, [number, number, string]>();
 }
 
+class InsightServiceStub {
+    readonly findByIdAndUserOrThrow = jest.fn<Promise<{ id: number }>, [number, number]>();
+}
+
 describe('InterviewFacade', () => {
     let interviewFacade: InterviewFacade;
     let interviewServiceStub: InterviewServiceStub;
     let experienceServiceStub: ExperienceServiceStub;
+    let insightServiceStub: InsightServiceStub;
 
     beforeEach(() => {
         interviewServiceStub = new InterviewServiceStub();
         experienceServiceStub = new ExperienceServiceStub();
+        insightServiceStub = new InsightServiceStub();
 
         interviewFacade = new InterviewFacade(
             interviewServiceStub as unknown as InterviewService,
-            experienceServiceStub as unknown as ExperienceService
+            experienceServiceStub as unknown as ExperienceService,
+            insightServiceStub as unknown as InsightService
         );
     });
 
@@ -149,8 +154,7 @@ describe('InterviewFacade', () => {
     it('resolves sessionId from experience before sending chat stream', async () => {
         const dto: SendInterviewChatReqDTO = {
             message: '안녕하세요',
-            fileIds: ['file_1'],
-            insightIds: [1],
+            insightId: 1,
         };
         const experience = {
             id: 9,
@@ -164,11 +168,18 @@ describe('InterviewFacade', () => {
 
         experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
         interviewServiceStub.sendChatStream.mockResolvedValue(relayConnection);
+        insightServiceStub.findByIdAndUserOrThrow.mockResolvedValue({ id: 1 });
 
         const result = await interviewFacade.sendChatStream(42, 9, dto);
 
         expect(experienceServiceStub.findByIdOrThrow).toHaveBeenCalledWith(9, 42);
-        expect(interviewServiceStub.sendChatStream).toHaveBeenCalledWith('session_resolved', dto);
+        expect(insightServiceStub.findByIdAndUserOrThrow).toHaveBeenCalledTimes(1);
+        expect(insightServiceStub.findByIdAndUserOrThrow).toHaveBeenCalledWith(1, 42);
+        expect(interviewServiceStub.sendChatStream).toHaveBeenCalledWith(
+            'session_resolved',
+            '안녕하세요',
+            [1]
+        );
         expect(result).toBe(relayConnection);
     });
 

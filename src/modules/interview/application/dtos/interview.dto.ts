@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class SendInterviewChatReqDTO {
     @Transform(({ value }: { value: string }) => value?.trim())
@@ -13,27 +13,15 @@ export class SendInterviewChatReqDTO {
     message: string;
 
     @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    @ApiProperty({
-        required: false,
-        type: [String],
-        example: ['file_1', 'file_2'],
-        description: '참조할 파일 ID 목록',
-    })
-    fileIds?: string[];
-
-    @IsOptional()
-    @IsArray()
     @Type(() => Number)
-    @IsInt({ each: true })
+    @IsInt()
     @ApiProperty({
         required: false,
-        type: [Number],
-        example: [1, 2],
-        description: '언급한 인사이트 ID 목록',
+        type: Number,
+        example: 1,
+        description: '언급한 인사이트 ID (단일)',
     })
-    insightIds?: number[];
+    insightId?: number;
 }
 
 export class InterviewInternalDTO {
