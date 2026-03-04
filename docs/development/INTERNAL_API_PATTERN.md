@@ -10,7 +10,7 @@ This document defines the baseline pattern for internal-only APIs used by AI ser
 
 ## Routing Rule
 
-- Internal routes must use the prefix: `/api/v1/internal/*`
+- Internal routes must use the prefix: `/internal/*`
 - Public user routes remain unchanged (`/portfolios`, `/portfolio-corrections`, ...)
 
 ## Auth Rule
