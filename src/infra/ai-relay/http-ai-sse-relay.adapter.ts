@@ -106,12 +106,10 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
                 const status = error.response?.status;
-                const errorData = error.response?.data as unknown;
                 this.logger.error('AI JSON request failed', {
                     url: requestUrl,
                     status,
                     error: error.message,
-                    data: errorData,
                 });
             } else {
                 this.logger.error('Unknown AI JSON request failure');

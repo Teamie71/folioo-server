@@ -77,7 +77,7 @@ describe('HttpAiPdfExtractAdapter', () => {
 
             await expect(adapter.extractText(fileBuffer, 'test.pdf')).rejects.toMatchObject({
                 response: expect.objectContaining({
-                    errorCode: ErrorCode.INTERVIEW_AI_RELAY_FAILED,
+                    errorCode: ErrorCode.PORTFOLIO_EXTRACT_FAILED,
                 }),
             });
         });

@@ -34,10 +34,9 @@ export class InterviewController {
     @ApiProduces('text/event-stream')
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
-        ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
         ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS,
-        ErrorCode.INTERNAL_SERVER_ERROR
+        ErrorCode.INTERVIEW_AI_RELAY_FAILED
     )
     async createSessionStream(
         @User('sub') userId: number,
@@ -71,9 +70,9 @@ export class InterviewController {
     @ApiBody({ type: SendInterviewChatReqDTO })
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
-        ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
-        ErrorCode.INTERNAL_SERVER_ERROR
+        ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
+        ErrorCode.INTERVIEW_AI_RELAY_FAILED
     )
     async sendChatStream(
         @User('sub') userId: number,
@@ -107,9 +106,9 @@ export class InterviewController {
     @ApiCommonResponse(InterviewSessionStateResDTO)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
-        ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
-        ErrorCode.INTERNAL_SERVER_ERROR
+        ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
+        ErrorCode.INTERVIEW_AI_RELAY_FAILED
     )
     async getSessionState(
         @User('sub') userId: number,

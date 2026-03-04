@@ -23,13 +23,13 @@ export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
         const baseUrl = this.configService.get<string>('AI_BASE_URL');
         if (!baseUrl) {
             this.logger.error('AI_BASE_URL is not configured');
-            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+            throw new BusinessException(ErrorCode.PORTFOLIO_EXTRACT_FAILED);
         }
 
         const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
         if (!apiKey) {
             this.logger.error('AI_SERVICE_API_KEY is not configured');
-            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+            throw new BusinessException(ErrorCode.PORTFOLIO_EXTRACT_FAILED);
         }
 
         const requestUrl = this.buildRequestUrl(baseUrl, EXTRACT_PATH);
