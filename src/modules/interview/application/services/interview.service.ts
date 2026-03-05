@@ -49,20 +49,18 @@ export class InterviewService {
         return InterviewSessionStateResDTO.fromAiPayload(response.data);
     }
 
-    delegatePortfolioGeneration(portfolioId: number, sessionId: string, userId: string): void {
+    async delegatePortfolioGeneration(
+        portfolioId: number,
+        sessionId: string,
+        userId: string
+    ): Promise<void> {
         // TODO: AI 서버 스펙 변경 후 portfolioId도 body에 추가
-        this.aiRelayPort
-            .postJson({
-                path: '/api/v1/portfolio/generate',
-                body: {
-                    session_id: sessionId,
-                    user_id: userId,
-                },
-            })
-            .catch((error: unknown) => {
-                const message = `Failed to delegate portfolio generation to AI server: portfolioId=${portfolioId}`;
-                const stack = error instanceof Error ? error.stack : undefined;
-                this.logger.error(message, stack);
-            });
+        await this.aiRelayPort.postJson({
+            path: '/api/v1/portfolio/generate',
+            body: {
+                session_id: sessionId,
+                user_id: userId,
+            },
+        });
     }
 }

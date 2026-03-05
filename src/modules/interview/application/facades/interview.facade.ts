@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -18,6 +18,8 @@ import { InterviewService } from '../services/interview.service';
 
 @Injectable()
 export class InterviewFacade {
+    private readonly logger = new Logger(InterviewFacade.name);
+
     constructor(
         private readonly interviewService: InterviewService,
         private readonly experienceService: ExperienceService,
@@ -129,11 +131,19 @@ export class InterviewFacade {
 
         const result = await this.executePortfolioGeneration(experience, userId);
 
-        this.interviewService.delegatePortfolioGeneration(
-            result.portfolioId,
-            experience.sessionId,
-            String(userId)
-        );
+        try {
+            await this.interviewService.delegatePortfolioGeneration(
+                result.portfolioId,
+                experience.sessionId,
+                String(userId)
+            );
+        } catch (error) {
+            await this.compensateFailedDelegation(result.portfolioId, experienceId, error);
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED, {
+                reason: 'Failed to delegate portfolio generation to AI server',
+                portfolioId: result.portfolioId,
+            });
+        }
 
         return result;
     }
@@ -153,6 +163,37 @@ export class InterviewFacade {
             savedPortfolio.status,
             updatedExperience.status
         );
+    }
+
+    @Transactional()
+    private async compensateFailedDelegation(
+        portfolioId: number,
+        experienceId: number,
+        originalError: unknown
+    ): Promise<void> {
+        const errorDetail =
+            originalError instanceof Error ? originalError.message : String(originalError);
+        this.logger.error(
+            `AI delegation failed for portfolioId=${portfolioId}, experienceId=${experienceId}. ` +
+                `Running compensation. Cause: ${errorDetail}`
+        );
+
+        try {
+            await Promise.all([
+                this.portfolioService.removeGeneratingPortfolio(portfolioId),
+                this.experienceService.revertToOnChat(experienceId),
+            ]);
+            this.logger.log(
+                `Compensation completed: portfolioId=${portfolioId}, experienceId=${experienceId}`
+            );
+        } catch (compensationError) {
+            const stack = compensationError instanceof Error ? compensationError.stack : undefined;
+            this.logger.error(
+                `Compensation FAILED for portfolioId=${portfolioId}, experienceId=${experienceId}. ` +
+                    `Manual intervention required.`,
+                stack
+            );
+        }
     }
 
     private extractSessionId(headers?: Record<string, string>): string | null {
