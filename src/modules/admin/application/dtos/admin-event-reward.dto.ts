@@ -1,13 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
 
 export class AdminUserSearchReqDTO {
+    @IsOptional()
     @IsString()
-    @MinLength(1)
-    @MaxLength(25)
-    name: string;
+    @MaxLength(100)
+    keyword?: string;
 }
 
 export class AdminUserItemResDTO {

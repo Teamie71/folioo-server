@@ -30,11 +30,16 @@ export class AdminEventRewardController {
     }
 
     @Get('api/users/search')
-    @ApiOperation({ summary: '사용자 이름 검색 (Admin)' })
-    @ApiQuery({ name: 'name', type: String, description: '검색할 사용자 이름' })
+    @ApiOperation({ summary: '사용자 검색 (Admin) — 이름/이메일 통합 검색, 빈 값이면 전체 목록' })
+    @ApiQuery({
+        name: 'keyword',
+        type: String,
+        required: false,
+        description: '검색 키워드 (이름 또는 이메일)',
+    })
     @ApiCommonResponse(AdminUserSearchResDTO)
     async searchUsers(@Query() query: AdminUserSearchReqDTO): Promise<AdminUserSearchResDTO> {
-        return this.adminEventRewardFacade.searchUsers(query.name);
+        return this.adminEventRewardFacade.searchUsers(query.keyword);
     }
 
     @Post('api/events/:eventCode/grants')
