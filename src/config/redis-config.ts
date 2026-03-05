@@ -63,17 +63,17 @@ export class RedisConfigService {
             return;
         }
 
+        if (driver === 'upstash') {
+            this.validateUpstashConfig();
+            return;
+        }
+
         const host = this.configService.get<string>('REDIS_HOST', DEFAULT_REDIS_HOST);
         if (LOCAL_REDIS_HOSTS.has(host)) {
             throw new Error(
                 `${profile} 프로필에서 REDIS_HOST=${host} 는 허용되지 않습니다. ` +
                     '로컬 전용 값이므로 Upstash(REST) 또는 원격 Redis 엔드포인트를 사용하세요.'
             );
-        }
-
-        if (driver === 'upstash') {
-            this.validateUpstashConfig();
-            return;
         }
     }
 
