@@ -233,6 +233,34 @@ export class PortfolioCorrectionService {
         }
     }
 
+    async saveCorrectionResult(
+        correctionId: number,
+        items: { portfolioId: number; data: Partial<CorrectionItem> }[]
+    ): Promise<void> {
+        const correction = await this.findByIdOrThrow(correctionId);
+        this.validateStatusTransition(correction.status, CorrectionStatus.DONE);
+
+        const existingItems = await this.correctionItemService.findByCorrectionId(correctionId);
+        const itemMap = new Map(existingItems.map((item) => [item.portfolio.id, item]));
+
+        for (const { portfolioId, data } of items) {
+            const existingItem = itemMap.get(portfolioId);
+            if (existingItem) {
+                existingItem.description = data.description ?? existingItem.description;
+                existingItem.responsibilities =
+                    data.responsibilities ?? existingItem.responsibilities;
+                existingItem.problemSolving = data.problemSolving ?? existingItem.problemSolving;
+                existingItem.learnings = data.learnings ?? existingItem.learnings;
+                existingItem.overallReview = data.overallReview ?? existingItem.overallReview;
+                await this.correctionItemService.saveCorrectionItem(existingItem);
+            }
+        }
+
+        await this.portfolioCorrectionRepository.updateById(correctionId, {
+            status: CorrectionStatus.DONE,
+        });
+    }
+
     async deleteCorrection(correctionId: number, userId: number): Promise<void> {
         await this.findByIdAndUserIdOrThrow(correctionId, userId);
         await this.correctionItemService.deleteByCorrectionId(correctionId);
