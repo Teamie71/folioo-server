@@ -25,7 +25,7 @@ export class EventFeedbackSubmission extends BaseEntity {
     @Column({ name: 'user_id', type: 'int', nullable: true })
     userId: number | null;
 
-    @Column({ name: 'phone_num', length: 20, nullable: true })
+    @Column({ name: 'phone_num', type: 'varchar', length: 20, nullable: true })
     phoneNum: string | null;
 
     @Column({
