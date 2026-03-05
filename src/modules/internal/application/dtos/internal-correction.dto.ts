@@ -63,7 +63,7 @@ export class InternalCorrectionResDTO {
         const { correction, portfolioIds, items } = payload;
         const dto = new InternalCorrectionResDTO();
         dto.id = correction.id;
-        dto.user_id = correction.user?.id ?? 0;
+        dto.user_id = correction.user.id;
         dto.portfolio_ids = portfolioIds;
         dto.company_name = correction.companyName;
         dto.job_title = correction.positionName;
