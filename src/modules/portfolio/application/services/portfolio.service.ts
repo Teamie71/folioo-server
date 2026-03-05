@@ -18,6 +18,10 @@ export class PortfolioService {
         return portfolio;
     }
 
+    async savePortfolio(portfolio: Portfolio): Promise<Portfolio> {
+        return this.portfolioRepository.save(portfolio);
+    }
+
     async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
         const portfolio = await this.portfolioRepository.findByIdWithExperience(id);
         if (!portfolio) {
@@ -71,6 +75,14 @@ export class PortfolioService {
         }
         portfolio.fail();
         await this.portfolioRepository.save(portfolio);
+    }
+
+    async removeGeneratingPortfolio(portfolioId: number): Promise<void> {
+        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
+        if (portfolio.status !== PortfolioStatus.GENERATING) {
+            return;
+        }
+        await this.portfolioRepository.deleteById(portfolio.id);
     }
 
     private async findByIdInternalOrThrow(id: number): Promise<Portfolio> {

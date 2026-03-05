@@ -11,9 +11,9 @@ import { EventParticipationService } from './application/services/event-particip
 import { EventFeedbackSubmissionService } from './application/services/event-feedback-submission.service';
 import { EventController } from './presentation/event.controller';
 import { EventRewardFacade } from './application/facades/event-reward.facade';
+import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import { UserModule } from '../user/user.module';
 import { TicketModule } from '../ticket/ticket.module';
-import { InternalApiKeyGuard } from '../internal/infrastructure/guards/internal-api-key.guard';
 
 @Module({
     imports: [

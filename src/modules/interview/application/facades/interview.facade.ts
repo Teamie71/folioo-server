@@ -1,9 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { Transactional } from 'typeorm-transactional';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
+import { Experience } from 'src/modules/experience/domain/experience.entity';
+import { GeneratePortfolioResDTO } from 'src/modules/experience/application/dtos/experience.dto';
 import { InsightService } from 'src/modules/insight/application/services/insight.service';
+import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
+import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 import {
     InterviewInternalDTO,
     InterviewSessionStateResDTO,
@@ -13,10 +18,13 @@ import { InterviewService } from '../services/interview.service';
 
 @Injectable()
 export class InterviewFacade {
+    private readonly logger = new Logger(InterviewFacade.name);
+
     constructor(
         private readonly interviewService: InterviewService,
         private readonly experienceService: ExperienceService,
-        private readonly insightService: InsightService
+        private readonly insightService: InsightService,
+        private readonly portfolioService: PortfolioService
     ) {}
 
     async createSessionStream(userId: number, experienceId: number): Promise<AiRelayConnection> {
@@ -104,6 +112,88 @@ export class InterviewFacade {
         }
 
         return this.interviewService.getSessionState(interviewInternalDTO.sessionId);
+    }
+
+    async generatePortfolio(
+        experienceId: number,
+        userId: number
+    ): Promise<GeneratePortfolioResDTO> {
+        const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
+
+        if (!experience.sessionId) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_SESSION_NOT_READY, { experienceId });
+        }
+
+        const sessionState = await this.interviewService.getSessionState(experience.sessionId);
+        if (!sessionState.allComplete) {
+            throw new BusinessException(ErrorCode.INTERVIEW_NOT_COMPLETED);
+        }
+
+        const result = await this.executePortfolioGeneration(experience, userId);
+
+        try {
+            await this.interviewService.delegatePortfolioGeneration(
+                result.portfolioId,
+                experience.sessionId,
+                String(userId)
+            );
+        } catch (error) {
+            await this.compensateFailedDelegation(result.portfolioId, experienceId, error);
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED, {
+                reason: 'Failed to delegate portfolio generation to AI server',
+                portfolioId: result.portfolioId,
+            });
+        }
+
+        return result;
+    }
+
+    @Transactional()
+    private async executePortfolioGeneration(
+        experience: Experience,
+        userId: number
+    ): Promise<GeneratePortfolioResDTO> {
+        const updatedExperience = await this.experienceService.transitionToGenerate(experience);
+
+        const portfolio = Portfolio.createInternal(userId, experience.id, experience.name);
+        const savedPortfolio = await this.portfolioService.savePortfolio(portfolio);
+
+        return GeneratePortfolioResDTO.of(
+            savedPortfolio.id,
+            savedPortfolio.status,
+            updatedExperience.status
+        );
+    }
+
+    @Transactional()
+    private async compensateFailedDelegation(
+        portfolioId: number,
+        experienceId: number,
+        originalError: unknown
+    ): Promise<void> {
+        const errorDetail =
+            originalError instanceof Error ? originalError.message : String(originalError);
+        this.logger.error(
+            `AI delegation failed for portfolioId=${portfolioId}, experienceId=${experienceId}. ` +
+                `Running compensation. Cause: ${errorDetail}`
+        );
+
+        try {
+            await Promise.all([
+                this.portfolioService.removeGeneratingPortfolio(portfolioId),
+                this.experienceService.revertToOnChat(experienceId),
+            ]);
+            this.logger.log(
+                `Compensation completed: portfolioId=${portfolioId}, experienceId=${experienceId}`
+            );
+        } catch (compensationError) {
+            const stack = compensationError instanceof Error ? compensationError.stack : undefined;
+            this.logger.error(
+                `Compensation FAILED for portfolioId=${portfolioId}, experienceId=${experienceId}. ` +
+                    `Manual intervention required.`,
+                stack
+            );
+        }
     }
 
     private extractSessionId(headers?: Record<string, string>): string | null {

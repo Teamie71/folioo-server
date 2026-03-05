@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AiRelayConnection, AiRelayPort } from 'src/common/ports/ai-relay.port';
 import {
     AiInterviewSessionStateResponse,
@@ -9,6 +9,8 @@ const CREATE_SESSION_STREAM_PATH = '/api/v1/interview/sessions/stream';
 
 @Injectable()
 export class InterviewService {
+    private readonly logger = new Logger(InterviewService.name);
+
     constructor(
         @Inject(AiRelayPort)
         private readonly aiRelayPort: AiRelayPort
@@ -45,5 +47,20 @@ export class InterviewService {
         });
 
         return InterviewSessionStateResDTO.fromAiPayload(response.data);
+    }
+
+    async delegatePortfolioGeneration(
+        portfolioId: number,
+        sessionId: string,
+        userId: string
+    ): Promise<void> {
+        // TODO: AI 서버 스펙 변경 후 portfolioId도 body에 추가
+        await this.aiRelayPort.postJson({
+            path: '/api/v1/portfolio/generate',
+            body: {
+                session_id: sessionId,
+                user_id: userId,
+            },
+        });
     }
 }
