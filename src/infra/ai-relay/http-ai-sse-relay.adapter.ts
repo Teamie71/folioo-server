@@ -132,7 +132,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
                 this.logger.error('Unknown AI POST JSON request failure');
             }
 
-            throw new BusinessException(ErrorCode.CORRECTION_AI_RELAY_FAILED);
+            throw new BusinessException(ErrorCode.AI_RELAY_REQUEST_FAILED);
         }
     }
 

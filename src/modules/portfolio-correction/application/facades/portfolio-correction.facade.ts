@@ -102,10 +102,9 @@ export class PortfolioCorrectionFacade {
                 body: {},
             })
             .catch((error: unknown) => {
-                const message = error instanceof Error ? error.message : 'Unknown error';
-                this.logger.error(
-                    `Failed to delegate correction generation to AI server: correctionId=${correctionId}, error=${message}`
-                );
+                const message = `Failed to delegate correction generation to AI server: correctionId=${correctionId}`;
+                const stack = error instanceof Error ? error.stack : undefined;
+                this.logger.error(message, stack);
             });
     }
 

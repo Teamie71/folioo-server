@@ -24,6 +24,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '아직 구현되지 않은 기능입니다.',
         statusCode: HttpStatus.NOT_IMPLEMENTED,
     },
+    [ErrorCode.AI_RELAY_REQUEST_FAILED]: {
+        message: 'AI 서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
+    },
     [ErrorCode.INVALID_SOCIAL_PROFILE]: {
         message: '소셜 로그인 프로필 정보가 유효하지 않습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
