@@ -5,11 +5,12 @@ import { InternalCorrectionResultController } from './presentation/internal-corr
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import { InsightModule } from '../insight/insight.module';
 import { PortfolioModule } from '../portfolio/portfolio.module';
+import { ExperienceModule } from '../experience/experience.module';
 import { InternalPortfolioFacade } from './application/facades/internal-portfolio.facade';
 import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-correction.module';
 
 @Module({
-    imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule],
+    imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule, ExperienceModule],
     controllers: [
         InternalController,
         InternalCorrectionController,

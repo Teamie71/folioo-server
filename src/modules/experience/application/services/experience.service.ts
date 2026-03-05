@@ -51,6 +51,32 @@ export class ExperienceService {
         return this.experienceRepository.save(experience);
     }
 
+    async transitionToDone(experienceId: number): Promise<void> {
+        const experience = await this.findByIdInternalOrThrow(experienceId);
+        if (experience.status !== ExperienceStatus.GENERATE) {
+            return;
+        }
+        experience.status = ExperienceStatus.DONE;
+        await this.experienceRepository.save(experience);
+    }
+
+    async revertToOnChat(experienceId: number): Promise<void> {
+        const experience = await this.findByIdInternalOrThrow(experienceId);
+        if (experience.status !== ExperienceStatus.GENERATE) {
+            return;
+        }
+        experience.status = ExperienceStatus.ON_CHAT;
+        await this.experienceRepository.save(experience);
+    }
+
+    private async findByIdInternalOrThrow(experienceId: number): Promise<Experience> {
+        const experience = await this.experienceRepository.findById(experienceId);
+        if (!experience) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_NOT_FOUND);
+        }
+        return experience;
+    }
+
     async getExperiences(userId: number, keyword?: string): Promise<ExperienceResDTO[]> {
         const experiences = await this.experienceRepository.findAllByUserId(userId, keyword);
         return experiences.map((experience) => ExperienceResDTO.from(experience));
