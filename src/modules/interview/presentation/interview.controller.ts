@@ -6,6 +6,7 @@ import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SseRelayUtil } from 'src/common/utils/sse-relay.util';
+import { GeneratePortfolioResDTO } from 'src/modules/experience/application/dtos/experience.dto';
 import { InterviewFacade } from '../application/facades/interview.facade';
 import {
     InterviewSessionStateResDTO,
@@ -121,5 +122,27 @@ export class InterviewController {
         @Param('experienceId', ParseIntPipe) experienceId: number
     ): Promise<InterviewSessionStateResDTO> {
         return this.interviewFacade.getSessionState(userId, experienceId);
+    }
+
+    @Post(':experienceId/portfolio/generate')
+    @ApiOperation({
+        summary: '포트폴리오 생성 시작',
+        description:
+            '경험 정리의 인터뷰 세션을 기반으로 포트폴리오 생성을 AI 서버에 위임합니다. 경험 상태가 ON_CHAT일 때만 요청 가능합니다.',
+    })
+    @ApiParam({ name: 'experienceId', description: '경험 정리 ID', example: 42 })
+    @ApiCommonResponse(GeneratePortfolioResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EXPERIENCE_NOT_FOUND,
+        ErrorCode.EXPERIENCE_SESSION_NOT_READY,
+        ErrorCode.INTERVIEW_NOT_COMPLETED,
+        ErrorCode.EXPERIENCE_INVALID_STATUS
+    )
+    async generatePortfolio(
+        @User('sub') userId: number,
+        @Param('experienceId', ParseIntPipe) experienceId: number
+    ): Promise<GeneratePortfolioResDTO> {
+        return this.interviewFacade.generatePortfolio(experienceId, userId);
     }
 }

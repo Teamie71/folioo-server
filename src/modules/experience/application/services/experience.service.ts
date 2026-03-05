@@ -8,6 +8,7 @@ import {
     UpdateExperienceReqDTO,
 } from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
+import { ExperienceStatus } from '../../domain/enums/experience-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
@@ -33,6 +34,21 @@ export class ExperienceService {
         const experience = await this.findByIdOrThrow(experienceId, userId);
         experience.sessionId = sessionId;
         await this.experienceRepository.save(experience);
+    }
+
+    async transitionToGenerate(experience: Experience): Promise<Experience> {
+        if (experience.status !== ExperienceStatus.ON_CHAT) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_INVALID_STATUS, {
+                currentStatus: experience.status,
+            });
+        }
+        if (!experience.sessionId) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_SESSION_NOT_READY, {
+                experienceId: experience.id,
+            });
+        }
+        experience.status = ExperienceStatus.GENERATE;
+        return this.experienceRepository.save(experience);
     }
 
     async getExperiences(userId: number, keyword?: string): Promise<ExperienceResDTO[]> {

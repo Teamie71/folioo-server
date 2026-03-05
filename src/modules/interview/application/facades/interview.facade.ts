@@ -1,9 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { Transactional } from 'typeorm-transactional';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
+import { Experience } from 'src/modules/experience/domain/experience.entity';
+import { GeneratePortfolioResDTO } from 'src/modules/experience/application/dtos/experience.dto';
 import { InsightService } from 'src/modules/insight/application/services/insight.service';
+import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
+import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 import {
     InterviewInternalDTO,
     InterviewSessionStateResDTO,
@@ -16,7 +21,8 @@ export class InterviewFacade {
     constructor(
         private readonly interviewService: InterviewService,
         private readonly experienceService: ExperienceService,
-        private readonly insightService: InsightService
+        private readonly insightService: InsightService,
+        private readonly portfolioService: PortfolioService
     ) {}
 
     async createSessionStream(userId: number, experienceId: number): Promise<AiRelayConnection> {
@@ -104,6 +110,49 @@ export class InterviewFacade {
         }
 
         return this.interviewService.getSessionState(interviewInternalDTO.sessionId);
+    }
+
+    async generatePortfolio(
+        experienceId: number,
+        userId: number
+    ): Promise<GeneratePortfolioResDTO> {
+        const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
+
+        if (!experience.sessionId) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_SESSION_NOT_READY, { experienceId });
+        }
+
+        const sessionState = await this.interviewService.getSessionState(experience.sessionId);
+        if (!sessionState.allComplete) {
+            throw new BusinessException(ErrorCode.INTERVIEW_NOT_COMPLETED);
+        }
+
+        const result = await this.executePortfolioGeneration(experience, userId);
+
+        this.interviewService.delegatePortfolioGeneration(
+            result.portfolioId,
+            experience.sessionId,
+            String(userId)
+        );
+
+        return result;
+    }
+
+    @Transactional()
+    private async executePortfolioGeneration(
+        experience: Experience,
+        userId: number
+    ): Promise<GeneratePortfolioResDTO> {
+        const updatedExperience = await this.experienceService.transitionToGenerate(experience);
+
+        const portfolio = Portfolio.createInternal(userId, experience.id, experience.name);
+        const savedPortfolio = await this.portfolioService.savePortfolio(portfolio);
+
+        return GeneratePortfolioResDTO.of(
+            savedPortfolio.id,
+            savedPortfolio.status,
+            updatedExperience.status
+        );
     }
 
     private extractSessionId(headers?: Record<string, string>): string | null {

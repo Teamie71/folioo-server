@@ -104,6 +104,11 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.INTERVIEW_NOT_COMPLETED]: {
+        message:
+            '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변한 후 포트폴리오를 생성할 수 있습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
     [ErrorCode.INTERVIEW_AI_RELAY_FAILED]: {
         message: 'AI 인터뷰 세션 중계에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,
@@ -139,6 +144,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS]: {
         message: '해당 경험에는 이미 인터뷰 세션이 존재합니다.',
         statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_SESSION_NOT_READY]: {
+        message: '인터뷰 세션이 아직 생성되지 않은 경험입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_INVALID_STATUS]: {
+        message: '현재 경험 상태에서는 포트폴리오를 생성할 수 없습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
     [ErrorCode.CORRECTION_MAX_LIMIT]: {
         message: '포트폴리오 첨삭은 최대 15개까지 가질 수 있습니다.',

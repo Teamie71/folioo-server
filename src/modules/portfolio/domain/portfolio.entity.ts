@@ -67,6 +67,20 @@ export class Portfolio extends BaseEntity {
         return portfolio;
     }
 
+    static createInternal(userId: number, experienceId: number, name: string): Portfolio {
+        const portfolio = new Portfolio();
+        portfolio.name = name;
+        portfolio.description = '';
+        portfolio.responsibilities = '';
+        portfolio.problemSolving = '';
+        portfolio.learnings = '';
+        portfolio.status = PortfolioStatus.GENERATING;
+        portfolio.sourceType = SourceType.INTERNAL;
+        portfolio.user = { id: userId } as User;
+        portfolio.experience = { id: experienceId } as Experience;
+        return portfolio;
+    }
+
     update(updates: { name?: string; contributionRate?: number }): void {
         if (updates.name !== undefined) {
             this.name = updates.name;

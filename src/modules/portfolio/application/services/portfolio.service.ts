@@ -18,6 +18,10 @@ export class PortfolioService {
         return portfolio;
     }
 
+    async savePortfolio(portfolio: Portfolio): Promise<Portfolio> {
+        return this.portfolioRepository.save(portfolio);
+    }
+
     async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
         const portfolio = await this.portfolioRepository.findByIdWithExperience(id);
         if (!portfolio) {
