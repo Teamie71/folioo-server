@@ -11,21 +11,21 @@ interface JsonObject {
 }
 
 class InternalCorrectionItemResDTO {
-    portfolio_id: number;
+    portfolioId: number;
     description: JsonObject | null;
     responsibilities: JsonObject | null;
-    problem_solving: JsonObject | null;
+    problemSolving: JsonObject | null;
     learnings: JsonObject | null;
-    overall_review: JsonObject | null;
+    overallReview: JsonObject | null;
 
     static from(item: CorrectionItem): InternalCorrectionItemResDTO {
         const dto = new InternalCorrectionItemResDTO();
-        dto.portfolio_id = item.portfolio.id;
+        dto.portfolioId = item.portfolio.id;
         dto.description = (item.description as JsonObject) ?? null;
         dto.responsibilities = (item.responsibilities as JsonObject) ?? null;
-        dto.problem_solving = (item.problemSolving as JsonObject) ?? null;
+        dto.problemSolving = (item.problemSolving as JsonObject) ?? null;
         dto.learnings = (item.learnings as JsonObject) ?? null;
-        dto.overall_review = (item.overallReview as JsonObject) ?? null;
+        dto.overallReview = (item.overallReview as JsonObject) ?? null;
         return dto;
     }
 }
@@ -34,24 +34,24 @@ export class InternalCorrectionResDTO {
     id: number;
 
     @ApiProperty({ description: '연관된 사용자 ID' })
-    user_id: number;
+    userId: number;
 
     @ApiProperty({ description: '선택된 포트폴리오 ID 목록', type: [Number] })
-    portfolio_ids: number[];
+    portfolioIds: number[];
 
-    company_name: string;
+    companyName: string;
 
     @ApiProperty({ description: '직무명' })
-    job_title: string;
+    positionName: string;
 
     @ApiProperty({ description: '직무 설명(JD)' })
-    job_description: string;
+    jobDescription: string;
 
     @ApiProperty({ description: '사용자가 입력한 강조 포인트', nullable: true })
-    emphasis_points: string | null;
+    highlightPoint: string | null;
 
     @ApiProperty({ description: 'RAG 파이프라인이 생성한 기업 분석', nullable: true })
-    company_insight: string | null;
+    companyInsight: string | null;
 
     @ApiProperty({ enum: CorrectionStatus })
     status: CorrectionStatus;
@@ -63,13 +63,13 @@ export class InternalCorrectionResDTO {
         const { correction, portfolioIds, items } = payload;
         const dto = new InternalCorrectionResDTO();
         dto.id = correction.id;
-        dto.user_id = correction.user.id;
-        dto.portfolio_ids = portfolioIds;
-        dto.company_name = correction.companyName;
-        dto.job_title = correction.positionName;
-        dto.job_description = correction.jobDescription;
-        dto.emphasis_points = correction.highlightPoint ?? null;
-        dto.company_insight = correction.companyInsight ?? null;
+        dto.userId = correction.user.id;
+        dto.portfolioIds = portfolioIds;
+        dto.companyName = correction.companyName;
+        dto.positionName = correction.positionName;
+        dto.jobDescription = correction.jobDescription;
+        dto.highlightPoint = correction.highlightPoint ?? null;
+        dto.companyInsight = correction.companyInsight ?? null;
         dto.status = correction.status;
         dto.result =
             items.length > 0 ? items.map((item) => InternalCorrectionItemResDTO.from(item)) : null;
@@ -88,5 +88,5 @@ export class UpdateCompanyInsightInternalReqDTO {
     @IsNotEmpty()
     @MaxLength(1500)
     @ApiProperty({ description: 'RAG로 생성된 기업 분석 텍스트' })
-    company_insight: string;
+    companyInsight: string;
 }
