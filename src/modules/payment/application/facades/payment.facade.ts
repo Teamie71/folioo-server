@@ -70,20 +70,26 @@ export class PaymentFacade {
             return payment;
         }
 
-        try {
-            await this.payAppClient.requestCancel(payment.mulNo, 'user_requested', {
-                paymentId,
-                currentStatus: payment.status,
-            });
-        } catch (error) {
-            this.logger.error(
-                `Cancel payment external call failed: paymentId=${paymentId}, mulNo=${payment.mulNo}, status=${payment.status}, userId=${userId}`
-            );
-            throw error;
+        if (payment.status === PaymentStatus.PAID) {
+            try {
+                await this.payAppClient.requestCancel(payment.mulNo, 'user_requested', {
+                    paymentId,
+                    currentStatus: payment.status,
+                });
+            } catch (error) {
+                this.logger.error(
+                    `Cancel payment external call failed: paymentId=${paymentId}, mulNo=${payment.mulNo}, status=${payment.status}, userId=${userId}`
+                );
+                throw error;
+            }
         }
 
         const cancelledPayment = await this.paymentService.markCancelled(payment);
-        await this.ticketService.revokeAvailableTicketsForPayment(cancelledPayment.id);
+
+        if (payment.status === PaymentStatus.PAID) {
+            await this.ticketService.revokeAvailableTicketsForPayment(cancelledPayment.id);
+        }
+
         return cancelledPayment;
     }
 }
