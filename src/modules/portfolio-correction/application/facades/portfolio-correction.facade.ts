@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { AiRelayPort } from 'src/common/ports/ai-relay.port';
 import {
     CorrectionSelectionResDTO,
     CreateCorrectionReqDTO,
@@ -19,12 +20,15 @@ import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 
 @Injectable()
 export class PortfolioCorrectionFacade {
+    private readonly logger = new Logger(PortfolioCorrectionFacade.name);
+
     constructor(
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
         private readonly ticketService: TicketService,
         private readonly correctionItemService: CorrectionItemService,
         private readonly externalPortfolioService: ExternalPortfolioService,
-        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService
+        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
+        private readonly aiRelayPort: AiRelayPort
     ) {}
 
     @Transactional()
@@ -86,7 +90,22 @@ export class PortfolioCorrectionFacade {
         const items = await this.replaceCorrectionItems(correctionId, correction, portfolios);
         await this.portfolioCorrectionService.transitionToGenerating(correctionId);
 
+        this.delegateCorrectionGeneration(correctionId);
+
         return items;
+    }
+
+    private delegateCorrectionGeneration(correctionId: number): void {
+        this.aiRelayPort
+            .postJson({
+                path: `/api/v1/corrections/${correctionId}/generate`,
+                body: {},
+            })
+            .catch((error: unknown) => {
+                const message = `Failed to delegate correction generation to AI server: correctionId=${correctionId}`;
+                const stack = error instanceof Error ? error.stack : undefined;
+                this.logger.error(message, stack);
+            });
     }
 
     private async resolveSelectionTargets(

@@ -99,6 +99,43 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
         }
     }
 
+    async postJson<T = unknown>(request: AiRelayRequest): Promise<AiRelayJsonResponse<T>> {
+        const { baseUrl, apiKey } = this.getAiServiceConfig();
+        const requestUrl = this.buildRequestUrl(baseUrl, request.path);
+
+        try {
+            const response: AxiosResponse<T> = await this.httpService.axiosRef.post<T>(
+                requestUrl,
+                request.body,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey,
+                    },
+                    timeout: 30_000,
+                }
+            );
+
+            return {
+                data: response.data,
+                status: response.status,
+                headers: this.extractHeaders(response.headers as Record<string, unknown>),
+            };
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                this.logger.error('AI POST JSON request failed', {
+                    url: requestUrl,
+                    status: error.response?.status,
+                    error: error.message,
+                });
+            } else {
+                this.logger.error('Unknown AI POST JSON request failure');
+            }
+
+            throw new BusinessException(ErrorCode.AI_RELAY_REQUEST_FAILED);
+        }
+    }
+
     private buildRequestUrl(baseUrl: string, path: string): string {
         const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
         const normalizedPath = path.startsWith('/') ? path : `/${path}`;
