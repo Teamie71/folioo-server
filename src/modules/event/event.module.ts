@@ -13,14 +13,13 @@ import { EventController } from './presentation/event.controller';
 import { EventRewardFacade } from './application/facades/event-reward.facade';
 import { UserModule } from '../user/user.module';
 import { TicketModule } from '../ticket/ticket.module';
-import { InternalModule } from '../internal/internal.module';
+import { InternalApiKeyGuard } from '../internal/infrastructure/guards/internal-api-key.guard';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Event, EventParticipation, EventFeedbackSubmission]),
         UserModule,
         TicketModule,
-        InternalModule,
     ],
     controllers: [EventController],
     providers: [
@@ -31,6 +30,7 @@ import { InternalModule } from '../internal/internal.module';
         EventParticipationService,
         EventFeedbackSubmissionService,
         EventRewardFacade,
+        InternalApiKeyGuard,
     ],
     exports: [
         EventService,
