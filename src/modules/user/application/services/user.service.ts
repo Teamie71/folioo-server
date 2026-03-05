@@ -107,8 +107,8 @@ export class UserService {
         await this.socialUserRepository.deleteByUserId(user.id);
     }
 
-    async searchByName(name: string): Promise<UserWithSocialInfoProjection[]> {
-        return this.userRepository.searchByNameWithSocialInfo(name);
+    async searchUsers(keyword?: string): Promise<UserWithSocialInfoProjection[]> {
+        return this.userRepository.searchUsersWithSocialInfo(keyword);
     }
 
     async findByPhoneNumOrThrow(phoneNum: string): Promise<User> {

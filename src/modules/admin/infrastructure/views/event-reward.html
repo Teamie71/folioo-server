@@ -40,16 +40,16 @@
         }
 
         .container {
-            max-width: 960px;
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 2rem 1.5rem;
+            padding: 1.5rem;
         }
 
         .header {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.25rem;
         }
 
         .header-logo {
@@ -66,63 +66,44 @@
         }
 
         .header h1 {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 700;
-            color: var(--text);
         }
 
         .header-badge {
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             background: var(--primary-light);
             color: var(--primary);
-            padding: 0.25rem 0.75rem;
+            padding: 0.2rem 0.625rem;
             border-radius: var(--radius-btn);
             font-weight: 600;
         }
 
-        .card {
+        .toolbar {
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: var(--radius-card);
             box-shadow: var(--shadow);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .card-title {
-            font-size: 1.125rem;
-            font-weight: 600;
+            padding: 1rem 1.25rem;
             margin-bottom: 1rem;
-            color: var(--text);
-        }
-
-        .form-row {
             display: flex;
             gap: 0.75rem;
-            align-items: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.375rem;
-        }
-
-        .form-group.flex-1 {
-            flex: 1;
-        }
-
-        .form-label {
-            font-size: 0.875rem;
+        .toolbar-label {
+            font-size: 0.8125rem;
             font-weight: 600;
             color: var(--text-gray);
+            white-space: nowrap;
         }
 
-        .form-input {
-            padding: 0.625rem 1rem;
+        .toolbar-input {
+            padding: 0.5rem 0.875rem;
             border: 1px solid var(--border);
             border-radius: var(--radius-input);
-            font-size: 1rem;
+            font-size: 0.875rem;
             font-family: inherit;
             color: var(--text);
             background: white;
@@ -130,23 +111,48 @@
             transition: border-color 0.15s;
         }
 
-        .form-input:focus {
+        .toolbar-input:focus {
             border-color: var(--primary);
         }
 
-        .form-input::placeholder {
+        .toolbar-input::placeholder {
             color: var(--text-gray);
         }
 
+        .toolbar-input-event {
+            width: 200px;
+        }
+
+        .toolbar-input-search {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 1.5rem;
+            background: var(--border);
+        }
+
+        .toolbar-count {
+            font-size: 0.8125rem;
+            color: var(--text-gray);
+            margin-left: auto;
+        }
+
+        .toolbar-count strong {
+            color: var(--primary);
+        }
+
         .btn {
-            padding: 0.625rem 1.5rem;
+            padding: 0.5rem 1.25rem;
             border: none;
             border-radius: var(--radius-btn);
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            transition: background-color 0.15s, box-shadow 0.15s;
+            transition: background-color 0.15s;
             white-space: nowrap;
         }
 
@@ -175,61 +181,71 @@
         }
 
         .btn-sm {
-            padding: 0.375rem 1rem;
-            font-size: 0.8125rem;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.75rem;
         }
 
-        .btn-granted {
-            background: var(--surface);
-            color: var(--text-gray);
-            cursor: default;
+        .table-card {
+            background: var(--card-bg);
             border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow);
+            overflow: hidden;
         }
 
         .table-wrapper {
             overflow-x: auto;
-            margin-top: 1rem;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.8125rem;
         }
 
         thead th {
             text-align: left;
-            padding: 0.75rem 1rem;
-            font-size: 0.8125rem;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--text-gray);
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-        }
-
-        thead th:first-child {
-            border-radius: 0.5rem 0 0 0;
-        }
-
-        thead th:last-child {
-            border-radius: 0 0.5rem 0 0;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
         }
 
         tbody td {
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            border-bottom: 1px solid var(--surface);
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #F0F1F3;
             vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #FAFBFC;
         }
 
         tbody tr:hover {
             background: var(--primary-light);
         }
 
+        .cell-id {
+            color: var(--text-gray);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cell-email {
+            color: var(--text-gray);
+            font-size: 0.75rem;
+        }
+
         .badge {
             display: inline-block;
-            padding: 0.125rem 0.5rem;
+            padding: 0.1rem 0.4rem;
             border-radius: var(--radius-btn);
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             font-weight: 600;
         }
 
@@ -243,14 +259,19 @@
             color: var(--error);
         }
 
+        .badge-login {
+            background: #E3F2FD;
+            color: #1565C0;
+        }
+
         .toast {
             position: fixed;
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            padding: 0.875rem 1.5rem;
+            padding: 0.75rem 1.25rem;
             border-radius: var(--radius-card);
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
             box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
             opacity: 0;
@@ -264,37 +285,36 @@
             opacity: 1;
         }
 
-        .toast-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .toast-error {
-            background: var(--error);
-            color: white;
-        }
+        .toast-success { background: var(--success); color: white; }
+        .toast-error { background: var(--error); color: white; }
 
         .empty-state {
             text-align: center;
             padding: 3rem 1rem;
             color: var(--text-gray);
+            font-size: 0.875rem;
         }
 
-        .empty-state-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .loading {
+        .loading-spinner {
             display: inline-block;
-            width: 1rem;
-            height: 1rem;
+            width: 0.875rem;
+            height: 0.875rem;
             border: 2px solid white;
             border-top-color: transparent;
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
             vertical-align: middle;
             margin-right: 0.25rem;
+        }
+
+        .loading-bar {
+            height: 2px;
+            background: var(--primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1001;
+            transition: width 0.3s ease;
         }
 
         @keyframes spin {
@@ -314,27 +334,27 @@
         .confirm-dialog {
             background: var(--card-bg);
             border-radius: 1.25rem;
-            padding: 2rem;
-            max-width: 400px;
+            padding: 1.75rem;
+            max-width: 380px;
             width: 90%;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
         .confirm-dialog h3 {
-            font-size: 1.125rem;
-            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            margin-bottom: 0.625rem;
         }
 
         .confirm-dialog p {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             color: var(--text-gray);
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             line-height: 1.6;
         }
 
         .confirm-actions {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.625rem;
             justify-content: flex-end;
         }
 
@@ -361,6 +381,8 @@
     </style>
 </head>
 <body>
+    <div id="loadingBar" class="loading-bar" style="width: 0; display: none;"></div>
+
     <div class="container">
         <div class="header">
             <div class="header-logo">F</div>
@@ -368,46 +390,23 @@
             <span class="header-badge">Admin</span>
         </div>
 
-        <div class="card">
-            <div class="card-title">이벤트 설정</div>
-            <div class="form-row">
-                <div class="form-group flex-1">
-                    <label class="form-label" for="eventCode">이벤트 코드</label>
-                    <input
-                        type="text"
-                        id="eventCode"
-                        class="form-input"
-                        placeholder="예: FEEDBACK_REWARD"
-                        value="FEEDBACK_REWARD"
-                    >
-                </div>
-            </div>
+        <div class="toolbar">
+            <span class="toolbar-label">이벤트</span>
+            <input type="text" id="eventCode" class="toolbar-input toolbar-input-event"
+                   placeholder="이벤트 코드" value="FEEDBACK_REWARD">
+
+            <div class="toolbar-divider"></div>
+
+            <input type="text" id="searchKeyword" class="toolbar-input toolbar-input-search"
+                   placeholder="이름 또는 이메일로 검색...">
+            <button class="btn btn-primary" id="searchBtn">검색</button>
+
+            <span class="toolbar-count" id="userCount"></span>
         </div>
 
-        <div class="card">
-            <div class="card-title">사용자 검색</div>
-            <div class="form-row">
-                <div class="form-group flex-1">
-                    <label class="form-label" for="searchName">이름</label>
-                    <input
-                        type="text"
-                        id="searchName"
-                        class="form-input"
-                        placeholder="사용자 이름을 입력하세요"
-                    >
-                </div>
-                <button class="btn btn-primary" id="searchBtn" onclick="handleSearch()">
-                    검색
-                </button>
-            </div>
-
-            <div class="table-wrapper">
-                <div id="tableArea">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">&#128269;</div>
-                        <p>사용자 이름을 검색하세요</p>
-                    </div>
-                </div>
+        <div class="table-card">
+            <div class="table-wrapper" id="tableArea">
+                <div class="empty-state">불러오는 중...</div>
             </div>
         </div>
     </div>
@@ -422,19 +421,28 @@
             return $('#eventCode').value.trim();
         }
 
-        async function handleSearch() {
-            const name = $('#searchName').value.trim();
-            if (!name) {
-                showToast('이름을 입력해주세요', 'error');
-                return;
+        function setLoading(on) {
+            const bar = $('#loadingBar');
+            if (on) {
+                bar.style.display = 'block';
+                bar.style.width = '70%';
+            } else {
+                bar.style.width = '100%';
+                setTimeout(() => {
+                    bar.style.display = 'none';
+                    bar.style.width = '0';
+                }, 300);
             }
+        }
 
+        async function loadUsers(keyword) {
             const btn = $('#searchBtn');
             btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span>검색 중';
+            setLoading(true);
 
             try {
-                const res = await fetch(`/admin/api/users/search?name=${encodeURIComponent(name)}`);
+                const params = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+                const res = await fetch(`/admin/api/users/search${params}`);
                 const data = await res.json();
 
                 if (!data.isSuccess) {
@@ -443,11 +451,12 @@
                 }
 
                 renderTable(data.result.users);
+                $('#userCount').innerHTML = `총 <strong>${data.result.total}</strong>명`;
             } catch {
                 showToast('서버 연결에 실패했습니다', 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = '검색';
+                setLoading(false);
             }
         }
 
@@ -455,12 +464,7 @@
             const area = $('#tableArea');
 
             if (!users || users.length === 0) {
-                area.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">&#128528;</div>
-                        <p>검색 결과가 없습니다</p>
-                    </div>
-                `;
+                area.innerHTML = '<div class="empty-state">사용자가 없습니다</div>';
                 return;
             }
 
@@ -473,7 +477,7 @@
                             <th>이메일</th>
                             <th>로그인</th>
                             <th>상태</th>
-                            <th>보상</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -484,19 +488,21 @@
                     ? '<span class="badge badge-active">활성</span>'
                     : '<span class="badge badge-inactive">비활성</span>';
 
+                const loginBadge = u.loginType
+                    ? `<span class="badge badge-login">${escapeHtml(u.loginType)}</span>`
+                    : '-';
+
                 html += `
                     <tr>
-                        <td>${u.userId}</td>
+                        <td class="cell-id">${u.userId}</td>
                         <td>${escapeHtml(u.name)}</td>
-                        <td>${escapeHtml(u.email ?? '-')}</td>
-                        <td>${escapeHtml(u.loginType ?? '-')}</td>
+                        <td class="cell-email">${escapeHtml(u.email ?? '-')}</td>
+                        <td>${loginBadge}</td>
                         <td>${statusBadge}</td>
                         <td>
-                            <button
-                                class="btn btn-outline btn-sm grant-btn"
-                                data-user-id="${u.userId}"
-                                data-user-name="${escapeHtml(u.name)}"
-                            >
+                            <button class="btn btn-outline btn-sm grant-btn"
+                                    data-user-id="${u.userId}"
+                                    data-user-name="${escapeHtml(u.name)}">
                                 보상 지급
                             </button>
                         </td>
@@ -509,9 +515,7 @@
 
             area.querySelectorAll('.grant-btn').forEach((btn) => {
                 btn.addEventListener('click', () => {
-                    const userId = Number(btn.dataset.userId);
-                    const userName = btn.dataset.userName;
-                    confirmGrant(userId, userName);
+                    confirmGrant(Number(btn.dataset.userId), btn.dataset.userName);
                 });
             });
         }
@@ -533,7 +537,6 @@
             h3.textContent = '보상 지급 확인';
 
             const p = document.createElement('p');
-            p.innerHTML = '';
             const strong1 = document.createElement('strong');
             strong1.textContent = userName;
             const strong2 = document.createElement('strong');
@@ -576,16 +579,13 @@
             const eventCode = getEventCode();
             const btn = $('#confirmGrantBtn');
             btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span>처리 중';
+            btn.innerHTML = '<span class="loading-spinner"></span>처리 중';
 
             try {
                 const res = await fetch(`/admin/api/events/${encodeURIComponent(eventCode)}/grants`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId,
-                        reviewedBy: 'admin-ui',
-                    }),
+                    body: JSON.stringify({ userId, reviewedBy: 'admin-ui' }),
                 });
 
                 const data = await res.json();
@@ -597,7 +597,7 @@
 
                 closeConfirm();
                 showToast(`${userName}님께 보상이 지급되었습니다`, 'success');
-                await handleSearch();
+                await loadUsers($('#searchKeyword').value.trim() || undefined);
             } catch {
                 closeConfirm();
                 showToast('서버 연결에 실패했습니다', 'error');
@@ -608,12 +608,8 @@
             const toast = $('#toast');
             toast.textContent = message;
             toast.className = `toast toast-${type}`;
-            requestAnimationFrame(() => {
-                toast.classList.add('show');
-            });
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
         function escapeHtml(str) {
@@ -622,9 +618,17 @@
             return div.innerHTML;
         }
 
-        $('#searchName').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleSearch();
+        // 검색 이벤트
+        $('#searchBtn').addEventListener('click', () => {
+            loadUsers($('#searchKeyword').value.trim() || undefined);
         });
+
+        $('#searchKeyword').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loadUsers($('#searchKeyword').value.trim() || undefined);
+        });
+
+        // 페이지 로드 시 전체 유저 목록
+        loadUsers();
     </script>
 </body>
 </html>

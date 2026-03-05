@@ -15,8 +15,8 @@ export class AdminEventRewardFacade {
         private readonly eventRewardFacade: EventRewardFacade
     ) {}
 
-    async searchUsers(name: string): Promise<AdminUserSearchResDTO> {
-        const projections = await this.userService.searchByName(name);
+    async searchUsers(keyword?: string): Promise<AdminUserSearchResDTO> {
+        const projections = await this.userService.searchUsers(keyword);
 
         const users: AdminUserItemResDTO[] = projections.map((p) => {
             const item = new AdminUserItemResDTO();

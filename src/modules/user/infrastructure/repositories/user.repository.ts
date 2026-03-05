@@ -51,11 +51,11 @@ export class UserRepository {
         });
     }
 
-    async searchByNameWithSocialInfo(
-        name: string,
-        limit: number = 20
+    async searchUsersWithSocialInfo(
+        keyword?: string,
+        limit: number = 100
     ): Promise<UserWithSocialInfoProjection[]> {
-        return this.userRepository
+        const qb = this.userRepository
             .createQueryBuilder('u')
             .leftJoin(SocialUser, 'su', 'su.user_id = u.id')
             .select([
@@ -67,11 +67,17 @@ export class UserRepository {
                 'MIN(su.email) AS "email"',
                 'MIN(su.login_type) AS "loginType"',
             ])
-            .where('u.name ILIKE :name', { name: `%${name}%` })
             .groupBy('u.id')
             .orderBy('u.id', 'ASC')
-            .limit(limit)
-            .getRawMany<UserWithSocialInfoProjection>();
+            .limit(limit);
+
+        if (keyword) {
+            qb.where('u.name ILIKE :keyword OR su.email ILIKE :keyword', {
+                keyword: `%${keyword}%`,
+            });
+        }
+
+        return qb.getRawMany<UserWithSocialInfoProjection>();
     }
 
     async deactivateById(userId: number, deactivatedAt: Date): Promise<boolean> {
