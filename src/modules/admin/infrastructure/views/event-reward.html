@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folioo Admin - 이벤트 보상 지급</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #5060C5;
+            --primary-hover: #404D9E;
+            --primary-light: #F6F5FF;
+            --primary-light-hover: #EEEDF7;
+            --text: #1A1A1A;
+            --text-gray: #74777D;
+            --border: #CDD0D5;
+            --card-bg: #FDFDFD;
+            --surface: #E9EAEC;
+            --error: #DC0000;
+            --success: #2E7D32;
+            --radius-btn: 6.25rem;
+            --radius-card: 1rem;
+            --radius-input: 0.5rem;
+            --shadow: 0 0.25rem 0.5rem 0 rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: #F4F5F7;
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .header-logo {
+            width: 2rem;
+            height: 2rem;
+            background: var(--primary);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .header-badge {
+            font-size: 0.75rem;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-btn);
+            font-weight: 600;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .form-group.flex-1 {
+            flex: 1;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-gray);
+        }
+
+        .form-input {
+            padding: 0.625rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-input);
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text);
+            background: white;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-gray);
+        }
+
+        .btn {
+            padding: 0.625rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-btn);
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-primary:disabled {
+            background: var(--border);
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-light-hover);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 1rem;
+            font-size: 0.8125rem;
+        }
+
+        .btn-granted {
+            background: var(--surface);
+            color: var(--text-gray);
+            cursor: default;
+            border: 1px solid var(--border);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-gray);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        thead th:first-child {
+            border-radius: 0.5rem 0 0 0;
+        }
+
+        thead th:last-child {
+            border-radius: 0 0.5rem 0 0;
+        }
+
+        tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--surface);
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: var(--primary-light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-btn);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-active {
+            background: #E8F5E9;
+            color: var(--success);
+        }
+
+        .badge-inactive {
+            background: #FFEBEE;
+            color: var(--error);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 0.875rem 1.5rem;
+            border-radius: var(--radius-card);
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 1000;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .toast-error {
+            background: var(--error);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-gray);
+        }
+
+        .empty-state-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.25rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .confirm-dialog {
+            background: var(--card-bg);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .confirm-dialog h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .confirm-dialog p {
+            font-size: 0.875rem;
+            color: var(--text-gray);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .confirm-actions .btn-cancel {
+            background: white;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+        }
+
+        .confirm-actions .btn-cancel:hover {
+            background: var(--surface);
+        }
+
+        .confirm-actions .btn-confirm {
+            background: var(--primary);
+            color: white;
+            border-radius: 0.5rem;
+        }
+
+        .confirm-actions .btn-confirm:hover {
+            background: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-logo">F</div>
+            <h1>이벤트 보상 지급</h1>
+            <span class="header-badge">Admin</span>
+        </div>
+
+        <div class="card">
+            <div class="card-title">이벤트 설정</div>
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label class="form-label" for="eventCode">이벤트 코드</label>
+                    <input
+                        type="text"
+                        id="eventCode"
+                        class="form-input"
+                        placeholder="예: FEEDBACK_REWARD"
+                        value="FEEDBACK_REWARD"
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">사용자 검색</div>
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label class="form-label" for="searchName">이름</label>
+                    <input
+                        type="text"
+                        id="searchName"
+                        class="form-input"
+                        placeholder="사용자 이름을 입력하세요"
+                    >
+                </div>
+                <button class="btn btn-primary" id="searchBtn" onclick="handleSearch()">
+                    검색
+                </button>
+            </div>
+
+            <div class="table-wrapper">
+                <div id="tableArea">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#128269;</div>
+                        <p>사용자 이름을 검색하세요</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <div id="confirmOverlay" class="confirm-overlay" style="display: none;"></div>
+
+    <script>
+        const $ = (sel) => document.querySelector(sel);
+
+        function getEventCode() {
+            return $('#eventCode').value.trim();
+        }
+
+        async function handleSearch() {
+            const name = $('#searchName').value.trim();
+            if (!name) {
+                showToast('이름을 입력해주세요', 'error');
+                return;
+            }
+
+            const btn = $('#searchBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>검색 중';
+
+            try {
+                const res = await fetch(`/admin/api/users/search?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+
+                if (!data.isSuccess) {
+                    showToast(data.error?.reason ?? '검색에 실패했습니다', 'error');
+                    return;
+                }
+
+                renderTable(data.result.users);
+            } catch {
+                showToast('서버 연결에 실패했습니다', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '검색';
+            }
+        }
+
+        function renderTable(users) {
+            const area = $('#tableArea');
+
+            if (!users || users.length === 0) {
+                area.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">&#128528;</div>
+                        <p>검색 결과가 없습니다</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>이름</th>
+                            <th>이메일</th>
+                            <th>로그인</th>
+                            <th>상태</th>
+                            <th>보상</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (const u of users) {
+                const statusBadge = u.isActive
+                    ? '<span class="badge badge-active">활성</span>'
+                    : '<span class="badge badge-inactive">비활성</span>';
+
+                html += `
+                    <tr>
+                        <td>${u.userId}</td>
+                        <td>${escapeHtml(u.name)}</td>
+                        <td>${escapeHtml(u.email ?? '-')}</td>
+                        <td>${escapeHtml(u.loginType ?? '-')}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <button
+                                class="btn btn-outline btn-sm grant-btn"
+                                data-user-id="${u.userId}"
+                                data-user-name="${escapeHtml(u.name)}"
+                            >
+                                보상 지급
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            html += '</tbody></table>';
+            area.innerHTML = html;
+
+            area.querySelectorAll('.grant-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const userId = Number(btn.dataset.userId);
+                    const userName = btn.dataset.userName;
+                    confirmGrant(userId, userName);
+                });
+            });
+        }
+
+        function confirmGrant(userId, userName) {
+            const eventCode = getEventCode();
+            if (!eventCode) {
+                showToast('이벤트 코드를 입력해주세요', 'error');
+                return;
+            }
+
+            const overlay = $('#confirmOverlay');
+            overlay.style.display = 'flex';
+
+            const dialog = document.createElement('div');
+            dialog.className = 'confirm-dialog';
+
+            const h3 = document.createElement('h3');
+            h3.textContent = '보상 지급 확인';
+
+            const p = document.createElement('p');
+            p.innerHTML = '';
+            const strong1 = document.createElement('strong');
+            strong1.textContent = userName;
+            const strong2 = document.createElement('strong');
+            strong2.textContent = eventCode;
+            p.appendChild(strong1);
+            p.append(` (ID: ${userId})님께`);
+            p.appendChild(document.createElement('br'));
+            p.appendChild(strong2);
+            p.append(' 이벤트 보상을 지급하시겠습니까?');
+
+            const actions = document.createElement('div');
+            actions.className = 'confirm-actions';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-cancel';
+            cancelBtn.textContent = '취소';
+            cancelBtn.addEventListener('click', closeConfirm);
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'btn btn-confirm';
+            confirmBtn.id = 'confirmGrantBtn';
+            confirmBtn.textContent = '지급하기';
+            confirmBtn.addEventListener('click', () => executeGrant(userId, userName));
+
+            actions.appendChild(cancelBtn);
+            actions.appendChild(confirmBtn);
+            dialog.appendChild(h3);
+            dialog.appendChild(p);
+            dialog.appendChild(actions);
+
+            overlay.innerHTML = '';
+            overlay.appendChild(dialog);
+        }
+
+        function closeConfirm() {
+            $('#confirmOverlay').style.display = 'none';
+        }
+
+        async function executeGrant(userId, userName) {
+            const eventCode = getEventCode();
+            const btn = $('#confirmGrantBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>처리 중';
+
+            try {
+                const res = await fetch(`/admin/api/events/${encodeURIComponent(eventCode)}/grants`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        reviewedBy: 'admin-ui',
+                    }),
+                });
+
+                const data = await res.json();
+
+                if (!data.isSuccess) {
+                    showToast(data.error?.reason ?? '보상 지급에 실패했습니다', 'error');
+                    return;
+                }
+
+                closeConfirm();
+                showToast(`${userName}님께 보상이 지급되었습니다`, 'success');
+                await handleSearch();
+            } catch {
+                closeConfirm();
+                showToast('서버 연결에 실패했습니다', 'error');
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = $('#toast');
+            toast.textContent = message;
+            toast.className = `toast toast-${type}`;
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        $('#searchName').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSearch();
+        });
+    </script>
+</body>
+</html>

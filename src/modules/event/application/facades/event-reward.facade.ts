@@ -8,6 +8,7 @@ import {
     GrantFeedbackRewardReqDTO,
     GrantFeedbackRewardResDTO,
 } from '../dtos/event.dto';
+import type { GrantRewardByUserIdParams } from '../dtos/event.dto';
 import { EventService } from '../services/event.service';
 import { EventParticipationService } from '../services/event-participation.service';
 import { EventFeedbackSubmissionService } from '../services/event-feedback-submission.service';
@@ -295,6 +296,86 @@ export class EventRewardFacade {
         dto.rewardStatus = savedParticipation.rewardStatus;
         dto.rewardGrantedAt = now.toISOString();
         return dto;
+    }
+
+    @Transactional()
+    async grantFeedbackRewardByUserId(
+        eventCode: string,
+        params: GrantRewardByUserIdParams
+    ): Promise<{ userId: number; rewardStatus: EventRewardStatus; rewardGrantedAt: Date }> {
+        const event = await this.eventService.findActiveByCodeOrThrow(eventCode);
+        if (event.opsConfig?.manualRewardOnly === false) {
+            throw new BusinessException(ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED);
+        }
+
+        const user = await this.userService.findByIdOrThrow(params.userId);
+
+        if (params.externalSubmissionId) {
+            const existingSubmission =
+                await this.eventFeedbackSubmissionService.findByEventIdAndExternalSubmissionId(
+                    event.id,
+                    params.externalSubmissionId
+                );
+            if (existingSubmission) {
+                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
+            }
+        } else {
+            const latestSubmission =
+                await this.eventFeedbackSubmissionService.findLatestByUserIdAndEventId(
+                    user.id,
+                    event.id
+                );
+            if (latestSubmission?.reviewStatus === EventFeedbackReviewStatus.REWARDED) {
+                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
+            }
+        }
+
+        const participation = await this.getOrCreateParticipationForUpdate(user.id, event.id);
+
+        if (
+            participation.rewardStatus === EventRewardStatus.GRANTED ||
+            participation.rewardGrantedAt
+        ) {
+            throw new BusinessException(ErrorCode.EVENT_REWARD_ALREADY_GRANTED);
+        }
+
+        const now = new Date();
+
+        participation.rewardStatus = EventRewardStatus.GRANTED;
+        participation.rewardGrantedAt = now;
+        participation.isCompleted = true;
+        participation.completedAt = participation.completedAt ?? now;
+        participation.grantedBy = params.reviewedBy ?? 'admin-ui';
+        participation.grantReason = params.reviewNote ?? null;
+        const savedParticipation = await this.eventParticipationService.save(participation);
+
+        await this.ticketService.issueTickets(
+            user.id,
+            {
+                source: TicketSource.EVENT,
+                eventParticipationId: savedParticipation.id,
+            },
+            event.rewardConfig
+        );
+
+        const submission = new EventFeedbackSubmission();
+        submission.eventId = event.id;
+        submission.userId = user.id;
+        submission.phoneNum = null;
+        submission.source = EventFeedbackSource.ADMIN_UI;
+        submission.externalSubmissionId = params.externalSubmissionId ?? null;
+        submission.reviewStatus = EventFeedbackReviewStatus.REWARDED;
+        submission.reviewedBy = params.reviewedBy ?? 'admin-ui';
+        submission.reviewedAt = now;
+        submission.reviewNote = params.reviewNote ?? null;
+        submission.rewardedParticipationId = savedParticipation.id;
+        await this.eventFeedbackSubmissionService.save(submission);
+
+        return {
+            userId: user.id,
+            rewardStatus: savedParticipation.rewardStatus,
+            rewardGrantedAt: now,
+        };
     }
 
     private async recordFeedbackSubmission(

@@ -1,7 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../domain/user.entity';
+import { SocialUser } from '../../domain/social-user.entity';
 import { Repository } from 'typeorm';
+
+export interface UserWithSocialInfoProjection {
+    userId: number;
+    name: string;
+    phoneNum: string | null;
+    status: string;
+    isActive: boolean;
+    email: string | null;
+    loginType: string | null;
+}
 
 @Injectable()
 export class UserRepository {
@@ -38,6 +49,29 @@ export class UserRepository {
                 phoneNum: true,
             },
         });
+    }
+
+    async searchByNameWithSocialInfo(
+        name: string,
+        limit: number = 20
+    ): Promise<UserWithSocialInfoProjection[]> {
+        return this.userRepository
+            .createQueryBuilder('u')
+            .leftJoin(SocialUser, 'su', 'su.user_id = u.id')
+            .select([
+                'u.id AS "userId"',
+                'u.name AS "name"',
+                'u.phone_num AS "phoneNum"',
+                'u.status AS "status"',
+                'u.is_active AS "isActive"',
+                'MIN(su.email) AS "email"',
+                'MIN(su.login_type) AS "loginType"',
+            ])
+            .where('u.name ILIKE :name', { name: `%${name}%` })
+            .groupBy('u.id')
+            .orderBy('u.id', 'ASC')
+            .limit(limit)
+            .getRawMany<UserWithSocialInfoProjection>();
     }
 
     async deactivateById(userId: number, deactivatedAt: Date): Promise<boolean> {

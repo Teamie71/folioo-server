@@ -19,6 +19,7 @@ import { EventModule } from './modules/event/event.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -54,6 +55,7 @@ import { DataSource } from 'typeorm';
         EventModule,
         InterviewModule,
         InternalModule,
+        AdminModule,
     ],
     providers: [
         {
