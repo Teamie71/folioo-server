@@ -123,7 +123,7 @@ export class UserService {
         }
     }
 
-    private async findByIdOrThrow(userId: number): Promise<User> {
+    async findByIdOrThrow(userId: number): Promise<User> {
         const user = await this.userRepository.findById(userId);
         if (!user) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);

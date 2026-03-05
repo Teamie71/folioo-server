@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import cookieParser from 'cookie-parser';
+import expressBasicAuth from 'express-basic-auth';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
@@ -24,6 +25,19 @@ async function bootstrap() {
     });
 
     app.use(cookieParser());
+
+    const adminUser = configService.get<string>('ADMIN_USER');
+    const adminPassword = configService.get<string>('ADMIN_PASSWORD');
+    if (adminUser && adminPassword) {
+        app.use(
+            ['/admin'],
+            expressBasicAuth({
+                challenge: true,
+                realm: 'Folioo Admin',
+                users: { [adminUser]: adminPassword },
+            })
+        );
+    }
 
     app.useGlobalPipes(
         new ValidationPipe({

@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { InternalApiKeyGuard } from 'src/modules/internal/infrastructure/guards/internal-api-key.guard';
 import {
     ClaimEventRewardResDTO,
     EventProgressCardResDTO,
@@ -70,10 +71,11 @@ export class EventController {
 
     @Post('admin/:eventCode/feedback-rewards/grants')
     @Public()
+    @UseGuards(InternalApiKeyGuard)
     @ApiOperation({
-        summary: '피드백 이벤트 수동 보상 지급',
+        summary: '[Deprecated] 피드백 이벤트 수동 보상 지급 (전화번호 기반)',
         description:
-            '운영/PM이 외부 피드백 제출건 확인 후 전화번호 기준으로 보상을 수동 지급합니다.',
+            '운영/PM이 외부 피드백 제출건 확인 후 전화번호 기준으로 보상을 수동 지급합니다. Admin 대시보드(/admin/event-rewards) 사용을 권장합니다.',
     })
     @ApiBody({ type: GrantFeedbackRewardReqDTO })
     @ApiCommonResponse(GrantFeedbackRewardResDTO)

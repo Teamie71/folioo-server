@@ -110,6 +110,13 @@ export class GrantFeedbackRewardResDTO {
     rewardGrantedAt: string;
 }
 
+export interface GrantRewardByUserIdParams {
+    userId: number;
+    externalSubmissionId?: string;
+    reviewedBy?: string;
+    reviewNote?: string;
+}
+
 export class ClaimEventRewardResDTO {
     @ApiProperty({ example: 'INSIGHT_LOG_CHALLENGE' })
     eventCode: string;
