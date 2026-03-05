@@ -23,6 +23,11 @@ class AiRelayPortStub extends AiRelayPort {
     getJson<T = unknown>(request: AiRelayGetRequest): Promise<AiRelayJsonResponse<T>> {
         return this.getJsonMock(request) as Promise<AiRelayJsonResponse<T>>;
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    postJson<T = unknown>(_request: AiRelayRequest): Promise<AiRelayJsonResponse<T>> {
+        return Promise.resolve({ data: {} as T, status: 202, headers: {} });
+    }
 }
 
 describe('InterviewService', () => {

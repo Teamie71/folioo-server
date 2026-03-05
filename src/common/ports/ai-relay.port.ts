@@ -26,4 +26,5 @@ export interface AiRelayJsonResponse<T = unknown> {
 export abstract class AiRelayPort {
     abstract openPostStream(request: AiRelayRequest): Promise<AiRelayConnection>;
     abstract getJson<T = unknown>(request: AiRelayGetRequest): Promise<AiRelayJsonResponse<T>>;
+    abstract postJson<T = unknown>(request: AiRelayRequest): Promise<AiRelayJsonResponse<T>>;
 }
