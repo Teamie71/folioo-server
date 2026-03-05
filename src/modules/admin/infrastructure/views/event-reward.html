@@ -493,8 +493,9 @@
                         <td>${statusBadge}</td>
                         <td>
                             <button
-                                class="btn btn-outline btn-sm"
-                                onclick="confirmGrant(${u.userId}, '${escapeHtml(u.name)}')"
+                                class="btn btn-outline btn-sm grant-btn"
+                                data-user-id="${u.userId}"
+                                data-user-name="${escapeHtml(u.name)}"
                             >
                                 보상 지급
                             </button>
@@ -505,6 +506,14 @@
 
             html += '</tbody></table>';
             area.innerHTML = html;
+
+            area.querySelectorAll('.grant-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const userId = Number(btn.dataset.userId);
+                    const userName = btn.dataset.userName;
+                    confirmGrant(userId, userName);
+                });
+            });
         }
 
         function confirmGrant(userId, userName) {
@@ -516,19 +525,47 @@
 
             const overlay = $('#confirmOverlay');
             overlay.style.display = 'flex';
-            overlay.innerHTML = `
-                <div class="confirm-dialog">
-                    <h3>보상 지급 확인</h3>
-                    <p>
-                        <strong>${escapeHtml(userName)}</strong> (ID: ${userId})님께<br>
-                        <strong>${escapeHtml(eventCode)}</strong> 이벤트 보상을 지급하시겠습니까?
-                    </p>
-                    <div class="confirm-actions">
-                        <button class="btn btn-cancel" onclick="closeConfirm()">취소</button>
-                        <button class="btn btn-confirm" id="confirmGrantBtn" onclick="executeGrant(${userId}, '${escapeHtml(userName)}')">지급하기</button>
-                    </div>
-                </div>
-            `;
+
+            const dialog = document.createElement('div');
+            dialog.className = 'confirm-dialog';
+
+            const h3 = document.createElement('h3');
+            h3.textContent = '보상 지급 확인';
+
+            const p = document.createElement('p');
+            p.innerHTML = '';
+            const strong1 = document.createElement('strong');
+            strong1.textContent = userName;
+            const strong2 = document.createElement('strong');
+            strong2.textContent = eventCode;
+            p.appendChild(strong1);
+            p.append(` (ID: ${userId})님께`);
+            p.appendChild(document.createElement('br'));
+            p.appendChild(strong2);
+            p.append(' 이벤트 보상을 지급하시겠습니까?');
+
+            const actions = document.createElement('div');
+            actions.className = 'confirm-actions';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-cancel';
+            cancelBtn.textContent = '취소';
+            cancelBtn.addEventListener('click', closeConfirm);
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'btn btn-confirm';
+            confirmBtn.id = 'confirmGrantBtn';
+            confirmBtn.textContent = '지급하기';
+            confirmBtn.addEventListener('click', () => executeGrant(userId, userName));
+
+            actions.appendChild(cancelBtn);
+            actions.appendChild(confirmBtn);
+            dialog.appendChild(h3);
+            dialog.appendChild(p);
+            dialog.appendChild(actions);
+
+            overlay.innerHTML = '';
+            overlay.appendChild(dialog);
         }
 
         function closeConfirm() {
@@ -558,12 +595,12 @@
                     return;
                 }
 
-                showToast(`${userName}님께 보상이 지급되었습니다`, 'success');
-                handleSearch();
-            } catch {
-                showToast('서버 연결에 실패했습니다', 'error');
-            } finally {
                 closeConfirm();
+                showToast(`${userName}님께 보상이 지급되었습니다`, 'success');
+                await handleSearch();
+            } catch {
+                closeConfirm();
+                showToast('서버 연결에 실패했습니다', 'error');
             }
         }
 

@@ -3,7 +3,7 @@ import { IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-va
 import { Type } from 'class-transformer';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
 
-export class AdminUserSearchQueryDTO {
+export class AdminUserSearchReqDTO {
     @IsString()
     @MinLength(1)
     @MaxLength(25)

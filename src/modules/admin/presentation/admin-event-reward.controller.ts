@@ -9,7 +9,7 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     AdminGrantRewardReqDTO,
     AdminGrantRewardResDTO,
-    AdminUserSearchQueryDTO,
+    AdminUserSearchReqDTO,
     AdminUserSearchResDTO,
 } from '../application/dtos/admin-event-reward.dto';
 import { AdminEventRewardFacade } from '../application/facades/admin-event-reward.facade';
@@ -33,7 +33,7 @@ export class AdminEventRewardController {
     @ApiOperation({ summary: '사용자 이름 검색 (Admin)' })
     @ApiQuery({ name: 'name', type: String, description: '검색할 사용자 이름' })
     @ApiCommonResponse(AdminUserSearchResDTO)
-    async searchUsers(@Query() query: AdminUserSearchQueryDTO): Promise<AdminUserSearchResDTO> {
+    async searchUsers(@Query() query: AdminUserSearchReqDTO): Promise<AdminUserSearchResDTO> {
         return this.adminEventRewardFacade.searchUsers(query.name);
     }
 

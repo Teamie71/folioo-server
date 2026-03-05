@@ -1,6 +1,6 @@
 import './instrument';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { initializeTransactionalContext } from 'typeorm-transactional';
@@ -26,6 +26,7 @@ async function bootstrap() {
 
     app.use(cookieParser());
 
+    // Admin Basic Auth — 환경변수 미설정 시 /admin 경로 차단
     const adminUser = configService.get<string>('ADMIN_USER');
     const adminPassword = configService.get<string>('ADMIN_PASSWORD');
     if (adminUser && adminPassword) {
@@ -36,6 +37,18 @@ async function bootstrap() {
                 realm: 'Folioo Admin',
                 users: { [adminUser]: adminPassword },
             })
+        );
+    } else {
+        const logger = new Logger('Bootstrap');
+        logger.warn('ADMIN_USER/ADMIN_PASSWORD not set — /admin routes are blocked');
+        app.use(
+            '/admin',
+            (
+                _req: unknown,
+                res: { status: (code: number) => { json: (body: unknown) => void } }
+            ) => {
+                res.status(403).json({ message: 'Admin is not configured' });
+            }
         );
     }
 

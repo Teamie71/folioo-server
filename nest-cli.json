@@ -5,6 +5,7 @@
     "compilerOptions": {
         "builder": "swc",
         "deleteOutDir": true,
+        "assets": [{ "include": "**/*.html", "watchAssets": true }],
         "plugins": [
             {
                 "name": "@nestjs/swagger",

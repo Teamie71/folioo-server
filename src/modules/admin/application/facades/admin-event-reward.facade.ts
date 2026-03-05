@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserRepository } from 'src/modules/user/infrastructure/repositories/user.repository';
+import { UserService } from 'src/modules/user/application/services/user.service';
 import { EventRewardFacade } from 'src/modules/event/application/facades/event-reward.facade';
 import {
     AdminGrantRewardReqDTO,
@@ -11,12 +11,12 @@ import {
 @Injectable()
 export class AdminEventRewardFacade {
     constructor(
-        private readonly userRepository: UserRepository,
+        private readonly userService: UserService,
         private readonly eventRewardFacade: EventRewardFacade
     ) {}
 
     async searchUsers(name: string): Promise<AdminUserSearchResDTO> {
-        const projections = await this.userRepository.searchByNameWithSocialInfo(name);
+        const projections = await this.userService.searchByName(name);
 
         const users: AdminUserItemResDTO[] = projections.map((p) => {
             const item = new AdminUserItemResDTO();
