@@ -4,7 +4,7 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PortfolioCorrectionService } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
-import { InternalApiKeyGuard } from '../infrastructure/guards/internal-api-key.guard';
+import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import {
     InternalCorrectionResDTO,
     UpdateCompanyInsightInternalReqDTO,

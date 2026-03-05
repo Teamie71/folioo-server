@@ -4,7 +4,7 @@ import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators
 import { Public } from 'src/common/decorators/public.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { InternalApiKeyGuard } from 'src/modules/internal/infrastructure/guards/internal-api-key.guard';
+import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import {
     ClaimEventRewardResDTO,
     EventProgressCardResDTO,
