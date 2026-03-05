@@ -64,10 +64,10 @@ export class RagDataResDTO {
     searchResults: Record<string, unknown>;
     createdAt: string;
 
-    static from(ragData: CorrectionRagData): RagDataResDTO {
+    static from(ragData: CorrectionRagData, correctionId: number): RagDataResDTO {
         const dto = new RagDataResDTO();
         dto.id = ragData.id;
-        dto.correctionId = ragData.portfolioCorrection?.id ?? 0;
+        dto.correctionId = correctionId;
         dto.searchQuery = ragData.searchQuery;
         dto.searchResults = ragData.searchResults;
         dto.createdAt = ragData.createdAt.toISOString();

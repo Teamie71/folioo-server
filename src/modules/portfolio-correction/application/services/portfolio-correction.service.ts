@@ -243,6 +243,7 @@ export class PortfolioCorrectionService {
         const existingItems = await this.correctionItemService.findByCorrectionId(correctionId);
         const itemMap = new Map(existingItems.map((item) => [item.portfolio.id, item]));
 
+        const itemsToUpdate: CorrectionItem[] = [];
         for (const { portfolioId, data } of items) {
             const existingItem = itemMap.get(portfolioId);
             if (existingItem) {
@@ -252,8 +253,12 @@ export class PortfolioCorrectionService {
                 existingItem.problemSolving = data.problemSolving ?? existingItem.problemSolving;
                 existingItem.learnings = data.learnings ?? existingItem.learnings;
                 existingItem.overallReview = data.overallReview ?? existingItem.overallReview;
-                await this.correctionItemService.saveCorrectionItem(existingItem);
+                itemsToUpdate.push(existingItem);
             }
+        }
+
+        if (itemsToUpdate.length > 0) {
+            await this.correctionItemService.saveAll(itemsToUpdate);
         }
 
         await this.portfolioCorrectionRepository.updateById(correctionId, {

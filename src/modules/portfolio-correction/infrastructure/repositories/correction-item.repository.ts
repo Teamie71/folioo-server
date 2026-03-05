@@ -14,6 +14,10 @@ export class CorrectionItemRepository {
         return this.correctionItemRepository.save(correctionItem);
     }
 
+    saveAll(correctionItems: CorrectionItem[]): Promise<CorrectionItem[]> {
+        return this.correctionItemRepository.save(correctionItems);
+    }
+
     async findPortfolioIdsByCorrectionId(correctionId: number): Promise<number[]> {
         const results = await this.correctionItemRepository
             .createQueryBuilder('ci')

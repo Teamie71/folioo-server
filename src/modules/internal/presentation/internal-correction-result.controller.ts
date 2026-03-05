@@ -84,7 +84,6 @@ export class InternalCorrectionResultController {
         @Param('correctionId', ParseIntPipe) correctionId: number,
         @Body() body: CreateRagDataReqDTO
     ): Promise<string> {
-        await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
         await this.correctionRagDataService.createRagData(
             correctionId,
             body.searchQuery,
@@ -103,15 +102,14 @@ export class InternalCorrectionResultController {
     })
     @ApiOperation({
         summary: 'RAG 검색 결과 조회 (Internal)',
-        description: '저장된 RAG 검색 결과를 조회합니다. created_at 오름차순 정렬.',
+        description: '저장된 RAG 검색 결과를 조회합니다. createdAt 오름차순 정렬.',
     })
     @ApiCommonResponse(RagDataResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getRagData(
         @Param('correctionId', ParseIntPipe) correctionId: number
     ): Promise<RagDataResDTO[]> {
-        await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
         const ragDataList = await this.correctionRagDataService.findByCorrectionId(correctionId);
-        return ragDataList.map((ragData) => RagDataResDTO.from(ragData));
+        return ragDataList.map((ragData) => RagDataResDTO.from(ragData, correctionId));
     }
 }
