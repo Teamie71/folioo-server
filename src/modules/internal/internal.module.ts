@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { InternalController } from './presentation/internal.controller';
 import { InternalCorrectionController } from './presentation/internal-correction.controller';
+import { InternalCorrectionResultController } from './presentation/internal-correction-result.controller';
 import { InternalApiKeyGuard } from './infrastructure/guards/internal-api-key.guard';
 import { InsightModule } from '../insight/insight.module';
 import { PortfolioModule } from '../portfolio/portfolio.module';
@@ -9,7 +10,11 @@ import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-cor
 
 @Module({
     imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule],
-    controllers: [InternalController, InternalCorrectionController],
+    controllers: [
+        InternalController,
+        InternalCorrectionController,
+        InternalCorrectionResultController,
+    ],
     providers: [InternalApiKeyGuard, InternalPortfolioFacade],
     exports: [InternalApiKeyGuard],
 })

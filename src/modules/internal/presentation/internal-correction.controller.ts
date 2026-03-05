@@ -89,7 +89,7 @@ export class InternalCorrectionController {
     ): Promise<string> {
         await this.portfolioCorrectionService.saveCompanyInsightInternal(
             correctionId,
-            body.company_insight
+            body.companyInsight
         );
         return '기업 분석이 저장되었습니다.';
     }
