@@ -18,6 +18,9 @@ export enum ErrorCode {
 
     //User
     USER_NOT_FOUND = 'USER404',
+    REQUIRED_TERMS_NOT_AGREED = 'USER4001',
+    ALREADY_AGREED_USER = 'USER4091',
+    TERM_NOT_FOUND = 'TERM404',
 
     //Insight-Log
     NOT_LOG_OWNER = 'LOG4031',

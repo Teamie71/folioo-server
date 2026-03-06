@@ -17,4 +17,11 @@ export class TermRepository {
             order: { id: 'DESC' },
         });
     }
+
+    async findAllActive(): Promise<Term[]> {
+        return this.termRepository.find({
+            where: { isActive: true },
+            order: { id: 'DESC' },
+        });
+    }
 }

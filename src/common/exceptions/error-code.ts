@@ -76,6 +76,18 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 사용자를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.REQUIRED_TERMS_NOT_AGREED]: {
+        message: '필수 약관에 모두 동의해야 합니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.ALREADY_AGREED_USER]: {
+        message: '이미 약관에 동의한 사용자입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.TERM_NOT_FOUND]: {
+        message: '해당하는 약관을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
     [ErrorCode.LOG_NOT_FOUND]: {
         message: '해당하는 인사이트 로그를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
