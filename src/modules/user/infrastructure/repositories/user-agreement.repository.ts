@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserAgreement } from '../../domain/user-agreement.entity';
-import { Term } from '../../domain/term.entity';
 import { TermType } from '../../domain/enums/term-type.enum';
 
 @Injectable()
@@ -28,10 +27,10 @@ export class UserAgreementRepository {
     ): Promise<UserAgreement | null> {
         return this.userAgreementRepository
             .createQueryBuilder('ua')
-            .innerJoin(Term, 'term', 'term.id = ua.term_id')
-            .where('ua.user_id = :userId', { userId })
-            .andWhere('term.term_type = :termType', { termType })
-            .andWhere('term.is_active = true')
+            .innerJoin('ua.term', 'term')
+            .where('ua.userId = :userId', { userId })
+            .andWhere('term.termType = :termType', { termType })
+            .andWhere('term.isActive = true')
             .orderBy('ua.id', 'DESC')
             .getOne();
     }
