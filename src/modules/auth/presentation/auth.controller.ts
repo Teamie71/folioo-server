@@ -39,6 +39,7 @@ import { parseFrontProfileState } from '../infrastructure/utils/oauth-state.util
 import { KakaoAuthGuard } from '../infrastructure/guards/kakao-auth.guard';
 import { GoogleAuthGuard } from '../infrastructure/guards/google-auth.guard';
 import { NaverAuthGuard } from '../infrastructure/guards/naver-auth.guard';
+import { AllowPending } from 'src/common/decorators/allow-pending.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -266,6 +267,7 @@ export class AuthController {
     }
 
     @Post('logout')
+    @AllowPending()
     @ApiOperation({
         summary: '로그아웃',
         description: 'JWT 토큰을 만료시키고 서버에서 로그아웃을 수행합니다.',
