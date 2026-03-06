@@ -111,4 +111,22 @@ describe('InterviewService', () => {
             allComplete: false,
         });
     });
+
+    it('maps extend stream request to AI server schema', async () => {
+        await interviewService.extendSessionStream('session_abc');
+
+        expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
+            path: '/api/v1/interview/sessions/session_abc/extend/stream',
+            body: {},
+        });
+    });
+
+    it('encodes special characters in sessionId for extend stream path', async () => {
+        await interviewService.extendSessionStream('session 1/2');
+
+        expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
+            path: '/api/v1/interview/sessions/session%201%2F2/extend/stream',
+            body: {},
+        });
+    });
 });
