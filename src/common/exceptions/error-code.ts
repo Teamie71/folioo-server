@@ -109,6 +109,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
             '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변한 후 포트폴리오를 생성할 수 있습니다.',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
+    [ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED]: {
+        message: '인터뷰가 완료된 상태에서만 연장 모드를 시작할 수 있습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
     [ErrorCode.INTERVIEW_AI_RELAY_FAILED]: {
         message: 'AI 인터뷰 세션 중계에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,

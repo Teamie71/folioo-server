@@ -68,22 +68,11 @@ export class InterviewFacade {
         experienceId: number,
         dto: SendInterviewChatReqDTO
     ): Promise<AiRelayConnection> {
-        const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
-        const interviewInternalDTO = InterviewInternalDTO.of(experience);
-        if (!interviewInternalDTO.sessionId) {
-            throw new BusinessException(ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED, {
-                reason: 'interview session id is not initialized for this experience',
-                experienceId,
-            });
-        }
+        const { sessionId } = await this.getInitializedSession(userId, experienceId);
 
         const validatedInsightIds = await this.resolveInsightIds(userId, dto.insightId);
 
-        return this.interviewService.sendChatStream(
-            interviewInternalDTO.sessionId,
-            dto.message,
-            validatedInsightIds
-        );
+        return this.interviewService.sendChatStream(sessionId, dto.message, validatedInsightIds);
     }
 
     private async resolveInsightIds(userId: number, insightId?: number): Promise<number[]> {
@@ -101,6 +90,26 @@ export class InterviewFacade {
         userId: number,
         experienceId: number
     ): Promise<InterviewSessionStateResDTO> {
+        const { sessionId } = await this.getInitializedSession(userId, experienceId);
+
+        return this.interviewService.getSessionState(sessionId);
+    }
+
+    async extendSessionStream(userId: number, experienceId: number): Promise<AiRelayConnection> {
+        const { sessionId } = await this.getInitializedSession(userId, experienceId);
+
+        const sessionState = await this.interviewService.getSessionState(sessionId);
+        if (!sessionState.allComplete) {
+            throw new BusinessException(ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED);
+        }
+
+        return this.interviewService.extendSessionStream(sessionId);
+    }
+
+    private async getInitializedSession(
+        userId: number,
+        experienceId: number
+    ): Promise<{ sessionId: string; experience: InterviewInternalDTO }> {
         const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
         const interviewInternalDTO = InterviewInternalDTO.of(experience);
 
@@ -111,7 +120,7 @@ export class InterviewFacade {
             });
         }
 
-        return this.interviewService.getSessionState(interviewInternalDTO.sessionId);
+        return { sessionId: interviewInternalDTO.sessionId, experience: interviewInternalDTO };
     }
 
     async generatePortfolio(

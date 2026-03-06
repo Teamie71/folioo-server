@@ -5,6 +5,7 @@ import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { Readable } from 'stream';
+import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { InterviewService } from '../services/interview.service';
 import { InterviewSessionStateResDTO, SendInterviewChatReqDTO } from '../dtos/interview.dto';
 import { InterviewFacade } from './interview.facade';
@@ -15,6 +16,8 @@ class InterviewServiceStub {
     readonly sendChatStream = jest.fn<Promise<AiRelayConnection>, [string, string, number[]]>();
 
     readonly getSessionState = jest.fn<Promise<InterviewSessionStateResDTO>, [string]>();
+
+    readonly extendSessionStream = jest.fn<Promise<AiRelayConnection>, [string]>();
 }
 
 class ExperienceServiceStub {
@@ -28,6 +31,8 @@ class ExperienceServiceStub {
 class InsightServiceStub {
     readonly findByIdAndUserOrThrow = jest.fn<Promise<{ id: number }>, [number, number]>();
 }
+
+class PortfolioServiceStub {}
 
 describe('InterviewFacade', () => {
     let interviewFacade: InterviewFacade;
@@ -43,7 +48,8 @@ describe('InterviewFacade', () => {
         interviewFacade = new InterviewFacade(
             interviewServiceStub as unknown as InterviewService,
             experienceServiceStub as unknown as ExperienceService,
-            insightServiceStub as unknown as InsightService
+            insightServiceStub as unknown as InsightService,
+            new PortfolioServiceStub() as unknown as PortfolioService
         );
     });
 
@@ -244,5 +250,80 @@ describe('InterviewFacade', () => {
         expect(experienceServiceStub.findByIdOrThrow).toHaveBeenCalledWith(12, 99);
         expect(interviewServiceStub.getSessionState).toHaveBeenCalledWith('session_state_123');
         expect(result).toBe(sessionState);
+    });
+
+    it('returns relay connection when extending a completed interview session', async () => {
+        const experience = {
+            id: 20,
+            name: '연장 테스트 경험',
+            sessionId: 'session_extend_ok',
+        };
+        const sessionState: InterviewSessionStateResDTO = {
+            messages: [],
+            experienceName: experience.name,
+            currentStage: 3,
+            allComplete: true,
+        };
+        const relayConnection: AiRelayConnection = {
+            stream: Readable.from([]),
+            close: jest.fn(),
+        };
+
+        experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+        interviewServiceStub.getSessionState.mockResolvedValue(sessionState);
+        interviewServiceStub.extendSessionStream.mockResolvedValue(relayConnection);
+
+        const result = await interviewFacade.extendSessionStream(77, 20);
+
+        expect(experienceServiceStub.findByIdOrThrow).toHaveBeenCalledWith(20, 77);
+        expect(interviewServiceStub.getSessionState).toHaveBeenCalledWith('session_extend_ok');
+        expect(interviewServiceStub.extendSessionStream).toHaveBeenCalledWith('session_extend_ok');
+        expect(result).toBe(relayConnection);
+    });
+
+    it('throws INTERVIEW_SESSION_NOT_INITIALIZED when sessionId is missing for extend', async () => {
+        const experience = {
+            id: 21,
+            name: '세션 없는 경험',
+            sessionId: null,
+        };
+
+        experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+
+        await expect(interviewFacade.extendSessionStream(77, 21)).rejects.toMatchObject(
+            expect.objectContaining({
+                response: expect.objectContaining({
+                    errorCode: ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
+                }),
+            })
+        );
+        expect(interviewServiceStub.getSessionState).not.toHaveBeenCalled();
+        expect(interviewServiceStub.extendSessionStream).not.toHaveBeenCalled();
+    });
+
+    it('throws INTERVIEW_EXTEND_NOT_ALLOWED when interview is not completed', async () => {
+        const experience = {
+            id: 22,
+            name: '미완료 인터뷰 경험',
+            sessionId: 'session_incomplete',
+        };
+        const sessionState: InterviewSessionStateResDTO = {
+            messages: [],
+            experienceName: experience.name,
+            currentStage: 1,
+            allComplete: false,
+        };
+
+        experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+        interviewServiceStub.getSessionState.mockResolvedValue(sessionState);
+
+        await expect(interviewFacade.extendSessionStream(77, 22)).rejects.toMatchObject(
+            expect.objectContaining({
+                response: expect.objectContaining({
+                    errorCode: ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED,
+                }),
+            })
+        );
+        expect(interviewServiceStub.extendSessionStream).not.toHaveBeenCalled();
     });
 });

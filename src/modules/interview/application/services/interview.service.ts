@@ -6,6 +6,10 @@ import {
 } from '../dtos/interview.dto';
 
 const CREATE_SESSION_STREAM_PATH = '/api/v1/interview/sessions/stream';
+const SESSION_BASE_PATH = '/api/v1/interview/sessions';
+
+const sessionPath = (sessionId: string, suffix: string): string =>
+    `${SESSION_BASE_PATH}/${encodeURIComponent(sessionId)}${suffix}`;
 
 @Injectable()
 export class InterviewService {
@@ -17,7 +21,6 @@ export class InterviewService {
     ) {}
 
     async createSessionStream(userId: number, experienceName: string): Promise<AiRelayConnection> {
-        // TODO(interview): Add DB-backed pre-processing before relaying session-create request.
         return this.aiRelayPort.openPostStream({
             path: CREATE_SESSION_STREAM_PATH,
             body: {
@@ -33,7 +36,7 @@ export class InterviewService {
         mentionedInsightIds: number[]
     ): Promise<AiRelayConnection> {
         return this.aiRelayPort.openPostStream({
-            path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/chat/stream`,
+            path: sessionPath(sessionId, '/chat/stream'),
             body: {
                 message,
                 mentioned_insight_ids: mentionedInsightIds,
@@ -41,9 +44,16 @@ export class InterviewService {
         });
     }
 
+    async extendSessionStream(sessionId: string): Promise<AiRelayConnection> {
+        return this.aiRelayPort.openPostStream({
+            path: sessionPath(sessionId, '/extend/stream'),
+            body: {},
+        });
+    }
+
     async getSessionState(sessionId: string): Promise<InterviewSessionStateResDTO> {
         const response = await this.aiRelayPort.getJson<AiInterviewSessionStateResponse>({
-            path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/state`,
+            path: sessionPath(sessionId, '/state'),
         });
 
         return InterviewSessionStateResDTO.fromAiPayload(response.data);
@@ -54,10 +64,10 @@ export class InterviewService {
         sessionId: string,
         userId: string
     ): Promise<void> {
-        // TODO: AI 서버 스펙 변경 후 portfolioId도 body에 추가
         await this.aiRelayPort.postJson({
             path: '/api/v1/portfolio/generate',
             body: {
+                portfolio_id: portfolioId,
                 session_id: sessionId,
                 user_id: userId,
             },
