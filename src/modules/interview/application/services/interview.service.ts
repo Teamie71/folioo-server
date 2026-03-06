@@ -17,7 +17,6 @@ export class InterviewService {
     ) {}
 
     async createSessionStream(userId: number, experienceName: string): Promise<AiRelayConnection> {
-        // TODO(interview): Add DB-backed pre-processing before relaying session-create request.
         return this.aiRelayPort.openPostStream({
             path: CREATE_SESSION_STREAM_PATH,
             body: {
@@ -41,6 +40,13 @@ export class InterviewService {
         });
     }
 
+    async extendSessionStream(sessionId: string): Promise<AiRelayConnection> {
+        return this.aiRelayPort.openPostStream({
+            path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/extend/stream`,
+            body: {},
+        });
+    }
+
     async getSessionState(sessionId: string): Promise<InterviewSessionStateResDTO> {
         const response = await this.aiRelayPort.getJson<AiInterviewSessionStateResponse>({
             path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/state`,
@@ -54,10 +60,10 @@ export class InterviewService {
         sessionId: string,
         userId: string
     ): Promise<void> {
-        // TODO: AI 서버 스펙 변경 후 portfolioId도 body에 추가
         await this.aiRelayPort.postJson({
             path: '/api/v1/portfolio/generate',
             body: {
+                portfolio_id: portfolioId,
                 session_id: sessionId,
                 user_id: userId,
             },

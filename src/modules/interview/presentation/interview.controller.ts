@@ -145,4 +145,41 @@ export class InterviewController {
     ): Promise<GeneratePortfolioResDTO> {
         return this.interviewFacade.generatePortfolio(experienceId, userId);
     }
+
+    @Post(':experienceId/extend/stream')
+    @SkipTransform()
+    @ApiOperation({
+        summary: '연장 모드 시작 (SSE 스트리밍)',
+        description:
+            '완료된 인터뷰 세션을 연장 모드로 전환하고 첫 질문을 SSE로 스트리밍합니다. 인터뷰가 모두 완료된 상태에서만 요청 가능합니다.',
+    })
+    @ApiParam({ name: 'experienceId', description: '경험 정리 ID', example: 42 })
+    @ApiProduces('text/event-stream')
+    @ApiInterviewStreamStartResponse()
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EXPERIENCE_NOT_FOUND,
+        ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
+        ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED,
+        ErrorCode.INTERVIEW_AI_RELAY_FAILED
+    )
+    async extendSessionStream(
+        @User('sub') userId: number,
+        @Param('experienceId', ParseIntPipe) experienceId: number,
+        @Req() req: Request,
+        @Res() res: Response
+    ): Promise<void> {
+        const relayConnection = await this.interviewFacade.extendSessionStream(
+            userId,
+            experienceId
+        );
+        SseRelayUtil.relayStream({
+            connection: relayConnection,
+            request: req,
+            response: res,
+            logger: this.logger,
+            errorLogPrefix: 'Interview extend SSE relay error',
+            errorEventPayload: this.sseErrorEventPayload,
+        });
+    }
 }

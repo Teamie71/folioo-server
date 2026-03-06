@@ -114,6 +114,24 @@ export class InterviewFacade {
         return this.interviewService.getSessionState(interviewInternalDTO.sessionId);
     }
 
+    async extendSessionStream(userId: number, experienceId: number): Promise<AiRelayConnection> {
+        const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
+
+        if (!experience.sessionId) {
+            throw new BusinessException(ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED, {
+                reason: 'interview session id is not initialized for this experience',
+                experienceId,
+            });
+        }
+
+        const sessionState = await this.interviewService.getSessionState(experience.sessionId);
+        if (!sessionState.allComplete) {
+            throw new BusinessException(ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED);
+        }
+
+        return this.interviewService.extendSessionStream(experience.sessionId);
+    }
+
     async generatePortfolio(
         experienceId: number,
         userId: number
