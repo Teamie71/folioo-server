@@ -44,6 +44,18 @@ WHERE NOT EXISTS (
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
+-- 2-1. term 테이블이 비어 있으면 초기 약관 시드
+-- ============================================================
+INSERT INTO term (term_type, version, is_required, is_active)
+SELECT v.term_type, v.version, v.is_required, true
+FROM (VALUES
+    ('SERVICE'::term_term_type_enum,   'v0.0', true),
+    ('PRIVACY'::term_term_type_enum,   'v0.0', true),
+    ('MARKETING'::term_term_type_enum, 'v0.0', false)
+) AS v(term_type, version, is_required)
+WHERE NOT EXISTS (SELECT 1 FROM term);
+
+-- ============================================================
 -- 3. user_agreement 에 term_id 컬럼 추가
 -- ============================================================
 ALTER TABLE user_agreement
