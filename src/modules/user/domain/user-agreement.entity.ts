@@ -39,16 +39,4 @@ export class UserAgreement extends BaseEntity {
         agreement.agreeAt = agreeAt;
         return agreement;
     }
-
-    static createMarketingAgreement(
-        userId: number,
-        isMarketingAgreed: boolean,
-        agreedAt: Date | null
-    ): UserAgreement {
-        const agreement = new UserAgreement();
-        agreement.userId = userId;
-        agreement.isAgree = isMarketingAgreed;
-        agreement.agreeAt = agreedAt;
-        return agreement;
-    }
 }

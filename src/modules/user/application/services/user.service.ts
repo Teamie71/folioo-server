@@ -65,8 +65,7 @@ export class UserService {
         );
 
         if (!agreement) {
-            agreement = UserAgreement.createMarketingAgreement(userId, isMarketingAgreed, agreeAt);
-            agreement.termId = marketingTerm.id;
+            agreement = UserAgreement.create(userId, marketingTerm.id, isMarketingAgreed, agreeAt);
         } else {
             agreement.isAgree = isMarketingAgreed;
             agreement.agreeAt = agreeAt;
