@@ -1,10 +1,10 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { User } from './user.entity';
-import { TermType } from './enums/term-type.enum';
+import { Term } from './term.entity';
 
 @Entity('user_agreement')
-@Index(['userId'])
+@Index(['userId', 'termId'], { unique: true })
 export class UserAgreement extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
@@ -13,15 +13,12 @@ export class UserAgreement extends BaseEntity {
     @Column({ name: 'user_id' })
     userId: number;
 
-    @Column({
-        type: 'enum',
-        enum: TermType,
-        name: 'term_type',
-    })
-    termType: TermType;
+    @ManyToOne(() => Term, { onDelete: 'RESTRICT' })
+    @JoinColumn({ name: 'term_id' })
+    term: Term;
 
-    @Column({ length: 10 })
-    version: string;
+    @Column({ name: 'term_id' })
+    termId: number;
 
     @Column({ name: 'is_agree' })
     isAgree: boolean;
@@ -31,14 +28,11 @@ export class UserAgreement extends BaseEntity {
 
     static createMarketingAgreement(
         userId: number,
-        version: string,
         isMarketingAgreed: boolean,
         agreedAt: Date | null
     ): UserAgreement {
         const agreement = new UserAgreement();
         agreement.userId = userId;
-        agreement.termType = TermType.MARKETING;
-        agreement.version = version;
         agreement.isAgree = isMarketingAgreed;
         agreement.agreeAt = agreedAt;
         return agreement;
