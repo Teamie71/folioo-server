@@ -69,7 +69,7 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        await this.userService.checkUserActive(userId);
+        await this.userService.checkUserActive(userId, true);
 
         return true;
     }

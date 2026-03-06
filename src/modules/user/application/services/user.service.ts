@@ -165,7 +165,7 @@ export class UserService {
         return user;
     }
 
-    async checkUserActive(userId: number): Promise<void> {
+    async checkUserActive(userId: number, allowPending?: boolean): Promise<void> {
         const user = await this.userRepository.findById(userId);
         if (!user) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
@@ -173,6 +173,10 @@ export class UserService {
 
         if (user.isDeactivated()) {
             throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+        }
+
+        if (!allowPending && user.status === UserStatus.PENDING) {
+            throw new BusinessException(ErrorCode.PENDING_USER);
         }
     }
 

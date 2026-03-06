@@ -48,6 +48,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '탈퇴한 사용자입니다.',
         statusCode: HttpStatus.UNAUTHORIZED,
     },
+    [ErrorCode.PENDING_USER]: {
+        message: '약관 동의가 필요합니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
     [ErrorCode.SOCIAL_UNLINK_FAILED]: {
         message: '소셜 계정 연결 해제에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,

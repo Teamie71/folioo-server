@@ -9,6 +9,7 @@ import {
 } from '../application/dtos/marketing-agree.dto';
 import { AgreeTermsReqDTO, AgreeTermsResDTO } from '../application/dtos/agree-terms.dto';
 import { User } from 'src/common/decorators/user.decorator';
+import { AllowPending } from 'src/common/decorators/allow-pending.decorator';
 import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
@@ -55,6 +56,7 @@ export class UserController {
     }
 
     @Post('me/terms')
+    @AllowPending()
     @ApiOperation({
         summary: '온보딩 약관 동의',
         description:
