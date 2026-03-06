@@ -102,16 +102,17 @@ export class UserService {
         const marketingTerm = termMap.get(TermType.MARKETING);
 
         if (!serviceTerm || !privacyTerm || !marketingTerm) {
-            throw new BusinessException(ErrorCode.TERM_NOT_FOUND);
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         const now = new Date();
-
-        await this.saveAgreement(userId, serviceTerm.id, true, now);
-        await this.saveAgreement(userId, privacyTerm.id, true, now);
-
         const marketingAgreeAt = isMarketingAgreed ? now : null;
-        await this.saveAgreement(userId, marketingTerm.id, isMarketingAgreed, marketingAgreeAt);
+
+        await Promise.all([
+            this.saveAgreement(userId, serviceTerm.id, true, now),
+            this.saveAgreement(userId, privacyTerm.id, true, now),
+            this.saveAgreement(userId, marketingTerm.id, isMarketingAgreed, marketingAgreeAt),
+        ]);
 
         user.status = UserStatus.ACTIVE;
         await this.userRepository.save(user);
