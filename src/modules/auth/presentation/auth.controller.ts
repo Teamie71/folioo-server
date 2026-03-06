@@ -199,7 +199,7 @@ export class AuthController {
         req: Request,
         res: Response
     ): Promise<void> {
-        const refreshToken = await this.loginUsecase.execute(user);
+        const { refreshToken, isNewUser } = await this.loginUsecase.execute(user);
         const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
             '14d') as StringValue;
         const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
@@ -211,7 +211,7 @@ export class AuthController {
             maxAge: TimeUtil.toMs(expiresIn),
         });
         const clientUrl = this.resolveClientRedirectUri(req);
-        res.redirect(`${clientUrl}?status=success`);
+        res.redirect(`${clientUrl}?status=success&isNewUser=${isNewUser}`);
     }
 
     private resolveClientRedirectUri(req: Request): string {

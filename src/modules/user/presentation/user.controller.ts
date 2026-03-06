@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Headers, Patch, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -7,7 +7,9 @@ import {
     AgreeMarketingReqDTO,
     AgreeMarketingResDTO,
 } from '../application/dtos/marketing-agree.dto';
+import { AgreeTermsReqDTO, AgreeTermsResDTO } from '../application/dtos/agree-terms.dto';
 import { User } from 'src/common/decorators/user.decorator';
+import { AllowPending } from 'src/common/decorators/allow-pending.decorator';
 import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
@@ -51,6 +53,34 @@ export class UserController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.USER_NOT_FOUND)
     async getProfile(@User('sub') userId: number): Promise<UserProfileResDTO> {
         return await this.userService.getProfile(userId);
+    }
+
+    @Post('me/terms')
+    @AllowPending()
+    @ApiOperation({
+        summary: '온보딩 약관 동의',
+        description:
+            '회원가입 후 서비스 이용약관, 개인정보 처리방침, 마케팅 수신 동의를 처리합니다. 필수 약관(서비스, 개인정보) 동의 시 사용자 상태가 ACTIVE로 전환됩니다.',
+    })
+    @ApiBody({ type: AgreeTermsReqDTO })
+    @ApiCommonResponse(AgreeTermsResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.USER_NOT_FOUND,
+        ErrorCode.REQUIRED_TERMS_NOT_AGREED,
+        ErrorCode.ALREADY_AGREED_USER,
+        ErrorCode.TERM_NOT_FOUND
+    )
+    async agreeTerms(
+        @User('sub') userId: number,
+        @Body() body: AgreeTermsReqDTO
+    ): Promise<AgreeTermsResDTO> {
+        return this.userService.agreeTerms(
+            userId,
+            body.isServiceAgreed,
+            body.isPrivacyAgreed,
+            body.isMarketingAgreed
+        );
     }
 
     @Get('me/tickets')

@@ -2,6 +2,7 @@ import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
+import { ALLOW_PENDING_KEY } from 'src/common/decorators/allow-pending.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UserAfterAuth } from 'src/modules/auth/domain/types/jwt-payload.type';
@@ -81,7 +82,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        await this.userService.checkUserActive(userId);
+        const allowPending = this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+
+        await this.userService.checkUserActive(userId, allowPending);
 
         return true;
     }

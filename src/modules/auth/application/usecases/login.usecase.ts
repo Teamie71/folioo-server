@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SocialUser } from 'src/modules/user/domain/social-user.entity';
 import { User } from 'src/modules/user/domain/user.entity';
+import { UserStatus } from 'src/modules/user/domain/enums/user-status.enum';
 import { SocialUserRepository } from 'src/modules/user/infrastructure/repositories/social-user.repository';
 import { UserRepository } from 'src/modules/user/infrastructure/repositories/user.repository';
 import { TokenService } from '../../infrastructure/services/token.service';
@@ -9,6 +10,11 @@ import { Transactional } from 'typeorm-transactional';
 import type { SocialUserAfterOAuth } from '../../domain/types/jwt-payload.type';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+
+export interface LoginResult {
+    refreshToken: string;
+    isNewUser: boolean;
+}
 
 @Injectable()
 export class LoginUsecase {
@@ -20,7 +26,7 @@ export class LoginUsecase {
     ) {}
 
     @Transactional()
-    async execute(command: SocialUserAfterOAuth): Promise<string> {
+    async execute(command: SocialUserAfterOAuth): Promise<LoginResult> {
         const existingSocialUser = await this.socialUserRepository.findByLoginTypeAndLoginId(
             command.socialType,
             command.id
@@ -64,8 +70,9 @@ export class LoginUsecase {
             await this.socialUserRepository.save(socialUser);
         }
 
+        const isNewUser = user.status === UserStatus.PENDING;
         const refreshToken = await this.tokenService.generateRefreshToken(user);
         await this.authTokenStoreService.whitelistRefreshToken(refreshToken, user.id);
-        return refreshToken;
+        return { refreshToken, isNewUser };
     }
 }

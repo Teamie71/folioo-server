@@ -48,6 +48,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '탈퇴한 사용자입니다.',
         statusCode: HttpStatus.UNAUTHORIZED,
     },
+    [ErrorCode.PENDING_USER]: {
+        message: '약관 동의가 필요합니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
     [ErrorCode.SOCIAL_UNLINK_FAILED]: {
         message: '소셜 계정 연결 해제에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,
@@ -74,6 +78,18 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.USER_NOT_FOUND]: {
         message: '해당하는 사용자를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.REQUIRED_TERMS_NOT_AGREED]: {
+        message: '필수 약관에 모두 동의해야 합니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.ALREADY_AGREED_USER]: {
+        message: '이미 약관에 동의한 사용자입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.TERM_NOT_FOUND]: {
+        message: '해당하는 약관을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
     [ErrorCode.LOG_NOT_FOUND]: {

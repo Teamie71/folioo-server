@@ -8,20 +8,23 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { User } from '../../domain/user.entity';
 import { UserAgreementRepository } from '../../infrastructure/repositories/user-agreement.repository';
+import { TermRepository } from '../../infrastructure/repositories/term.repository';
 import { SocialUserRepository } from '../../infrastructure/repositories/social-user.repository';
 import { TermType } from '../../domain/enums/term-type.enum';
 import { UserAgreement } from '../../domain/user-agreement.entity';
 import { AgreeMarketingResDTO } from '../dtos/marketing-agree.dto';
+import { AgreeTermsResDTO } from '../dtos/agree-terms.dto';
 import { SocialAccountUnlinkClient } from '../../infrastructure/clients/social-account-unlink.client';
 import { Transactional } from 'typeorm-transactional';
-
-const DEFAULT_TERMS_VERSION = 'v1.0';
+import { UserStatus } from '../../domain/enums/user-status.enum';
+import { Term } from '../../domain/term.entity';
 
 @Injectable()
 export class UserService {
     constructor(
         private readonly userRepository: UserRepository,
         private readonly userAgreementRepository: UserAgreementRepository,
+        private readonly termRepository: TermRepository,
         private readonly socialUserRepository: SocialUserRepository,
         private readonly socialAccountUnlinkClient: SocialAccountUnlinkClient
     ) {}
@@ -48,21 +51,21 @@ export class UserService {
     ): Promise<AgreeMarketingResDTO> {
         await this.findByIdOrThrow(userId);
 
+        const marketingTerm = await this.termRepository.findActiveByTermType(TermType.MARKETING);
+        if (!marketingTerm) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
         const now = new Date();
-        let agreement = await this.userAgreementRepository.findLatestByUserIdAndTermType(
-            userId,
-            TermType.MARKETING
-        );
         const agreeAt = isMarketingAgreed ? now : null;
 
+        let agreement = await this.userAgreementRepository.findByUserIdAndTermId(
+            userId,
+            marketingTerm.id
+        );
+
         if (!agreement) {
-            const latestAgreement = await this.userAgreementRepository.findLatestByUserId(userId);
-            agreement = UserAgreement.createMarketingAgreement(
-                userId,
-                latestAgreement?.version ?? DEFAULT_TERMS_VERSION,
-                isMarketingAgreed,
-                agreeAt
-            );
+            agreement = UserAgreement.create(userId, marketingTerm.id, isMarketingAgreed, agreeAt);
         } else {
             agreement.isAgree = isMarketingAgreed;
             agreement.agreeAt = agreeAt;
@@ -71,6 +74,49 @@ export class UserService {
         const savedAgreement = await this.userAgreementRepository.save(agreement);
 
         return AgreeMarketingResDTO.from(savedAgreement.isAgree, savedAgreement.agreeAt);
+    }
+
+    @Transactional()
+    async agreeTerms(
+        userId: number,
+        isServiceAgreed: boolean,
+        isPrivacyAgreed: boolean,
+        isMarketingAgreed: boolean
+    ): Promise<AgreeTermsResDTO> {
+        const user = await this.findByIdOrThrow(userId);
+
+        if (user.status !== UserStatus.PENDING) {
+            throw new BusinessException(ErrorCode.ALREADY_AGREED_USER);
+        }
+
+        if (!isServiceAgreed || !isPrivacyAgreed) {
+            throw new BusinessException(ErrorCode.REQUIRED_TERMS_NOT_AGREED);
+        }
+
+        const activeTerms = await this.termRepository.findAllActive();
+        const termMap = this.buildTermMap(activeTerms);
+
+        const serviceTerm = termMap.get(TermType.SERVICE);
+        const privacyTerm = termMap.get(TermType.PRIVACY);
+        const marketingTerm = termMap.get(TermType.MARKETING);
+
+        if (!serviceTerm || !privacyTerm || !marketingTerm) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        const now = new Date();
+        const marketingAgreeAt = isMarketingAgreed ? now : null;
+
+        await Promise.all([
+            this.saveAgreement(userId, serviceTerm.id, true, now),
+            this.saveAgreement(userId, privacyTerm.id, true, now),
+            this.saveAgreement(userId, marketingTerm.id, isMarketingAgreed, marketingAgreeAt),
+        ]);
+
+        user.status = UserStatus.ACTIVE;
+        await this.userRepository.save(user);
+
+        return AgreeTermsResDTO.from(true, true, isMarketingAgreed, marketingAgreeAt);
     }
 
     async withdraw(userId: number): Promise<void> {
@@ -119,7 +165,7 @@ export class UserService {
         return user;
     }
 
-    async checkUserActive(userId: number): Promise<void> {
+    async checkUserActive(userId: number, allowPending?: boolean): Promise<void> {
         const user = await this.userRepository.findById(userId);
         if (!user) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
@@ -127,6 +173,10 @@ export class UserService {
 
         if (user.isDeactivated()) {
             throw new BusinessException(ErrorCode.DEACTIVATED_USER);
+        }
+
+        if (!allowPending && user.status === UserStatus.PENDING) {
+            throw new BusinessException(ErrorCode.PENDING_USER);
         }
     }
 
@@ -140,7 +190,7 @@ export class UserService {
     }
 
     private async getMarketingConsent(userId: number): Promise<boolean> {
-        const marketingAgreement = await this.userAgreementRepository.findLatestByUserIdAndTermType(
+        const marketingAgreement = await this.userAgreementRepository.findByUserIdAndTermType(
             userId,
             TermType.MARKETING
         );
@@ -155,5 +205,33 @@ export class UserService {
         return socialAccounts.map((socialAccount) =>
             UserSocialAccountResDTO.from(socialAccount.loginType, socialAccount.email)
         );
+    }
+
+    private buildTermMap(terms: Term[]): Map<TermType, Term> {
+        const map = new Map<TermType, Term>();
+        for (const term of terms) {
+            if (!map.has(term.termType)) {
+                map.set(term.termType, term);
+            }
+        }
+        return map;
+    }
+
+    private async saveAgreement(
+        userId: number,
+        termId: number,
+        isAgree: boolean,
+        agreeAt: Date | null
+    ): Promise<UserAgreement> {
+        let agreement = await this.userAgreementRepository.findByUserIdAndTermId(userId, termId);
+
+        if (!agreement) {
+            agreement = UserAgreement.create(userId, termId, isAgree, agreeAt);
+        } else {
+            agreement.isAgree = isAgree;
+            agreement.agreeAt = agreeAt;
+        }
+
+        return this.userAgreementRepository.save(agreement);
     }
 }

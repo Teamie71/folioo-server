@@ -15,20 +15,23 @@ export class UserAgreementRepository {
         return this.userAgreementRepository.save(entity);
     }
 
-    async findLatestByUserId(userId: number): Promise<UserAgreement | null> {
+    async findByUserIdAndTermId(userId: number, termId: number): Promise<UserAgreement | null> {
         return this.userAgreementRepository.findOne({
-            where: { userId },
-            order: { id: 'DESC' },
+            where: { userId, termId },
         });
     }
 
-    async findLatestByUserIdAndTermType(
+    async findByUserIdAndTermType(
         userId: number,
         termType: TermType
     ): Promise<UserAgreement | null> {
-        return this.userAgreementRepository.findOne({
-            where: { userId, termType },
-            order: { id: 'DESC' },
-        });
+        return this.userAgreementRepository
+            .createQueryBuilder('ua')
+            .innerJoin('ua.term', 'term')
+            .where('ua.userId = :userId', { userId })
+            .andWhere('term.termType = :termType', { termType })
+            .andWhere('term.isActive = true')
+            .orderBy('ua.id', 'DESC')
+            .getOne();
     }
 }
