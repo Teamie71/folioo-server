@@ -6,6 +6,10 @@ import {
 } from '../dtos/interview.dto';
 
 const CREATE_SESSION_STREAM_PATH = '/api/v1/interview/sessions/stream';
+const SESSION_BASE_PATH = '/api/v1/interview/sessions';
+
+const sessionPath = (sessionId: string, suffix: string): string =>
+    `${SESSION_BASE_PATH}/${encodeURIComponent(sessionId)}${suffix}`;
 
 @Injectable()
 export class InterviewService {
@@ -32,7 +36,7 @@ export class InterviewService {
         mentionedInsightIds: number[]
     ): Promise<AiRelayConnection> {
         return this.aiRelayPort.openPostStream({
-            path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/chat/stream`,
+            path: sessionPath(sessionId, '/chat/stream'),
             body: {
                 message,
                 mentioned_insight_ids: mentionedInsightIds,
@@ -42,14 +46,14 @@ export class InterviewService {
 
     async extendSessionStream(sessionId: string): Promise<AiRelayConnection> {
         return this.aiRelayPort.openPostStream({
-            path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/extend/stream`,
+            path: sessionPath(sessionId, '/extend/stream'),
             body: {},
         });
     }
 
     async getSessionState(sessionId: string): Promise<InterviewSessionStateResDTO> {
         const response = await this.aiRelayPort.getJson<AiInterviewSessionStateResponse>({
-            path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/state`,
+            path: sessionPath(sessionId, '/state'),
         });
 
         return InterviewSessionStateResDTO.fromAiPayload(response.data);
