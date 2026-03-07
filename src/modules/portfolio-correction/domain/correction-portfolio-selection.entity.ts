@@ -9,7 +9,7 @@ export class CorrectionPortfolioSelection extends BaseEntity {
     @ManyToOne(() => PortfolioCorrection, { onDelete: 'CASCADE' })
     portfolioCorrection: PortfolioCorrection;
 
-    @ManyToOne(() => Portfolio, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Portfolio, { onDelete: 'RESTRICT' })
     portfolio: Portfolio;
 
     @Column({ default: false })

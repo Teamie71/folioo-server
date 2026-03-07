@@ -51,7 +51,7 @@ export class Portfolio extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     user: User;
 
-    @OneToOne(() => Experience, { nullable: true })
+    @OneToOne(() => Experience, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn()
     experience: Experience;
 
