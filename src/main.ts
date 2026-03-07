@@ -54,8 +54,8 @@ async function bootstrap() {
         );
     }
 
-    // Admin 정적 파일 서빙 (React SPA assets)
-    app.useStaticAssets(join(__dirname, 'modules', 'admin', 'infrastructure', 'views', 'assets'), {
+    // Admin 정적 파일 서빙 (React SPA — src/ 밖에 위치하여 SWC 컴파일 방지)
+    app.useStaticAssets(join(__dirname, '..', 'admin-client', 'assets'), {
         prefix: '/admin/assets/',
     });
 
