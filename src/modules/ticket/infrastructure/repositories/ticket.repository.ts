@@ -155,7 +155,10 @@ export class TicketRepository {
             .getMany();
     }
 
-    async findAllWithUserInfo(limit: number = 200): Promise<TicketWithUserProjection[]> {
+    async findAllWithUserInfo({
+        limit = 200,
+        offset = 0,
+    }: { limit?: number; offset?: number } = {}): Promise<TicketWithUserProjection[]> {
         return this.ticketRepository
             .createQueryBuilder('t')
             .innerJoin('users', 'u', 'u.id = t.user_id')
@@ -175,6 +178,7 @@ export class TicketRepository {
             .groupBy('t.id')
             .addGroupBy('u.id')
             .orderBy('t.created_at', 'DESC')
+            .offset(offset)
             .limit(limit)
             .getRawMany<TicketWithUserProjection>();
     }

@@ -99,20 +99,9 @@ export class AdminEventRewardFacade {
             item.type = r.type;
             item.status = r.status;
             item.source = r.source;
-            item.createdAt =
-                r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt);
-            item.usedAt =
-                r.usedAt instanceof Date
-                    ? r.usedAt.toISOString()
-                    : r.usedAt
-                      ? String(r.usedAt)
-                      : null;
-            item.expiredAt =
-                r.expiredAt instanceof Date
-                    ? r.expiredAt.toISOString()
-                    : r.expiredAt
-                      ? String(r.expiredAt)
-                      : null;
+            item.createdAt = r.createdAt.toISOString();
+            item.usedAt = r.usedAt ? r.usedAt.toISOString() : null;
+            item.expiredAt = r.expiredAt ? r.expiredAt.toISOString() : null;
             return item;
         });
 

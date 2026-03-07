@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { html, useState, useEffect, useCallback } from '../lib/setup.js';
+import { html, useState, useEffect, useCallback, useMemo } from '../lib/setup.js';
 import { api, TICKET_TYPE_LABELS } from '../lib/api.js';
 import { Badge } from '../components/Badge.js';
 import { Toast } from '../components/Toast.js';
@@ -26,25 +26,8 @@ function formatDate(dateStr) {
     return `${yyyy}.${MM}.${dd} ${HH}:${mm}`;
 }
 
-function TicketHistoryTable({ history, filter }) {
-    let filtered = history;
-
-    if (filter.keyword) {
-        const kw = filter.keyword.toLowerCase();
-        filtered = filtered.filter(
-            (t) =>
-                t.userName.toLowerCase().includes(kw) ||
-                (t.userEmail && t.userEmail.toLowerCase().includes(kw))
-        );
-    }
-    if (filter.status) {
-        filtered = filtered.filter((t) => t.status === filter.status);
-    }
-    if (filter.source) {
-        filtered = filtered.filter((t) => t.source === filter.source);
-    }
-
-    if (filtered.length === 0) {
+function TicketHistoryTable({ items }) {
+    if (items.length === 0) {
         return html`
             <div class="text-center py-16 text-gray-400 text-sm">
                 거래 내역이 없습니다
@@ -67,7 +50,7 @@ function TicketHistoryTable({ history, filter }) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${filtered.map((t, i) => {
+                    ${items.map((t, i) => {
                         const statusCfg = STATUS_CONFIG[t.status] || { label: t.status, variant: 'zero' };
                         const sourceCfg = SOURCE_CONFIG[t.source] || { label: t.source, variant: 'zero' };
                         const actionDate = t.usedAt || t.expiredAt;
@@ -126,17 +109,22 @@ export function TicketHistoryTab() {
         loadHistory();
     }, [loadHistory]);
 
-    const filteredCount = history
-        ? history.filter((t) => {
-              if (filter.keyword) {
-                  const kw = filter.keyword.toLowerCase();
-                  if (!t.userName.toLowerCase().includes(kw) && !(t.userEmail && t.userEmail.toLowerCase().includes(kw))) return false;
-              }
-              if (filter.status && t.status !== filter.status) return false;
-              if (filter.source && t.source !== filter.source) return false;
-              return true;
-          }).length
-        : null;
+    const filteredHistory = useMemo(() => {
+        if (!history) return [];
+        return history.filter((t) => {
+            if (filter.keyword) {
+                const kw = filter.keyword.toLowerCase();
+                if (
+                    !t.userName.toLowerCase().includes(kw) &&
+                    !(t.userEmail && t.userEmail.toLowerCase().includes(kw))
+                )
+                    return false;
+            }
+            if (filter.status && t.status !== filter.status) return false;
+            if (filter.source && t.source !== filter.source) return false;
+            return true;
+        });
+    }, [history, filter]);
 
     return html`
         <${React.Fragment}>
@@ -170,9 +158,9 @@ export function TicketHistoryTab() {
                                rounded-full hover:bg-primary-600 transition-colors whitespace-nowrap">
                     새로고침
                 </button>
-                ${filteredCount !== null ? html`
+                ${history !== null ? html`
                     <span class="text-sm text-gray-400 ml-auto">
-                        총 <strong class="text-primary-500">${filteredCount}</strong>건
+                        총 <strong class="text-primary-500">${filteredHistory.length}</strong>건
                     </span>
                 ` : null}
             </div>
@@ -180,7 +168,7 @@ export function TicketHistoryTab() {
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 ${history === null
                     ? html`<div class="text-center py-16 text-gray-400 text-sm">불러오는 중...</div>`
-                    : html`<${TicketHistoryTable} history=${history} filter=${filter} />`}
+                    : html`<${TicketHistoryTable} items=${filteredHistory} />`}
             </div>
 
             <${Toast} message=${toast.message} type=${toast.type} visible=${toast.visible} />
