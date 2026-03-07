@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -6,10 +6,8 @@ import {
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
 import { User } from 'src/common/decorators/user.decorator';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    ExportPortfolioResDTO,
     PortfolioDetailResDTO,
     PortfolioListResDTO,
     UpdatePortfolioReqDTO,
@@ -84,18 +82,5 @@ export class PortfolioController {
     ): Promise<string> {
         await this.portfolioService.deletePortfolio(portfolioId, userId);
         return '포트폴리오가 성공적으로 삭제되었습니다.';
-    }
-
-    @Post(':portfolioId/export')
-    @ApiOperation({
-        summary: '포트폴리오 내보내기',
-        description: '경험 정리가 완료된 포트폴리오를 pdf로 내보냅니다.',
-    })
-    @ApiCommonResponse(ExportPortfolioResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    exportPortfolio(
-        @Param('portfolioId', ParseIntPipe) portfolioId: number
-    ): ExportPortfolioResDTO {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, portfolioId);
     }
 }

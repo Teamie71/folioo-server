@@ -76,8 +76,3 @@ export class UpdatePortfolioReqDTO {
     @Max(100)
     contributionRate?: number;
 }
-
-export class ExportPortfolioResDTO {
-    @ApiProperty({ example: 'https://example.pdf' })
-    url: string;
-}
