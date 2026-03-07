@@ -83,7 +83,7 @@ export class PortfolioCorrectionFacade {
             });
         }
 
-        const portfolios = await this.externalPortfolioService.getExternalPortfoliosByOwnerOrThrow(
+        const portfolios = await this.externalPortfolioService.getPortfoliosByOwnerOrThrow(
             activePortfolioIds,
             userId
         );
@@ -124,7 +124,7 @@ export class PortfolioCorrectionFacade {
             throw new BusinessException(ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED);
         }
 
-        const portfolios = await this.externalPortfolioService.getExternalPortfoliosByOwnerOrThrow(
+        const portfolios = await this.externalPortfolioService.getPortfoliosByOwnerOrThrow(
             uniqueIds,
             userId
         );

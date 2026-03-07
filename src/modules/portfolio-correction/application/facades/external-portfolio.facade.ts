@@ -48,7 +48,7 @@ export class ExternalPortfolioFacade {
             return [];
         }
 
-        const portfolios = await this.externalPortfolioService.getExternalPortfolios(portfolioIds);
+        const portfolios = await this.externalPortfolioService.getPortfolios(portfolioIds);
         return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
     }
 
@@ -75,7 +75,7 @@ export class ExternalPortfolioFacade {
         const activePortfolios =
             activePortfolioIds.length === 0
                 ? []
-                : await this.externalPortfolioService.getExternalPortfoliosByOwnerOrThrow(
+                : await this.externalPortfolioService.getPortfoliosByOwnerOrThrow(
                       activePortfolioIds,
                       userId
                   );

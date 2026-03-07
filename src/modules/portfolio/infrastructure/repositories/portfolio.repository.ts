@@ -66,6 +66,25 @@ export class PortfolioRepository {
         });
     }
 
+    async findByIdsAndUserId(ids: number[], userId: number): Promise<Portfolio[]> {
+        if (ids.length === 0) return [];
+        return this.portfolioRepository.find({
+            where: {
+                id: In(ids),
+                user: { id: userId },
+            },
+        });
+    }
+
+    async findByIds(ids: number[]): Promise<Portfolio[]> {
+        if (ids.length === 0) return [];
+        return this.portfolioRepository.find({
+            where: {
+                id: In(ids),
+            },
+        });
+    }
+
     async findAllCompletedByUserId(userId: number): Promise<Portfolio[]> {
         return this.portfolioRepository.find({
             where: {
