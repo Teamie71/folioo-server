@@ -16,7 +16,6 @@ import {
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
 import { User } from 'src/common/decorators/user.decorator';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CorrectionSelectionResDTO,
@@ -170,30 +169,6 @@ export class PortfolioCorrectionController {
         @Body() body: UpdateCompanyInsightReqDTO
     ): Promise<UpdateCompanyInsightResDTO> {
         return this.portfolioCorrectionService.updateCompanyInsight(correctionId, userId, body);
-    }
-
-    @Post(':correctionId/regenerate-insight')
-    @ApiOperation({
-        summary: '기업 분석 정보 재생성',
-        description: '특정 AI 첨삭의 기업 분석 정보를 재생성합니다. (미구현)',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '기업 분석 정보를 재생성합니다.',
-            },
-        },
-    })
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.CORRECTION_NOT_FOUND,
-        ErrorCode.NOT_IMPLEMENTED
-    )
-    reCreateCompanyInsight(@Param('correctionId', ParseIntPipe) correctionId: number): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, correctionId);
     }
 
     @Post(':correctionId/select')

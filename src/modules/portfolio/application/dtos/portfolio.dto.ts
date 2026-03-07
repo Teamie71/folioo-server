@@ -4,6 +4,29 @@ import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'cla
 import { JobCategory } from 'src/modules/experience/domain/enums/job-category.enum';
 import { Portfolio } from '../../domain/portfolio.entity';
 
+export class PortfolioListResDTO {
+    @ApiProperty({ example: 1 })
+    id: number;
+
+    @ApiProperty({ example: '마케팅 인턴 경험' })
+    name: string;
+
+    @ApiProperty({ enum: JobCategory, example: JobCategory.DEV, nullable: true })
+    hopeJob: JobCategory | null;
+
+    @ApiProperty({ example: '2026-01-02T12:34:56.000Z' })
+    createdAt: string;
+
+    static from(portfolio: Portfolio): PortfolioListResDTO {
+        const dto = new PortfolioListResDTO();
+        dto.id = portfolio.id;
+        dto.name = portfolio.name;
+        dto.hopeJob = portfolio.experience?.hopeJob ?? null;
+        dto.createdAt = portfolio.createdAt.toISOString();
+        return dto;
+    }
+}
+
 export class PortfolioDetailResDTO {
     id: number;
     name: string;
@@ -52,9 +75,4 @@ export class UpdatePortfolioReqDTO {
     @Min(0)
     @Max(100)
     contributionRate?: number;
-}
-
-export class ExportPortfolioResDTO {
-    @ApiProperty({ example: 'https://example.pdf' })
-    url: string;
 }

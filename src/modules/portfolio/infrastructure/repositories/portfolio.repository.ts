@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Portfolio } from '../../domain/portfolio.entity';
+import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 import { SourceType } from '../../domain/enums/source-type.enum';
 
 @Injectable()
@@ -62,6 +63,17 @@ export class PortfolioRepository {
                 sourceType: SourceType.EXTERNAL,
                 user: { id: userId },
             },
+        });
+    }
+
+    async findAllCompletedByUserId(userId: number): Promise<Portfolio[]> {
+        return this.portfolioRepository.find({
+            where: {
+                user: { id: userId },
+                status: PortfolioStatus.COMPLETED,
+            },
+            relations: { experience: true },
+            order: { createdAt: 'DESC' },
         });
     }
 
