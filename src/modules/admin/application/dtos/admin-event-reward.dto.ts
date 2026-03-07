@@ -179,3 +179,10 @@ export class AdminTicketHistoryResDTO {
     @ApiProperty({ example: 10 })
     total: number;
 }
+
+export interface GrantRewardByUserIdParams {
+    userId: number;
+    externalSubmissionId?: string;
+    reviewedBy?: string;
+    reviewNote?: string;
+}

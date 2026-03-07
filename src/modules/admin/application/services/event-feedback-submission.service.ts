@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventFeedbackSubmission } from '../../domain/entities/event-feedback-submission.entity';
-import { EventFeedbackSubmissionRepository } from '../../infrastructure/repositories/event-feedback-submission.repository';
+import { EventFeedbackSubmissionRepository } from '../../infrastructure/event-feedback-submission.repository';
 
 @Injectable()
 export class EventFeedbackSubmissionService {

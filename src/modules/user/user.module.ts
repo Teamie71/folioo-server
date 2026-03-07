@@ -23,8 +23,8 @@ import { EventModule } from '../event/event.module';
     imports: [
         TypeOrmModule.forFeature([User, SocialUser, UserAgreement, Term, WithdrawnUser]),
         TicketModule,
+        EventModule,
         forwardRef(() => AuthModule),
-        forwardRef(() => EventModule),
     ],
     controllers: [UserController],
     providers: [
