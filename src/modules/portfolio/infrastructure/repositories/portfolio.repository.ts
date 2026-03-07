@@ -45,27 +45,6 @@ export class PortfolioRepository {
         });
     }
 
-    async findExternalByIds(ids: number[]): Promise<Portfolio[]> {
-        if (ids.length === 0) return [];
-        return this.portfolioRepository.find({
-            where: {
-                id: In(ids),
-                sourceType: SourceType.EXTERNAL,
-            },
-        });
-    }
-
-    async findExternalByIdsAndUserId(ids: number[], userId: number): Promise<Portfolio[]> {
-        if (ids.length === 0) return [];
-        return this.portfolioRepository.find({
-            where: {
-                id: In(ids),
-                sourceType: SourceType.EXTERNAL,
-                user: { id: userId },
-            },
-        });
-    }
-
     async findByIdsAndUserId(ids: number[], userId: number): Promise<Portfolio[]> {
         if (ids.length === 0) return [];
         return this.portfolioRepository.find({
