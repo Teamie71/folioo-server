@@ -70,19 +70,15 @@ export const ApiCommonResponse = <T extends Type<unknown> | null>(
     );
 };
 
-interface ApiCommonMessageResponseOptions {
-    description?: string;
-    status?: number;
-}
+type ApiCommonMessageResponseOptions = Omit<ApiCommonResponseOptions, 'exampleResult'>;
 
 export const ApiCommonMessageResponse = (
     message: string,
     options?: ApiCommonMessageResponseOptions
 ) => {
     return ApiCommonResponse(null, {
-        description: options?.description,
+        ...options,
         exampleResult: message,
-        status: options?.status,
     });
 };
 
