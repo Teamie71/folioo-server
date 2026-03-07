@@ -32,14 +32,6 @@ export class AdminEventRewardController {
         res.sendFile(htmlPath);
     }
 
-    @Get('event-rewards')
-    @SkipTransform()
-    @Header('Content-Type', 'text/html')
-    @ApiOperation({ summary: 'Admin 대시보드로 리다이렉트 (레거시)' })
-    redirectLegacy(@Res() res: Response): void {
-        res.redirect('/admin/dashboard');
-    }
-
     @Get('api/users/search')
     @ApiOperation({ summary: '사용자 검색 (Admin) — 이름/이메일 통합 검색, 빈 값이면 전체 목록' })
     @ApiQuery({
