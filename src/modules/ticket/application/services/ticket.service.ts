@@ -170,4 +170,8 @@ export class TicketService {
             correctionInfo?.earliestExpiredAt ? new Date(correctionInfo.earliestExpiredAt) : null
         );
     }
+
+    async getTicketHistory() {
+        return this.ticketRepository.findAllWithUserInfo();
+    }
 }

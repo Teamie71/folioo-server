@@ -22,6 +22,19 @@ interface ExpiringTicketInfo {
     earliestExpiredAt: string | Date | null;
 }
 
+export interface TicketWithUserProjection {
+    ticketId: number;
+    userId: number;
+    userName: string;
+    userEmail: string | null;
+    type: TicketType;
+    status: string;
+    source: string;
+    createdAt: Date;
+    usedAt: Date | null;
+    expiredAt: Date | null;
+}
+
 @Injectable()
 export class TicketRepository {
     constructor(
@@ -132,5 +145,29 @@ export class TicketRepository {
             .groupBy('ticket.userId')
             .addGroupBy('ticket.type')
             .getRawMany<TicketCountByUserAndType>();
+    }
+
+    async findAllWithUserInfo(limit: number = 200): Promise<TicketWithUserProjection[]> {
+        return this.ticketRepository
+            .createQueryBuilder('t')
+            .innerJoin('users', 'u', 'u.id = t.user_id')
+            .leftJoin('social_user', 'su', 'su.user_id = u.id')
+            .select([
+                't.id AS "ticketId"',
+                'u.id AS "userId"',
+                'u.name AS "userName"',
+                'MIN(su.email) AS "userEmail"',
+                't.type AS "type"',
+                't.status AS "status"',
+                't.source AS "source"',
+                't.created_at AS "createdAt"',
+                't.used_at AS "usedAt"',
+                't.expired_at AS "expiredAt"',
+            ])
+            .groupBy('t.id')
+            .addGroupBy('u.id')
+            .orderBy('t.created_at', 'DESC')
+            .limit(limit)
+            .getRawMany<TicketWithUserProjection>();
     }
 }

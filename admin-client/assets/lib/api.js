@@ -14,7 +14,7 @@ export const GRANT_REASONS = [
 
 export const TABS = [
     { id: 'users', label: '회원 관리', enabled: true },
-    { id: 'tickets', label: '이용권 거래 내역', enabled: false },
+    { id: 'tickets', label: '이용권 거래 내역', enabled: true },
     { id: 'events', label: '이벤트 모달 관리', enabled: false },
 ];
 

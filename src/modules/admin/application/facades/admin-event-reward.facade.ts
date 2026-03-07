@@ -8,6 +8,8 @@ import {
     AdminGrantRewardResDTO,
     AdminGrantTicketsReqDTO,
     AdminGrantTicketsResDTO,
+    AdminTicketHistoryItemResDTO,
+    AdminTicketHistoryResDTO,
     AdminUserItemResDTO,
     AdminUserSearchResDTO,
 } from '../dtos/admin-event-reward.dto';
@@ -82,6 +84,41 @@ export class AdminEventRewardFacade {
         dto.quantity = body.quantity;
         dto.reason = body.reason;
         dto.remainingBalance = remainingBalance;
+        return dto;
+    }
+
+    async getTicketHistory(): Promise<AdminTicketHistoryResDTO> {
+        const rows = await this.ticketService.getTicketHistory();
+
+        const history: AdminTicketHistoryItemResDTO[] = rows.map((r) => {
+            const item = new AdminTicketHistoryItemResDTO();
+            item.ticketId = r.ticketId;
+            item.userId = r.userId;
+            item.userName = r.userName;
+            item.userEmail = r.userEmail;
+            item.type = r.type;
+            item.status = r.status;
+            item.source = r.source;
+            item.createdAt =
+                r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt);
+            item.usedAt =
+                r.usedAt instanceof Date
+                    ? r.usedAt.toISOString()
+                    : r.usedAt
+                      ? String(r.usedAt)
+                      : null;
+            item.expiredAt =
+                r.expiredAt instanceof Date
+                    ? r.expiredAt.toISOString()
+                    : r.expiredAt
+                      ? String(r.expiredAt)
+                      : null;
+            return item;
+        });
+
+        const dto = new AdminTicketHistoryResDTO();
+        dto.history = history;
+        dto.total = history.length;
         return dto;
     }
 }

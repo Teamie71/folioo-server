@@ -60,29 +60,31 @@ export function UserManagementTab() {
     };
 
     return html`
-        <${SearchToolbar}
-            keyword=${keyword}
-            onKeywordChange=${setKeyword}
-            onSearch=${() => loadUsers(keyword || undefined)}
-            total=${total}
-            loading=${loading}
-        />
+        <${React.Fragment}>
+            <${SearchToolbar}
+                keyword=${keyword}
+                onKeywordChange=${setKeyword}
+                onSearch=${() => loadUsers(keyword || undefined)}
+                total=${total}
+                loading=${loading}
+            />
 
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            ${users === null
-                ? html`<div class="text-center py-16 text-gray-400 text-sm">
-                      불러오는 중...
-                  </div>`
-                : html`<${UserTable} users=${users} onGrant=${handleGrant} />`}
-        </div>
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                ${users === null
+                    ? html`<div class="text-center py-16 text-gray-400 text-sm">
+                          불러오는 중...
+                      </div>`
+                    : html`<${UserTable} users=${users} onGrant=${handleGrant} />`}
+            </div>
 
-        <${GrantTicketModal}
-            open=${modalOpen}
-            user=${selectedUser}
-            onClose=${() => setModalOpen(false)}
-            onSuccess=${handleGrantSuccess}
-        />
+            <${GrantTicketModal}
+                open=${modalOpen}
+                user=${selectedUser}
+                onClose=${() => setModalOpen(false)}
+                onSuccess=${handleGrantSuccess}
+            />
 
-        <${Toast} message=${toast.message} type=${toast.type} visible=${toast.visible} />
+            <${Toast} message=${toast.message} type=${toast.type} visible=${toast.visible} />
+        <//>
     `;
 }

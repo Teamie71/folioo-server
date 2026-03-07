@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { html } from '../lib/setup.js';
-import { Badge } from './Badge.js';
+import { Badge, LoginBadge } from './Badge.js';
 
 export function UserTable({ users, onGrant }) {
     if (!users || users.length === 0) {
@@ -35,9 +35,7 @@ export function UserTable({ users, onGrant }) {
                             <td class="px-4 py-3 font-medium">${u.name}</td>
                             <td class="px-4 py-3 text-gray-500 text-xs">${u.email || '-'}</td>
                             <td class="px-4 py-3">
-                                ${u.loginType
-                                    ? html`<${Badge} variant="login">${u.loginType}<//>`
-                                    : '-'}
+                                <${LoginBadge} loginType=${u.loginType} />
                             </td>
                             <td class="px-4 py-3">
                                 <${Badge} variant=${u.isActive ? 'active' : 'inactive'}>
@@ -70,7 +68,7 @@ export function UserTable({ users, onGrant }) {
     `;
 }
 
-export function SearchToolbar({ keyword, onKeywordChange, onSearch, total, loading }) {
+export function SearchToolbar({ keyword, onKeywordChange, onSearch, total, loading, countLabel }) {
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') onSearch();
     };
@@ -94,7 +92,7 @@ export function SearchToolbar({ keyword, onKeywordChange, onSearch, total, loadi
             </button>
             ${total !== null ? html`
                 <span class="text-sm text-gray-400 ml-auto">
-                    총 <strong class="text-primary-500">${total}</strong>명
+                    총 <strong class="text-primary-500">${total}</strong>${countLabel || '명'}
                 </span>
             ` : null}
         </div>

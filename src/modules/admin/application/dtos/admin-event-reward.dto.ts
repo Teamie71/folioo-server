@@ -139,3 +139,43 @@ export class AdminGrantTicketsResDTO {
     @ApiProperty({ example: 3, description: '지급 후 해당 타입 잔여 수량' })
     remainingBalance: number;
 }
+
+export class AdminTicketHistoryItemResDTO {
+    @ApiProperty({ example: 1 })
+    ticketId: number;
+
+    @ApiProperty({ example: 1 })
+    userId: number;
+
+    @ApiProperty({ example: '김효인' })
+    userName: string;
+
+    @ApiPropertyOptional({ example: 'hyoin@test.com', nullable: true })
+    userEmail: string | null;
+
+    @ApiProperty({ enum: TicketType, example: TicketType.EXPERIENCE })
+    type: TicketType;
+
+    @ApiProperty({ example: 'AVAILABLE' })
+    status: string;
+
+    @ApiProperty({ example: 'PURCHASE' })
+    source: string;
+
+    @ApiProperty({ example: '2026-03-08T00:00:00.000Z' })
+    createdAt: string;
+
+    @ApiPropertyOptional({ example: null, nullable: true })
+    usedAt: string | null;
+
+    @ApiPropertyOptional({ example: null, nullable: true })
+    expiredAt: string | null;
+}
+
+export class AdminTicketHistoryResDTO {
+    @ApiProperty({ type: [AdminTicketHistoryItemResDTO] })
+    history: AdminTicketHistoryItemResDTO[];
+
+    @ApiProperty({ example: 10 })
+    total: number;
+}
