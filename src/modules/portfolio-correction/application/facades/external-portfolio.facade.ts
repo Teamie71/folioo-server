@@ -38,8 +38,11 @@ export class ExternalPortfolioFacade {
         return extractedText;
     }
 
-    async getSelectedPortfolios(correctionId: number): Promise<StructuredPortfolioResDTO[]> {
-        await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
+    async getSelectedPortfolios(
+        correctionId: number,
+        userId: number
+    ): Promise<StructuredPortfolioResDTO[]> {
+        await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(correctionId, userId);
 
         const portfolioIds =
             await this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(

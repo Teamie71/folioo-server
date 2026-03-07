@@ -252,10 +252,11 @@ export class ExternalPortfolioController {
     @ApiQuery({ name: 'correctionId', required: true, type: Number })
     @ApiCommonResponseArray(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
-    async getExternalPortfolios(
+    async getSelectedPortfolios(
+        @User('sub') userId: number,
         @Query('correctionId', ParseIntPipe) correctionId: number
     ): Promise<StructuredPortfolioResDTO[]> {
-        return this.externalPortfolioFacade.getSelectedPortfolios(correctionId);
+        return this.externalPortfolioFacade.getSelectedPortfolios(correctionId, userId);
     }
 
     @Patch(':portfolioId')
