@@ -147,6 +147,14 @@ export class TicketRepository {
             .getRawMany<TicketCountByUserAndType>();
     }
 
+    async findByUserId(userId: number): Promise<Ticket[]> {
+        return this.ticketRepository
+            .createQueryBuilder('ticket')
+            .where('ticket.userId = :userId', { userId })
+            .orderBy('ticket.created_at', 'DESC')
+            .getMany();
+    }
+
     async findAllWithUserInfo(limit: number = 200): Promise<TicketWithUserProjection[]> {
         return this.ticketRepository
             .createQueryBuilder('t')

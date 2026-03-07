@@ -9,6 +9,7 @@ import { TicketType } from '../../domain/enums/ticket-type.enum';
 import { TicketRepository } from '../../infrastructure/repositories/ticket.repository';
 import { TicketBalanceResDTO } from '../dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from '../dtos/ticket-expiring.dto';
+import { TicketHistoryItemResDTO, TicketHistoryResDTO } from '../dtos/ticket-history.dto';
 
 type TicketRewardItem = {
     type: TicketType;
@@ -169,6 +170,24 @@ export class TicketService {
             correctionInfo?.count ?? 0,
             correctionInfo?.earliestExpiredAt ? new Date(correctionInfo.earliestExpiredAt) : null
         );
+    }
+
+    async getUserTicketHistory(userId: number): Promise<TicketHistoryResDTO> {
+        const tickets = await this.ticketRepository.findByUserId(userId);
+
+        const history: TicketHistoryItemResDTO[] = tickets.map((t) => {
+            const item = new TicketHistoryItemResDTO();
+            item.ticketId = t.id;
+            item.type = t.type;
+            item.status = t.status;
+            item.source = t.source;
+            item.createdAt = t.createdAt.toISOString();
+            item.usedAt = t.usedAt ? t.usedAt.toISOString() : null;
+            item.expiredAt = t.expiredAt ? t.expiredAt.toISOString() : null;
+            return item;
+        });
+
+        return TicketHistoryResDTO.from(history);
     }
 
     async getTicketHistory() {
