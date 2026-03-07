@@ -214,6 +214,9 @@ export class EventRewardFacade {
             userId,
             activeSignupEvent.id
         );
+        if (participation.rewardStatus === EventRewardStatus.GRANTED) {
+            return;
+        }
         await this.ticketService.issueTickets(
             userId,
             {
@@ -222,6 +225,9 @@ export class EventRewardFacade {
             },
             activeSignupEvent.rewardConfig
         );
+        participation.rewardStatus = EventRewardStatus.GRANTED;
+        participation.rewardGrantedAt = new Date();
+        await this.eventParticipationService.save(participation);
     }
 
     async getOrCreateParticipationForUpdate(
