@@ -47,4 +47,8 @@ export class ExperienceRepository {
             where: { user: { id: userId }, name },
         });
     }
+
+    async deleteById(id: number): Promise<void> {
+        await this.experienceRepository.delete(id);
+    }
 }

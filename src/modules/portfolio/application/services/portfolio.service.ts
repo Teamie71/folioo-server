@@ -60,6 +60,10 @@ export class PortfolioService {
         await this.portfolioRepository.deleteById(portfolio.id);
     }
 
+    async findByExperienceId(experienceId: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findByExperienceId(experienceId);
+    }
+
     async completeGeneration(
         portfolioId: number,
         content: {

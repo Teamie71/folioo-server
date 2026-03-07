@@ -173,6 +173,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '현재 경험 상태에서는 포트폴리오를 생성할 수 없습니다.',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
+    [ErrorCode.EXPERIENCE_HAS_CORRECTIONS]: {
+        message: '연결된 첨삭이 존재하여 경험을 삭제할 수 없습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.CORRECTION_MAX_LIMIT]: {
         message: '포트폴리오 첨삭은 최대 15개까지 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,

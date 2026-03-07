@@ -150,4 +150,8 @@ export class ExperienceService {
             throw error;
         }
     }
+
+    async deleteExperience(experienceId: number): Promise<void> {
+        await this.experienceRepository.deleteById(experienceId);
+    }
 }

@@ -32,4 +32,10 @@ export class CorrectionPortfolioSelectionRepository {
             order: { createdAt: 'ASC' },
         });
     }
+
+    existsByPortfolioId(portfolioId: number): Promise<boolean> {
+        return this.correctionPortfolioSelectionRepository.exists({
+            where: { portfolio: { id: portfolioId } },
+        });
+    }
 }
