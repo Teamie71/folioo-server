@@ -1,5 +1,15 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Query,
+} from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
     ApiCommonResponse,
@@ -88,5 +98,34 @@ export class ExperienceController {
         @Body() body: UpdateExperienceReqDTO
     ): Promise<ExperienceResDTO> {
         return this.experienceFacade.updateExperience(experienceId, userId, body);
+    }
+
+    @Delete(':experienceId')
+    @ApiOperation({
+        summary: '경험 정리 삭제',
+        description:
+            '경험 정리를 삭제합니다. 연결된 포트폴리오가 있으면 함께 삭제됩니다. 연결된 첨삭이 존재하는 경우 삭제할 수 없습니다.',
+    })
+    @ApiOkResponse({
+        schema: {
+            example: {
+                timestamp: '2026-01-02T14:56:23.295Z',
+                isSuccess: true,
+                error: null,
+                result: '경험 정리가 성공적으로 삭제되었습니다.',
+            },
+        },
+    })
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EXPERIENCE_NOT_FOUND,
+        ErrorCode.EXPERIENCE_HAS_CORRECTIONS
+    )
+    async deleteExperience(
+        @User('sub') userId: number,
+        @Param('experienceId', ParseIntPipe) experienceId: number
+    ): Promise<string> {
+        await this.experienceFacade.deleteExperience(experienceId, userId);
+        return '경험 정리가 성공적으로 삭제되었습니다.';
     }
 }

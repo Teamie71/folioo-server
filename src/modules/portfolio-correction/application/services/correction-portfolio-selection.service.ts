@@ -42,4 +42,8 @@ export class CorrectionPortfolioSelectionService {
             );
         return activeSelections.map((selection) => selection.portfolio.id);
     }
+
+    async existsByPortfolioId(portfolioId: number): Promise<boolean> {
+        return this.correctionPortfolioSelectionRepository.existsByPortfolioId(portfolioId);
+    }
 }

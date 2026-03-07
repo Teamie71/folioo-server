@@ -80,4 +80,10 @@ export class PortfolioRepository {
     async deleteById(portfolioId: number): Promise<void> {
         await this.portfolioRepository.delete(portfolioId);
     }
+
+    async findByExperienceId(experienceId: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: { experience: { id: experienceId } },
+        });
+    }
 }
