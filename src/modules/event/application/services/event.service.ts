@@ -37,4 +37,10 @@ export class EventService {
         }
         return event;
     }
+
+    async findSignUpEvent(): Promise<Event | null> {
+        const today = getSeoulDateString();
+        const event = await this.eventRepository.findActiveSignUpEvent(today);
+        return event;
+    }
 }

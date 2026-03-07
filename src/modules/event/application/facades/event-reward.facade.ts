@@ -378,6 +378,25 @@ export class EventRewardFacade {
         };
     }
 
+    async grantSignUpReward(userId: number): Promise<void> {
+        const activeSignupEvent = await this.eventService.findSignUpEvent();
+        if (!activeSignupEvent) {
+            return;
+        }
+        const participation = await this.getOrCreateParticipationForUpdate(
+            userId,
+            activeSignupEvent.id
+        );
+        await this.ticketService.issueTickets(
+            userId,
+            {
+                source: TicketSource.EVENT,
+                eventParticipationId: participation.id,
+            },
+            activeSignupEvent.rewardConfig
+        );
+    }
+
     private async recordFeedbackSubmission(
         event: Event,
         userId: number,

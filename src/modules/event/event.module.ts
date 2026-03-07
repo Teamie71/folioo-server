@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Event } from './domain/entities/event.entity';
 import { EventParticipation } from './domain/entities/event-participation.entity';
@@ -18,7 +18,7 @@ import { TicketModule } from '../ticket/ticket.module';
 @Module({
     imports: [
         TypeOrmModule.forFeature([Event, EventParticipation, EventFeedbackSubmission]),
-        UserModule,
+        forwardRef(() => UserModule),
         TicketModule,
     ],
     controllers: [EventController],

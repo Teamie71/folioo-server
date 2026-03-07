@@ -17,12 +17,14 @@ import { SocialAccountUnlinkClient } from './infrastructure/clients/social-accou
 import { AuthModule } from '../auth/auth.module';
 import { WithdrawnUser } from './domain/withdrawn-user.entity';
 import { WithdrawnUserRepository } from './infrastructure/repositories/withdrawn-user.repository';
+import { EventModule } from '../event/event.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([User, SocialUser, UserAgreement, Term, WithdrawnUser]),
         TicketModule,
         forwardRef(() => AuthModule),
+        forwardRef(() => EventModule),
     ],
     controllers: [UserController],
     providers: [
