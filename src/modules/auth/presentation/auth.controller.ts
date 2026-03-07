@@ -1,6 +1,9 @@
 import { Controller, Get, Headers, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+    ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
+} from 'src/common/decorators/swagger.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AuthGuard } from '@nestjs/passport';
@@ -224,17 +227,7 @@ export class AuthController {
         summary: '토큰 재발급',
         description: '유효한 refreshToken을 사용해 accessToken을 발급 받습니다.',
     })
-    @ApiResponse({
-        status: HttpStatus.CREATED,
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'new AccessToken',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('new AccessToken', { status: HttpStatus.CREATED })
     @ApiCommonErrorResponse(
         ErrorCode.REFRESH_TOKEN_EXPIRED,
         ErrorCode.REFRESH_TOKEN_MISSING,
@@ -254,16 +247,7 @@ export class AuthController {
         summary: '로그아웃',
         description: 'JWT 토큰을 만료시키고 서버에서 로그아웃을 수행합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Logout from Server',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('Logout from Server')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async handleLogout(
         @Headers('authorization') authorization: string | undefined,

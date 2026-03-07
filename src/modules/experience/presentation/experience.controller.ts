@@ -9,9 +9,10 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
@@ -106,16 +107,7 @@ export class ExperienceController {
         description:
             '경험 정리를 삭제합니다. 연결된 포트폴리오가 있으면 함께 삭제됩니다. 연결된 첨삭이 존재하는 경우 삭제할 수 없습니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '경험 정리가 성공적으로 삭제되었습니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('경험 정리가 성공적으로 삭제되었습니다.')
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
