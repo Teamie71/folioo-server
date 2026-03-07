@@ -64,6 +64,6 @@ export class ExperienceFacade {
             }
         }
 
-        await this.experienceService.deleteExperience(experienceId, userId);
+        await this.experienceService.deleteExperience(experienceId);
     }
 }

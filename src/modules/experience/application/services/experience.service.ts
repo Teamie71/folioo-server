@@ -151,8 +151,7 @@ export class ExperienceService {
         }
     }
 
-    async deleteExperience(experienceId: number, userId: number): Promise<void> {
-        await this.findByIdOrThrow(experienceId, userId);
+    async deleteExperience(experienceId: number): Promise<void> {
         await this.experienceRepository.deleteById(experienceId);
     }
 }
