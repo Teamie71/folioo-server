@@ -13,6 +13,18 @@ import {
     AdminUserItemResDTO,
     AdminUserSearchResDTO,
 } from '../dtos/admin-event-reward.dto';
+import type { GrantRewardByUserIdParams } from '../dtos/admin-event-reward.dto';
+import { Transactional } from 'typeorm-transactional';
+import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
+import { EventFeedbackSubmissionService } from '../services/event-feedback-submission.service';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { EventFeedbackReviewStatus } from '../../domain/enums/event-feedback-review-status.enum';
+import { EventService } from 'src/modules/event/application/services/event.service';
+import { EventParticipationService } from 'src/modules/event/application/services/event-participation.service';
+import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
+import { EventFeedbackSubmission } from '../../domain/entities/event-feedback-submission.entity';
+import { EventFeedbackSource } from '../../domain/enums/event-feedback-source.enum';
 
 @Injectable()
 export class AdminEventRewardFacade {
@@ -20,6 +32,9 @@ export class AdminEventRewardFacade {
 
     constructor(
         private readonly userService: UserService,
+        private readonly eventFeedbackSubmissionService: EventFeedbackSubmissionService,
+        private readonly eventService: EventService,
+        private readonly eventParticipationService: EventParticipationService,
         private readonly eventRewardFacade: EventRewardFacade,
         private readonly ticketService: TicketService
     ) {}
@@ -49,7 +64,7 @@ export class AdminEventRewardFacade {
         eventCode: string,
         body: AdminGrantRewardReqDTO
     ): Promise<AdminGrantRewardResDTO> {
-        const result = await this.eventRewardFacade.grantFeedbackRewardByUserId(eventCode, {
+        const result = await this.grantFeedbackRewardByUserId(eventCode, {
             userId: body.userId,
             externalSubmissionId: body.externalSubmissionId,
             reviewedBy: body.reviewedBy,
@@ -109,5 +124,88 @@ export class AdminEventRewardFacade {
         dto.history = history;
         dto.total = history.length;
         return dto;
+    }
+
+    @Transactional()
+    async grantFeedbackRewardByUserId(
+        eventCode: string,
+        params: GrantRewardByUserIdParams
+    ): Promise<{ userId: number; rewardStatus: EventRewardStatus; rewardGrantedAt: Date }> {
+        const event = await this.eventService.findActiveByCodeOrThrow(eventCode);
+        if (event.opsConfig?.manualRewardOnly === false) {
+            throw new BusinessException(ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED);
+        }
+
+        const user = await this.userService.findByIdOrThrow(params.userId);
+
+        if (params.externalSubmissionId) {
+            const existingSubmission =
+                await this.eventFeedbackSubmissionService.findByEventIdAndExternalSubmissionId(
+                    event.id,
+                    params.externalSubmissionId
+                );
+            if (existingSubmission) {
+                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
+            }
+        } else {
+            const latestSubmission =
+                await this.eventFeedbackSubmissionService.findLatestByUserIdAndEventId(
+                    user.id,
+                    event.id
+                );
+            if (latestSubmission?.reviewStatus === EventFeedbackReviewStatus.REWARDED) {
+                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
+            }
+        }
+
+        const participation = await this.eventRewardFacade.getOrCreateParticipationForUpdate(
+            user.id,
+            event.id
+        );
+
+        if (
+            participation.rewardStatus === EventRewardStatus.GRANTED ||
+            participation.rewardGrantedAt
+        ) {
+            throw new BusinessException(ErrorCode.EVENT_REWARD_ALREADY_GRANTED);
+        }
+
+        const now = new Date();
+
+        participation.rewardStatus = EventRewardStatus.GRANTED;
+        participation.rewardGrantedAt = now;
+        participation.isCompleted = true;
+        participation.completedAt = participation.completedAt ?? now;
+        participation.grantedBy = params.reviewedBy ?? 'admin-ui';
+        participation.grantReason = params.reviewNote ?? null;
+        const savedParticipation = await this.eventParticipationService.save(participation);
+
+        await this.ticketService.issueTickets(
+            user.id,
+            {
+                source: TicketSource.EVENT,
+                eventParticipationId: savedParticipation.id,
+            },
+            event.rewardConfig
+        );
+
+        const submission = new EventFeedbackSubmission();
+        submission.eventId = event.id;
+        submission.userId = user.id;
+        submission.phoneNum = null;
+        submission.source = EventFeedbackSource.ADMIN_UI;
+        submission.externalSubmissionId = params.externalSubmissionId ?? null;
+        submission.reviewStatus = EventFeedbackReviewStatus.REWARDED;
+        submission.reviewedBy = params.reviewedBy ?? 'admin-ui';
+        submission.reviewedAt = now;
+        submission.reviewNote = params.reviewNote ?? null;
+        submission.rewardedParticipationId = savedParticipation.id;
+        await this.eventFeedbackSubmissionService.save(submission);
+
+        return {
+            userId: user.id,
+            rewardStatus: savedParticipation.rewardStatus,
+            rewardGrantedAt: now,
+        };
     }
 }

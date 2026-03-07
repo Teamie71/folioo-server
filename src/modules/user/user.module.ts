@@ -15,11 +15,15 @@ import { UserTicketFacade } from './application/facades/user-ticket.facade';
 import { UserAuthFacade } from './application/facades/user-auth.facade';
 import { SocialAccountUnlinkClient } from './infrastructure/clients/social-account-unlink.client';
 import { AuthModule } from '../auth/auth.module';
+import { WithdrawnUser } from './domain/withdrawn-user.entity';
+import { WithdrawnUserRepository } from './infrastructure/repositories/withdrawn-user.repository';
+import { EventModule } from '../event/event.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User, SocialUser, UserAgreement, Term]),
+        TypeOrmModule.forFeature([User, SocialUser, UserAgreement, Term, WithdrawnUser]),
         TicketModule,
+        EventModule,
         forwardRef(() => AuthModule),
     ],
     controllers: [UserController],
@@ -28,6 +32,7 @@ import { AuthModule } from '../auth/auth.module';
         SocialUserRepository,
         UserAgreementRepository,
         TermRepository,
+        WithdrawnUserRepository,
         SocialAccountUnlinkClient,
         UserService,
         UserTicketFacade,

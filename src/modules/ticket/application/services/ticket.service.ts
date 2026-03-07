@@ -10,6 +10,7 @@ import { TicketRepository } from '../../infrastructure/repositories/ticket.repos
 import { TicketBalanceResDTO } from '../dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from '../dtos/ticket-expiring.dto';
 import { TicketHistoryItemResDTO, TicketHistoryResDTO } from '../dtos/ticket-history.dto';
+import { getEndOfSeoulDay } from 'src/common/utils/seoul-date.util';
 
 type TicketRewardItem = {
     type: TicketType;
@@ -57,7 +58,8 @@ export class TicketService {
     async issueTickets(
         userId: number,
         source: TicketIssueSource,
-        rewards: TicketRewardItem[]
+        rewards: TicketRewardItem[],
+        expiredAt?: Date | null
     ): Promise<Ticket[]> {
         const tickets = rewards.flatMap((reward) => {
             return Array.from({ length: reward.quantity }).map(() => {
@@ -75,6 +77,10 @@ export class TicketService {
 
                 ticket.type = reward.type;
                 ticket.status = TicketStatus.AVAILABLE;
+                const finalEndDate: Date | null = expiredAt ? new Date(expiredAt) : null;
+                if (finalEndDate && !isNaN(finalEndDate.getTime())) {
+                    ticket.expiredAt = getEndOfSeoulDay(finalEndDate);
+                }
                 return ticket;
             });
         });

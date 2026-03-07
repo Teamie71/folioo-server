@@ -18,6 +18,9 @@ import { SocialAccountUnlinkClient } from '../../infrastructure/clients/social-a
 import { Transactional } from 'typeorm-transactional';
 import { UserStatus } from '../../domain/enums/user-status.enum';
 import { Term } from '../../domain/term.entity';
+import { WithdrawnUserRepository } from '../../infrastructure/repositories/withdrawn-user.repository';
+import { hashWithdrawalIdentifier } from '../../domain/transformers/withdrawal-identifier.transformer';
+import { WithdrawnUser } from '../../domain/withdrawn-user.entity';
 
 @Injectable()
 export class UserService {
@@ -26,7 +29,8 @@ export class UserService {
         private readonly userAgreementRepository: UserAgreementRepository,
         private readonly termRepository: TermRepository,
         private readonly socialUserRepository: SocialUserRepository,
-        private readonly socialAccountUnlinkClient: SocialAccountUnlinkClient
+        private readonly socialAccountUnlinkClient: SocialAccountUnlinkClient,
+        private readonly withdrawnUserRepository: WithdrawnUserRepository
     ) {}
 
     async getProfile(userId: number): Promise<UserProfileResDTO> {
@@ -76,7 +80,6 @@ export class UserService {
         return AgreeMarketingResDTO.from(savedAgreement.isAgree, savedAgreement.agreeAt);
     }
 
-    @Transactional()
     async agreeTerms(
         userId: number,
         isServiceAgreed: boolean,
@@ -125,8 +128,8 @@ export class UserService {
             throw new BusinessException(ErrorCode.DEACTIVATED_USER);
         }
 
-        const socialUsers = await this.socialUserRepository.findByUserId(userId);
-        for (const socialUser of socialUsers) {
+        const socialUser = await this.socialUserRepository.findByUserId(userId);
+        if (socialUser) {
             await this.socialAccountUnlinkClient.unlinkSocialAccount(socialUser);
         }
 
@@ -150,11 +153,33 @@ export class UserService {
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
+        const socialUser = await this.socialUserRepository.findByUserId(user.id);
+        if (socialUser) {
+            const plainIdentifier = `${socialUser.loginType}:${socialUser.loginId}`;
+            const encryptedIdentifier = hashWithdrawalIdentifier(plainIdentifier);
+            const withdrawnAccount = WithdrawnUser.from(encryptedIdentifier, now);
+            await this.withdrawnUserRepository.upsert(withdrawnAccount);
+        }
+
         await this.socialUserRepository.deleteByUserId(user.id);
     }
 
     async searchUsers(keyword?: string): Promise<UserWithSocialInfoProjection[]> {
         return this.userRepository.searchUsersWithSocialInfo(keyword);
+    }
+
+    async checkIfWithdrawn(userId: number): Promise<boolean> {
+        const socialUser = await this.socialUserRepository.findByUserId(userId);
+        if (socialUser) {
+            const plainIdentifier = `${socialUser.loginType}:${socialUser.loginId}`;
+            const encryptedIdentifier = hashWithdrawalIdentifier(plainIdentifier);
+            const withdrawnUser =
+                await this.withdrawnUserRepository.findByWithdrawnIdentifier(encryptedIdentifier);
+            if (withdrawnUser) {
+                return true;
+            }
+        }
+        return false;
     }
 
     async findByPhoneNumOrThrow(phoneNum: string): Promise<User> {

@@ -5,25 +5,16 @@ import {
     EventProgressCardResDTO,
     FeedbackModalResDTO,
     FeedbackModalVariant,
-    GrantFeedbackRewardReqDTO,
-    GrantFeedbackRewardResDTO,
 } from '../dtos/event.dto';
-import type { GrantRewardByUserIdParams } from '../dtos/event.dto';
 import { EventService } from '../services/event.service';
 import { EventParticipationService } from '../services/event-participation.service';
-import { EventFeedbackSubmissionService } from '../services/event-feedback-submission.service';
-import { EventFeedbackSubmission } from '../../domain/entities/event-feedback-submission.entity';
-import { EventFeedbackReviewStatus } from '../../domain/enums/event-feedback-review-status.enum';
-import { EventFeedbackSource } from '../../domain/enums/event-feedback-source.enum';
 import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
-import { UserService } from 'src/modules/user/application/services/user.service';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventParticipation } from '../../domain/entities/event-participation.entity';
-import { Event } from '../../domain/entities/event.entity';
-import { isSameSeoulDate } from '../utils/seoul-date.util';
+import { isSameSeoulDate } from '../../../../common/utils/seoul-date.util';
 
 const INSIGHT_LOG_CHALLENGE_EVENT_CODE = 'INSIGHT_LOG_CHALLENGE';
 
@@ -32,8 +23,6 @@ export class EventRewardFacade {
     constructor(
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
-        private readonly eventFeedbackSubmissionService: EventFeedbackSubmissionService,
-        private readonly userService: UserService,
         private readonly ticketService: TicketService
     ) {}
 
@@ -216,223 +205,33 @@ export class EventRewardFacade {
         return dto;
     }
 
-    @Transactional()
-    async grantFeedbackRewardByPhone(
-        eventCode: string,
-        body: GrantFeedbackRewardReqDTO
-    ): Promise<GrantFeedbackRewardResDTO> {
-        const event = await this.eventService.findActiveByCodeOrThrow(eventCode);
-        if (event.opsConfig?.manualRewardOnly === false) {
-            throw new BusinessException(ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED);
+    async grantSignUpReward(userId: number): Promise<void> {
+        const activeSignupEvent = await this.eventService.findSignUpEvent();
+        if (!activeSignupEvent) {
+            return;
         }
-
-        const normalizedPhoneNum = this.normalizePhoneNum(body.phoneNum);
-        if (normalizedPhoneNum.length < 10 || normalizedPhoneNum.length > 11) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        const participation = await this.getOrCreateParticipationForUpdate(
+            userId,
+            activeSignupEvent.id
+        );
+        if (participation.rewardStatus === EventRewardStatus.GRANTED) {
+            return;
         }
-
-        const user = await this.userService.findByPhoneNumOrThrow(normalizedPhoneNum);
-
-        if (body.externalSubmissionId) {
-            const existingSubmission =
-                await this.eventFeedbackSubmissionService.findByEventIdAndExternalSubmissionId(
-                    event.id,
-                    body.externalSubmissionId
-                );
-            if (existingSubmission) {
-                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
-            }
-        } else {
-            const latestSubmission =
-                await this.eventFeedbackSubmissionService.findLatestByUserIdAndEventId(
-                    user.id,
-                    event.id
-                );
-            if (latestSubmission?.reviewStatus === EventFeedbackReviewStatus.REWARDED) {
-                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
-            }
-        }
-
-        const participation = await this.getOrCreateParticipationForUpdate(user.id, event.id);
-
-        if (
-            participation.rewardStatus === EventRewardStatus.GRANTED ||
-            participation.rewardGrantedAt
-        ) {
-            throw new BusinessException(ErrorCode.EVENT_REWARD_ALREADY_GRANTED);
-        }
-
-        const now = new Date();
-
-        participation.rewardStatus = EventRewardStatus.GRANTED;
-        participation.rewardGrantedAt = now;
-        participation.isCompleted = true;
-        participation.completedAt = participation.completedAt ?? now;
-        participation.grantedBy = body.reviewedBy ?? 'admin';
-        participation.grantReason = body.reviewNote ?? null;
-        const savedParticipation = await this.eventParticipationService.save(participation);
-
         await this.ticketService.issueTickets(
-            user.id,
+            userId,
             {
                 source: TicketSource.EVENT,
-                eventParticipationId: savedParticipation.id,
+                eventParticipationId: participation.id,
             },
-            event.rewardConfig
+            activeSignupEvent.rewardConfig,
+            activeSignupEvent.endDate
         );
-
-        await this.recordFeedbackSubmission(
-            event,
-            user.id,
-            normalizedPhoneNum,
-            savedParticipation,
-            body
-        );
-
-        const dto = new GrantFeedbackRewardResDTO();
-        dto.eventCode = event.code;
-        dto.userId = user.id;
-        dto.maskedPhoneNum = this.maskPhoneNum(normalizedPhoneNum);
-        dto.rewardStatus = savedParticipation.rewardStatus;
-        dto.rewardGrantedAt = now.toISOString();
-        return dto;
-    }
-
-    @Transactional()
-    async grantFeedbackRewardByUserId(
-        eventCode: string,
-        params: GrantRewardByUserIdParams
-    ): Promise<{ userId: number; rewardStatus: EventRewardStatus; rewardGrantedAt: Date }> {
-        const event = await this.eventService.findActiveByCodeOrThrow(eventCode);
-        if (event.opsConfig?.manualRewardOnly === false) {
-            throw new BusinessException(ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED);
-        }
-
-        const user = await this.userService.findByIdOrThrow(params.userId);
-
-        if (params.externalSubmissionId) {
-            const existingSubmission =
-                await this.eventFeedbackSubmissionService.findByEventIdAndExternalSubmissionId(
-                    event.id,
-                    params.externalSubmissionId
-                );
-            if (existingSubmission) {
-                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
-            }
-        } else {
-            const latestSubmission =
-                await this.eventFeedbackSubmissionService.findLatestByUserIdAndEventId(
-                    user.id,
-                    event.id
-                );
-            if (latestSubmission?.reviewStatus === EventFeedbackReviewStatus.REWARDED) {
-                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
-            }
-        }
-
-        const participation = await this.getOrCreateParticipationForUpdate(user.id, event.id);
-
-        if (
-            participation.rewardStatus === EventRewardStatus.GRANTED ||
-            participation.rewardGrantedAt
-        ) {
-            throw new BusinessException(ErrorCode.EVENT_REWARD_ALREADY_GRANTED);
-        }
-
-        const now = new Date();
-
         participation.rewardStatus = EventRewardStatus.GRANTED;
-        participation.rewardGrantedAt = now;
-        participation.isCompleted = true;
-        participation.completedAt = participation.completedAt ?? now;
-        participation.grantedBy = params.reviewedBy ?? 'admin-ui';
-        participation.grantReason = params.reviewNote ?? null;
-        const savedParticipation = await this.eventParticipationService.save(participation);
-
-        await this.ticketService.issueTickets(
-            user.id,
-            {
-                source: TicketSource.EVENT,
-                eventParticipationId: savedParticipation.id,
-            },
-            event.rewardConfig
-        );
-
-        const submission = new EventFeedbackSubmission();
-        submission.eventId = event.id;
-        submission.userId = user.id;
-        submission.phoneNum = null;
-        submission.source = EventFeedbackSource.ADMIN_UI;
-        submission.externalSubmissionId = params.externalSubmissionId ?? null;
-        submission.reviewStatus = EventFeedbackReviewStatus.REWARDED;
-        submission.reviewedBy = params.reviewedBy ?? 'admin-ui';
-        submission.reviewedAt = now;
-        submission.reviewNote = params.reviewNote ?? null;
-        submission.rewardedParticipationId = savedParticipation.id;
-        await this.eventFeedbackSubmissionService.save(submission);
-
-        return {
-            userId: user.id,
-            rewardStatus: savedParticipation.rewardStatus,
-            rewardGrantedAt: now,
-        };
+        participation.rewardGrantedAt = new Date();
+        await this.eventParticipationService.save(participation);
     }
 
-    private async recordFeedbackSubmission(
-        event: Event,
-        userId: number,
-        phoneNum: string,
-        savedParticipation: EventParticipation,
-        body: GrantFeedbackRewardReqDTO
-    ): Promise<void> {
-        const submission = new EventFeedbackSubmission();
-        submission.eventId = event.id;
-        submission.userId = userId;
-        submission.phoneNum = phoneNum;
-        submission.source = EventFeedbackSource.GOOGLE_FORM;
-        submission.externalSubmissionId = body.externalSubmissionId ?? null;
-        submission.reviewStatus = EventFeedbackReviewStatus.REWARDED;
-        submission.reviewedBy = body.reviewedBy ?? 'admin';
-        submission.reviewedAt = new Date();
-        submission.reviewNote = body.reviewNote ?? null;
-        submission.rewardedParticipationId = savedParticipation.id;
-        await this.eventFeedbackSubmissionService.save(submission);
-    }
-
-    private normalizePhoneNum(phoneNum: string): string {
-        return phoneNum.replace(/[^0-9]/g, '');
-    }
-
-    private maskPhoneNum(phoneNum: string): string {
-        if (phoneNum.length < 7) {
-            return phoneNum;
-        }
-
-        const prefix = phoneNum.slice(0, 3);
-        const suffix = phoneNum.slice(-4);
-        return `${prefix}****${suffix}`;
-    }
-
-    private interpolate(template: string, variables: Record<string, string>): string {
-        return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (full, key: string) => {
-            return variables[key] ?? full;
-        });
-    }
-
-    private isUniqueViolation(error: unknown): boolean {
-        if (typeof error !== 'object' || error === null || !('driverError' in error)) {
-            return false;
-        }
-
-        const driverError = (error as { driverError?: unknown }).driverError;
-        if (typeof driverError !== 'object' || driverError === null || !('code' in driverError)) {
-            return false;
-        }
-
-        return typeof driverError.code === 'string' && driverError.code === '23505';
-    }
-
-    private async getOrCreateParticipationForUpdate(
+    async getOrCreateParticipationForUpdate(
         userId: number,
         eventId: number
     ): Promise<EventParticipation> {
@@ -462,5 +261,24 @@ export class EventRewardFacade {
         }
 
         return participation;
+    }
+
+    private interpolate(template: string, variables: Record<string, string>): string {
+        return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (full, key: string) => {
+            return variables[key] ?? full;
+        });
+    }
+
+    private isUniqueViolation(error: unknown): boolean {
+        if (typeof error !== 'object' || error === null || !('driverError' in error)) {
+            return false;
+        }
+
+        const driverError = (error as { driverError?: unknown }).driverError;
+        if (typeof driverError !== 'object' || driverError === null || !('code' in driverError)) {
+            return false;
+        }
+
+        return typeof driverError.code === 'string' && driverError.code === '23505';
     }
 }

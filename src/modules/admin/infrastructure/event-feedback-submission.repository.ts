@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EventFeedbackSubmission } from '../../domain/entities/event-feedback-submission.entity';
+import { EventFeedbackSubmission } from '../domain/entities/event-feedback-submission.entity';
 
 @Injectable()
 export class EventFeedbackSubmissionRepository {

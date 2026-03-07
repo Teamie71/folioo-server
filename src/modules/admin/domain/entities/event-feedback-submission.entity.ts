@@ -3,7 +3,7 @@ import { User } from 'src/modules/user/domain/user.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { EventFeedbackReviewStatus } from '../enums/event-feedback-review-status.enum';
 import { EventFeedbackSource } from '../enums/event-feedback-source.enum';
-import { Event } from './event.entity';
+import { Event } from '../../../event/domain/entities/event.entity';
 
 @Entity('event_feedback_submission')
 @Unique(['eventId', 'externalSubmissionId'])

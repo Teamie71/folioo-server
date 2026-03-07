@@ -23,3 +23,12 @@ export function getSeoulDateString(date: Date = new Date()): string {
 export function isSameSeoulDate(left: Date, right: Date): boolean {
     return getSeoulDateString(left) === getSeoulDateString(right);
 }
+
+/**
+ * 특정 날짜의 서울 시간(KST) 기준 해당 일의 마지막 시각(23:59:59)을 반환합니다.
+ * @param date 기준이 되는 날짜 (예: 이벤트 종료일)
+ */
+export function getEndOfSeoulDay(date: Date): Date {
+    const dateString = getSeoulDateString(date);
+    return new Date(`${dateString}T23:59:59+09:00`);
+}

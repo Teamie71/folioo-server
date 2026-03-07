@@ -76,7 +76,7 @@ export class UserController {
         @User('sub') userId: number,
         @Body() body: AgreeTermsReqDTO
     ): Promise<AgreeTermsResDTO> {
-        return this.userService.agreeTerms(
+        return await this.userTicketFacade.onBoarding(
             userId,
             body.isServiceAgreed,
             body.isPrivacyAgreed,
