@@ -13,6 +13,7 @@ import { AllowPending } from 'src/common/decorators/allow-pending.decorator';
 import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
+import { TicketHistoryResDTO } from 'src/modules/ticket/application/dtos/ticket-history.dto';
 import { TicketExpiringQueryReqDTO } from 'src/modules/ticket/application/dtos/ticket-expiring-query.dto';
 import { extractAccessTokenFromAuthorization } from 'src/modules/auth/infrastructure/utils/access-token.util';
 import type { Request } from 'express';
@@ -107,6 +108,17 @@ export class UserController {
         @Query() query: TicketExpiringQueryReqDTO
     ): Promise<TicketExpiringResDTO> {
         return this.userTicketFacade.getExpiring(userId, query.days);
+    }
+
+    @Get('me/tickets/history')
+    @ApiOperation({
+        summary: '이용권 거래 내역 조회',
+        description: '사용자의 이용권 발급/사용/만료 내역을 최신순으로 조회합니다.',
+    })
+    @ApiCommonResponse(TicketHistoryResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getTicketHistory(@User('sub') userId: number): Promise<TicketHistoryResDTO> {
+        return this.userTicketFacade.getHistory(userId);
     }
 
     @Patch('me')

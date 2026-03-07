@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
+import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 
 export class AdminUserSearchReqDTO {
     @IsOptional()
@@ -28,6 +29,12 @@ export class AdminUserItemResDTO {
 
     @ApiProperty({ example: true })
     isActive: boolean;
+
+    @ApiProperty({ example: 2, description: '잔여 경험 정리 이용권 수량' })
+    experienceTickets: number;
+
+    @ApiProperty({ example: 1, description: '잔여 포트폴리오 첨삭 이용권 수량' })
+    correctionTickets: number;
 }
 
 export class AdminUserSearchResDTO {
@@ -86,4 +93,89 @@ export class AdminGrantRewardResDTO {
 
     @ApiProperty({ example: '2026-03-05T08:30:00.000Z' })
     rewardGrantedAt: string;
+}
+
+export class AdminGrantTicketsReqDTO {
+    @ApiProperty({ description: '대상 사용자 ID', example: 1 })
+    @IsInt()
+    @Min(1)
+    @Type(() => Number)
+    userId: number;
+
+    @ApiProperty({
+        description: '이용권 종류',
+        enum: TicketType,
+        example: TicketType.EXPERIENCE,
+    })
+    @IsEnum(TicketType)
+    type: TicketType;
+
+    @ApiProperty({ description: '지급 수량 (1~10)', example: 1 })
+    @IsInt()
+    @Min(1)
+    @Max(10)
+    @Type(() => Number)
+    quantity: number;
+
+    @ApiProperty({ description: '지급 사유', example: '피드백 제출' })
+    @IsString()
+    @MaxLength(200)
+    reason: string;
+}
+
+export class AdminGrantTicketsResDTO {
+    @ApiProperty({ example: 1 })
+    userId: number;
+
+    @ApiProperty({ enum: TicketType, example: TicketType.EXPERIENCE })
+    type: TicketType;
+
+    @ApiProperty({ example: 1 })
+    quantity: number;
+
+    @ApiProperty({ example: '피드백 제출' })
+    reason: string;
+
+    @ApiProperty({ example: 3, description: '지급 후 해당 타입 잔여 수량' })
+    remainingBalance: number;
+}
+
+export class AdminTicketHistoryItemResDTO {
+    @ApiProperty({ example: 1 })
+    ticketId: number;
+
+    @ApiProperty({ example: 1 })
+    userId: number;
+
+    @ApiProperty({ example: '김효인' })
+    userName: string;
+
+    @ApiPropertyOptional({ example: 'hyoin@test.com', nullable: true })
+    userEmail: string | null;
+
+    @ApiProperty({ enum: TicketType, example: TicketType.EXPERIENCE })
+    type: TicketType;
+
+    @ApiProperty({ example: 'AVAILABLE' })
+    status: string;
+
+    @ApiProperty({ example: 'PURCHASE' })
+    source: string;
+
+    @ApiProperty({ example: '2026-03-08T00:00:00.000Z' })
+    createdAt: string;
+
+    @ApiPropertyOptional({ example: null, nullable: true })
+    usedAt: string | null;
+
+    @ApiPropertyOptional({ example: null, nullable: true })
+    expiredAt: string | null;
+}
+
+export class AdminTicketHistoryResDTO {
+    @ApiProperty({ type: [AdminTicketHistoryItemResDTO] })
+    history: AdminTicketHistoryItemResDTO[];
+
+    @ApiProperty({ example: 10 })
+    total: number;
 }
