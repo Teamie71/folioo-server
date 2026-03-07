@@ -31,15 +31,6 @@ export class AdminEventRewardController {
         res.sendFile(htmlPath);
     }
 
-    @Get('static/app.js')
-    @SkipTransform()
-    @Header('Content-Type', 'application/javascript')
-    @ApiOperation({ summary: 'Admin SPA JavaScript 번들' })
-    serveAppJs(@Res() res: Response): void {
-        const filePath = path.join(__dirname, '..', 'infrastructure', 'views', 'static', 'app.js');
-        res.sendFile(filePath);
-    }
-
     @Get('event-rewards')
     @SkipTransform()
     @Header('Content-Type', 'text/html')

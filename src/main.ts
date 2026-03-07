@@ -1,5 +1,6 @@
 import './instrument';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
@@ -7,10 +8,11 @@ import { initializeTransactionalContext } from 'typeorm-transactional';
 import cookieParser from 'cookie-parser';
 import expressBasicAuth from 'express-basic-auth';
 import { ConfigService } from '@nestjs/config';
+import { join } from 'path';
 
 async function bootstrap() {
     initializeTransactionalContext();
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
     const configService = app.get(ConfigService);
     const corsOriginsString = configService.get<string>('CORS_ORIGINS', 'http://localhost:3000');
@@ -51,6 +53,11 @@ async function bootstrap() {
             }
         );
     }
+
+    // Admin 정적 파일 서빙 (React SPA assets)
+    app.useStaticAssets(join(__dirname, 'modules', 'admin', 'infrastructure', 'views', 'assets'), {
+        prefix: '/admin/assets/',
+    });
 
     app.useGlobalPipes(
         new ValidationPipe({

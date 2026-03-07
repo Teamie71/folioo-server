@@ -7,7 +7,7 @@
         "deleteOutDir": true,
         "assets": [
             { "include": "**/*.html", "watchAssets": true },
-            { "include": "modules/admin/infrastructure/views/static/**/*", "watchAssets": true }
+            { "include": "modules/admin/infrastructure/views/assets/**/*", "watchAssets": true }
         ],
         "plugins": [
             {
