@@ -10,10 +10,29 @@ interface TicketCountByType {
     count: number;
 }
 
+interface TicketCountByUserAndType {
+    userId: number;
+    type: TicketType;
+    count: number;
+}
+
 interface ExpiringTicketInfo {
     type: TicketType;
     count: number;
     earliestExpiredAt: string | Date | null;
+}
+
+export interface TicketWithUserProjection {
+    ticketId: number;
+    userId: number;
+    userName: string;
+    userEmail: string | null;
+    type: TicketType;
+    status: string;
+    source: string;
+    createdAt: Date;
+    usedAt: Date | null;
+    expiredAt: Date | null;
 }
 
 @Injectable()
@@ -114,5 +133,53 @@ export class TicketRepository {
             .getRawMany<ExpiringTicketInfo>();
 
         return rows;
+    }
+
+    async countAvailableGroupedByUserAndType(): Promise<TicketCountByUserAndType[]> {
+        return this.ticketRepository
+            .createQueryBuilder('ticket')
+            .select('ticket.userId', 'userId')
+            .addSelect('ticket.type', 'type')
+            .addSelect('COUNT(*)::int', 'count')
+            .where('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .groupBy('ticket.userId')
+            .addGroupBy('ticket.type')
+            .getRawMany<TicketCountByUserAndType>();
+    }
+
+    async findByUserId(userId: number): Promise<Ticket[]> {
+        return this.ticketRepository
+            .createQueryBuilder('ticket')
+            .where('ticket.userId = :userId', { userId })
+            .orderBy('ticket.created_at', 'DESC')
+            .getMany();
+    }
+
+    async findAllWithUserInfo({
+        limit = 200,
+        offset = 0,
+    }: { limit?: number; offset?: number } = {}): Promise<TicketWithUserProjection[]> {
+        return this.ticketRepository
+            .createQueryBuilder('t')
+            .innerJoin('users', 'u', 'u.id = t.user_id')
+            .leftJoin('social_user', 'su', 'su.user_id = u.id')
+            .select([
+                't.id AS "ticketId"',
+                'u.id AS "userId"',
+                'u.name AS "userName"',
+                'MIN(su.email) AS "userEmail"',
+                't.type AS "type"',
+                't.status AS "status"',
+                't.source AS "source"',
+                't.created_at AS "createdAt"',
+                't.used_at AS "usedAt"',
+                't.expired_at AS "expiredAt"',
+            ])
+            .groupBy('t.id')
+            .addGroupBy('u.id')
+            .orderBy('t.created_at', 'DESC')
+            .offset(offset)
+            .limit(limit)
+            .getRawMany<TicketWithUserProjection>();
     }
 }

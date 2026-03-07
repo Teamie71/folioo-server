@@ -9,6 +9,7 @@ import { TicketType } from '../../domain/enums/ticket-type.enum';
 import { TicketRepository } from '../../infrastructure/repositories/ticket.repository';
 import { TicketBalanceResDTO } from '../dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from '../dtos/ticket-expiring.dto';
+import { TicketHistoryItemResDTO, TicketHistoryResDTO } from '../dtos/ticket-history.dto';
 
 type TicketRewardItem = {
     type: TicketType;
@@ -115,6 +116,38 @@ export class TicketService {
         );
     }
 
+    async getBalanceBatch(): Promise<Map<number, { experience: number; correction: number }>> {
+        const rows = await this.ticketRepository.countAvailableGroupedByUserAndType();
+        const map = new Map<number, { experience: number; correction: number }>();
+
+        for (const row of rows) {
+            if (!map.has(row.userId)) {
+                map.set(row.userId, { experience: 0, correction: 0 });
+            }
+            const entry = map.get(row.userId)!;
+            if (row.type === TicketType.EXPERIENCE) {
+                entry.experience = row.count;
+            } else if (row.type === TicketType.PORTFOLIO_CORRECTION) {
+                entry.correction = row.count;
+            }
+        }
+
+        return map;
+    }
+
+    async issueAdminTickets(userId: number, type: TicketType, quantity: number): Promise<Ticket[]> {
+        const tickets = Array.from({ length: quantity }).map(() => {
+            const ticket = new Ticket();
+            ticket.userId = userId;
+            ticket.type = type;
+            ticket.status = TicketStatus.AVAILABLE;
+            ticket.source = TicketSource.EVENT;
+            return ticket;
+        });
+
+        return this.ticketRepository.saveAll(tickets);
+    }
+
     async getExpiring(userId: number, days: number): Promise<TicketExpiringResDTO> {
         const now = new Date();
         const expiredBefore = new Date(now);
@@ -137,5 +170,27 @@ export class TicketService {
             correctionInfo?.count ?? 0,
             correctionInfo?.earliestExpiredAt ? new Date(correctionInfo.earliestExpiredAt) : null
         );
+    }
+
+    async getUserTicketHistory(userId: number): Promise<TicketHistoryResDTO> {
+        const tickets = await this.ticketRepository.findByUserId(userId);
+
+        const history: TicketHistoryItemResDTO[] = tickets.map((t) => {
+            const item = new TicketHistoryItemResDTO();
+            item.ticketId = t.id;
+            item.type = t.type;
+            item.status = t.status;
+            item.source = t.source;
+            item.createdAt = t.createdAt.toISOString();
+            item.usedAt = t.usedAt ? t.usedAt.toISOString() : null;
+            item.expiredAt = t.expiredAt ? t.expiredAt.toISOString() : null;
+            return item;
+        });
+
+        return TicketHistoryResDTO.from(history);
+    }
+
+    async getTicketHistory() {
+        return this.ticketRepository.findAllWithUserInfo();
     }
 }
