@@ -9,9 +9,10 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
@@ -159,16 +160,7 @@ export class InsightController {
         description:
             '활동 분류 태그를 삭제합니다. 태그가 연결되어있던 인사이트 로그는 자동적으로 미분류 상태가 됩니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '활동 분류 태그가 성공적으로 삭제되었습니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('활동 분류 태그가 성공적으로 삭제되었습니다.')
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.NOT_ACTIVITY_TAG_OWNER,
