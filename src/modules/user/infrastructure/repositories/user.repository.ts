@@ -85,6 +85,7 @@ export class UserRepository {
             .createQueryBuilder()
             .update(User)
             .set({
+                name: '탈퇴한 사용자',
                 isActive: false,
                 deactivatedAt,
             })

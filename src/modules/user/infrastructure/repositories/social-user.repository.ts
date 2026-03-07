@@ -53,8 +53,8 @@ export class SocialUserRepository {
         }));
     }
 
-    async findByUserId(userId: number): Promise<SocialUser[]> {
-        return await this.socialUserRepository.find({
+    async findByUserId(userId: number): Promise<SocialUser | null> {
+        return await this.socialUserRepository.findOne({
             where: {
                 userId,
             },
