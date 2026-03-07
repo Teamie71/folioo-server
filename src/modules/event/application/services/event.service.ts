@@ -3,7 +3,7 @@ import { EventRepository } from '../../infrastructure/repositories/event.reposit
 import { Event } from '../../domain/entities/event.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { getSeoulDateString } from '../utils/seoul-date.util';
+import { getSeoulDateString } from '../../../../common/utils/seoul-date.util';
 
 @Injectable()
 export class EventService {

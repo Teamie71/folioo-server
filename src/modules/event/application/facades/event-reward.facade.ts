@@ -14,7 +14,7 @@ import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventParticipation } from '../../domain/entities/event-participation.entity';
-import { isSameSeoulDate } from '../utils/seoul-date.util';
+import { isSameSeoulDate } from '../../../../common/utils/seoul-date.util';
 
 const INSIGHT_LOG_CHALLENGE_EVENT_CODE = 'INSIGHT_LOG_CHALLENGE';
 
@@ -223,7 +223,8 @@ export class EventRewardFacade {
                 source: TicketSource.EVENT,
                 eventParticipationId: participation.id,
             },
-            activeSignupEvent.rewardConfig
+            activeSignupEvent.rewardConfig,
+            activeSignupEvent.endDate
         );
         participation.rewardStatus = EventRewardStatus.GRANTED;
         participation.rewardGrantedAt = new Date();
