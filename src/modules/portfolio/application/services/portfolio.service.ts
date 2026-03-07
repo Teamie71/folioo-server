@@ -98,6 +98,19 @@ export class PortfolioService {
         await this.portfolioRepository.deleteById(portfolio.id);
     }
 
+    async findByIdsAndUserIdOrThrow(portfolioIds: number[], userId: number): Promise<Portfolio[]> {
+        const uniqueIds = [...new Set(portfolioIds)];
+        const portfolios = await this.portfolioRepository.findByIdsAndUserId(uniqueIds, userId);
+        if (portfolios.length !== uniqueIds.length) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
+        }
+        return portfolios;
+    }
+
+    async findByIds(portfolioIds: number[]): Promise<Portfolio[]> {
+        return this.portfolioRepository.findByIds(portfolioIds);
+    }
+
     private async findByIdInternalOrThrow(id: number): Promise<Portfolio> {
         const portfolio = await this.portfolioRepository.findById(id);
         if (!portfolio) {

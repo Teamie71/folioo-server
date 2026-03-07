@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
-import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
+import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -26,7 +26,7 @@ export class PortfolioCorrectionFacade {
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
         private readonly ticketService: TicketService,
         private readonly correctionItemService: CorrectionItemService,
-        private readonly externalPortfolioService: ExternalPortfolioService,
+        private readonly portfolioService: PortfolioService,
         private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
         private readonly aiRelayPort: AiRelayPort
     ) {}
@@ -83,7 +83,7 @@ export class PortfolioCorrectionFacade {
             });
         }
 
-        const portfolios = await this.externalPortfolioService.getPortfoliosByOwnerOrThrow(
+        const portfolios = await this.portfolioService.findByIdsAndUserIdOrThrow(
             activePortfolioIds,
             userId
         );
@@ -124,10 +124,7 @@ export class PortfolioCorrectionFacade {
             throw new BusinessException(ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED);
         }
 
-        const portfolios = await this.externalPortfolioService.getPortfoliosByOwnerOrThrow(
-            uniqueIds,
-            userId
-        );
+        const portfolios = await this.portfolioService.findByIdsAndUserIdOrThrow(uniqueIds, userId);
 
         return { correction, portfolios };
     }
