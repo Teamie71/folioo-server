@@ -212,14 +212,14 @@ Legend:
 - GET `/auth/google/callback` -> IMPLEMENTED (Public, OAuth callback)
 - GET `/auth/naver` -> IMPLEMENTED (Public, OAuth redirect)
 - GET `/auth/naver/callback` -> IMPLEMENTED (Public, OAuth callback)
-- POST `/auth/sms/send` -> NOT_IMPLEMENTED
-- POST `/auth/sms/verify` -> NOT_IMPLEMENTED
 
 ### User
 
 - GET `/users/me` -> IMPLEMENTED
+- POST `/users/me/terms` -> IMPLEMENTED (온보딩 약관 동의, `@AllowPending()`)
 - GET `/users/me/tickets` -> IMPLEMENTED
 - GET `/users/me/tickets/expiring` -> IMPLEMENTED
+- GET `/users/me/tickets/history` -> IMPLEMENTED (이용권 사용 이력)
 - PATCH `/users/me` -> IMPLEMENTED
 - PATCH `/users/me/marketing-consent` -> IMPLEMENTED
 - DELETE `/users/me` -> IMPLEMENTED (soft delete + social unlink policy)
@@ -246,8 +246,6 @@ Legend:
 - GET `/portfolios` -> IMPLEMENTED (사용자의 포트폴리오 목록 조회)
 - GET `/portfolios/{portfolioId}` -> IMPLEMENTED
 - PATCH `/portfolios/{portfolioId}` -> IMPLEMENTED
-- DELETE `/portfolios/{portfolioId}` -> IMPLEMENTED
-- POST `/portfolios/{portfolioId}/export` -> NOT_IMPLEMENTED
 
 ### Portfolio-Correction
 
@@ -258,7 +256,6 @@ Legend:
 - GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 - POST `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - PATCH `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
-- POST `/portfolio-corrections/{correctionId}/regenerate-insight` -> NOT_IMPLEMENTED
 - POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택 포트폴리오를 매핑 테이블에 활성화 상태로 저장)
 - POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (요청 본문 없이 활성화된 매핑 기준으로 생성 준비 수행)
 - PATCH `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
@@ -299,6 +296,7 @@ Legend:
 - GET `/events/{eventCode}/feedback-modal` -> IMPLEMENTED (보상 수령 여부에 따라 피드백 모달 문구/CTA 반환)
 - GET `/events/{eventCode}/progress-card` -> IMPLEMENTED (진행도/남은 개수/동적 문구/CTA 반환)
 - POST `/events/{eventCode}/reward-claim` -> IMPLEMENTED (완료된 챌린지 보상 직접 수령)
+- POST `/events/admin/{eventCode}/feedback-rewards/grants` -> IMPLEMENTED (`@Public`, 레거시 수동 지급, Admin API로 이관 예정)
 
 ### Admin
 
