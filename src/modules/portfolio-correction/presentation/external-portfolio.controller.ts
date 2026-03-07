@@ -255,7 +255,7 @@ export class ExternalPortfolioController {
     async getExternalPortfolios(
         @Query('correctionId', ParseIntPipe) correctionId: number
     ): Promise<StructuredPortfolioResDTO[]> {
-        return this.externalPortfolioFacade.getExternalPortfolios(correctionId);
+        return this.externalPortfolioFacade.getSelectedPortfolios(correctionId);
     }
 
     @Patch(':portfolioId')

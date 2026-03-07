@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
+import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
@@ -16,6 +17,7 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 export class ExternalPortfolioFacade {
     constructor(
         private readonly externalPortfolioService: ExternalPortfolioService,
+        private readonly portfolioService: PortfolioService,
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
         private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
         private readonly pdfExtractService: PdfExtractService
@@ -36,7 +38,7 @@ export class ExternalPortfolioFacade {
         return extractedText;
     }
 
-    async getExternalPortfolios(correctionId: number): Promise<StructuredPortfolioResDTO[]> {
+    async getSelectedPortfolios(correctionId: number): Promise<StructuredPortfolioResDTO[]> {
         await this.portfolioCorrectionService.findByIdOrThrow(correctionId);
 
         const portfolioIds =
@@ -48,7 +50,7 @@ export class ExternalPortfolioFacade {
             return [];
         }
 
-        const portfolios = await this.externalPortfolioService.getPortfolios(portfolioIds);
+        const portfolios = await this.portfolioService.findByIds(portfolioIds);
         return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
     }
 
@@ -75,10 +77,7 @@ export class ExternalPortfolioFacade {
         const activePortfolios =
             activePortfolioIds.length === 0
                 ? []
-                : await this.externalPortfolioService.getPortfoliosByOwnerOrThrow(
-                      activePortfolioIds,
-                      userId
-                  );
+                : await this.portfolioService.findByIdsAndUserIdOrThrow(activePortfolioIds, userId);
 
         const savedPortfolio = await this.externalPortfolioService.createEmptyPortfolio(userId);
         await this.correctionPortfolioSelectionService.activateSelections(correction, [
