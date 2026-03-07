@@ -115,6 +115,38 @@ export class TicketService {
         );
     }
 
+    async getBalanceBatch(): Promise<Map<number, { experience: number; correction: number }>> {
+        const rows = await this.ticketRepository.countAvailableGroupedByUserAndType();
+        const map = new Map<number, { experience: number; correction: number }>();
+
+        for (const row of rows) {
+            if (!map.has(row.userId)) {
+                map.set(row.userId, { experience: 0, correction: 0 });
+            }
+            const entry = map.get(row.userId)!;
+            if (row.type === TicketType.EXPERIENCE) {
+                entry.experience = row.count;
+            } else if (row.type === TicketType.PORTFOLIO_CORRECTION) {
+                entry.correction = row.count;
+            }
+        }
+
+        return map;
+    }
+
+    async issueAdminTickets(userId: number, type: TicketType, quantity: number): Promise<Ticket[]> {
+        const tickets = Array.from({ length: quantity }).map(() => {
+            const ticket = new Ticket();
+            ticket.userId = userId;
+            ticket.type = type;
+            ticket.status = TicketStatus.AVAILABLE;
+            ticket.source = TicketSource.EVENT;
+            return ticket;
+        });
+
+        return this.ticketRepository.saveAll(tickets);
+    }
+
     async getExpiring(userId: number, days: number): Promise<TicketExpiringResDTO> {
         const now = new Date();
         const expiredBefore = new Date(now);

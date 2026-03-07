@@ -10,6 +10,12 @@ interface TicketCountByType {
     count: number;
 }
 
+interface TicketCountByUserAndType {
+    userId: number;
+    type: TicketType;
+    count: number;
+}
+
 interface ExpiringTicketInfo {
     type: TicketType;
     count: number;
@@ -114,5 +120,17 @@ export class TicketRepository {
             .getRawMany<ExpiringTicketInfo>();
 
         return rows;
+    }
+
+    async countAvailableGroupedByUserAndType(): Promise<TicketCountByUserAndType[]> {
+        return this.ticketRepository
+            .createQueryBuilder('ticket')
+            .select('ticket.userId', 'userId')
+            .addSelect('ticket.type', 'type')
+            .addSelect('COUNT(*)::int', 'count')
+            .where('ticket.status = :status', { status: TicketStatus.AVAILABLE })
+            .groupBy('ticket.userId')
+            .addGroupBy('ticket.type')
+            .getRawMany<TicketCountByUserAndType>();
     }
 }

@@ -9,6 +9,8 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     AdminGrantRewardReqDTO,
     AdminGrantRewardResDTO,
+    AdminGrantTicketsReqDTO,
+    AdminGrantTicketsResDTO,
     AdminUserSearchReqDTO,
     AdminUserSearchResDTO,
 } from '../application/dtos/admin-event-reward.dto';
@@ -20,13 +22,30 @@ import { AdminEventRewardFacade } from '../application/facades/admin-event-rewar
 export class AdminEventRewardController {
     constructor(private readonly adminEventRewardFacade: AdminEventRewardFacade) {}
 
+    @Get('dashboard')
+    @SkipTransform()
+    @Header('Content-Type', 'text/html')
+    @ApiOperation({ summary: 'Admin 대시보드 SPA 페이지' })
+    getDashboard(@Res() res: Response): void {
+        const htmlPath = path.join(__dirname, '..', 'infrastructure', 'views', 'index.html');
+        res.sendFile(htmlPath);
+    }
+
+    @Get('static/app.js')
+    @SkipTransform()
+    @Header('Content-Type', 'application/javascript')
+    @ApiOperation({ summary: 'Admin SPA JavaScript 번들' })
+    serveAppJs(@Res() res: Response): void {
+        const filePath = path.join(__dirname, '..', 'infrastructure', 'views', 'static', 'app.js');
+        res.sendFile(filePath);
+    }
+
     @Get('event-rewards')
     @SkipTransform()
     @Header('Content-Type', 'text/html')
-    @ApiOperation({ summary: 'Admin 이벤트 보상 지급 대시보드 HTML 페이지' })
-    getPage(@Res() res: Response): void {
-        const htmlPath = path.join(__dirname, '..', 'infrastructure', 'views', 'event-reward.html');
-        res.sendFile(htmlPath);
+    @ApiOperation({ summary: 'Admin 대시보드로 리다이렉트 (레거시)' })
+    redirectLegacy(@Res() res: Response): void {
+        res.redirect('/admin/dashboard');
     }
 
     @Get('api/users/search')
@@ -59,5 +78,14 @@ export class AdminEventRewardController {
         @Body() body: AdminGrantRewardReqDTO
     ): Promise<AdminGrantRewardResDTO> {
         return this.adminEventRewardFacade.grantReward(eventCode, body);
+    }
+
+    @Post('api/tickets/grant')
+    @ApiOperation({ summary: '이용권 수동 지급 (Admin)' })
+    @ApiBody({ type: AdminGrantTicketsReqDTO })
+    @ApiCommonResponse(AdminGrantTicketsResDTO)
+    @ApiCommonErrorResponse(ErrorCode.USER_NOT_FOUND)
+    async grantTickets(@Body() body: AdminGrantTicketsReqDTO): Promise<AdminGrantTicketsResDTO> {
+        return this.adminEventRewardFacade.grantTickets(body);
     }
 }
