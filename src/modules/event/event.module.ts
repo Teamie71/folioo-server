@@ -8,8 +8,10 @@ import { EventService } from './application/services/event.service';
 import { EventParticipationService } from './application/services/event-participation.service';
 import { EventController } from './presentation/event.controller';
 import { EventRewardFacade } from './application/facades/event-reward.facade';
+import { EventRewardLifecycleFacade } from './application/facades/event-reward-lifecycle.facade';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import { TicketModule } from '../ticket/ticket.module';
+import { EventRewardReadService } from './application/services/event-reward-read.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Event, EventParticipation]), TicketModule],
@@ -19,9 +21,17 @@ import { TicketModule } from '../ticket/ticket.module';
         EventParticipationRepository,
         EventService,
         EventParticipationService,
+        EventRewardReadService,
+        EventRewardLifecycleFacade,
         EventRewardFacade,
         InternalApiKeyGuard,
     ],
-    exports: [EventService, EventParticipationService, EventRewardFacade],
+    exports: [
+        EventService,
+        EventParticipationService,
+        EventRewardReadService,
+        EventRewardLifecycleFacade,
+        EventRewardFacade,
+    ],
 })
 export class EventModule {}

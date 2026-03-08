@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UserService } from 'src/modules/user/application/services/user.service';
-import { EventRewardFacade } from 'src/modules/event/application/facades/event-reward.facade';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import {
@@ -31,6 +30,7 @@ import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-gra
 import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { AdminTicketGrantListResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
+import { EventRewardLifecycleFacade } from 'src/modules/event/application/facades/event-reward-lifecycle.facade';
 
 @Injectable()
 export class AdminEventRewardFacade {
@@ -41,7 +41,7 @@ export class AdminEventRewardFacade {
         private readonly eventFeedbackSubmissionService: EventFeedbackSubmissionService,
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
-        private readonly eventRewardFacade: EventRewardFacade,
+        private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade,
         private readonly ticketService: TicketService,
         private readonly ticketGrantFacade: TicketGrantFacade
     ) {}
@@ -232,10 +232,11 @@ export class AdminEventRewardFacade {
             }
         }
 
-        const participation = await this.eventRewardFacade.getOrCreateParticipationForUpdate(
-            user.id,
-            event.id
-        );
+        const participation =
+            await this.eventRewardLifecycleFacade.getOrCreateParticipationForUpdate(
+                user.id,
+                event.id
+            );
 
         if (
             participation.rewardStatus === EventRewardStatus.GRANTED ||

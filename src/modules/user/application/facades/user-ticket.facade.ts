@@ -7,7 +7,7 @@ import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { UserService } from '../services/user.service';
 import { AgreeTermsResDTO } from '../dtos/agree-terms.dto';
-import { EventRewardFacade } from 'src/modules/event/application/facades/event-reward.facade';
+import { EventRewardLifecycleFacade } from 'src/modules/event/application/facades/event-reward-lifecycle.facade';
 import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class UserTicketFacade {
     constructor(
         private readonly userService: UserService,
         private readonly ticketService: TicketService,
-        private readonly eventRewardFacade: EventRewardFacade,
+        private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade,
         private readonly ticketGrantFacade: TicketGrantFacade
     ) {}
 
@@ -59,7 +59,7 @@ export class UserTicketFacade {
 
         const isRejoined = await this.userService.checkIfWithdrawn(userId);
         if (!isRejoined) {
-            await this.eventRewardFacade.grantSignUpReward(userId);
+            await this.eventRewardLifecycleFacade.grantSignUpReward(userId);
         }
 
         return agreed;

@@ -56,7 +56,7 @@ export class EventRepository {
                     qb.where('event.endDate >= :now', { now }).orWhere('event.endDate IS NULL');
                 })
             )
-            .andWhere(`COALESCE(event.opsConfig->>'manualRewardOnly', 'false') = 'true'`)
+            .andWhere(`COALESCE(event.ops_config->>'manualRewardOnly', 'false') = 'true'`)
             .orderBy('event.displayOrder', 'ASC')
             .addOrderBy('event.id', 'ASC')
             .getMany();
