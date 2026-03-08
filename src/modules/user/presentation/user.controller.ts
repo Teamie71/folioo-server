@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Headers, Patch, Post, Query, Req } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers,
+    Param,
+    Patch,
+    Post,
+    Query,
+    Req,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -18,6 +29,7 @@ import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
 import { TicketHistoryResDTO } from 'src/modules/ticket/application/dtos/ticket-history.dto';
+import { TicketGrantNoticeResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
 import { TicketExpiringQueryReqDTO } from 'src/modules/ticket/application/dtos/ticket-expiring-query.dto';
 import { extractAccessTokenFromAuthorization } from 'src/modules/auth/infrastructure/utils/access-token.util';
 import type { Request } from 'express';
@@ -123,6 +135,48 @@ export class UserController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async getTicketHistory(@User('sub') userId: number): Promise<TicketHistoryResDTO> {
         return this.userTicketFacade.getHistory(userId);
+    }
+
+    @Get('me/ticket-grant-notices/next')
+    @ApiOperation({
+        summary: '다음 보상 안내 조회',
+        description:
+            '로그인 사용자의 다음 PENDING 보상 안내 1건을 최신순으로 조회합니다. 없으면 null을 반환합니다.',
+    })
+    @ApiCommonResponse(TicketGrantNoticeResDTO, { exampleResult: null })
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getNextTicketGrantNotice(
+        @User('sub') userId: number
+    ): Promise<TicketGrantNoticeResDTO | null> {
+        return this.userTicketFacade.getNextGrantNotice(userId);
+    }
+
+    @Patch('me/ticket-grant-notices/:noticeId/shown')
+    @ApiOperation({
+        summary: '보상 안내 shown 처리',
+        description: '사용자가 보상 안내를 실제 확인한 시점을 shown 상태로 기록합니다.',
+    })
+    @ApiCommonResponse(TicketGrantNoticeResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND)
+    async markTicketGrantNoticeShown(
+        @User('sub') userId: number,
+        @Param('noticeId') noticeId: string
+    ): Promise<TicketGrantNoticeResDTO> {
+        return this.userTicketFacade.markGrantNoticeShown(userId, Number(noticeId));
+    }
+
+    @Patch('me/ticket-grant-notices/:noticeId/dismiss')
+    @ApiOperation({
+        summary: '보상 안내 dismiss 처리',
+        description: '사용자가 보상 안내 모달을 닫았음을 기록합니다.',
+    })
+    @ApiCommonResponse(TicketGrantNoticeResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND)
+    async markTicketGrantNoticeDismissed(
+        @User('sub') userId: number,
+        @Param('noticeId') noticeId: string
+    ): Promise<TicketGrantNoticeResDTO> {
+        return this.userTicketFacade.markGrantNoticeDismissed(userId, Number(noticeId));
     }
 
     @Patch('me')

@@ -22,9 +22,13 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventFeedbackReviewStatus } from '../../domain/enums/event-feedback-review-status.enum';
 import { EventService } from 'src/modules/event/application/services/event.service';
 import { EventParticipationService } from 'src/modules/event/application/services/event-participation.service';
-import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { EventFeedbackSubmission } from '../../domain/entities/event-feedback-submission.entity';
 import { EventFeedbackSource } from '../../domain/enums/event-feedback-source.enum';
+import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
+import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
+import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
+import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
+import { AdminTicketGrantListResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
 
 @Injectable()
 export class AdminEventRewardFacade {
@@ -36,7 +40,8 @@ export class AdminEventRewardFacade {
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
         private readonly eventRewardFacade: EventRewardFacade,
-        private readonly ticketService: TicketService
+        private readonly ticketService: TicketService,
+        private readonly ticketGrantFacade: TicketGrantFacade
     ) {}
 
     async searchUsers(keyword?: string): Promise<AdminUserSearchResDTO> {
@@ -69,6 +74,12 @@ export class AdminEventRewardFacade {
             externalSubmissionId: body.externalSubmissionId,
             reviewedBy: body.reviewedBy,
             reviewNote: body.reviewNote,
+            createNotice: body.createNotice,
+            displayReason: body.displayReason,
+            noticeTitle: body.noticeTitle,
+            noticeBody: body.noticeBody,
+            noticeCtaText: body.noticeCtaText,
+            noticeCtaLink: body.noticeCtaLink,
         });
 
         const dto = new AdminGrantRewardResDTO();
@@ -81,7 +92,49 @@ export class AdminEventRewardFacade {
 
     async grantTickets(body: AdminGrantTicketsReqDTO): Promise<AdminGrantTicketsResDTO> {
         await this.userService.findByIdOrThrow(body.userId);
-        await this.ticketService.issueAdminTickets(body.userId, body.type, body.quantity);
+
+        const rewards = [{ type: body.type, quantity: body.quantity }];
+        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(rewards);
+        const shouldCreateNotice =
+            body.createNotice === true ||
+            !!body.noticeTitle ||
+            !!body.noticeBody ||
+            !!body.displayReason;
+        const notice = !shouldCreateNotice
+            ? null
+            : body.noticeBody
+              ? {
+                    title: body.noticeTitle ?? '보상이 지급되었어요',
+                    body: body.noticeBody,
+                    ctaText: body.noticeCtaText ?? null,
+                    ctaLink: body.noticeCtaLink ?? null,
+                    payload: {
+                        displayReason: body.displayReason ?? null,
+                        rewards,
+                    },
+                }
+              : this.ticketGrantFacade.createDefaultNotice({
+                    title: body.noticeTitle ?? '보상이 지급되었어요',
+                    rewardSummary,
+                    displayReason: body.displayReason ?? null,
+                    ctaText: body.noticeCtaText ?? null,
+                    ctaLink: body.noticeCtaLink ?? null,
+                    rewards,
+                });
+
+        await this.ticketGrantFacade.issueGrantAndTickets({
+            userId: body.userId,
+            rewards,
+            grantSourceType: TicketGrantSourceType.ADMIN,
+            issueContext: {
+                source: TicketSource.ADMIN,
+            },
+            actorType: TicketGrantActorType.ADMIN,
+            actorId: 'admin-ui',
+            reasonCode: 'admin_manual_ticket_grant',
+            reasonText: body.reason,
+            notice,
+        });
 
         this.logger.log(
             `Admin ticket grant: userId=${body.userId}, type=${body.type}, qty=${body.quantity}, reason="${body.reason}"`
@@ -100,6 +153,10 @@ export class AdminEventRewardFacade {
         dto.reason = body.reason;
         dto.remainingBalance = remainingBalance;
         return dto;
+    }
+
+    async getTicketGrants(): Promise<AdminTicketGrantListResDTO> {
+        return this.ticketGrantFacade.getAdminTicketGrants();
     }
 
     async getTicketHistory(): Promise<AdminTicketHistoryResDTO> {
@@ -180,14 +237,46 @@ export class AdminEventRewardFacade {
         participation.grantReason = params.reviewNote ?? null;
         const savedParticipation = await this.eventParticipationService.save(participation);
 
-        await this.ticketService.issueTickets(
-            user.id,
-            {
+        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(event.rewardConfig);
+        const notice =
+            params.createNotice === false
+                ? null
+                : params.noticeBody
+                  ? {
+                        title: params.noticeTitle ?? `${event.title}`,
+                        body: params.noticeBody,
+                        ctaText: params.noticeCtaText ?? event.ctaText,
+                        ctaLink: params.noticeCtaLink ?? event.ctaLink ?? null,
+                        payload: {
+                            displayReason: params.displayReason ?? null,
+                            rewards: event.rewardConfig,
+                        },
+                    }
+                  : this.ticketGrantFacade.createDefaultNotice({
+                        title: params.noticeTitle ?? `${event.title} 보상 지급 완료`,
+                        rewardSummary,
+                        displayReason: params.displayReason ?? event.title,
+                        ctaText: params.noticeCtaText ?? event.ctaText,
+                        ctaLink: params.noticeCtaLink ?? event.ctaLink ?? null,
+                        rewards: event.rewardConfig,
+                    });
+
+        await this.ticketGrantFacade.issueGrantAndTickets({
+            userId: user.id,
+            rewards: event.rewardConfig,
+            grantSourceType: TicketGrantSourceType.EVENT,
+            issueContext: {
                 source: TicketSource.EVENT,
                 eventParticipationId: savedParticipation.id,
             },
-            event.rewardConfig
-        );
+            actorType: TicketGrantActorType.ADMIN,
+            actorId: params.reviewedBy ?? 'admin-ui',
+            sourceRefId: savedParticipation.id,
+            reasonCode: 'event_feedback_reward',
+            reasonText: params.reviewNote ?? null,
+            notice,
+            grantedAt: now,
+        });
 
         const submission = new EventFeedbackSubmission();
         submission.eventId = event.id;

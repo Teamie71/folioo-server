@@ -1,8 +1,22 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+    IsBoolean,
+    IsEnum,
+    IsInt,
+    IsOptional,
+    IsString,
+    Max,
+    MaxLength,
+    Matches,
+    Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
 import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
+
+const NOTICE_CTA_LINK_REGEX = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
+const NOTICE_CTA_LINK_MESSAGE =
+    'noticeCtaLink는 http/https URL 또는 /로 시작하는 상대 경로만 허용합니다.';
 
 export class AdminUserSearchReqDTO {
     @IsOptional()
@@ -79,6 +93,49 @@ export class AdminGrantRewardReqDTO {
     @IsString()
     @MaxLength(500)
     reviewNote?: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 모달 생성 여부', example: true })
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    createNotice?: boolean;
+
+    @ApiPropertyOptional({
+        description: '사용자 노출 사유 문구',
+        example: '서비스 이용 불편에 대한 보상',
+    })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    displayReason?: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 제목', example: '보상이 지급되었어요' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    noticeTitle?: string;
+
+    @ApiPropertyOptional({
+        description: '보상 안내 본문',
+        example: '경험 정리 1회권이 지급되었어요.',
+    })
+    @IsOptional()
+    @IsString()
+    @MaxLength(1000)
+    noticeBody?: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 CTA 문구', example: '첨삭 의뢰하기' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    noticeCtaText?: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 CTA 링크', example: '/correction/new' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    @Matches(NOTICE_CTA_LINK_REGEX, { message: NOTICE_CTA_LINK_MESSAGE })
+    noticeCtaLink?: string;
 }
 
 export class AdminGrantRewardResDTO {
@@ -121,6 +178,49 @@ export class AdminGrantTicketsReqDTO {
     @IsString()
     @MaxLength(200)
     reason: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 모달 생성 여부', example: true })
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    createNotice?: boolean;
+
+    @ApiPropertyOptional({
+        description: '사용자 노출 사유 문구',
+        example: '서비스 이용 불편에 대한 보상',
+    })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    displayReason?: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 제목', example: '보상이 지급되었어요' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    noticeTitle?: string;
+
+    @ApiPropertyOptional({
+        description: '보상 안내 본문',
+        example: '경험 정리 1회권이 지급되었어요.',
+    })
+    @IsOptional()
+    @IsString()
+    @MaxLength(1000)
+    noticeBody?: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 CTA 문구', example: '첨삭 의뢰하기' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    noticeCtaText?: string;
+
+    @ApiPropertyOptional({ description: '보상 안내 CTA 링크', example: '/correction/new' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    @Matches(NOTICE_CTA_LINK_REGEX, { message: NOTICE_CTA_LINK_MESSAGE })
+    noticeCtaLink?: string;
 }
 
 export class AdminGrantTicketsResDTO {
@@ -185,4 +285,10 @@ export interface GrantRewardByUserIdParams {
     externalSubmissionId?: string;
     reviewedBy?: string;
     reviewNote?: string;
+    createNotice?: boolean;
+    displayReason?: string;
+    noticeTitle?: string;
+    noticeBody?: string;
+    noticeCtaText?: string;
+    noticeCtaLink?: string;
 }

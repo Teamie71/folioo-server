@@ -9,7 +9,9 @@ import {
 import { EventService } from '../services/event.service';
 import { EventParticipationService } from '../services/event-participation.service';
 import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
-import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
+import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
+import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
+import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -23,7 +25,7 @@ export class EventRewardFacade {
     constructor(
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
-        private readonly ticketService: TicketService
+        private readonly ticketGrantFacade: TicketGrantFacade
     ) {}
 
     async getFeedbackModal(userId: number, eventCode: string): Promise<FeedbackModalResDTO> {
@@ -189,14 +191,21 @@ export class EventRewardFacade {
         participation.grantReason = '챌린지 보상 직접 수령';
 
         const savedParticipation = await this.eventParticipationService.save(participation);
-        await this.ticketService.issueTickets(
+        await this.ticketGrantFacade.issueGrantAndTickets({
             userId,
-            {
+            rewards: event.rewardConfig,
+            grantSourceType: TicketGrantSourceType.EVENT,
+            issueContext: {
                 source: TicketSource.EVENT,
                 eventParticipationId: savedParticipation.id,
             },
-            event.rewardConfig
-        );
+            actorType: TicketGrantActorType.SYSTEM,
+            actorId: 'self-claim',
+            sourceRefId: savedParticipation.id,
+            reasonCode: 'event_self_claim',
+            reasonText: '챌린지 보상 직접 수령',
+            grantedAt: now,
+        });
 
         const dto = new ClaimEventRewardResDTO();
         dto.eventCode = event.code;
@@ -217,17 +226,38 @@ export class EventRewardFacade {
         if (participation.rewardStatus === EventRewardStatus.GRANTED) {
             return;
         }
-        await this.ticketService.issueTickets(
+        const now = new Date();
+        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(
+            activeSignupEvent.rewardConfig
+        );
+
+        await this.ticketGrantFacade.issueGrantAndTickets({
             userId,
-            {
+            rewards: activeSignupEvent.rewardConfig,
+            grantSourceType: TicketGrantSourceType.SIGNUP,
+            issueContext: {
                 source: TicketSource.EVENT,
                 eventParticipationId: participation.id,
             },
-            activeSignupEvent.rewardConfig,
-            activeSignupEvent.endDate
-        );
+            actorType: TicketGrantActorType.SYSTEM,
+            actorId: 'signup-reward',
+            sourceRefId: participation.id,
+            reasonCode: 'signup_reward',
+            reasonText: activeSignupEvent.title,
+            expiredAt: activeSignupEvent.endDate,
+            grantedAt: now,
+            notice: this.ticketGrantFacade.createDefaultNotice({
+                title: '환영합니다!',
+                rewardSummary,
+                displayReason: activeSignupEvent.title,
+                ctaText: activeSignupEvent.ctaText,
+                ctaLink: activeSignupEvent.ctaLink ?? null,
+                rewards: activeSignupEvent.rewardConfig,
+                expiresAt: activeSignupEvent.endDate,
+            }),
+        });
         participation.rewardStatus = EventRewardStatus.GRANTED;
-        participation.rewardGrantedAt = new Date();
+        participation.rewardGrantedAt = now;
         await this.eventParticipationService.save(participation);
     }
 

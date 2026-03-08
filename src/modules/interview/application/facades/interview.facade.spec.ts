@@ -184,7 +184,7 @@ describe('InterviewFacade', () => {
         expect(interviewServiceStub.sendChatStream).toHaveBeenCalledWith(
             'session_resolved',
             '안녕하세요',
-            [1]
+            []
         );
         expect(result).toBe(relayConnection);
     });

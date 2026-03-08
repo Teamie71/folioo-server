@@ -6,6 +6,20 @@ export const TICKET_TYPE_LABELS = {
     PORTFOLIO_CORRECTION: '포트폴리오 첨삭',
 };
 
+export const NOTICE_STATUS_LABELS = {
+    PENDING: '대기',
+    SHOWN: '노출됨',
+    DISMISSED: '닫힘',
+};
+
+export const GRANT_SOURCE_LABELS = {
+    EVENT: '이벤트',
+    SIGNUP: '가입 보상',
+    ADMIN: '운영 지급',
+    COMPENSATION: '보상',
+    PURCHASE: '구매',
+};
+
 export const GRANT_REASONS = [
     '피드백 제출',
     '인사이트 로그 작성 챌린지',
@@ -15,7 +29,7 @@ export const GRANT_REASONS = [
 export const TABS = [
     { id: 'users', label: '회원 관리', enabled: true },
     { id: 'tickets', label: '이용권 거래 내역', enabled: true },
-    { id: 'events', label: '이벤트 모달 관리', enabled: false },
+    { id: 'grants', label: '지급/안내 이력', enabled: true },
 ];
 
 export async function api(url, options) {

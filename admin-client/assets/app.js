@@ -4,6 +4,7 @@ import { html, useState } from './lib/setup.js';
 import { Header, TabNav, ComingSoonTab } from './components/Layout.js';
 import { UserManagementTab } from './pages/UserManagement.js';
 import { TicketHistoryTab } from './pages/TicketHistory.js';
+import { TicketGrantHistoryTab } from './pages/TicketGrantHistory.js';
 
 function App() {
     const [activeTab, setActiveTab] = useState('users');
@@ -15,7 +16,7 @@ function App() {
 
             ${activeTab === 'users' && html`<${UserManagementTab} />`}
             ${activeTab === 'tickets' && html`<${TicketHistoryTab} />`}
-            ${activeTab === 'events' && html`<${ComingSoonTab} title="이벤트 모달 관리" />`}
+            ${activeTab === 'grants' && html`<${TicketGrantHistoryTab} />`}
         </div>
     `;
 }

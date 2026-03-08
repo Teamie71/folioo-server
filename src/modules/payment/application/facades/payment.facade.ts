@@ -3,7 +3,11 @@ import { Transactional } from 'typeorm-transactional';
 import { Payment } from '../../domain/entities/payment.entity';
 import { PaymentStatus } from '../../domain/enums/payment-status.enum';
 import { PaymentService } from '../services/payment.service';
+import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
 import { TicketProductService } from 'src/modules/ticket/application/services/ticket-product.service';
+import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
+import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
+import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { PayAppWebhookReqDTO } from '../dtos/payment.dto';
 import { PayAppClient } from '../../infrastructure/clients/payapp.client';
@@ -15,6 +19,7 @@ export class PaymentFacade {
     constructor(
         private readonly paymentService: PaymentService,
         private readonly ticketProductService: TicketProductService,
+        private readonly ticketGrantFacade: TicketGrantFacade,
         private readonly ticketService: TicketService,
         private readonly payAppClient: PayAppClient
     ) {}
@@ -49,12 +54,21 @@ export class PaymentFacade {
                 updatedPayment.ticketProductId
             );
 
-            await this.ticketService.issueTicketsForPayment(
-                updatedPayment.userId,
-                updatedPayment.id,
-                ticketProduct.type,
-                ticketProduct.quantity
-            );
+            await this.ticketGrantFacade.issueGrantAndTickets({
+                userId: updatedPayment.userId,
+                rewards: [{ type: ticketProduct.type, quantity: ticketProduct.quantity }],
+                grantSourceType: TicketGrantSourceType.PURCHASE,
+                issueContext: {
+                    source: TicketSource.PURCHASE,
+                    paymentId: updatedPayment.id,
+                },
+                actorType: TicketGrantActorType.SYSTEM,
+                actorId: 'payapp-webhook',
+                sourceRefId: updatedPayment.id,
+                reasonCode: 'payment_purchase',
+                reasonText: `payment:${updatedPayment.id}`,
+                grantedAt: updatedPayment.paidAt,
+            });
 
             this.logger.log(
                 `Tickets issued: paymentId=${updatedPayment.id}, type=${ticketProduct.type}, qty=${ticketProduct.quantity}`

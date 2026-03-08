@@ -21,10 +21,16 @@ type TicketIssueSource =
     | {
           source: TicketSource.PURCHASE;
           paymentId: number;
+          ticketGrantId?: number | null;
       }
     | {
           source: TicketSource.EVENT;
           eventParticipationId: number;
+          ticketGrantId?: number | null;
+      }
+    | {
+          source: TicketSource.ADMIN;
+          ticketGrantId: number;
       };
 
 @Injectable()
@@ -74,6 +80,8 @@ export class TicketService {
                 if (source.source === TicketSource.EVENT) {
                     ticket.eventParticipationId = source.eventParticipationId;
                 }
+
+                ticket.ticketGrantId = source.ticketGrantId ?? null;
 
                 ticket.type = reward.type;
                 ticket.status = TicketStatus.AVAILABLE;
@@ -141,17 +149,20 @@ export class TicketService {
         return map;
     }
 
-    async issueAdminTickets(userId: number, type: TicketType, quantity: number): Promise<Ticket[]> {
-        const tickets = Array.from({ length: quantity }).map(() => {
-            const ticket = new Ticket();
-            ticket.userId = userId;
-            ticket.type = type;
-            ticket.status = TicketStatus.AVAILABLE;
-            ticket.source = TicketSource.EVENT;
-            return ticket;
-        });
-
-        return this.ticketRepository.saveAll(tickets);
+    async issueAdminTickets(
+        userId: number,
+        type: TicketType,
+        quantity: number,
+        ticketGrantId: number
+    ): Promise<Ticket[]> {
+        return this.issueTickets(
+            userId,
+            {
+                source: TicketSource.ADMIN,
+                ticketGrantId,
+            },
+            [{ type, quantity }]
+        );
     }
 
     async getExpiring(userId: number, days: number): Promise<TicketExpiringResDTO> {
