@@ -11,25 +11,34 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 - **Runtime**: Node.js 20+
 - **Framework**: NestJS 10.x
 - **ORM**: TypeORM
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (로컬: Docker, dev/prod: Supabase 외부 연결)
+- **Cache**: Upstash Redis REST API (dev/prod) / ioredis Docker (로컬)
 - **Package Manager**: pnpm
 - **Language**: TypeScript (Strict Mode)
+- **배포**: GCE Blue-Green (docker-compose.infra.yml + dev/prod overlay)
+- **이미지 레지스트리**: GCP Artifact Registry (`asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server`)
 
 ## 문서 경로
 
 상세한 내용은 아래 문서 참조:
 
-| 문서          | 경로                                     |
-| ------------- | ---------------------------------------- |
-| 아키텍처      | `docs/architecture/ARCHITECTURE.md`      |
-| 도메인 전략   | `docs/architecture/DOMAIN_STRATEGY.md`   |
-| ERD/DB 설계   | `docs/architecture/ERD.md`               |
-| 코드 스타일   | `docs/development/CODE_STYLE.md`         |
-| 예외 처리     | `docs/development/ERROR_HANDLING.md`     |
-| Git 컨벤션    | `docs/development/GIT_CONVENTIONS.md`    |
-| 네이밍 컨벤션 | `docs/development/NAMING_CONVENTIONS.md` |
-| PR 템플릿     | `.github/PULL_REQUEST_TEMPLATE.md`       |
-| Issue 템플릿  | `.github/ISSUE_TEMPLATE/`                |
+| 문서              | 경로                                     |
+| ----------------- | ---------------------------------------- |
+| 아키텍처          | `docs/architecture/ARCHITECTURE.md`      |
+| 도메인 전략       | `docs/architecture/DOMAIN_STRATEGY.md`   |
+| ERD/DB 설계       | `docs/architecture/ERD.md`               |
+| 코드 스타일       | `docs/development/CODE_STYLE.md`         |
+| 예외 처리         | `docs/development/ERROR_HANDLING.md`     |
+| Git 컨벤션        | `docs/development/GIT_CONVENTIONS.md`    |
+| 네이밍 컨벤션     | `docs/development/NAMING_CONVENTIONS.md` |
+| API 현황          | `docs/API.md`                            |
+| 환경변수 관리     | `docs/infrastructure/ENV_MANAGEMENT.md`  |
+| Redis/Cache       | `docs/infrastructure/REDIS.md`           |
+| 비용 추정         | `docs/infrastructure/COST_ESTIMATE.md`   |
+| 인프라(Terraform) | `infra/README.md`                        |
+| Env 계약          | `infra/docs/env-contract.md`             |
+| PR 템플릿         | `.github/PULL_REQUEST_TEMPLATE.md`       |
+| Issue 템플릿      | `.github/ISSUE_TEMPLATE/`                |
 
 ## 핵심 규칙
 
@@ -132,14 +141,21 @@ export class ExternalPortfolioService {
 
 ## 도메인 구조
 
-| 도메인               | 분류    | 설명                                         |
-| -------------------- | ------- | -------------------------------------------- |
-| Experience           | Core    | 경험 정리 (AI 채팅), 서비스의 핵심 기능      |
-| Portfolio            | Core    | 경험 정리의 결과물, 첨삭의 소스로 사용       |
-| Portfolio-Correction | Core    | 포트폴리오 첨삭 서비스                       |
-| Insight              | Core    | 인사이트/팁 정리                             |
-| User                 | Generic | 사용자 (추후 userAuth-userProfile 분리 가능) |
-| Auth                 | Generic | 인증 (passport - kakao/google/apple)         |
+| 도메인               | 분류       | 설명                                         |
+| -------------------- | ---------- | -------------------------------------------- |
+| Experience           | Core       | 경험 정리 (AI 채팅 포함), 서비스의 핵심 기능 |
+| Interview            | Core       | AI 인터뷰 세션 관리 (SSE 스트림, 연장 모드)  |
+| Portfolio            | Core       | 경험 정리의 결과물, 첨삭의 소스로 사용       |
+| Portfolio-Correction | Core       | 포트폴리오 첨삭 서비스 (RAG, 기업 분석)      |
+| Insight              | Core       | 인사이트/팁 정리 (벡터 유사도 검색)          |
+| Event                | Core       | 이벤트/챌린지 관리, 보상 수령                |
+| User                 | Generic    | 사용자 (추후 userAuth-userProfile 분리 가능) |
+| Auth                 | Generic    | 인증 (passport - kakao/google/naver)         |
+| Ticket               | Generic    | 이용권 관리 (발급, 차감, 만료)               |
+| Payment              | Generic    | 결제 (PayApp 연동, 웹훅, 취소)               |
+| Admin                | Supporting | 관리자 대시보드 (이용권 수동 지급, 검색)     |
+| Internal             | Supporting | AI 서버 연동 내부 API (X-API-Key 인증)       |
+| Embedding            | Infra      | 벡터 임베딩 (pgvector, 코사인 유사도)        |
 
 ## 파일 처리 방식
 
@@ -174,6 +190,10 @@ node scripts/smoke-dev-api.mjs
 
 # 변형 요청(POST/PATCH/DELETE)까지 포함
 node scripts/smoke-dev-api.mjs --mutate --exclude '^/auth/(kakao|google|naver)'
+
+# Internal API 스모크 테스트 (X-API-Key 인증)
+export FOLIOO_INTERNAL_API_KEY="<paste-api-key>"
+node scripts/smoke-dev-api.mjs --internal --mutate
 ```
 
 ## API 구현/테스트 문서

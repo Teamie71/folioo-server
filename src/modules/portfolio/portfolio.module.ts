@@ -10,6 +10,6 @@ import { PortfolioService } from './application/services/portfolio.service';
     imports: [TypeOrmModule.forFeature([Portfolio])],
     controllers: [PortfolioController],
     providers: [PortfolioRepository, ExternalPortfolioService, PortfolioService],
-    exports: [ExternalPortfolioService],
+    exports: [ExternalPortfolioService, PortfolioService],
 })
 export class PortfolioModule {}

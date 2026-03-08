@@ -1,25 +1,48 @@
-import { Body, Controller, Get, Patch, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers,
+    Param,
+    Patch,
+    Post,
+    Query,
+    Req,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
+import {
+    ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
+    ApiCommonResponse,
+} from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UpdateUserNameReqDTO, UserProfileResDTO } from '../application/dtos/user-profile.dto';
 import {
     AgreeMarketingReqDTO,
     AgreeMarketingResDTO,
 } from '../application/dtos/marketing-agree.dto';
+import { AgreeTermsReqDTO, AgreeTermsResDTO } from '../application/dtos/agree-terms.dto';
 import { User } from 'src/common/decorators/user.decorator';
+import { AllowPending } from 'src/common/decorators/allow-pending.decorator';
 import { UserService } from '../application/services/user.service';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
+import { TicketHistoryResDTO } from 'src/modules/ticket/application/dtos/ticket-history.dto';
+import { TicketGrantNoticeResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
 import { TicketExpiringQueryReqDTO } from 'src/modules/ticket/application/dtos/ticket-expiring-query.dto';
+import { extractAccessTokenFromAuthorization } from 'src/modules/auth/infrastructure/utils/access-token.util';
+import type { Request } from 'express';
 import { UserTicketFacade } from '../application/facades/user-ticket.facade';
+import { UserAuthFacade } from '../application/facades/user-auth.facade';
 
 @ApiTags('User')
 @Controller('users')
 export class UserController {
     constructor(
         private readonly userService: UserService,
-        private readonly userTicketFacade: UserTicketFacade
+        private readonly userTicketFacade: UserTicketFacade,
+        private readonly userAuthFacade: UserAuthFacade
     ) {}
 
     @Get('me')
@@ -49,6 +72,34 @@ export class UserController {
         return await this.userService.getProfile(userId);
     }
 
+    @Post('me/terms')
+    @AllowPending()
+    @ApiOperation({
+        summary: '온보딩 약관 동의',
+        description:
+            '회원가입 후 서비스 이용약관, 개인정보 처리방침, 마케팅 수신 동의를 처리합니다. 필수 약관(서비스, 개인정보) 동의 시 사용자 상태가 ACTIVE로 전환됩니다.',
+    })
+    @ApiBody({ type: AgreeTermsReqDTO })
+    @ApiCommonResponse(AgreeTermsResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.USER_NOT_FOUND,
+        ErrorCode.REQUIRED_TERMS_NOT_AGREED,
+        ErrorCode.ALREADY_AGREED_USER,
+        ErrorCode.TERM_NOT_FOUND
+    )
+    async agreeTerms(
+        @User('sub') userId: number,
+        @Body() body: AgreeTermsReqDTO
+    ): Promise<AgreeTermsResDTO> {
+        return await this.userTicketFacade.onBoarding(
+            userId,
+            body.isServiceAgreed,
+            body.isPrivacyAgreed,
+            body.isMarketingAgreed
+        );
+    }
+
     @Get('me/tickets')
     @ApiOperation({
         summary: '잔여 이용권 조회',
@@ -73,6 +124,59 @@ export class UserController {
         @Query() query: TicketExpiringQueryReqDTO
     ): Promise<TicketExpiringResDTO> {
         return this.userTicketFacade.getExpiring(userId, query.days);
+    }
+
+    @Get('me/tickets/history')
+    @ApiOperation({
+        summary: '이용권 거래 내역 조회',
+        description: '사용자의 이용권 발급/사용/만료 내역을 최신순으로 조회합니다.',
+    })
+    @ApiCommonResponse(TicketHistoryResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getTicketHistory(@User('sub') userId: number): Promise<TicketHistoryResDTO> {
+        return this.userTicketFacade.getHistory(userId);
+    }
+
+    @Get('me/ticket-grant-notices/next')
+    @ApiOperation({
+        summary: '다음 보상 안내 조회',
+        description:
+            '로그인 사용자의 다음 PENDING 보상 안내 1건을 최신순으로 조회합니다. 없으면 null을 반환합니다.',
+    })
+    @ApiCommonResponse(TicketGrantNoticeResDTO, { exampleResult: null })
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getNextTicketGrantNotice(
+        @User('sub') userId: number
+    ): Promise<TicketGrantNoticeResDTO | null> {
+        return this.userTicketFacade.getNextGrantNotice(userId);
+    }
+
+    @Patch('me/ticket-grant-notices/:noticeId/shown')
+    @ApiOperation({
+        summary: '보상 안내 shown 처리',
+        description: '사용자가 보상 안내를 실제 확인한 시점을 shown 상태로 기록합니다.',
+    })
+    @ApiCommonResponse(TicketGrantNoticeResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND)
+    async markTicketGrantNoticeShown(
+        @User('sub') userId: number,
+        @Param('noticeId') noticeId: string
+    ): Promise<TicketGrantNoticeResDTO> {
+        return this.userTicketFacade.markGrantNoticeShown(userId, Number(noticeId));
+    }
+
+    @Patch('me/ticket-grant-notices/:noticeId/dismiss')
+    @ApiOperation({
+        summary: '보상 안내 dismiss 처리',
+        description: '사용자가 보상 안내 모달을 닫았음을 기록합니다.',
+    })
+    @ApiCommonResponse(TicketGrantNoticeResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND)
+    async markTicketGrantNoticeDismissed(
+        @User('sub') userId: number,
+        @Param('noticeId') noticeId: string
+    ): Promise<TicketGrantNoticeResDTO> {
+        return this.userTicketFacade.markGrantNoticeDismissed(userId, Number(noticeId));
     }
 
     @Patch('me')
@@ -104,5 +208,31 @@ export class UserController {
         @Body() body: AgreeMarketingReqDTO
     ): Promise<AgreeMarketingResDTO> {
         return this.userService.updateMarketingConsent(userId, body.isMarketingAgreed);
+    }
+
+    @Delete('me')
+    @ApiOperation({
+        summary: '회원 탈퇴',
+        description:
+            '사용자의 계정을 탈퇴 처리하고 연결된 소셜 로그인 계정을 저장된 OAuth 리프레시 토큰 기반으로 연결 해제합니다.',
+    })
+    @ApiCommonMessageResponse('회원 탈퇴가 완료되었습니다.')
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.USER_NOT_FOUND,
+        ErrorCode.DEACTIVATED_USER,
+        ErrorCode.SOCIAL_UNLINK_FAILED
+    )
+    async withdraw(
+        @User('sub') userId: number,
+        @Headers('authorization') authorization: string | undefined,
+        @Req() req: Request
+    ): Promise<string> {
+        const accessToken = extractAccessTokenFromAuthorization(authorization)!;
+
+        const refreshToken = req.cookies?.refreshToken as string | undefined;
+
+        await this.userAuthFacade.withdraw(userId, accessToken, refreshToken ?? null);
+        return '회원 탈퇴가 완료되었습니다.';
     }
 }

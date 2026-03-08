@@ -9,9 +9,10 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
@@ -124,28 +125,6 @@ export class InsightController {
         );
     }
 
-    @Get('search')
-    @ApiOperation({
-        summary: '인사이트 로그 유사도 검색',
-        description: '키워드를 통해 인사이트 로그를 검색합니다.',
-    })
-    @ApiQuery({ name: 'keyword', required: true })
-    @ApiQuery({
-        name: 'threshold',
-        required: false,
-        description: '유사도 거리 임계값 (기본 0.7, 작을수록 일치도 높음)',
-    })
-    @ApiCommonResponseArray(InsightLogResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async searchVector(
-        @User('sub') userId: number,
-        @Query('keyword') keyword: string,
-        @Query('threshold') threshold?: number
-    ): Promise<InsightLogResDTO[]> {
-        const targetThreshold = threshold ?? 0.7;
-        return await this.insightService.searchInsight(userId, keyword, targetThreshold);
-    }
-
     @Post('tags')
     @ApiOperation({
         summary: '활동 분류 태그 생성',
@@ -181,16 +160,7 @@ export class InsightController {
         description:
             '활동 분류 태그를 삭제합니다. 태그가 연결되어있던 인사이트 로그는 자동적으로 미분류 상태가 됩니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '활동 분류 태그가 성공적으로 삭제되었습니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('활동 분류 태그가 성공적으로 삭제되었습니다.')
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.NOT_ACTIVITY_TAG_OWNER,

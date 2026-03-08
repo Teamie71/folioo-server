@@ -19,7 +19,8 @@ export class NaverStrategy extends PassportStrategy(Strategy, 'naver') {
         });
     }
 
-    validate(_accessToken: string, _refreshToken: string, profile: Profile): SocialUserAfterOAuth {
+    validate(_accessToken: string, refreshToken: string, profile: Profile): SocialUserAfterOAuth {
+        const normalizedRefreshToken = getOptionalSocialProfileField(refreshToken);
         const user: SocialUserAfterOAuth = {
             id: requireSocialProfileField(profile.id, 'id', LoginType.NAVER),
             nickname:
@@ -27,6 +28,7 @@ export class NaverStrategy extends PassportStrategy(Strategy, 'naver') {
                 getOptionalSocialProfileField(profile.name),
             email: getOptionalSocialProfileField(profile.email),
             socialType: LoginType.NAVER,
+            refreshToken: normalizedRefreshToken || undefined,
         };
         return user;
     }

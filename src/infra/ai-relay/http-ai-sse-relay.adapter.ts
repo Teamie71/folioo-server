@@ -1,18 +1,20 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Readable } from 'stream';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    AiSseRelayConnection,
-    AiSseRelayPort,
-    AiSseRelayRequest,
-} from 'src/common/ports/ai-sse-relay.port';
+    AiRelayConnection,
+    AiRelayGetRequest,
+    AiRelayJsonResponse,
+    AiRelayPort,
+    AiRelayRequest,
+} from 'src/common/ports/ai-relay.port';
 
 @Injectable()
-export class HttpAiSseRelayAdapter extends AiSseRelayPort {
+export class HttpAiSseRelayAdapter extends AiRelayPort {
     private readonly logger = new Logger(HttpAiSseRelayAdapter.name);
 
     constructor(
@@ -22,12 +24,8 @@ export class HttpAiSseRelayAdapter extends AiSseRelayPort {
         super();
     }
 
-    async openPostStream(request: AiSseRelayRequest): Promise<AiSseRelayConnection> {
-        const baseUrl = this.configService.get<string>('AI_BASE_URL');
-        if (!baseUrl) {
-            this.logger.error('AI_BASE_URL is not configured');
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
+    async openPostStream(request: AiRelayRequest): Promise<AiRelayConnection> {
+        const { baseUrl, apiKey } = this.getAiServiceConfig();
 
         const abortController = new AbortController();
         const requestUrl = this.buildRequestUrl(baseUrl, request.path);
@@ -43,6 +41,7 @@ export class HttpAiSseRelayAdapter extends AiSseRelayPort {
                     headers: {
                         Accept: 'text/event-stream',
                         'Content-Type': 'application/json',
+                        'X-API-Key': apiKey,
                     },
                 }
             );
@@ -55,12 +54,85 @@ export class HttpAiSseRelayAdapter extends AiSseRelayPort {
         } catch (error: unknown) {
             if (axios.isCancel(error)) {
                 this.logger.warn('AI SSE relay request was canceled before being connected');
-                throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+                throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
             }
 
             const errorMessage = error instanceof Error ? error.message : 'Unknown relay error';
             this.logger.error(`Failed to connect AI SSE stream: ${errorMessage}`);
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+        }
+    }
+
+    async getJson<T = unknown>(request: AiRelayGetRequest): Promise<AiRelayJsonResponse<T>> {
+        const { baseUrl, apiKey } = this.getAiServiceConfig();
+
+        const requestUrl = this.buildRequestUrl(baseUrl, request.path);
+
+        try {
+            const response: AxiosResponse<T> = await this.httpService.axiosRef.get<T>(requestUrl, {
+                params: request.query,
+                headers: {
+                    ...request.headers,
+                    'X-API-Key': apiKey,
+                },
+                timeout: 30_000,
+            });
+
+            return {
+                data: response.data,
+                status: response.status,
+                headers: this.extractHeaders(response.headers as Record<string, unknown>),
+            };
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                const status = error.response?.status;
+                this.logger.error('AI JSON request failed', {
+                    url: requestUrl,
+                    status,
+                    error: error.message,
+                });
+            } else {
+                this.logger.error('Unknown AI JSON request failure');
+            }
+
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+        }
+    }
+
+    async postJson<T = unknown>(request: AiRelayRequest): Promise<AiRelayJsonResponse<T>> {
+        const { baseUrl, apiKey } = this.getAiServiceConfig();
+        const requestUrl = this.buildRequestUrl(baseUrl, request.path);
+
+        try {
+            const response: AxiosResponse<T> = await this.httpService.axiosRef.post<T>(
+                requestUrl,
+                request.body,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey,
+                    },
+                    timeout: 30_000,
+                }
+            );
+
+            return {
+                data: response.data,
+                status: response.status,
+                headers: this.extractHeaders(response.headers as Record<string, unknown>),
+            };
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                this.logger.error('AI POST JSON request failed', {
+                    url: requestUrl,
+                    status: error.response?.status,
+                    error: error.message,
+                });
+            } else {
+                this.logger.error('Unknown AI POST JSON request failure');
+            }
+
+            throw new BusinessException(ErrorCode.AI_RELAY_REQUEST_FAILED);
         }
     }
 
@@ -100,5 +172,21 @@ export class HttpAiSseRelayAdapter extends AiSseRelayPort {
         }
 
         return null;
+    }
+
+    private getAiServiceConfig(): { baseUrl: string; apiKey: string } {
+        const baseUrl = this.configService.get<string>('AI_BASE_URL');
+        if (!baseUrl) {
+            this.logger.error('AI_BASE_URL is not configured');
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+        }
+
+        const apiKey = this.configService.get<string>('AI_SERVICE_API_KEY');
+        if (!apiKey) {
+            this.logger.error('AI_SERVICE_API_KEY is not configured');
+            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
+        }
+
+        return { baseUrl, apiKey };
     }
 }

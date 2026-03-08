@@ -9,6 +9,7 @@ export interface SocialUserAfterOAuth {
     nickname: string;
     email: string;
     socialType: LoginType;
+    refreshToken?: string;
 }
 
 export type UserAfterAuth = JwtPayload & {

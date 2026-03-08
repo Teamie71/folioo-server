@@ -2,7 +2,7 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AiPdfExtractPort } from 'src/common/ports/ai-pdf-extract.port';
-import { AiSseRelayPort } from 'src/common/ports/ai-sse-relay.port';
+import { AiRelayPort } from 'src/common/ports/ai-relay.port';
 import { HttpAiPdfExtractAdapter } from './http-ai-pdf-extract.adapter';
 import { HttpAiSseRelayAdapter } from './http-ai-sse-relay.adapter';
 
@@ -11,7 +11,7 @@ import { HttpAiSseRelayAdapter } from './http-ai-sse-relay.adapter';
     providers: [
         HttpAiSseRelayAdapter,
         {
-            provide: AiSseRelayPort,
+            provide: AiRelayPort,
             useExisting: HttpAiSseRelayAdapter,
         },
         HttpAiPdfExtractAdapter,
@@ -20,6 +20,6 @@ import { HttpAiSseRelayAdapter } from './http-ai-sse-relay.adapter';
             useExisting: HttpAiPdfExtractAdapter,
         },
     ],
-    exports: [AiSseRelayPort, AiPdfExtractPort],
+    exports: [AiRelayPort, AiPdfExtractPort],
 })
 export class AiRelayModule {}

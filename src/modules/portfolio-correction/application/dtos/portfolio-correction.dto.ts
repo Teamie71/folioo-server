@@ -13,6 +13,7 @@ import {
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
+import { CorrectionPortfolioSelection } from '../../domain/correction-portfolio-selection.entity';
 
 export class CorrectionResDTO {
     id: number;
@@ -31,18 +32,41 @@ export class CorrectionResDTO {
 }
 
 export class CreateCorrectionReqDTO {
+    @ApiProperty({
+        description: '첨삭 제목',
+        example: '백엔드 개발자 포트폴리오 첨삭',
+    })
+    @Transform(({ value }: { value: string }) => value?.trim())
+    @IsString()
+    @MinLength(1)
+    @MaxLength(20)
+    title: string;
+
+    @ApiProperty({
+        description: '지원 회사명',
+        example: 'Folioo',
+    })
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsString()
     @MinLength(1)
     @MaxLength(20)
     companyName: string;
 
+    @ApiProperty({
+        description: '지원 포지션명',
+        example: 'Backend Developer',
+    })
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsString()
     @MinLength(1)
     @MaxLength(20)
     positionName: string;
 
+    @ApiProperty({
+        description: '채용 공고 또는 직무 설명',
+        example: 'NestJS 기반 백엔드 서비스 개발 및 운영',
+        required: false,
+    })
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
@@ -52,6 +76,11 @@ export class CreateCorrectionReqDTO {
     @IsEnum(JobDescriptionType)
     @ApiProperty({ enum: JobDescriptionType, example: JobDescriptionType.TEXT })
     jobDescriptionType: JobDescriptionType;
+}
+
+export class CreateCorrectionResDTO {
+    correctionId: number;
+    message: string;
 }
 
 export class CorrectionStatusResDTO {
@@ -73,6 +102,18 @@ export class MapCorrectionWithPortfoliosReqDTO {
     @ArrayNotEmpty()
     @IsNumber({}, { each: true })
     portfolioIds: number[];
+}
+
+export class CorrectionSelectionResDTO {
+    portfolioId: number;
+    isActive: boolean;
+
+    static from(selection: CorrectionPortfolioSelection): CorrectionSelectionResDTO {
+        const dto = new CorrectionSelectionResDTO();
+        dto.portfolioId = selection.portfolio.id;
+        dto.isActive = selection.isActive;
+        return dto;
+    }
 }
 
 export class UpdateCorrectionTitleReqDTO {

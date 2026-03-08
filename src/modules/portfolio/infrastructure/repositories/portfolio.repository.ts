@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Portfolio } from '../../domain/portfolio.entity';
+import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 import { SourceType } from '../../domain/enums/source-type.enum';
 
 @Injectable()
@@ -21,6 +22,13 @@ export class PortfolioRepository {
         });
     }
 
+    async findByIdWithExperience(id: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: { id },
+            relations: { experience: true, user: true },
+        });
+    }
+
     async findByIdAndUserId(id: number, userId: number): Promise<Portfolio | null> {
         return this.portfolioRepository.findOne({
             where: { id, user: { id: userId } },
@@ -37,28 +45,56 @@ export class PortfolioRepository {
         });
     }
 
-    async findExternalByIds(ids: number[]): Promise<Portfolio[]> {
-        if (ids.length === 0) return [];
-        return this.portfolioRepository.find({
+    async findExternalByIdAndUserId(
+        portfolioId: number,
+        userId: number
+    ): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
             where: {
-                id: In(ids),
-                sourceType: SourceType.EXTERNAL,
-            },
-        });
-    }
-
-    async findExternalByIdsAndUserId(ids: number[], userId: number): Promise<Portfolio[]> {
-        if (ids.length === 0) return [];
-        return this.portfolioRepository.find({
-            where: {
-                id: In(ids),
+                id: portfolioId,
                 sourceType: SourceType.EXTERNAL,
                 user: { id: userId },
             },
         });
     }
 
+    async findByIdsAndUserId(ids: number[], userId: number): Promise<Portfolio[]> {
+        if (ids.length === 0) return [];
+        return this.portfolioRepository.find({
+            where: {
+                id: In(ids),
+                user: { id: userId },
+            },
+        });
+    }
+
+    async findByIds(ids: number[]): Promise<Portfolio[]> {
+        if (ids.length === 0) return [];
+        return this.portfolioRepository.find({
+            where: {
+                id: In(ids),
+            },
+        });
+    }
+
+    async findAllCompletedByUserId(userId: number): Promise<Portfolio[]> {
+        return this.portfolioRepository.find({
+            where: {
+                user: { id: userId },
+                status: PortfolioStatus.COMPLETED,
+            },
+            relations: { experience: true },
+            order: { createdAt: 'DESC' },
+        });
+    }
+
     async deleteById(portfolioId: number): Promise<void> {
         await this.portfolioRepository.delete(portfolioId);
+    }
+
+    async findByExperienceId(experienceId: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: { experience: { id: experienceId } },
+        });
     }
 }

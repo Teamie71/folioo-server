@@ -19,8 +19,9 @@ export class KakaoStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    validate(_accessToken: string, _refreshToken: string, profile: Profile): SocialUserAfterOAuth {
+    validate(_accessToken: string, refreshToken: string, profile: Profile): SocialUserAfterOAuth {
         const raw = profile._json as unknown as KakaoRawData;
+        const normalizedRefreshToken = getOptionalSocialProfileField(refreshToken);
         const user: SocialUserAfterOAuth = {
             id: requireSocialProfileField(raw.id, 'id', LoginType.KAKAO),
             nickname:
@@ -28,6 +29,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy) {
                 getOptionalSocialProfileField(raw.properties?.nickname),
             email: getOptionalSocialProfileField(raw.kakao_account?.email),
             socialType: LoginType.KAKAO,
+            refreshToken: normalizedRefreshToken || undefined,
         };
         return user;
     }

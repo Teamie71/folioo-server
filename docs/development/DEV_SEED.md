@@ -1,7 +1,7 @@
 # Dev Seed
 
-This project does not use database migrations yet.
-In `local`/`dev` profiles, TypeORM runs with `synchronize: true` (see `src/config/typeorm-config.ts`).
+This project uses Supabase SQL migrations for schema changes.
+TypeORM `synchronize` is disabled in all profiles (see `src/config/typeorm-config.ts`).
 
 To avoid empty dev databases blocking manual tests and smoke tests, we seed minimal reference data on app startup.
 
@@ -70,7 +70,7 @@ curl -s http://localhost:3000/ticket-products | jq '.result | length'
 # Expected: 6
 
 # Dev server
-curl -s https://folioo-dev-api.log8.kr/ticket-products | jq '.result | length'
+curl -s https://dev-api.folioo.ai.kr/ticket-products | jq '.result | length'
 # Expected: 6
 ```
 
@@ -82,14 +82,19 @@ If the seed ran correctly, preflight succeeds and subsequent `POST /payments` us
 ## After a DB reset
 
 If the dev database is wiped (see `docs/development/DEV_DB_RESET.md`), simply restart the server.
-TypeORM `synchronize: true` recreates tables, and the seed service re-inserts all 6 products on the next startup.
+After applying required migrations, the seed service re-inserts all 6 products on the next startup.
+
+**로컬** 환경에서 DB를 초기화하려면:
 
 ```bash
-# 1. Reset DB (deletes all data)
-docker compose --env-file .env.dev -f docker-compose.dev.yml down -v
-docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --force-recreate --wait
+# 1. Reset local DB (deletes all data)
+docker compose down -v
+docker compose up -d --force-recreate --wait
 
 # 2. Server restart triggers seed automatically
 # 3. Verify
-curl -s https://folioo-dev-api.log8.kr/ticket-products | jq '.result | length'
+curl -s http://localhost:3000/ticket-products | jq '.result | length'
 ```
+
+**dev 서버**는 Supabase 외부 DB를 사용하므로, DB 초기화가 필요하면 Supabase 대시보드를 사용하세요.
+앱 재시작만 필요한 경우 `supabase db push` 없이 컨테이너만 재시작하면 seed가 자동 실행됩니다.

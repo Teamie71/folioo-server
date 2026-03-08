@@ -38,7 +38,7 @@ export class CorrectionItem extends BaseEntity {
     @ManyToOne(() => PortfolioCorrection, { onDelete: 'CASCADE' })
     portfolioCorrection: PortfolioCorrection;
 
-    @ManyToOne(() => Portfolio, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Portfolio, { onDelete: 'RESTRICT' })
     portfolio: Portfolio;
 
     static create(portfolio: Portfolio, portfolioCorrection: PortfolioCorrection): CorrectionItem {

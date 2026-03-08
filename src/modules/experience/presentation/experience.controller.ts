@@ -1,7 +1,18 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
@@ -30,7 +41,6 @@ export class ExperienceController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_MAX_LIMIT,
-        ErrorCode.DUPLICATE_EXPERIENCE_NAME,
         ErrorCode.INSUFFICIENT_TICKETS
     )
     async createExperience(
@@ -77,16 +87,32 @@ export class ExperienceController {
         description: '경험 정리의 제목 또는 희망 직무를 수정합니다.',
     })
     @ApiCommonResponse(ExperienceResDTO)
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.EXPERIENCE_NOT_FOUND,
-        ErrorCode.DUPLICATE_EXPERIENCE_NAME
-    )
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.EXPERIENCE_NOT_FOUND)
     async updateExperience(
         @User('sub') userId: number,
         @Param('experienceId', ParseIntPipe) experienceId: number,
         @Body() body: UpdateExperienceReqDTO
     ): Promise<ExperienceResDTO> {
         return this.experienceFacade.updateExperience(experienceId, userId, body);
+    }
+
+    @Delete(':experienceId')
+    @ApiOperation({
+        summary: '경험 정리 삭제',
+        description:
+            '경험 정리를 삭제합니다. 연결된 포트폴리오가 있으면 함께 삭제됩니다. 연결된 첨삭이 존재하는 경우 삭제할 수 없습니다.',
+    })
+    @ApiCommonMessageResponse('경험 정리가 성공적으로 삭제되었습니다.')
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EXPERIENCE_NOT_FOUND,
+        ErrorCode.EXPERIENCE_HAS_CORRECTIONS
+    )
+    async deleteExperience(
+        @User('sub') userId: number,
+        @Param('experienceId', ParseIntPipe) experienceId: number
+    ): Promise<string> {
+        await this.experienceFacade.deleteExperience(experienceId, userId);
+        return '경험 정리가 성공적으로 삭제되었습니다.';
     }
 }

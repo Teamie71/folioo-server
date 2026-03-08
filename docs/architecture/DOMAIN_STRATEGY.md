@@ -36,15 +36,21 @@
 
 ## 도메인 분류
 
-| 도메인                   | 분류    | 설명                                                |
-| ------------------------ | ------- | --------------------------------------------------- |
-| **Experience**           | Core    | 경험 정리 (AI 채팅 포함), 서비스의 핵심 기능        |
-| **Portfolio**            | Core    | 경험 정리의 결과물, 첨삭의 소스로 사용              |
-| **Portfolio-Correction** | Core    | 포트폴리오 첨삭 서비스                              |
-| **Insight**              | Core    | 인사이트/팁 정리                                    |
-| **User**                 | Generic | 사용자 도메인 (추후 userAuth-userProfile 분리 가능) |
-| **Auth**                 | Generic | 인증 (passport - kakao/google/apple)                |
-| **Payment**              | Generic | 결제 (예정)                                         |
+| 도메인                   | 분류       | 설명                                                  |
+| ------------------------ | ---------- | ----------------------------------------------------- |
+| **Experience**           | Core       | 경험 정리 (AI 채팅 포함), 서비스의 핵심 기능          |
+| **Interview**            | Core       | AI 인터뷰 세션 관리 (SSE 스트림 기반 채팅, 연장 모드) |
+| **Portfolio**            | Core       | 경험 정리의 결과물, 첨삭의 소스로 사용                |
+| **Portfolio-Correction** | Core       | 포트폴리오 첨삭 서비스 (RAG 파이프라인, 기업 분석)    |
+| **Insight**              | Core       | 인사이트/팁 정리 (벡터 유사도 검색)                   |
+| **Event**                | Core       | 이벤트/챌린지 관리, 참여 추적, 보상 수령              |
+| **User**                 | Generic    | 사용자 도메인 (추후 userAuth-userProfile 분리 가능)   |
+| **Auth**                 | Generic    | 인증 (passport - kakao/google/naver)                  |
+| **Ticket**               | Generic    | 이용권 관리 (발급, 차감, 만료 추적)                   |
+| **Payment**              | Generic    | 결제 (PayApp 연동, 웹훅 처리, 취소)                   |
+| **Admin**                | Supporting | 관리자 대시보드 (이용권 수동 지급, 사용자 검색)       |
+| **Internal**             | Supporting | AI 서버 연동 내부 API (X-API-Key 인증, 콜백 수신)     |
+| **Embedding**            | Infra      | 벡터 임베딩 인프라 (pgvector, 코사인 유사도 검색)     |
 
 ---
 
@@ -60,7 +66,7 @@ src/
             ├── strategies/       # Passport 전략
             │   ├── kakao.strategy.ts
             │   ├── google.strategy.ts
-            │   └── apple.strategy.ts
+            │   └── naver.strategy.ts
             └── guards/           # 인증 가드
 ```
 
@@ -100,3 +106,4 @@ Client (PDF)
 | 버전  | 날짜       | 변경 내용                                                                |
 | ----- | ---------- | ------------------------------------------------------------------------ |
 | 1.0.0 | 2026-02-03 | ARCHITECTURE.md 파일을 물리적 구조와 도메인 설계 및 전략을 기준으로 분리 |
+| 2.0.0 | 2026-03-08 | 실제 모듈 13개 전체 반영, apple→naver 전략 수정, Payment 구현 완료 반영  |

@@ -42,6 +42,9 @@ COPY --from=builder /app/node_modules ./node_modules
 # 빌드 결과물 복사
 COPY --from=builder /app/dist ./dist
 
+# Admin 프론트엔드 정적 파일 복사
+COPY --from=builder /app/admin-client ./admin-client
+
 # 소유권 변경
 RUN chown -R nestjs:nodejs /app
 

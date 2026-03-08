@@ -1,7 +1,7 @@
 # Dev DB Reset
 
-When changing DB naming policy (snake_case) or TypeORM schema options, the dev DB may become inconsistent.
-In `dev`/`local` profiles, this project runs TypeORM with `synchronize: true`, so resetting the DB is the fastest way to recover.
+When changing DB naming policy (snake_case) or schema definitions, the dev DB may become inconsistent.
+This project uses Supabase SQL migrations and keeps TypeORM `synchronize` disabled.
 
 ## Dev/Prod 서버
 

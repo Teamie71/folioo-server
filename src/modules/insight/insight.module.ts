@@ -30,5 +30,6 @@ import { InsightFacade } from './application/facades/insight.facade';
         InsightActivityService,
         ActivityService,
     ],
+    exports: [InsightService],
 })
 export class InsightModule {}

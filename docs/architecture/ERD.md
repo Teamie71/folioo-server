@@ -7,25 +7,28 @@
 
 ## 테이블 목록
 
-| 도메인                   | 테이블                      | 설명                      |
-| ------------------------ | --------------------------- | ------------------------- |
-| **user**                 | `users`                     | 사용자 정보               |
-|                          | `social_user`               | 소셜 로그인 정보          |
-|                          | `user_agreement`            | 약관 동의                 |
-| **experience**           | `experience`                | 경험 정리                 |
-|                          | `experience_source`         | 경험 정리 파일 (OCR 추출) |
-| **portfolio**            | `portfolio`                 | 포트폴리오                |
-| **portfolio-correction** | `portfolio_correction`      | 포트폴리오 첨삭           |
-|                          | `correction_item`           | 첨삭 항목                 |
-| **insight**              | `insight`                   | 인사이트                  |
-|                          | `insight_activity`          | 인사이트-활동 매핑        |
-|                          | `activity`                  | 활동                      |
-| **ticket**               | `ticket_product`            | 이용권 상품 (구매용)      |
-|                          | `ticket`                    | 이용권 (보유/사용 추적)   |
-| **payment**              | `payment`                   | PayApp 결제 건            |
-| **event**                | `event`                     | 이벤트 정의               |
-|                          | `event_participation`       | 이벤트 참여/진행도        |
-|                          | `event_feedback_submission` | 이벤트 피드백 제출 이력   |
+| 도메인                   | 테이블                           | 설명                      |
+| ------------------------ | -------------------------------- | ------------------------- |
+| **user**                 | `users`                          | 사용자 정보               |
+|                          | `social_user`                    | 소셜 로그인 정보          |
+|                          | `user_agreement`                 | 약관 동의                 |
+| **experience**           | `experience`                     | 경험 정리                 |
+|                          | `experience_source`              | 경험 정리 파일 (OCR 추출) |
+| **portfolio**            | `portfolio`                      | 포트폴리오                |
+| **portfolio-correction** | `portfolio_correction`           | 포트폴리오 첨삭           |
+|                          | `correction_portfolio_selection` | 첨삭-포트폴리오 선택 매핑 |
+|                          | `correction_item`                | 첨삭 항목                 |
+| **insight**              | `insight`                        | 인사이트                  |
+|                          | `insight_activity`               | 인사이트-활동 매핑        |
+|                          | `activity`                       | 활동                      |
+| **ticket**               | `ticket_product`                 | 이용권 상품 (구매용)      |
+|                          | `ticket`                         | 이용권 (보유/사용 추적)   |
+|                          | `ticket_grant`                   | 이용권 지급 ledger        |
+|                          | `ticket_grant_notice`            | 이용권 지급 안내 ledger   |
+| **payment**              | `payment`                        | PayApp 결제 건            |
+| **event**                | `event`                          | 이벤트 정의               |
+|                          | `event_participation`            | 이벤트 참여/진행도        |
+|                          | `event_feedback_submission`      | 이벤트 피드백 제출 이력   |
 
 ---
 
@@ -42,14 +45,21 @@ users
    │
    ├── 1:N ─ portfolio ─── N:1 ─ experience (경험에서 생성, nullable)
    │
+   ├── 1:N ─ portfolio_correction ─── 1:N ─ correction_portfolio_selection
+   │                                        └─── N:1 ─ portfolio
+   │
    ├── 1:N ─ portfolio_correction ─── 1:N ─ correction_item
    │                                        └─── N:1 ─ portfolio
    │
     ├── 1:N ─ activity ─── N:N ─ insight_activity ─── N:N ─ insight
     │
-   ├── 1:N ─ ticket (이용권 보유)
-   │           ├── N:1 ─ payment (구매로 획득 시)
-   │           └── N:1 ─ event_participation (이벤트로 획득 시)
+    ├── 1:N ─ ticket_grant ─── 1:N ─ ticket_grant_notice
+    │           └── 1:N ─ ticket (지급 ledger 기반 추적)
+    │
+    ├── 1:N ─ ticket (이용권 보유)
+    │           ├── N:1 ─ payment (구매로 획득 시)
+    │           ├── N:1 ─ event_participation (이벤트로 획득 시)
+    │           └── N:1 ─ ticket_grant (지급 ledger 연결, nullable)
    │
    ├── 1:N ─ payment ─── N:1 ─ ticket_product (이용권 상품)
    │
@@ -87,7 +97,10 @@ InsightCategory: '대인관계' | '문제해결' | '학습' | '레퍼런스' | '
 // 이용권
 TicketType: 'EXPERIENCE' | 'PORTFOLIO_CORRECTION';
 TicketStatus: 'AVAILABLE' | 'USED' | 'EXPIRED';
-TicketSource: 'PURCHASE' | 'EVENT';
+TicketSource: 'PURCHASE' | 'EVENT' | 'ADMIN';
+TicketGrantSourceType: 'EVENT' | 'SIGNUP' | 'ADMIN' | 'COMPENSATION' | 'PURCHASE';
+TicketGrantActorType: 'SYSTEM' | 'ADMIN' | 'INTERNAL_API';
+TicketGrantNoticeStatus: 'PENDING' | 'SHOWN' | 'DISMISSED';
 
 // 결제 (PayApp 연동)
 PaymentStatus: 'REQUESTED' | 'WAITING' | 'PAID' | 'CANCELLED' | 'REFUNDED' | 'PARTIAL_REFUNDED';
@@ -214,6 +227,17 @@ PayType: 'CARD' |
 | portfolio_correction_id | number           | FK → portfolio_correction.id |
 | portfolio_id            | number           | FK → portfolio.id            |
 
+### correction_portfolio_selection (첨삭-포트폴리오 선택 매핑)
+
+| 컬럼                    | 타입    | 설명                         |
+| ----------------------- | ------- | ---------------------------- |
+| id                      | number  | PK                           |
+| portfolio_correction_id | number  | FK → portfolio_correction.id |
+| portfolio_id            | number  | FK → portfolio.id            |
+| is_active               | boolean | 선택 활성화 여부             |
+
+> **Note**: `portfolio_correction_id + portfolio_id` 복합 unique로 동일 첨삭 내 중복 선택 매핑을 방지합니다.
+
 ### insight (인사이트)
 
 | 컬럼        | 타입         | 설명          |
@@ -264,13 +288,50 @@ PayType: 'CARD' |
 | user_id                | number        | FK → users.id                                  |
 | type                   | ENUM          | 이용권 타입 (EXPERIENCE, PORTFOLIO_CORRECTION) |
 | status                 | ENUM          | 상태 (AVAILABLE, USED, EXPIRED) NOT NULL       |
-| source                 | ENUM          | 획득 경로 (PURCHASE, EVENT) NOT NULL           |
+| source                 | ENUM          | 획득 경로 (PURCHASE, EVENT, ADMIN) NOT NULL    |
 | payment_id             | number (null) | FK → payment.id (구매 시)                      |
 | event_participation_id | number (null) | FK → event_participation.id (이벤트 시)        |
+| ticket_grant_id        | number (null) | FK → ticket_grant.id (지급 ledger 연결)        |
 | used_at                | datetime      | 사용 일시 (nullable)                           |
 | expired_at             | datetime      | 만료 일시 (nullable)                           |
 
-> **Note**: 3회권 구매 시 `ticket` 레코드 3개 생성. 잔여 이용권 조회 = `SELECT COUNT(*) FROM ticket WHERE user_id = ? AND type = ? AND status = 'AVAILABLE'`
+> **Note**: 3회권 구매 시 `ticket` 레코드 3개 생성. 잔여 이용권 조회 = `SELECT COUNT(*) FROM ticket WHERE user_id = ? AND type = ? AND status = 'AVAILABLE'`. `ticket_grant_id`는 지급 ledger와 실제 인벤토리를 느슨하게 연결하는 추적용 컬럼입니다.
+
+### ticket_grant (이용권 지급 ledger)
+
+| 컬럼            | 타입                | 설명                                                                    |
+| --------------- | ------------------- | ----------------------------------------------------------------------- |
+| id              | number              | PK                                                                      |
+| user_id         | number              | FK → users.id                                                           |
+| source_type     | ENUM                | 지급 출처 분류 (`EVENT`, `SIGNUP`, `ADMIN`, `COMPENSATION`, `PURCHASE`) |
+| source_ref_id   | number (null)       | event_participation.id / payment.id 등 출처 참조 ID                     |
+| actor_type      | ENUM                | 지급 수행 주체 (`SYSTEM`, `ADMIN`, `INTERNAL_API`)                      |
+| actor_id        | varchar(64) (null)  | 운영자 또는 시스템 식별자                                               |
+| reason_code     | varchar(64) (null)  | 내부 reason 분류 코드                                                   |
+| reason_text     | varchar(500) (null) | 운영 메모/지급 사유                                                     |
+| reward_snapshot | jsonb               | 지급 당시 이용권 구성 스냅샷                                            |
+| granted_at      | datetime            | 실제 지급 시각                                                          |
+
+> **Note**: `ticket_grant`는 지급 사실과 운영 맥락을 남기는 ledger입니다. `ticket`은 실제 인벤토리, `ticket_grant_notice`는 사용자 노출 상태를 담당합니다.
+
+### ticket_grant_notice (이용권 지급 안내 ledger)
+
+| 컬럼            | 타입                | 설명                                        |
+| --------------- | ------------------- | ------------------------------------------- |
+| id              | number              | PK                                          |
+| ticket_grant_id | number              | FK → ticket_grant.id                        |
+| user_id         | number              | FK → users.id                               |
+| status          | ENUM                | 안내 상태 (`PENDING`, `SHOWN`, `DISMISSED`) |
+| title           | varchar(100)        | 사용자 노출 제목                            |
+| body            | text                | 사용자 노출 본문                            |
+| cta_text        | varchar(50) (null)  | CTA 문구                                    |
+| cta_link        | varchar(255) (null) | CTA 링크                                    |
+| payload         | jsonb (null)        | 프론트 확장용 payload                       |
+| shown_at        | datetime (null)     | 최초 노출 시각                              |
+| dismissed_at    | datetime (null)     | 닫기 처리 시각                              |
+| expires_at      | datetime (null)     | 노출 만료 시각                              |
+
+> **Note**: 사용자에게 보여줄 문구와 내부 운영 사유를 분리하기 위해 별도 ledger로 관리합니다. 여러 기기/세션에서도 서버 기준으로 안내 상태를 추적합니다.
 
 ### payment (결제 — PayApp 연동)
 
@@ -358,22 +419,25 @@ PayType: 'CARD' |
 
 > PostgreSQL은 FK에 자동 인덱스를 생성하지 않음. 아래 FK 컬럼에 `@Index()` 필요.
 
-| 테이블                      | 인덱스 대상 컬럼                                                              | 비고                |
-| --------------------------- | ----------------------------------------------------------------------------- | ------------------- |
-| `social_user`               | `user_id`                                                                     |                     |
-| `user_agreement`            | `user_id`                                                                     |                     |
-| `experience`                | `user_id`                                                                     |                     |
-| `experience_source`         | `experience_id`                                                               |                     |
-| `portfolio`                 | `user_id`, `experience_id`                                                    |                     |
-| `portfolio_correction`      | `user_id`                                                                     |                     |
-| `correction_item`           | `portfolio_correction_id`, `portfolio_id`                                     |                     |
-| `insight`                   | `user_id`                                                                     |                     |
-| `insight_activity`          | `insight_id`, `activity_id`                                                   |                     |
-| `activity`                  | `user_id`                                                                     |                     |
-| `ticket`                    | `user_id`, `payment_id`, `event_participation_id`                             |                     |
-| `payment`                   | `user_id`, `ticket_product_id`                                                |                     |
-| `event_participation`       | `user_id`, `event_id` — **UNIQUE 복합키**                                     | 중복 참여 방지      |
-| `event_feedback_submission` | `event_id`, `user_id`, `phone_num`, `event_id+external_submission_id`(UNIQUE) | 외부 제출 이력/멱등 |
+| 테이블                           | 인덱스 대상 컬럼                                                               | 비고                |
+| -------------------------------- | ------------------------------------------------------------------------------ | ------------------- |
+| `social_user`                    | `user_id`                                                                      |                     |
+| `user_agreement`                 | `user_id`                                                                      |                     |
+| `experience`                     | `user_id`                                                                      |                     |
+| `experience_source`              | `experience_id`                                                                |                     |
+| `portfolio`                      | `user_id`, `experience_id`                                                     |                     |
+| `portfolio_correction`           | `user_id`                                                                      |                     |
+| `correction_portfolio_selection` | `portfolio_correction_id`, `portfolio_id`, `portfolio_correction_id+is_active` | 선택 조회 최적화    |
+| `correction_item`                | `portfolio_correction_id`, `portfolio_id`                                      |                     |
+| `insight`                        | `user_id`                                                                      |                     |
+| `insight_activity`               | `insight_id`, `activity_id`                                                    |                     |
+| `activity`                       | `user_id`                                                                      |                     |
+| `ticket`                         | `user_id`, `payment_id`, `event_participation_id`, `ticket_grant_id`           |                     |
+| `ticket_grant`                   | `user_id`, `source_type+source_ref_id`, `actor_type+actor_id`                  | 지급 ledger 조회    |
+| `ticket_grant_notice`            | `ticket_grant_id`, `user_id+status`, `status='PENDING'` partial index          | 엔트리 notice 조회  |
+| `payment`                        | `user_id`, `ticket_product_id`                                                 |                     |
+| `event_participation`            | `user_id`, `event_id` — **UNIQUE 복합키**                                      | 중복 참여 방지      |
+| `event_feedback_submission`      | `event_id`, `user_id`, `phone_num`, `event_id+external_submission_id`(UNIQUE)  | 외부 제출 이력/멱등 |
 
 ---
 
@@ -381,6 +445,8 @@ PayType: 'CARD' |
 
 | 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                    |
 | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.7.0 | 2026-03-08 | 이용권 지급/노출 분리 구조 반영 — `ticket_grant`, `ticket_grant_notice` 추가, `ticket.ticket_grant_id` 연결, `TicketSource.ADMIN` 반영, 기존 이벤트/결제/운영 지급 흐름과의 공존 구조 문서화                                                                                                 |
+| 2.6.0 | 2026-03-03 | 포트폴리오 첨삭 선택 매핑 테이블(`correction_portfolio_selection`) 추가 및 관련 인덱스 설계 반영                                                                                                                                                                                             |
 | 2.5.0 | 2026-02-25 | 이벤트 하이브리드 스키마 보강 — `event.ui_config`, `event.ops_config`, `event_participation.reward_status/granted_by/grant_reason` 추가, `event_feedback_submission` 신규(외부 피드백 이력/멱등 처리), 운영 수동 지급 시나리오 반영                                                          |
 | 2.4.0 | 2026-02-09 | 이벤트 도메인 설계 보완 — `event_participation` UNIQUE(user_id, event_id) 추가, jsonb 타입 안전성 가이드 추가, 동시성 처리 가이드 추가                                                                                                                                                       |
 | 2.3.0 | 2026-02-07 | Insight-Activity N:M 관계 재설계 — `insight_activity` 매핑 테이블 추가, `insight.activity_id` 제거. 인사이트는 pgvector 기반으로 관리.                                                                                                                                                       |

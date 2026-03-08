@@ -12,6 +12,10 @@ export class CorrectionItemService {
         return this.correctionItemRepository.save(correctionItem);
     }
 
+    saveAll(correctionItems: CorrectionItem[]): Promise<CorrectionItem[]> {
+        return this.correctionItemRepository.saveAll(correctionItems);
+    }
+
     async createCorrectionItem(
         portfolio: Portfolio,
         correction: PortfolioCorrection

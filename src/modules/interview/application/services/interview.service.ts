@@ -1,22 +1,27 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { AiSseRelayConnection, AiSseRelayPort } from 'src/common/ports/ai-sse-relay.port';
-import { SendInterviewChatReqDTO } from '../dtos/interview.dto';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { AiRelayConnection, AiRelayPort } from 'src/common/ports/ai-relay.port';
+import {
+    AiInterviewSessionStateResponse,
+    InterviewSessionStateResDTO,
+} from '../dtos/interview.dto';
 
 const CREATE_SESSION_STREAM_PATH = '/api/v1/interview/sessions/stream';
+const SESSION_BASE_PATH = '/api/v1/interview/sessions';
+
+const sessionPath = (sessionId: string, suffix: string): string =>
+    `${SESSION_BASE_PATH}/${encodeURIComponent(sessionId)}${suffix}`;
 
 @Injectable()
 export class InterviewService {
+    private readonly logger = new Logger(InterviewService.name);
+
     constructor(
-        @Inject(AiSseRelayPort)
-        private readonly aiSseRelayPort: AiSseRelayPort
+        @Inject(AiRelayPort)
+        private readonly aiRelayPort: AiRelayPort
     ) {}
 
-    async createSessionStream(
-        userId: number,
-        experienceName: string
-    ): Promise<AiSseRelayConnection> {
-        // TODO(interview): Add DB-backed pre-processing before relaying session-create request.
-        return this.aiSseRelayPort.openPostStream({
+    async createSessionStream(userId: number, experienceName: string): Promise<AiRelayConnection> {
+        return this.aiRelayPort.openPostStream({
             path: CREATE_SESSION_STREAM_PATH,
             body: {
                 user_id: String(userId),
@@ -27,14 +32,44 @@ export class InterviewService {
 
     async sendChatStream(
         sessionId: string,
-        dto: SendInterviewChatReqDTO
-    ): Promise<AiSseRelayConnection> {
-        return this.aiSseRelayPort.openPostStream({
-            path: `/api/v1/interview/sessions/${encodeURIComponent(sessionId)}/chat/stream`,
+        message: string,
+        mentionedInsightIds: number[]
+    ): Promise<AiRelayConnection> {
+        return this.aiRelayPort.openPostStream({
+            path: sessionPath(sessionId, '/chat/stream'),
             body: {
-                message: dto.message,
-                file_ids: dto.fileIds ?? [],
-                mentioned_insight_ids: dto.insightIds ?? [],
+                message,
+                mentioned_insight_ids: mentionedInsightIds.map(String),
+            },
+        });
+    }
+
+    async extendSessionStream(sessionId: string): Promise<AiRelayConnection> {
+        return this.aiRelayPort.openPostStream({
+            path: sessionPath(sessionId, '/extend/stream'),
+            body: {},
+        });
+    }
+
+    async getSessionState(sessionId: string): Promise<InterviewSessionStateResDTO> {
+        const response = await this.aiRelayPort.getJson<AiInterviewSessionStateResponse>({
+            path: sessionPath(sessionId, '/state'),
+        });
+
+        return InterviewSessionStateResDTO.fromAiPayload(response.data);
+    }
+
+    async delegatePortfolioGeneration(
+        portfolioId: number,
+        sessionId: string,
+        userId: string
+    ): Promise<void> {
+        await this.aiRelayPort.postJson({
+            path: '/api/v1/portfolio/generate',
+            body: {
+                portfolio_id: portfolioId,
+                session_id: sessionId,
+                user_id: userId,
             },
         });
     }

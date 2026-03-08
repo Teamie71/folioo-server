@@ -52,4 +52,19 @@ export class SocialUserRepository {
             email: socialUser.email,
         }));
     }
+
+    async findByUserId(userId: number): Promise<SocialUser | null> {
+        return await this.socialUserRepository.findOne({
+            where: {
+                userId,
+            },
+            order: {
+                id: 'ASC',
+            },
+        });
+    }
+
+    async deleteByUserId(userId: number): Promise<void> {
+        await this.socialUserRepository.delete({ userId });
+    }
 }

@@ -155,7 +155,7 @@ export class PaymentService {
             return payment;
         }
 
-        if (payment.status !== PaymentStatus.PAID) {
+        if (payment.status !== PaymentStatus.PAID && payment.status !== PaymentStatus.REQUESTED) {
             throw new BusinessException(ErrorCode.PAYMENT_CANCEL_NOT_ALLOWED);
         }
 

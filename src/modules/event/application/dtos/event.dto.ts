@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsPhoneNumber, IsString, MaxLength } from 'class-validator';
 import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
 
 export enum FeedbackModalVariant {
@@ -63,51 +62,6 @@ export class EventProgressCardResDTO {
 
     @ApiPropertyOptional({ example: '/insights', nullable: true })
     ctaLink: string | null;
-}
-
-export class GrantFeedbackRewardReqDTO {
-    @ApiProperty({ description: '보상 대상 전화번호', example: '01012345678' })
-    @IsString()
-    @IsPhoneNumber('KR')
-    phoneNum: string;
-
-    @ApiPropertyOptional({
-        description: '외부 제출 건 ID(멱등 키)',
-        example: 'google-form-row-123',
-    })
-    @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    externalSubmissionId?: string;
-
-    @ApiPropertyOptional({ description: '검토자 식별자', example: 'pm.lee' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(64)
-    reviewedBy?: string;
-
-    @ApiPropertyOptional({ description: '보상 메모', example: '유효 피드백 확인 완료' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(500)
-    reviewNote?: string;
-}
-
-export class GrantFeedbackRewardResDTO {
-    @ApiProperty({ example: 'FEEDBACK_REWARD' })
-    eventCode: string;
-
-    @ApiProperty({ example: 11 })
-    userId: number;
-
-    @ApiProperty({ example: '010****5678' })
-    maskedPhoneNum: string;
-
-    @ApiProperty({ enum: EventRewardStatus, example: EventRewardStatus.GRANTED })
-    rewardStatus: EventRewardStatus;
-
-    @ApiProperty({ example: '2026-02-25T08:30:00.000Z' })
-    rewardGrantedAt: string;
 }
 
 export class ClaimEventRewardResDTO {

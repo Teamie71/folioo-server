@@ -18,7 +18,7 @@
 services:
     # ── Production Blue Slot ──
     prod-blue:
-        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:latest
+        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server}:latest
         restart: unless-stopped
         env_file:
             - path: .env.prod
@@ -50,7 +50,7 @@ services:
 
     # ── Production Green Slot ──
     prod-green:
-        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-ai/folioo-docker/folioo-server}:latest
+        image: ${DOCKER_IMAGE:-asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server}:latest
         restart: unless-stopped
         env_file:
             - path: .env.prod

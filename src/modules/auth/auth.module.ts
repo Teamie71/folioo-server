@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuthController } from './presentation/auth.controller';
 import { LoginUsecase } from './application/usecases/login.usecase';
 import { KakaoStrategy } from './infrastructure/strategies/kakao.strategy';
@@ -17,6 +17,9 @@ import { JwtRefreshStrategy } from './infrastructure/strategies/jwt-refresh.stra
 import { StringValue } from 'ms';
 import { AuthTokenStoreService } from './infrastructure/services/auth-token-store.service';
 import { LogoutUsecase } from './application/usecases/logout.usecase';
+import { KakaoAuthGuard } from './infrastructure/guards/kakao-auth.guard';
+import { GoogleAuthGuard } from './infrastructure/guards/google-auth.guard';
+import { NaverAuthGuard } from './infrastructure/guards/naver-auth.guard';
 
 @Module({
     imports: [
@@ -31,12 +34,15 @@ import { LogoutUsecase } from './application/usecases/logout.usecase';
             }),
             inject: [ConfigService],
         }),
-        UserModule,
+        forwardRef(() => UserModule),
     ],
     controllers: [AuthController],
     providers: [
         LoginUsecase,
         LogoutUsecase,
+        KakaoAuthGuard,
+        GoogleAuthGuard,
+        NaverAuthGuard,
         KakaoStrategy,
         GoogleStrategy,
         NaverStrategy,
@@ -51,6 +57,6 @@ import { LogoutUsecase } from './application/usecases/logout.usecase';
         JwtRefreshGuard,
         JwtRefreshStrategy,
     ],
-    exports: [JwtAuthGuard],
+    exports: [JwtAuthGuard, LogoutUsecase],
 })
 export class AuthModule {}

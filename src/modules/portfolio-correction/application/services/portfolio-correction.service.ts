@@ -15,13 +15,22 @@ import {
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItemService } from './correction-item.service';
+import { CorrectionPortfolioSelectionService } from './correction-portfolio-selection.service';
 import { UpdateCorrectionTitleReqDTO } from '../dtos/portfolio-correction.dto';
+import { CorrectionItem } from '../../domain/correction-item.entity';
+
+export interface InternalCorrectionPayload {
+    correction: PortfolioCorrection;
+    portfolioIds: number[];
+    items: CorrectionItem[];
+}
 
 @Injectable()
 export class PortfolioCorrectionService {
     constructor(
         private readonly portfolioCorrectionRepository: PortfolioCorrectionRepository,
-        private readonly correctionItemService: CorrectionItemService
+        private readonly correctionItemService: CorrectionItemService,
+        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService
     ) {}
 
     async getCorrections(userId: number, keyword?: string): Promise<CorrectionResDTO[]> {
@@ -41,6 +50,7 @@ export class PortfolioCorrectionService {
 
     createCorrection(
         userId: number,
+        title: string,
         companyName: string,
         positionName: string,
         jobDescription: string,
@@ -48,6 +58,7 @@ export class PortfolioCorrectionService {
     ): Promise<PortfolioCorrection> {
         const correction = PortfolioCorrection.create(
             userId,
+            title,
             companyName,
             positionName,
             jobDescription,
@@ -79,6 +90,8 @@ export class PortfolioCorrectionService {
     }
 
     async transitionToGenerating(correctionId: number): Promise<void> {
+        const correction = await this.findByIdOrThrow(correctionId);
+        this.validateStatusTransition(correction.status, CorrectionStatus.GENERATING);
         await this.portfolioCorrectionRepository.updateById(correctionId, {
             status: CorrectionStatus.GENERATING,
         });
@@ -94,22 +107,28 @@ export class PortfolioCorrectionService {
         userId: number
     ): Promise<UpdateCompanyInsightResDTO> {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
+
+        if (correction.companyInsight === null) {
+            throw new BusinessException(ErrorCode.COMPANY_INSIGHT_NOT_READY);
+        }
+
         return UpdateCompanyInsightResDTO.from(correction);
     }
 
-    async requestCompanyInsightCreation(correctionId: number, userId: number): Promise<void> {
+    async requestCompanyInsightCreation(correctionId: number, userId: number): Promise<boolean> {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
 
         if (correction.companyInsight !== null) {
             throw new BusinessException(ErrorCode.COMPANY_INSIGHT_ALREADY_EXISTS);
         }
 
-        if (correction.status === CorrectionStatus.COMPANY_INSIGHT) {
-            return;
+        if (correction.status === CorrectionStatus.DOING_RAG) {
+            return false;
         }
 
-        correction.status = CorrectionStatus.COMPANY_INSIGHT;
+        correction.status = CorrectionStatus.DOING_RAG;
         await this.portfolioCorrectionRepository.save(correction);
+        return true;
     }
 
     async updateCompanyInsight(
@@ -163,6 +182,121 @@ export class PortfolioCorrectionService {
         correction.title = body.title;
         const saved = await this.portfolioCorrectionRepository.save(correction);
         return CorrectionResDTO.from(saved);
+    }
+
+    async findByIdWithUser(correctionId: number): Promise<PortfolioCorrection> {
+        const correction = await this.portfolioCorrectionRepository.findByIdWithUser(correctionId);
+        if (!correction) {
+            throw new BusinessException(ErrorCode.CORRECTION_NOT_FOUND);
+        }
+        return correction;
+    }
+
+    async getInternalCorrectionDetail(correctionId: number): Promise<InternalCorrectionPayload> {
+        const correction = await this.findByIdWithUser(correctionId);
+        const [portfolioIds, items] = await Promise.all([
+            this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
+                correctionId
+            ),
+            this.correctionItemService.findByCorrectionId(correctionId),
+        ]);
+        return { correction, portfolioIds, items };
+    }
+
+    async updateStatusWithTransition(
+        correctionId: number,
+        newStatus: CorrectionStatus
+    ): Promise<void> {
+        const correction = await this.findByIdOrThrow(correctionId);
+        this.validateStatusTransition(correction.status, newStatus);
+        await this.portfolioCorrectionRepository.updateById(correctionId, { status: newStatus });
+    }
+
+    async saveCompanyInsightInternal(correctionId: number, companyInsight: string): Promise<void> {
+        const correction = await this.findByIdOrThrow(correctionId);
+        this.validateStatusTransition(correction.status, CorrectionStatus.COMPANY_INSIGHT);
+        correction.companyInsight = companyInsight;
+        correction.status = CorrectionStatus.COMPANY_INSIGHT;
+        await this.portfolioCorrectionRepository.save(correction);
+    }
+
+    private validateStatusTransition(
+        currentStatus: CorrectionStatus,
+        newStatus: CorrectionStatus
+    ): void {
+        if (currentStatus === newStatus) {
+            return;
+        }
+
+        if (newStatus === CorrectionStatus.FAILED) {
+            return;
+        }
+
+        const allowedTransitions: Record<CorrectionStatus, CorrectionStatus[]> = {
+            [CorrectionStatus.NOT_STARTED]: [CorrectionStatus.DOING_RAG],
+            [CorrectionStatus.DOING_RAG]: [CorrectionStatus.COMPANY_INSIGHT],
+            [CorrectionStatus.COMPANY_INSIGHT]: [CorrectionStatus.GENERATING],
+            [CorrectionStatus.GENERATING]: [CorrectionStatus.DONE],
+            [CorrectionStatus.DONE]: [],
+            [CorrectionStatus.FAILED]: [],
+        };
+
+        const allowed = allowedTransitions[currentStatus] ?? [];
+        if (!allowed.includes(newStatus)) {
+            throw new BusinessException(ErrorCode.CORRECTION_INVALID_STATUS_TRANSITION);
+        }
+    }
+
+    async saveCorrectionResult(
+        correctionId: number,
+        items: { portfolioId: number; data: Partial<CorrectionItem> }[]
+    ): Promise<void> {
+        if (items.length === 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                reason: 'At least one correction result item is required.',
+            });
+        }
+
+        const correction = await this.findByIdOrThrow(correctionId);
+        this.validateStatusTransition(correction.status, CorrectionStatus.DONE);
+
+        const existingItems = await this.correctionItemService.findByCorrectionId(correctionId);
+        if (existingItems.length === 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                reason: 'No correction items exist for this correction.',
+            });
+        }
+
+        const itemMap = new Map(existingItems.map((item) => [item.portfolio.id, item]));
+
+        const itemsToUpdate: CorrectionItem[] = [];
+        for (const { portfolioId, data } of items) {
+            const existingItem = itemMap.get(portfolioId);
+            if (!existingItem) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                    reason: `Unknown portfolioId in correction result: ${portfolioId}`,
+                });
+            }
+
+            existingItem.description = data.description ?? existingItem.description;
+            existingItem.responsibilities = data.responsibilities ?? existingItem.responsibilities;
+            existingItem.problemSolving = data.problemSolving ?? existingItem.problemSolving;
+            existingItem.learnings = data.learnings ?? existingItem.learnings;
+            existingItem.overallReview = data.overallReview ?? existingItem.overallReview;
+            itemsToUpdate.push(existingItem);
+        }
+
+        if (itemsToUpdate.length !== existingItems.length) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                reason: 'Correction result must include all selected portfolio items.',
+            });
+        }
+
+        await this.correctionItemService.saveAll(itemsToUpdate);
+
+        await this.portfolioCorrectionRepository.updateById(correctionId, {
+            status: CorrectionStatus.DONE,
+        });
     }
 
     async deleteCorrection(correctionId: number, userId: number): Promise<void> {

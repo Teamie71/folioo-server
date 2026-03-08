@@ -1,26 +1,11 @@
+import { Controller, Get, Headers, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
-    Body,
-    Controller,
-    Get,
-    Headers,
-    HttpStatus,
-    Post,
-    Req,
-    Res,
-    UseGuards,
-} from '@nestjs/common';
-import {
-    ApiBody,
-    ApiOkResponse,
-    ApiOperation,
-    ApiQuery,
-    ApiResponse,
-    ApiTags,
-} from '@nestjs/swagger';
-import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
+    ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
+} from 'src/common/decorators/swagger.decorator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { SendSmsReqDTO, VerifySmsReqDTO } from '../application/dtos/sms-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { SocialUser } from 'src/common/decorators/social-user.decorator';
 import type { SocialUserAfterOAuth, UserAfterAuth } from '../domain/types/jwt-payload.type';
@@ -35,6 +20,11 @@ import { StringValue } from 'ms';
 import { TimeUtil } from 'src/common/utils/time.util';
 import { LogoutUsecase } from '../application/usecases/logout.usecase';
 import { extractAccessTokenFromAuthorization } from '../infrastructure/utils/access-token.util';
+import { parseFrontProfileState } from '../infrastructure/utils/oauth-state.util';
+import { KakaoAuthGuard } from '../infrastructure/guards/kakao-auth.guard';
+import { GoogleAuthGuard } from '../infrastructure/guards/google-auth.guard';
+import { NaverAuthGuard } from '../infrastructure/guards/naver-auth.guard';
+import { AllowPending } from 'src/common/decorators/allow-pending.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -48,7 +38,7 @@ export class AuthController {
 
     @Get('kakao')
     @Public()
-    @UseGuards(AuthGuard('kakao'))
+    @UseGuards(KakaoAuthGuard)
     @ApiOperation({
         summary: '카카오 로그인 트리거',
         description: '카카오 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -61,6 +51,11 @@ export class AuthController {
     @ApiQuery({
         name: 'redirect_path',
         description: '리다이렉트 될 uri path를 쿼리 파라미터로 포함합니다.',
+        required: false,
+    })
+    @ApiQuery({
+        name: 'state',
+        description: '프론트 프로필(local/dev). prod 서버에서는 무시됩니다.',
         required: false,
     })
     @ApiResponse({
@@ -83,14 +78,15 @@ export class AuthController {
     })
     async kakaoCallback(
         @SocialUser() user: SocialUserAfterOAuth,
+        @Req() req: Request,
         @Res() res: Response
     ): Promise<void> {
-        await this.handleSocialLoginRedirect(user, res);
+        await this.handleSocialLoginRedirect(user, req, res);
     }
 
     @Get('google')
     @Public()
-    @UseGuards(AuthGuard('google'))
+    @UseGuards(GoogleAuthGuard)
     @ApiOperation({
         summary: '구글 로그인 트리거',
         description: '구글 인증페이지로 리다이렉트합니다. 스웨거에서 누르지 마세요.',
@@ -103,6 +99,11 @@ export class AuthController {
     @ApiQuery({
         name: 'redirect_path',
         description: '리다이렉트 될 uri path를 쿼리 파라미터로 포함합니다.',
+        required: false,
+    })
+    @ApiQuery({
+        name: 'state',
+        description: '프론트 프로필(local/dev). prod 서버에서는 무시됩니다.',
         required: false,
     })
     @ApiResponse({
@@ -125,9 +126,10 @@ export class AuthController {
     })
     async googleCallback(
         @SocialUser() user: SocialUserAfterOAuth,
+        @Req() req: Request,
         @Res() res: Response
     ): Promise<void> {
-        await this.handleSocialLoginRedirect(user, res);
+        await this.handleSocialLoginRedirect(user, req, res);
     }
 
     @Get('naver')
@@ -146,11 +148,16 @@ export class AuthController {
         description: '리다이렉트 될 uri path를 쿼리 파라미터로 포함합니다.',
         required: false,
     })
+    @ApiQuery({
+        name: 'state',
+        description: '프론트 프로필(local/dev). prod 서버에서는 무시됩니다.',
+        required: false,
+    })
     @ApiResponse({
         status: 302,
         description: '네이버 로그인 페이지로 리다이렉트됨.',
     })
-    @UseGuards(AuthGuard('naver'))
+    @UseGuards(NaverAuthGuard)
     async naverLogin() {}
 
     @Get('naver/callback')
@@ -167,16 +174,18 @@ export class AuthController {
     })
     async naverCallback(
         @SocialUser() user: SocialUserAfterOAuth,
+        @Req() req: Request,
         @Res() res: Response
     ): Promise<void> {
-        await this.handleSocialLoginRedirect(user, res);
+        await this.handleSocialLoginRedirect(user, req, res);
     }
 
     private async handleSocialLoginRedirect(
         user: SocialUserAfterOAuth,
+        req: Request,
         res: Response
     ): Promise<void> {
-        const refreshToken = await this.loginUsecase.execute(user);
+        const { refreshToken, isNewUser } = await this.loginUsecase.execute(user);
         const expiresIn = (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
             '14d') as StringValue;
         const isLocal = this.configService.get<string>('APP_PROFILE', 'local') === 'local';
@@ -187,8 +196,28 @@ export class AuthController {
             path: '/',
             maxAge: TimeUtil.toMs(expiresIn),
         });
-        const clientUrl = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
-        res.redirect(`${clientUrl}?status=success`);
+        const clientUrl = this.resolveClientRedirectUri(req);
+        res.redirect(`${clientUrl}?status=success&isNewUser=${isNewUser}`);
+    }
+
+    private resolveClientRedirectUri(req: Request): string {
+        const defaultRedirectUri = this.configService.getOrThrow<string>('CLIENT_REDIRECT_URI');
+        const appProfile = this.configService.get<string>('APP_PROFILE', 'local');
+        if (appProfile === 'prod') {
+            return defaultRedirectUri;
+        }
+
+        const profileState = parseFrontProfileState(req.query?.state);
+        if (!profileState) {
+            return defaultRedirectUri;
+        }
+
+        const stateRedirectUri =
+            profileState === 'local'
+                ? this.configService.get<string>('CLIENT_REDIRECT_URI_LOCAL')
+                : this.configService.get<string>('CLIENT_REDIRECT_URI_DEV');
+
+        return stateRedirectUri ?? defaultRedirectUri;
     }
 
     @Post('refresh')
@@ -198,21 +227,12 @@ export class AuthController {
         summary: '토큰 재발급',
         description: '유효한 refreshToken을 사용해 accessToken을 발급 받습니다.',
     })
-    @ApiResponse({
-        status: HttpStatus.CREATED,
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'new AccessToken',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('new AccessToken', { status: HttpStatus.CREATED })
     @ApiCommonErrorResponse(
         ErrorCode.REFRESH_TOKEN_EXPIRED,
         ErrorCode.REFRESH_TOKEN_MISSING,
-        ErrorCode.INVALID_REFRESH_TOKEN
+        ErrorCode.INVALID_REFRESH_TOKEN,
+        ErrorCode.DEACTIVATED_USER
     )
     async handleRefresh(@User() user: UserAfterAuth) {
         const accessToken = await this.tokenService.generateAccessToken({
@@ -222,20 +242,12 @@ export class AuthController {
     }
 
     @Post('logout')
+    @AllowPending()
     @ApiOperation({
         summary: '로그아웃',
         description: 'JWT 토큰을 만료시키고 서버에서 로그아웃을 수행합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'Logout from Server',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('Logout from Server')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async handleLogout(
         @Headers('authorization') authorization: string | undefined,
@@ -263,51 +275,5 @@ export class AuthController {
         });
 
         return 'Logout from Server';
-    }
-
-    @Post('sms/send')
-    @ApiOperation({
-        summary: '전화번호 인증번호 발송',
-        description: '전화번호 인증번호를 발송합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '인증번호가 성공적으로 발송되었습니다.',
-            },
-        },
-    })
-    @ApiBody({ type: SendSmsReqDTO })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.ALREADY_VERIFY_USER)
-    handleSmsSend(@Body() body: SendSmsReqDTO): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
-    }
-
-    @Post('sms/verify')
-    @ApiOperation({
-        summary: '전화번호 인증번호 검증',
-        description: '발송된 인증정보가 올바른지 확인합니다.',
-    })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '전화번호 인증이 완료되었습니다.',
-            },
-        },
-    })
-    @ApiBody({ type: VerifySmsReqDTO })
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.SMS_CODE_MISMATCH,
-        ErrorCode.SMS_CODE_NOT_FOUND
-    )
-    handleSmsVerify(@Body() body: VerifySmsReqDTO): string {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED, body);
     }
 }

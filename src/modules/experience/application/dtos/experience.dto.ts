@@ -4,6 +4,7 @@ import { IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-valida
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { ExperienceStatus } from '../../domain/enums/experience-status.enum';
 import { Experience } from '../../domain/experience.entity';
+import { PortfolioStatus } from 'src/modules/portfolio/domain/enums/portfolio-status.enum';
 
 export class CreateExperienceReqDTO {
     @Transform(({ value }: { value: string }) => value?.trim())
@@ -43,14 +44,17 @@ export class ExperienceStateResDTO {
     @ApiProperty({ enum: ExperienceStatus, example: ExperienceStatus.ON_CHAT })
     status: ExperienceStatus;
     createdAt: string;
+    @ApiProperty({ example: 1, nullable: true })
+    portfolioId: number | null;
 
-    static from(experience: Experience): ExperienceStateResDTO {
+    static from(experience: Experience, portfolioId: number | null): ExperienceStateResDTO {
         const dto = new ExperienceStateResDTO();
         dto.id = experience.id;
         dto.name = experience.name;
         dto.hopeJob = experience.hopeJob;
         dto.status = experience.status;
         dto.createdAt = experience.createdAt.toISOString();
+        dto.portfolioId = portfolioId;
         return dto;
     }
 }
@@ -68,4 +72,27 @@ export class UpdateExperienceReqDTO {
     @IsEnum(JobCategory)
     @ApiProperty({ enum: JobCategory, required: false })
     hopeJob?: JobCategory;
+}
+
+export class GeneratePortfolioResDTO {
+    @ApiProperty({ example: 1 })
+    portfolioId: number;
+
+    @ApiProperty({ enum: PortfolioStatus, example: PortfolioStatus.GENERATING })
+    portfolioStatus: PortfolioStatus;
+
+    @ApiProperty({ enum: ExperienceStatus, example: ExperienceStatus.GENERATE })
+    experienceStatus: ExperienceStatus;
+
+    static of(
+        portfolioId: number,
+        portfolioStatus: PortfolioStatus,
+        experienceStatus: ExperienceStatus
+    ): GeneratePortfolioResDTO {
+        const dto = new GeneratePortfolioResDTO();
+        dto.portfolioId = portfolioId;
+        dto.portfolioStatus = portfolioStatus;
+        dto.experienceStatus = experienceStatus;
+        return dto;
+    }
 }

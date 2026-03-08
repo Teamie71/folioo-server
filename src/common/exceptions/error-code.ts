@@ -24,6 +24,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '아직 구현되지 않은 기능입니다.',
         statusCode: HttpStatus.NOT_IMPLEMENTED,
     },
+    [ErrorCode.AI_RELAY_REQUEST_FAILED]: {
+        message: 'AI 서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
+    },
     [ErrorCode.INVALID_SOCIAL_PROFILE]: {
         message: '소셜 로그인 프로필 정보가 유효하지 않습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
@@ -43,6 +47,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.DEACTIVATED_USER]: {
         message: '탈퇴한 사용자입니다.',
         statusCode: HttpStatus.UNAUTHORIZED,
+    },
+    [ErrorCode.PENDING_USER]: {
+        message: '약관 동의가 필요합니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
+    [ErrorCode.SOCIAL_UNLINK_FAILED]: {
+        message: '소셜 계정 연결 해제에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
     },
     [ErrorCode.ALREADY_VERIFY_USER]: {
         message: '이미 인증 이력이 있는 번호입니다.',
@@ -66,6 +78,18 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.USER_NOT_FOUND]: {
         message: '해당하는 사용자를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.REQUIRED_TERMS_NOT_AGREED]: {
+        message: '필수 약관에 모두 동의해야 합니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.ALREADY_AGREED_USER]: {
+        message: '이미 약관에 동의한 사용자입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.TERM_NOT_FOUND]: {
+        message: '해당하는 약관을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
     [ErrorCode.LOG_NOT_FOUND]: {
@@ -92,6 +116,23 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,
     },
+    [ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED]: {
+        message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_NOT_COMPLETED]: {
+        message:
+            '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변한 후 포트폴리오를 생성할 수 있습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED]: {
+        message: '인터뷰가 완료된 상태에서만 연장 모드를 시작할 수 있습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.INTERVIEW_AI_RELAY_FAILED]: {
+        message: 'AI 인터뷰 세션 중계에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
+    },
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -112,16 +153,24 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: `활동 분류 태그는 최대 ${MAX_ACTIVITY_TAG_PER_USER}개까지 가질 수 있습니다.`,
         statusCode: HttpStatus.CONFLICT,
     },
-    [ErrorCode.DUPLICATE_EXPERIENCE_NAME]: {
-        message: '경험 정리 제목은 중복될 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
     [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
         message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS]: {
         message: '해당 경험에는 이미 인터뷰 세션이 존재합니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_SESSION_NOT_READY]: {
+        message: '인터뷰 세션이 아직 생성되지 않은 경험입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_INVALID_STATUS]: {
+        message: '현재 경험 상태에서는 포트폴리오를 생성할 수 없습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.EXPERIENCE_HAS_CORRECTIONS]: {
+        message: '연결된 첨삭이 존재하여 경험을 삭제할 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.CORRECTION_MAX_LIMIT]: {
@@ -140,6 +189,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '기업 분석 정보가 아직 생성되지 않았습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.CORRECTION_INVALID_STATUS_TRANSITION]: {
+        message: '유효하지 않은 첨삭 상태 전이입니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.CORRECTION_AI_RELAY_FAILED]: {
+        message: 'AI 첨삭 생성 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.BAD_GATEWAY,
+    },
     [ErrorCode.TICKET_NOT_FOUND]: {
         message: '해당하는 티켓을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -151,6 +208,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.INSUFFICIENT_TICKETS]: {
         message: '티켓이 부족합니다.',
         statusCode: HttpStatus.PAYMENT_REQUIRED,
+    },
+    [ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND]: {
+        message: '해당하는 보상 안내를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
     },
     [ErrorCode.PAYMENT_NOT_FOUND]: {
         message: '해당하는 결제를 찾을 수 없습니다.',

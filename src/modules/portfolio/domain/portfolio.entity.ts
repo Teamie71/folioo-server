@@ -1,8 +1,16 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { SourceType } from './enums/source-type.enum';
+import { PortfolioStatus } from './enums/portfolio-status.enum';
 import { User } from '../../user/domain/user.entity';
 import { Experience } from '../../experience/domain/experience.entity';
+
+interface PortfolioContent {
+    description: string;
+    responsibilities: string;
+    problemSolving: string;
+    learnings: string;
+}
 
 export const MAX_EXTERNAL_PORTFOLIO_BLOCKS = 5;
 
@@ -28,6 +36,13 @@ export class Portfolio extends BaseEntity {
 
     @Column({
         type: 'enum',
+        enum: PortfolioStatus,
+        default: PortfolioStatus.NOT_STARTED,
+    })
+    status: PortfolioStatus;
+
+    @Column({
+        type: 'enum',
         enum: SourceType,
         default: SourceType.INTERNAL,
     })
@@ -36,7 +51,7 @@ export class Portfolio extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     user: User;
 
-    @OneToOne(() => Experience, { nullable: true })
+    @OneToOne(() => Experience, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn()
     experience: Experience;
 
@@ -52,6 +67,20 @@ export class Portfolio extends BaseEntity {
         return portfolio;
     }
 
+    static createInternal(userId: number, experienceId: number, name: string): Portfolio {
+        const portfolio = new Portfolio();
+        portfolio.name = name;
+        portfolio.description = '';
+        portfolio.responsibilities = '';
+        portfolio.problemSolving = '';
+        portfolio.learnings = '';
+        portfolio.status = PortfolioStatus.GENERATING;
+        portfolio.sourceType = SourceType.INTERNAL;
+        portfolio.user = { id: userId } as User;
+        portfolio.experience = { id: experienceId } as Experience;
+        return portfolio;
+    }
+
     update(updates: { name?: string; contributionRate?: number }): void {
         if (updates.name !== undefined) {
             this.name = updates.name;
@@ -59,5 +88,17 @@ export class Portfolio extends BaseEntity {
         if (updates.contributionRate !== undefined) {
             this.contributionRate = updates.contributionRate;
         }
+    }
+
+    complete(content: PortfolioContent): void {
+        this.description = content.description;
+        this.responsibilities = content.responsibilities;
+        this.problemSolving = content.problemSolving;
+        this.learnings = content.learnings;
+        this.status = PortfolioStatus.COMPLETED;
+    }
+
+    fail(): void {
+        this.status = PortfolioStatus.FAILED;
     }
 }

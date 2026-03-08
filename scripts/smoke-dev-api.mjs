@@ -38,6 +38,9 @@
   # Attach a file for multipart/form-data endpoints
   FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate --file ./sample.pdf
 
+  # Internal API smoke (X-API-Key auth, static endpoint list)
+  FOLIOO_INTERNAL_API_KEY=... node scripts/smoke-dev-api.mjs --internal --mutate
+
   # Filter by path regex
   FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --include '^/portfolio-corrections'
   FOLIOO_ACCESS_TOKEN=... node scripts/smoke-dev-api.mjs --mutate --exclude '^/auth/(kakao|google|naver)'
@@ -47,7 +50,7 @@ import fs from 'node:fs';
 import nodePath from 'node:path';
 import process from 'node:process';
 
-const DEFAULT_BASE = 'https://folioo-dev-api.log8.kr';
+const DEFAULT_BASE = 'https://dev-api.folioo.ai.kr';
 
 // ---------------------------------------------------------------------------
 // Result classification
@@ -85,6 +88,8 @@ function parseArgs(argv) {
         tokenEnv: 'FOLIOO_ACCESS_TOKEN',
         out: null,
         mutate: false,
+        internal: false,
+        internalKeyEnv: 'FOLIOO_INTERNAL_API_KEY',
         delayMs: 120,
         timeoutMs: 15000,
         include: null,
@@ -106,6 +111,11 @@ function parseArgs(argv) {
             i++;
         } else if (a === '--mutate') {
             args.mutate = true;
+        } else if (a === '--internal') {
+            args.internal = true;
+        } else if (a === '--internal-key-env' && next) {
+            args.internalKeyEnv = next;
+            i++;
         } else if (a === '--delay-ms' && next) {
             args.delayMs = Number(next);
             i++;
@@ -134,15 +144,17 @@ function printHelp() {
     console.log(`Usage: node scripts/smoke-dev-api.mjs [options]
 
 Options:
-  --base <url>           Base URL (default: ${DEFAULT_BASE})
-  --token-env <name>     Env var containing access token (default: FOLIOO_ACCESS_TOKEN)
-  --mutate               Enable POST/PATCH/DELETE (default: GET only)
-  --file <path>          Attach a local file for multipart/form-data endpoints
-  --delay-ms <n>         Delay between requests (default: 120)
-  --timeout-ms <n>       Per-request timeout (default: 15000)
-  --include <regex>      Only run operations whose path matches regex
-  --exclude <regex>      Skip operations whose path matches regex
-  --out <path>           Write report to this path (default: /tmp/folioo_dev_smoke_<ts>.json)
+  --base <url>               Base URL (default: ${DEFAULT_BASE})
+  --token-env <name>         Env var containing access token (default: FOLIOO_ACCESS_TOKEN)
+  --mutate                   Enable POST/PATCH/DELETE (default: GET only)
+  --internal                 Run Internal API smoke (X-API-Key auth, static endpoint list)
+  --internal-key-env <name>  Env var containing internal API key (default: FOLIOO_INTERNAL_API_KEY)
+  --file <path>              Attach a local file for multipart/form-data endpoints
+  --delay-ms <n>             Delay between requests (default: 120)
+  --timeout-ms <n>           Per-request timeout (default: 15000)
+  --include <regex>          Only run operations whose path matches regex
+  --exclude <regex>          Skip operations whose path matches regex
+  --out <path>               Write report to this path (default: /tmp/folioo_dev_smoke_<ts>.json)
 
 Result Classification:
   implemented            2xx - endpoint works
@@ -554,10 +566,151 @@ function buildMultipartBody(filePath, spec, contentSchema) {
 }
 
 // ---------------------------------------------------------------------------
+// Internal API smoke runner
+// ---------------------------------------------------------------------------
+async function runInternalSmoke(args, apiKey) {
+    const startedAt = nowIso();
+    const outPath = args.out || `/tmp/folioo_dev_internal_smoke_${Date.now()}.json`;
+    const includeRe = args.include ? new RegExp(args.include) : null;
+    const excludeRe = args.exclude ? new RegExp(args.exclude) : null;
+
+    const results = [];
+    for (const ep of INTERNAL_ENDPOINTS) {
+        if (ep.mutate && !args.mutate) continue;
+        if (includeRe && !includeRe.test(ep.path)) continue;
+        if (excludeRe && excludeRe.test(ep.path)) continue;
+
+        let urlStr = ep.path;
+        if (ep.query) {
+            const qs = new URLSearchParams(ep.query).toString();
+            urlStr = `${ep.path}?${qs}`;
+        }
+        const url = new URL(urlStr, args.base).toString();
+
+        const headers = {
+            accept: 'application/json',
+            'x-api-key': apiKey,
+        };
+
+        let body = null;
+        if (ep.body) {
+            body = JSON.stringify(ep.body);
+            headers['content-type'] = 'application/json';
+        }
+
+        const started = Date.now();
+        let status = null;
+        let errorCode = null;
+        let errorReason = null;
+        let networkError = null;
+
+        try {
+            const r = await fetchJson(url, { method: ep.method, headers, body }, args.timeoutMs);
+            status = r.status;
+            const err = r.json?.error;
+            if (err && typeof err === 'object') {
+                errorCode = err.errorCode || err.code || null;
+                errorReason = err.reason || err.message || null;
+            } else if (r.status >= 400 && !r.json) {
+                errorReason = r.text ? `[non-json] ${r.text.slice(0, 200)}` : '[empty body]';
+            }
+            if (!err && status >= 400 && r.text) {
+                errorReason = r.text.slice(0, 300);
+            }
+        } catch (e) {
+            networkError = String(e?.message || e);
+        }
+
+        const durationMs = Date.now() - started;
+        const classification = classify(status, errorCode, networkError);
+
+        results.push({
+            method: ep.method,
+            rawPath: ep.path,
+            url,
+            tag: 'internal',
+            summary: null,
+            operationId: null,
+            classification,
+            skipped: false,
+            skipReason: null,
+            status,
+            errorCode,
+            errorReason,
+            durationMs,
+            networkError,
+        });
+
+        await sleep(args.delayMs);
+    }
+
+    // Build classification buckets.
+    const classificationBuckets = {};
+    for (const cls of Object.values(CLASS)) classificationBuckets[cls] = 0;
+    for (const r of results) {
+        const cls = r.classification || CLASS.NETWORK_ERROR;
+        classificationBuckets[cls] = (classificationBuckets[cls] || 0) + 1;
+    }
+
+    const report = {
+        at: startedAt,
+        finishedAt: nowIso(),
+        base: args.base,
+        mode: 'internal',
+        options: { mutate: args.mutate, delayMs: args.delayMs, timeoutMs: args.timeoutMs },
+        classification: classificationBuckets,
+        count: results.length,
+        results,
+    };
+
+    fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
+
+    console.log('\n--- Internal API Smoke Test Summary ---');
+    console.log(`Endpoints: ${results.length}  |  Report: ${outPath}`);
+    console.log('\nClassification:');
+    const ordered = Object.entries(classificationBuckets)
+        .filter(([, v]) => v > 0)
+        .sort(([, a], [, b]) => b - a);
+    for (const [cat, count] of ordered) {
+        console.log(`  ${cat.padEnd(22)} ${count}`);
+    }
+    console.log(`\n${JSON.stringify({ outPath, classification: classificationBuckets, count: results.length })}`);
+}
+
+// ---------------------------------------------------------------------------
+// Internal API static endpoint list
+// ---------------------------------------------------------------------------
+const INTERNAL_ENDPOINTS = [
+    { method: 'GET', path: '/internal/health' },
+    { method: 'GET', path: '/internal/insights/search', query: { userId: '1', keyword: 'test' } },
+    { method: 'GET', path: '/internal/insights/1' },
+    { method: 'GET', path: '/internal/portfolios/1' },
+    { method: 'PATCH', path: '/internal/portfolios/1', body: { status: 'failed', errorMessage: 'smoke-test' }, mutate: true },
+    { method: 'GET', path: '/corrections/1', mutate: false },
+    { method: 'PATCH', path: '/corrections/1/status', body: { status: 'FAILED' }, mutate: true },
+    { method: 'PATCH', path: '/corrections/1/company-insight', body: { companyInsight: 'smoke-test' }, mutate: true },
+    { method: 'PATCH', path: '/corrections/1/result', body: { result: [] }, mutate: true },
+    { method: 'POST', path: '/corrections/1/rag-data', body: { searchQuery: 'smoke', searchResults: {} }, mutate: true },
+    { method: 'GET', path: '/corrections/1/rag-data' },
+];
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
     const args = parseArgs(process.argv);
+
+    // Internal API mode: use X-API-Key instead of Bearer token.
+    if (args.internal) {
+        const apiKey = process.env[args.internalKeyEnv];
+        if (!apiKey) {
+            console.error(`Missing env ${args.internalKeyEnv}. Refusing to run internal smoke.`);
+            process.exit(2);
+        }
+        await runInternalSmoke(args, apiKey);
+        return;
+    }
+
     const token = process.env[args.tokenEnv];
     if (!token) {
         console.error(`Missing env ${args.tokenEnv}. Refusing to run.`);
