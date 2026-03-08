@@ -2,7 +2,7 @@
 import { html } from '../lib/setup.js';
 import { Badge, LoginBadge } from './Badge.js';
 
-export function UserTable({ users, onGrant }) {
+export function UserTable({ users, onGrant, onEventGrant }) {
     if (!users || users.length === 0) {
         return html`
             <div class="text-center py-16 text-gray-400 text-sm">
@@ -53,12 +53,20 @@ export function UserTable({ users, onGrant }) {
                                 <//>
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <button onClick=${() => onGrant(u)}
-                                        class="px-3 py-1.5 text-xs font-semibold text-primary-500
-                                               bg-primary-50 border border-primary-500 rounded-full
-                                               hover:bg-primary-100 transition-colors whitespace-nowrap">
-                                    이용권 지급
-                                </button>
+                                <div class="flex justify-end gap-2">
+                                    <button onClick=${() => onGrant(u)}
+                                            class="px-3 py-1.5 text-xs font-semibold text-primary-500
+                                                   bg-primary-50 border border-primary-500 rounded-full
+                                                   hover:bg-primary-100 transition-colors whitespace-nowrap">
+                                        이용권 지급
+                                    </button>
+                                    <button onClick=${() => onEventGrant(u)}
+                                            class="px-3 py-1.5 text-xs font-semibold text-amber-600
+                                                   bg-amber-50 border border-amber-300 rounded-full
+                                                   hover:bg-amber-100 transition-colors whitespace-nowrap">
+                                        이벤트 보상
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `)}
