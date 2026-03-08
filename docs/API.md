@@ -250,7 +250,7 @@ Legend:
 ### Portfolio-Correction
 
 - GET `/portfolio-corrections` -> IMPLEMENTED
-- POST `/portfolio-corrections` -> IMPLEMENTED (consumes tickets, can return `TICKET402`)
+- POST `/portfolio-corrections` -> IMPLEMENTED (`title` required, consumes tickets, can return `TICKET402`)
 - GET `/portfolio-corrections/{correctionId}/status` -> IMPLEMENTED
 - GET `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
