@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
 import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
 import { TicketHistoryResDTO } from 'src/modules/ticket/application/dtos/ticket-history.dto';
+import { TicketGrantNoticeResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
+import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { UserService } from '../services/user.service';
 import { AgreeTermsResDTO } from '../dtos/agree-terms.dto';
@@ -13,7 +15,8 @@ export class UserTicketFacade {
     constructor(
         private readonly userService: UserService,
         private readonly ticketService: TicketService,
-        private readonly eventRewardFacade: EventRewardFacade
+        private readonly eventRewardFacade: EventRewardFacade,
+        private readonly ticketGrantFacade: TicketGrantFacade
     ) {}
 
     getBalance(userId: number): Promise<TicketBalanceResDTO> {
@@ -26,6 +29,18 @@ export class UserTicketFacade {
 
     getHistory(userId: number): Promise<TicketHistoryResDTO> {
         return this.ticketService.getUserTicketHistory(userId);
+    }
+
+    getNextGrantNotice(userId: number): Promise<TicketGrantNoticeResDTO | null> {
+        return this.ticketGrantFacade.getNextNotice(userId);
+    }
+
+    markGrantNoticeShown(userId: number, noticeId: number): Promise<TicketGrantNoticeResDTO> {
+        return this.ticketGrantFacade.markNoticeShown(userId, noticeId);
+    }
+
+    markGrantNoticeDismissed(userId: number, noticeId: number): Promise<TicketGrantNoticeResDTO> {
+        return this.ticketGrantFacade.markNoticeDismissed(userId, noticeId);
     }
 
     @Transactional()

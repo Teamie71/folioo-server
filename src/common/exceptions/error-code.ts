@@ -213,6 +213,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '티켓이 부족합니다.',
         statusCode: HttpStatus.PAYMENT_REQUIRED,
     },
+    [ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND]: {
+        message: '해당하는 보상 안내를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
     [ErrorCode.PAYMENT_NOT_FOUND]: {
         message: '해당하는 결제를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
