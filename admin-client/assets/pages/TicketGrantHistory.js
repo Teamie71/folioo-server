@@ -32,7 +32,7 @@ function formatDate(dateStr) {
 
 function rewardSummary(rewardSnapshot) {
     if (!rewardSnapshot || rewardSnapshot.length === 0) return '-';
-    return rewardSnapshot.map((reward) => `${TICKET_TYPE_LABELS[reward.type] || reward.type} ${reward.quantity}개`).join(' + ');
+    return rewardSnapshot.map((reward) => `${TICKET_TYPE_LABELS[reward.type] || reward.type} ${reward.quantity}회권`).join(' + ');
 }
 
 function TicketGrantTable({ items }) {
