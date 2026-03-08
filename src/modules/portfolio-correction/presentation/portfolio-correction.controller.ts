@@ -118,7 +118,7 @@ export class PortfolioCorrectionController {
         @User('sub') userId: number,
         @Param('correctionId', ParseIntPipe) correctionId: number
     ): Promise<string> {
-        await this.portfolioCorrectionService.requestCompanyInsightCreation(correctionId, userId);
+        await this.portfolioCorrectionFacade.requestCompanyInsightCreation(correctionId, userId);
         return '기업 분석 정보 생성이 시작되었습니다.';
     }
 
