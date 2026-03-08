@@ -35,7 +35,7 @@ export class ExternalPortfolioExtractRequestParserService {
             const parser = Busboy({
                 headers: req.headers,
                 limits: {
-                    files: 1,
+                    files: 10,
                     fields: 10,
                     fileSize: MAX_PDF_SIZE_BYTES,
                 },
@@ -75,7 +75,6 @@ export class ExternalPortfolioExtractRequestParserService {
             parser.on('file', (fieldName, fileStream, info) => {
                 if (fieldName !== 'file') {
                     fileStream.resume();
-                    fail(ErrorCode.BAD_REQUEST, { reason: 'file field is required' });
                     return;
                 }
 
@@ -116,7 +115,7 @@ export class ExternalPortfolioExtractRequestParserService {
             });
 
             parser.on('filesLimit', () => {
-                fail(ErrorCode.BAD_REQUEST, { reason: 'only one file is allowed' });
+                fail(ErrorCode.BAD_REQUEST, { reason: 'too many file fields were provided' });
             });
 
             parser.on('error', () => {

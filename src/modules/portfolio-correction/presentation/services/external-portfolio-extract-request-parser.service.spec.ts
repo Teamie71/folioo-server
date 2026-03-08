@@ -80,6 +80,67 @@ describe('ExternalPortfolioExtractRequestParserService', () => {
             expect(error).toBeInstanceOf(BusinessException);
             expect((error as BusinessException).getResponse()).toMatchObject({
                 errorCode: ErrorCode.BAD_REQUEST,
+                details: {
+                    reason: 'only application/pdf is allowed',
+                    mimeType: 'text/plain',
+                },
+            });
+        }
+    });
+
+    it('ignores unexpected file fields until the target file field appears', async () => {
+        const boundary = 'folioo-boundary';
+        const body = Buffer.concat([
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="correctionId"\r\n\r\n3\r\n`
+            ),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="attachment"; filename="ignored.pdf"\r\nContent-Type: application/pdf\r\n\r\n`
+            ),
+            Buffer.from('%PDF-1.4\nignored'),
+            Buffer.from(`\r\n`),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="portfolio.pdf"\r\nContent-Type: application/pdf\r\n\r\n`
+            ),
+            Buffer.from('%PDF-1.4\nfolioo'),
+            Buffer.from(`\r\n--${boundary}--\r\n`),
+        ]);
+        const request = createMultipartRequest(body, boundary);
+
+        await expect(parser.parse(request)).resolves.toMatchObject({
+            correctionId: 3,
+            fileName: 'portfolio.pdf',
+        });
+    });
+
+    it('rejects duplicate target file fields', async () => {
+        const boundary = 'folioo-boundary';
+        const body = Buffer.concat([
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="correctionId"\r\n\r\n3\r\n`
+            ),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="portfolio-1.pdf"\r\nContent-Type: application/pdf\r\n\r\n`
+            ),
+            Buffer.from('%PDF-1.4\nfirst'),
+            Buffer.from(`\r\n`),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="portfolio-2.pdf"\r\nContent-Type: application/pdf\r\n\r\n`
+            ),
+            Buffer.from('%PDF-1.4\nsecond'),
+            Buffer.from(`\r\n--${boundary}--\r\n`),
+        ]);
+        const request = createMultipartRequest(body, boundary);
+
+        expect.assertions(2);
+
+        try {
+            await parser.parse(request);
+        } catch (error) {
+            expect(error).toBeInstanceOf(BusinessException);
+            expect((error as BusinessException).getResponse()).toMatchObject({
+                errorCode: ErrorCode.BAD_REQUEST,
+                details: { reason: 'only one file is allowed' },
             });
         }
     });
