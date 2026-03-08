@@ -42,12 +42,6 @@ export class ExperienceRepository {
         });
     }
 
-    async existsByUserIdAndName(userId: number, name: string): Promise<boolean> {
-        return this.experienceRepository.exists({
-            where: { user: { id: userId }, name },
-        });
-    }
-
     async deleteById(id: number): Promise<void> {
         await this.experienceRepository.delete(id);
     }

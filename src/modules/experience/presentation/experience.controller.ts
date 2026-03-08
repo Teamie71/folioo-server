@@ -41,7 +41,6 @@ export class ExperienceController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_MAX_LIMIT,
-        ErrorCode.DUPLICATE_EXPERIENCE_NAME,
         ErrorCode.INSUFFICIENT_TICKETS
     )
     async createExperience(
@@ -88,11 +87,7 @@ export class ExperienceController {
         description: '경험 정리의 제목 또는 희망 직무를 수정합니다.',
     })
     @ApiCommonResponse(ExperienceResDTO)
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.EXPERIENCE_NOT_FOUND,
-        ErrorCode.DUPLICATE_EXPERIENCE_NAME
-    )
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.EXPERIENCE_NOT_FOUND)
     async updateExperience(
         @User('sub') userId: number,
         @Param('experienceId', ParseIntPipe) experienceId: number,

@@ -30,7 +30,7 @@ export class ExperienceFacade {
         hopeJob: JobCategory
     ): Promise<ExperienceResDTO> {
         await this.ticketService.consumeTicket(userId, TicketType.EXPERIENCE);
-        await this.experienceService.validateCreation(userId, name);
+        await this.experienceService.validateCreation(userId);
         return this.experienceService.createExperience(userId, name, hopeJob);
     }
 
@@ -42,7 +42,6 @@ export class ExperienceFacade {
         return this.experienceService.getExperience(experienceId, userId);
     }
 
-    @Transactional()
     async updateExperience(
         experienceId: number,
         userId: number,
