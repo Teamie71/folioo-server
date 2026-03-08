@@ -39,7 +39,7 @@ export class InterviewService {
             path: sessionPath(sessionId, '/chat/stream'),
             body: {
                 message,
-                mentioned_insight_ids: mentionedInsightIds,
+                mentioned_insight_ids: mentionedInsightIds.map(String),
             },
         });
     }
