@@ -11,6 +11,7 @@ import { ExperienceModule } from '../experience/experience.module';
 import { InternalPortfolioFacade } from './application/facades/internal-portfolio.facade';
 import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-correction.module';
 import { AiClientExceptionFilter } from 'src/common/filters/ai-client-exception.filter';
+import { AiCorrectionCompatService } from './application/services/ai-correction-compat.service';
 
 @Module({
     imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule, ExperienceModule],
@@ -21,6 +22,11 @@ import { AiClientExceptionFilter } from 'src/common/filters/ai-client-exception.
         AiCorrectionCompatController,
         AiPortfolioCompatController,
     ],
-    providers: [InternalApiKeyGuard, InternalPortfolioFacade, AiClientExceptionFilter],
+    providers: [
+        InternalApiKeyGuard,
+        InternalPortfolioFacade,
+        AiClientExceptionFilter,
+        AiCorrectionCompatService,
+    ],
 })
 export class InternalModule {}
