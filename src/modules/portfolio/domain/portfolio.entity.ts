@@ -19,16 +19,16 @@ export class Portfolio extends BaseEntity {
     @Column({ length: 20 })
     name: string;
 
-    @Column({ length: 400 })
+    @Column({ length: 1000 })
     description: string;
 
-    @Column({ length: 400 })
+    @Column({ length: 1000 })
     responsibilities: string;
 
-    @Column({ length: 400 })
+    @Column({ length: 1000 })
     problemSolving: string;
 
-    @Column({ length: 400 })
+    @Column({ length: 1000 })
     learnings: string;
 
     @Column({ nullable: true })
