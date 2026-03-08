@@ -5,13 +5,13 @@ import {
     FeedbackModalResDTO,
 } from '../dtos/event.dto';
 import { EventRewardReadService } from '../services/event-reward-read.service';
-import { EventRewardLifecycleService } from '../services/event-reward-lifecycle.service';
+import { EventRewardLifecycleFacade } from './event-reward-lifecycle.facade';
 
 @Injectable()
 export class EventRewardFacade {
     constructor(
         private readonly eventRewardReadService: EventRewardReadService,
-        private readonly eventRewardLifecycleService: EventRewardLifecycleService
+        private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade
     ) {}
 
     async getFeedbackModal(userId: number, eventCode: string): Promise<FeedbackModalResDTO> {
@@ -23,14 +23,14 @@ export class EventRewardFacade {
     }
 
     async trackInsightChallengeProgress(userId: number): Promise<void> {
-        await this.eventRewardLifecycleService.trackInsightChallengeProgress(userId);
+        await this.eventRewardLifecycleFacade.trackInsightChallengeProgress(userId);
     }
 
     async claimEventReward(userId: number, eventCode: string): Promise<ClaimEventRewardResDTO> {
-        return this.eventRewardLifecycleService.claimEventReward(userId, eventCode);
+        return this.eventRewardLifecycleFacade.claimEventReward(userId, eventCode);
     }
 
     async grantSignUpReward(userId: number): Promise<void> {
-        await this.eventRewardLifecycleService.grantSignUpReward(userId);
+        await this.eventRewardLifecycleFacade.grantSignUpReward(userId);
     }
 }

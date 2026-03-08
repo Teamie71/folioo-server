@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { ClaimEventRewardResDTO } from '../dtos/event.dto';
-import { EventService } from './event.service';
-import { EventParticipationService } from './event-participation.service';
+import { EventService } from '../services/event.service';
+import { EventParticipationService } from '../services/event-participation.service';
 import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -17,7 +17,7 @@ const INSIGHT_LOG_CHALLENGE_EVENT_CODE = 'INSIGHT_LOG_CHALLENGE';
 const UNIQUE_VIOLATION_CODE = '23505';
 
 @Injectable()
-export class EventRewardLifecycleService {
+export class EventRewardLifecycleFacade {
     constructor(
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
@@ -112,6 +112,7 @@ export class EventRewardLifecycleService {
         return dto;
     }
 
+    @Transactional()
     async grantSignUpReward(userId: number): Promise<void> {
         const activeSignupEvent = await this.eventService.findSignUpEvent();
         if (!activeSignupEvent) {
@@ -159,6 +160,7 @@ export class EventRewardLifecycleService {
         await this.eventParticipationService.save(participation);
     }
 
+    @Transactional()
     async getOrCreateParticipationForUpdate(
         userId: number,
         eventId: number

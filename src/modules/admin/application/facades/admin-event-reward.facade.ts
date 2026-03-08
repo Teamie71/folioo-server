@@ -30,7 +30,7 @@ import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-gra
 import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { AdminTicketGrantListResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
-import { EventRewardLifecycleService } from 'src/modules/event/application/services/event-reward-lifecycle.service';
+import { EventRewardLifecycleFacade } from 'src/modules/event/application/facades/event-reward-lifecycle.facade';
 
 @Injectable()
 export class AdminEventRewardFacade {
@@ -41,7 +41,7 @@ export class AdminEventRewardFacade {
         private readonly eventFeedbackSubmissionService: EventFeedbackSubmissionService,
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
-        private readonly eventRewardLifecycleService: EventRewardLifecycleService,
+        private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade,
         private readonly ticketService: TicketService,
         private readonly ticketGrantFacade: TicketGrantFacade
     ) {}
@@ -233,7 +233,7 @@ export class AdminEventRewardFacade {
         }
 
         const participation =
-            await this.eventRewardLifecycleService.getOrCreateParticipationForUpdate(
+            await this.eventRewardLifecycleFacade.getOrCreateParticipationForUpdate(
                 user.id,
                 event.id
             );
