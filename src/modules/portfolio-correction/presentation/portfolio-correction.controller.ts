@@ -9,9 +9,10 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
@@ -66,17 +67,10 @@ export class PortfolioCorrectionController {
         summary: '첨삭 의뢰하기',
         description: '포트폴리오 첨삭을 시작합니다. 포트폴리오 첨삭 티켓 1장이 사용됩니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: {
-                    correctionId: 1,
-                    message: 'AI 첨삭이 의뢰되었습니다.',
-                },
-            },
+    @ApiCommonResponse(CreateCorrectionResDTO, {
+        exampleResult: {
+            correctionId: 1,
+            message: 'AI 첨삭이 의뢰되었습니다.',
         },
     })
     @ApiCommonErrorResponse(
@@ -114,16 +108,7 @@ export class PortfolioCorrectionController {
         summary: '기업 분석 정보 생성',
         description: '특정 AI 첨삭의 기업 분석 정보 생성을 시작합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '기업 분석 정보 생성이 시작되었습니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('기업 분석 정보 생성이 시작되었습니다.')
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.CORRECTION_NOT_FOUND,
@@ -250,16 +235,7 @@ export class PortfolioCorrectionController {
         summary: '첨삭 삭제하기',
         description: 'AI 첨삭 내역을 삭제합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '첨삭이 삭제되었습니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('첨삭이 삭제되었습니다.')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async deleteCorrection(
         @User('sub') userId: number,

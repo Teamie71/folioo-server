@@ -12,16 +12,10 @@ import {
 } from '@nestjs/common';
 import Busboy from 'busboy';
 import type { Request } from 'express';
-import {
-    ApiBody,
-    ApiConsumes,
-    ApiOkResponse,
-    ApiOperation,
-    ApiQuery,
-    ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
     ApiCommonResponse,
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
@@ -63,16 +57,7 @@ export class ExternalPortfolioController {
             },
         },
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: 'AI가 파일을 구조화하여 정리합니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('AI가 파일을 구조화하여 정리합니다.')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_EXTRACT_FAILED)
     async extractPortfolios(@User('sub') userId: number, @Req() req: Request): Promise<string> {
         const { correctionId, fileBuffer, fileName } = await this.parseExtractMultipart(req);
@@ -279,16 +264,7 @@ export class ExternalPortfolioController {
         description:
             'AI가 구조화한 포트폴리오 활동을 삭제합니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '포트폴리오가 삭제되었습니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('포트폴리오가 삭제되었습니다.')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     async deleteExternalPortfolio(
         @Param('portfolioId', ParseIntPipe) portfolioId: number

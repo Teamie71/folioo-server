@@ -1,6 +1,10 @@
 import { Body, Controller, Delete, Get, Headers, Patch, Post, Query, Req } from '@nestjs/common';
-import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+    ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
+    ApiCommonResponse,
+} from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { UpdateUserNameReqDTO, UserProfileResDTO } from '../application/dtos/user-profile.dto';
 import {
@@ -158,16 +162,7 @@ export class UserController {
         description:
             '사용자의 계정을 탈퇴 처리하고 연결된 소셜 로그인 계정을 저장된 OAuth 리프레시 토큰 기반으로 연결 해제합니다.',
     })
-    @ApiOkResponse({
-        schema: {
-            example: {
-                timestamp: '2026-01-02T14:56:23.295Z',
-                isSuccess: true,
-                error: null,
-                result: '회원 탈퇴가 완료되었습니다.',
-            },
-        },
-    })
+    @ApiCommonMessageResponse('회원 탈퇴가 완료되었습니다.')
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.USER_NOT_FOUND,

@@ -1,5 +1,5 @@
-import { applyDecorators, Type } from '@nestjs/common';
-import { ApiExtraModels, ApiOkResponse, ApiResponse, getSchemaPath } from '@nestjs/swagger';
+import { applyDecorators, HttpStatus, Type } from '@nestjs/common';
+import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger';
 import { CommonResponse, ErrorPayload } from '../dtos/common-response.dto';
 import { ErrorMap } from '../exceptions/error-code';
 import { ErrorCode } from '../exceptions/error-code.enum';
@@ -13,6 +13,7 @@ const baseResponseSchema = {
 interface ApiCommonResponseOptions {
     description?: string;
     exampleResult?: unknown;
+    status?: number;
 }
 
 // 단일 객체 응답
@@ -61,18 +62,32 @@ export const ApiCommonResponse = <T extends Type<unknown> | null>(
 
     return applyDecorators(
         ...decorators,
-        ApiOkResponse({
+        ApiResponse({
+            status: options?.status ?? HttpStatus.OK,
             description: options?.description ?? '성공 응답',
             schema,
         })
     );
 };
 
+type ApiCommonMessageResponseOptions = Omit<ApiCommonResponseOptions, 'exampleResult'>;
+
+export const ApiCommonMessageResponse = (
+    message: string,
+    options?: ApiCommonMessageResponseOptions
+) => {
+    return ApiCommonResponse(null, {
+        ...options,
+        exampleResult: message,
+    });
+};
+
 // 배열 응답
 export const ApiCommonResponseArray = <T extends Type<unknown>>(model: T) => {
     return applyDecorators(
         ApiExtraModels(CommonResponse, model),
-        ApiOkResponse({
+        ApiResponse({
+            status: HttpStatus.OK,
             description: '성공 응답',
             schema: {
                 properties: {
