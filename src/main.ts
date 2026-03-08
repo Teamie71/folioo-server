@@ -1,5 +1,9 @@
 import './instrument';
+import { types as pgTypes } from 'pg';
+import { DateTime } from 'luxon';
 import { NestFactory } from '@nestjs/core';
+
+pgTypes.setTypeParser(1114, (val: string) => DateTime.fromSQL(val, { zone: 'UTC' }).toJSDate());
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
