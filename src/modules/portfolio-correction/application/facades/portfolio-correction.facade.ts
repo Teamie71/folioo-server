@@ -96,6 +96,19 @@ export class PortfolioCorrectionFacade {
         return items;
     }
 
+    async requestCompanyInsightCreation(correctionId: number, userId: number): Promise<void> {
+        const shouldDelegate = await this.portfolioCorrectionService.requestCompanyInsightCreation(
+            correctionId,
+            userId
+        );
+
+        if (!shouldDelegate) {
+            return;
+        }
+
+        this.delegateCompanyInsightCreation(correctionId);
+    }
+
     private delegateCorrectionGeneration(correctionId: number): void {
         this.aiRelayPort
             .postJson({
@@ -104,6 +117,19 @@ export class PortfolioCorrectionFacade {
             })
             .catch((error: unknown) => {
                 const message = `Failed to delegate correction generation to AI server: correctionId=${correctionId}`;
+                const stack = error instanceof Error ? error.stack : undefined;
+                this.logger.error(message, stack);
+            });
+    }
+
+    private delegateCompanyInsightCreation(correctionId: number): void {
+        this.aiRelayPort
+            .postJson({
+                path: `/api/v1/corrections/${correctionId}/rag`,
+                body: {},
+            })
+            .catch((error: unknown) => {
+                const message = `Failed to delegate company insight generation to AI server: correctionId=${correctionId}`;
                 const stack = error instanceof Error ? error.stack : undefined;
                 this.logger.error(message, stack);
             });
