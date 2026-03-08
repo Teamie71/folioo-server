@@ -8,6 +8,8 @@ import {
     AdminGrantRewardResDTO,
     AdminGrantTicketsReqDTO,
     AdminGrantTicketsResDTO,
+    AdminManualRewardEventItemResDTO,
+    AdminManualRewardEventListResDTO,
     AdminTicketHistoryItemResDTO,
     AdminTicketHistoryResDTO,
     AdminUserItemResDTO,
@@ -65,6 +67,18 @@ export class AdminEventRewardFacade {
         return AdminUserSearchResDTO.from(users, users.length);
     }
 
+    async getManualRewardEvents(): Promise<AdminManualRewardEventListResDTO> {
+        const events = await this.eventService.findActiveManualRewardEvents();
+        const items = events.map((event) => {
+            const item = new AdminManualRewardEventItemResDTO();
+            item.code = event.code;
+            item.title = event.title;
+            return item;
+        });
+
+        return AdminManualRewardEventListResDTO.from(items);
+    }
+
     async grantReward(
         eventCode: string,
         body: AdminGrantRewardReqDTO
@@ -95,6 +109,9 @@ export class AdminEventRewardFacade {
 
         const rewards = [{ type: body.type, quantity: body.quantity }];
         const rewardSummary = this.ticketGrantFacade.formatRewardSummary(rewards);
+        const normalizedDisplayReason = this.ticketGrantFacade.normalizeDisplayReason(
+            body.displayReason ?? body.reason
+        );
         const shouldCreateNotice =
             body.createNotice === true ||
             !!body.noticeTitle ||
@@ -109,14 +126,14 @@ export class AdminEventRewardFacade {
                     ctaText: body.noticeCtaText ?? null,
                     ctaLink: body.noticeCtaLink ?? null,
                     payload: {
-                        displayReason: body.displayReason ?? null,
+                        displayReason: normalizedDisplayReason,
                         rewards,
                     },
                 }
               : this.ticketGrantFacade.createDefaultNotice({
                     title: body.noticeTitle ?? '보상이 지급되었어요',
                     rewardSummary,
-                    displayReason: body.displayReason ?? null,
+                    displayReason: normalizedDisplayReason,
                     ctaText: body.noticeCtaText ?? null,
                     ctaLink: body.noticeCtaLink ?? null,
                     rewards,
@@ -238,6 +255,9 @@ export class AdminEventRewardFacade {
         const savedParticipation = await this.eventParticipationService.save(participation);
 
         const rewardSummary = this.ticketGrantFacade.formatRewardSummary(event.rewardConfig);
+        const normalizedDisplayReason = this.ticketGrantFacade.normalizeDisplayReason(
+            params.displayReason ?? event.title
+        );
         const notice =
             params.createNotice === false
                 ? null
@@ -248,14 +268,14 @@ export class AdminEventRewardFacade {
                         ctaText: params.noticeCtaText ?? event.ctaText,
                         ctaLink: params.noticeCtaLink ?? event.ctaLink ?? null,
                         payload: {
-                            displayReason: params.displayReason ?? null,
+                            displayReason: normalizedDisplayReason,
                             rewards: event.rewardConfig,
                         },
                     }
                   : this.ticketGrantFacade.createDefaultNotice({
-                        title: params.noticeTitle ?? `${event.title} 보상 지급 완료`,
+                        title: params.noticeTitle ?? '보상이 지급되었어요',
                         rewardSummary,
-                        displayReason: params.displayReason ?? event.title,
+                        displayReason: normalizedDisplayReason,
                         ctaText: params.noticeCtaText ?? event.ctaText,
                         ctaLink: params.noticeCtaLink ?? event.ctaLink ?? null,
                         rewards: event.rewardConfig,
