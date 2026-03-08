@@ -50,6 +50,7 @@ export class PortfolioCorrectionService {
 
     createCorrection(
         userId: number,
+        title: string,
         companyName: string,
         positionName: string,
         jobDescription: string,
@@ -57,6 +58,7 @@ export class PortfolioCorrectionService {
     ): Promise<PortfolioCorrection> {
         const correction = PortfolioCorrection.create(
             userId,
+            title,
             companyName,
             positionName,
             jobDescription,

@@ -37,6 +37,7 @@ export class PortfolioCorrectionFacade {
         await this.portfolioCorrectionService.validateCreation(userId);
         const correction = await this.portfolioCorrectionService.createCorrection(
             userId,
+            body.title,
             body.companyName,
             body.positionName,
             body.jobDescription ?? '',

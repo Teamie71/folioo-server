@@ -51,6 +51,7 @@ export class PortfolioCorrection extends BaseEntity {
 
     static create(
         userId: number,
+        title: string,
         companyName: string,
         positionName: string,
         jobDescription: string,
@@ -62,9 +63,7 @@ export class PortfolioCorrection extends BaseEntity {
         correction.positionName = positionName;
         correction.jobDescription = jobDescription;
         correction.jobDescriptionType = jobDescriptionType;
-
-        const initialTitle = `${companyName} ${positionName}`.trim();
-        correction.title = initialTitle.length > 20 ? initialTitle.slice(0, 20) : initialTitle;
+        correction.title = title;
 
         return correction;
     }

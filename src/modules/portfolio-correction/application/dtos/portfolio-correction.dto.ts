@@ -32,18 +32,41 @@ export class CorrectionResDTO {
 }
 
 export class CreateCorrectionReqDTO {
+    @ApiProperty({
+        description: '첨삭 제목',
+        example: '백엔드 개발자 포트폴리오 첨삭',
+    })
+    @Transform(({ value }: { value: string }) => value?.trim())
+    @IsString()
+    @MinLength(1)
+    @MaxLength(20)
+    title: string;
+
+    @ApiProperty({
+        description: '지원 회사명',
+        example: 'Folioo',
+    })
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsString()
     @MinLength(1)
     @MaxLength(20)
     companyName: string;
 
+    @ApiProperty({
+        description: '지원 포지션명',
+        example: 'Backend Developer',
+    })
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsString()
     @MinLength(1)
     @MaxLength(20)
     positionName: string;
 
+    @ApiProperty({
+        description: '채용 공고 또는 직무 설명',
+        example: 'NestJS 기반 백엔드 서비스 개발 및 운영',
+        required: false,
+    })
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
