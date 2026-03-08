@@ -47,8 +47,8 @@ export class PortfolioController {
 
     @Patch(':portfolioId')
     @ApiOperation({
-        summary: '개별 포트폴리오 수정',
-        description: '경험 정리가 완료된 포트폴리오의 내용을 수정합니다.',
+        summary: '개별 포트폴리오 수정 (기여도 수정)',
+        description: '경험 정리가 완료된 포트폴리오의 기여도를 수정합니다.',
     })
     @ApiCommonResponse(PortfolioDetailResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)

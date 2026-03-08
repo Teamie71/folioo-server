@@ -42,12 +42,23 @@ export class ExperienceFacade {
         return this.experienceService.getExperience(experienceId, userId);
     }
 
+    @Transactional()
     async updateExperience(
         experienceId: number,
         userId: number,
         body: UpdateExperienceReqDTO
     ): Promise<ExperienceResDTO> {
-        return this.experienceService.updateExperience(experienceId, userId, body);
+        const result = await this.experienceService.updateExperience(experienceId, userId, body);
+
+        if (body.name !== undefined) {
+            const portfolio = await this.portfolioService.findByExperienceId(experienceId);
+            if (portfolio) {
+                portfolio.update({ name: body.name });
+                await this.portfolioService.savePortfolio(portfolio);
+            }
+        }
+
+        return result;
     }
 
     @Transactional()

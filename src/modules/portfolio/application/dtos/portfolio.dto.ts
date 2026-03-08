@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { JobCategory } from 'src/modules/experience/domain/enums/job-category.enum';
 import { Portfolio } from '../../domain/portfolio.entity';
 
@@ -55,16 +55,6 @@ export class PortfolioDetailResDTO {
 }
 
 export class UpdatePortfolioReqDTO {
-    @ApiPropertyOptional({ description: '포트폴리오 이름', example: '포트폴리오 이름' })
-    @IsOptional()
-    @Transform(({ value }: { value: unknown }) =>
-        typeof value === 'string' ? value.trim() : value
-    )
-    @IsString()
-    @MinLength(1)
-    @MaxLength(20)
-    name?: string;
-
     @ApiPropertyOptional({
         description: '기여도(0~100). 입력하지 않으면 기존 값을 유지합니다.',
         example: 80,
