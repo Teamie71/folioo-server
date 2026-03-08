@@ -11,12 +11,11 @@ import {
     Body,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
     ApiCommonMessageResponse,
     ApiCommonResponse,
-    ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -26,6 +25,10 @@ import {
     UpdatePortfolioBlockReqDTO,
 } from '../application/dtos/external-portfolio.dto';
 import { ExternalPortfolioFacade } from '../application/facades/external-portfolio.facade';
+import {
+    ApiCorrectionIdListResponse,
+    ApiExternalPortfolioExtractRequest,
+} from './decorators/portfolio-correction-swagger.decorator';
 import { ExternalPortfolioExtractRequestParserService } from './services/external-portfolio-extract-request-parser.service';
 
 @ApiTags('Portfolio')
@@ -41,23 +44,7 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 추출',
         description: '업로드한 포트폴리오 파일에서 텍스트를 추출합니다.',
     })
-    @ApiConsumes('multipart/form-data')
-    @ApiBody({
-        schema: {
-            type: 'object',
-            properties: {
-                correctionId: {
-                    type: 'number',
-                    example: 1,
-                },
-                file: {
-                    type: 'string',
-                    format: 'binary',
-                },
-            },
-            required: ['correctionId', 'file'],
-        },
-    })
+    @ApiExternalPortfolioExtractRequest()
     @ApiCommonMessageResponse('AI가 파일을 구조화하여 정리합니다.')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_EXTRACT_FAILED)
     async extractPortfolios(@User('sub') userId: number, @Req() req: Request): Promise<string> {
@@ -95,8 +82,7 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 정리 결과 조회',
         description: 'AI가 구조화한 포트폴리오 정보를 조회합니다.',
     })
-    @ApiQuery({ name: 'correctionId', required: true, type: Number, description: '조회할 첨삭 ID' })
-    @ApiCommonResponseArray(StructuredPortfolioResDTO)
+    @ApiCorrectionIdListResponse(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getSelectedPortfolios(
         @User('sub') userId: number,
