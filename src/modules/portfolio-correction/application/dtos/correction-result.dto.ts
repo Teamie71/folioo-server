@@ -7,7 +7,6 @@ interface JsonObject {
     [key: string]: JsonValue;
 }
 
-type OverallReviewPayload = JsonObject;
 type DescriptionPayload = JsonObject;
 type ResponsibilitiesPayload = JsonObject;
 type ProblemSolvingPayload = JsonObject;
@@ -19,6 +18,7 @@ export class CorrectionResultResDTO {
     jobDescription: string;
     companyInsight: string | null;
     highlightPoint: string | null;
+    overallReview: string | null;
     items: CorrectionItemResDTO[];
 
     static from(correction: PortfolioCorrection, items: CorrectionItem[]): CorrectionResultResDTO {
@@ -28,6 +28,7 @@ export class CorrectionResultResDTO {
         dto.jobDescription = correction.jobDescription;
         dto.companyInsight = correction.companyInsight;
         dto.highlightPoint = correction.highlightPoint;
+        dto.overallReview = correction.overallReview;
         dto.items = items.map((item) => CorrectionItemResDTO.from(item));
         return dto;
     }
@@ -35,7 +36,6 @@ export class CorrectionResultResDTO {
 
 export class CorrectionItemResDTO {
     portfolioId: number;
-    overallReview: OverallReviewPayload | null;
     description: DescriptionPayload | null;
     responsibilities: ResponsibilitiesPayload | null;
     problemSolving: ProblemSolvingPayload | null;
@@ -44,7 +44,6 @@ export class CorrectionItemResDTO {
     static from(item: CorrectionItem): CorrectionItemResDTO {
         const dto = new CorrectionItemResDTO();
         dto.portfolioId = item.portfolio.id;
-        dto.overallReview = item.overallReview as OverallReviewPayload;
         dto.description = item.description as DescriptionPayload;
         dto.responsibilities = item.responsibilities as ResponsibilitiesPayload;
         dto.problemSolving = item.problemSolving as ProblemSolvingPayload;

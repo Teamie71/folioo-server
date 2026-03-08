@@ -249,7 +249,8 @@ export class PortfolioCorrectionService {
 
     async saveCorrectionResult(
         correctionId: number,
-        items: { portfolioId: number; data: Partial<CorrectionItem> }[]
+        items: { portfolioId: number; data: Partial<CorrectionItem> }[],
+        overallReview: string
     ): Promise<void> {
         if (items.length === 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
@@ -282,7 +283,6 @@ export class PortfolioCorrectionService {
             existingItem.responsibilities = data.responsibilities ?? existingItem.responsibilities;
             existingItem.problemSolving = data.problemSolving ?? existingItem.problemSolving;
             existingItem.learnings = data.learnings ?? existingItem.learnings;
-            existingItem.overallReview = data.overallReview ?? existingItem.overallReview;
             itemsToUpdate.push(existingItem);
         }
 
@@ -296,6 +296,7 @@ export class PortfolioCorrectionService {
 
         await this.portfolioCorrectionRepository.updateById(correctionId, {
             status: CorrectionStatus.DONE,
+            overallReview,
         });
     }
 

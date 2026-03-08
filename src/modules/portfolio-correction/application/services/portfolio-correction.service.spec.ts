@@ -44,7 +44,7 @@ const createCorrectionItem = (portfolioId: number): CorrectionItem => {
     item.responsibilities = null as unknown as Record<string, unknown>;
     item.problemSolving = null as unknown as Record<string, unknown>;
     item.learnings = null as unknown as Record<string, unknown>;
-    item.overallReview = null as unknown as Record<string, unknown>;
+
     return item;
 };
 
@@ -168,12 +168,7 @@ describe('PortfolioCorrectionService', () => {
         ]);
 
         await expect(
-            service.saveCorrectionResult(1, [
-                {
-                    portfolioId: 10,
-                    data: { overallReview: { summary: 'ok' } },
-                },
-            ])
+            service.saveCorrectionResult(1, [{ portfolioId: 10, data: {} }], '전체 총평')
         ).rejects.toThrow(BusinessException);
 
         expect(correctionItemService.saveAll).not.toHaveBeenCalled();
@@ -192,21 +187,20 @@ describe('PortfolioCorrectionService', () => {
         correctionItemService.saveAll.mockImplementation((items) => Promise.resolve(items));
 
         await expect(
-            service.saveCorrectionResult(1, [
-                {
-                    portfolioId: 10,
-                    data: { overallReview: { summary: 'first' } },
-                },
-                {
-                    portfolioId: 11,
-                    data: { overallReview: { summary: 'second' } },
-                },
-            ])
+            service.saveCorrectionResult(
+                1,
+                [
+                    { portfolioId: 10, data: {} },
+                    { portfolioId: 11, data: {} },
+                ],
+                '전체 포트폴리오 총평'
+            )
         ).resolves.toBeUndefined();
 
         expect(correctionItemService.saveAll).toHaveBeenCalledWith([first, second]);
         expect(repository.updateById).toHaveBeenCalledWith(1, {
             status: CorrectionStatus.DONE,
+            overallReview: '전체 포트폴리오 총평',
         });
     });
 });

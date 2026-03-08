@@ -16,7 +16,6 @@ class InternalCorrectionItemResDTO {
     responsibilities: JsonObject | null;
     problemSolving: JsonObject | null;
     learnings: JsonObject | null;
-    overallReview: JsonObject | null;
 
     static from(item: CorrectionItem): InternalCorrectionItemResDTO {
         const dto = new InternalCorrectionItemResDTO();
@@ -25,7 +24,6 @@ class InternalCorrectionItemResDTO {
         dto.responsibilities = (item.responsibilities as JsonObject) ?? null;
         dto.problemSolving = (item.problemSolving as JsonObject) ?? null;
         dto.learnings = (item.learnings as JsonObject) ?? null;
-        dto.overallReview = (item.overallReview as JsonObject) ?? null;
         return dto;
     }
 }
