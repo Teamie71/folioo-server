@@ -7,11 +7,16 @@ import {
     IsString,
     Max,
     MaxLength,
+    Matches,
     Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
 import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
+
+const NOTICE_CTA_LINK_REGEX = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
+const NOTICE_CTA_LINK_MESSAGE =
+    'noticeCtaLink는 http/https URL 또는 /로 시작하는 상대 경로만 허용합니다.';
 
 export class AdminUserSearchReqDTO {
     @IsOptional()
@@ -129,6 +134,7 @@ export class AdminGrantRewardReqDTO {
     @IsOptional()
     @IsString()
     @MaxLength(255)
+    @Matches(NOTICE_CTA_LINK_REGEX, { message: NOTICE_CTA_LINK_MESSAGE })
     noticeCtaLink?: string;
 }
 
@@ -213,6 +219,7 @@ export class AdminGrantTicketsReqDTO {
     @IsOptional()
     @IsString()
     @MaxLength(255)
+    @Matches(NOTICE_CTA_LINK_REGEX, { message: NOTICE_CTA_LINK_MESSAGE })
     noticeCtaLink?: string;
 }
 

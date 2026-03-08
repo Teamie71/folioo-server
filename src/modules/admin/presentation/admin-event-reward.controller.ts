@@ -84,6 +84,7 @@ export class AdminEventRewardController {
     @Get('api/ticket-grants')
     @ApiOperation({ summary: '이용권 지급/안내 이력 조회 (Admin)' })
     @ApiCommonResponse(AdminTicketGrantListResDTO)
+    @ApiCommonErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR)
     async getTicketGrants(): Promise<AdminTicketGrantListResDTO> {
         return this.adminEventRewardFacade.getTicketGrants();
     }
