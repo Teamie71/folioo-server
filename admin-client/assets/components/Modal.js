@@ -578,7 +578,7 @@ export function GrantEventRewardModal({ open, user, eventOptions, onClose, onSuc
     `;
 
     return html`
-        <${Modal} open=${open} onClose=${onClose}>
+        <${Modal} open=${open} onClose=${onClose} panelClassName="max-w-5xl">
             ${step === 'form' ? formView : confirmView}
         <//>
     `;
