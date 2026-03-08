@@ -1,12 +1,24 @@
+import { DateTime } from 'luxon';
+
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 /**
  * 현재 시각을 KST(한국 표준시) 기준 wall-clock Date 객체로 반환합니다.
  * timestamp without time zone 컬럼에 저장할 때 DB에 KST 시각이 기록됩니다.
  */
 export function getSeoulNow(): Date {
-    return new Date(Date.now() + KST_OFFSET_MS);
+    const kst = DateTime.now().setZone(SEOUL_TIME_ZONE);
+    return new Date(
+        Date.UTC(
+            kst.year,
+            kst.month - 1,
+            kst.day,
+            kst.hour,
+            kst.minute,
+            kst.second,
+            kst.millisecond
+        )
+    );
 }
 
 export function getSeoulDateString(date: Date = new Date()): string {
