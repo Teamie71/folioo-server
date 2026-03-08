@@ -1,9 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PortfolioRepository } from '../../infrastructure/repositories/portfolio.repository';
 import { Portfolio } from '../../domain/portfolio.entity';
-import { UpdatePortfolioBlockReqDTO } from 'src/modules/portfolio-correction/application/dtos/external-portfolio.dto';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+
+export interface ExternalPortfolioUpdateInput {
+    name?: string;
+    description?: string;
+    responsibilities?: string;
+    problemSolving?: string;
+    learnings?: string;
+}
 
 @Injectable()
 export class ExternalPortfolioService {
@@ -17,6 +24,20 @@ export class ExternalPortfolioService {
         return portfolio;
     }
 
+    async findExternalByIdAndUserIdOrThrow(
+        portfolioId: number,
+        userId: number
+    ): Promise<Portfolio> {
+        const portfolio = await this.portfolioRepository.findExternalByIdAndUserId(
+            portfolioId,
+            userId
+        );
+        if (!portfolio) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
+        }
+        return portfolio;
+    }
+
     async createEmptyPortfolio(userId: number): Promise<Portfolio> {
         const portfolio = Portfolio.createExternal(userId);
         return this.portfolioRepository.save(portfolio);
@@ -24,9 +45,10 @@ export class ExternalPortfolioService {
 
     async updateExternalPortfolio(
         portfolioId: number,
-        update: UpdatePortfolioBlockReqDTO
+        userId: number,
+        update: ExternalPortfolioUpdateInput
     ): Promise<Portfolio> {
-        const portfolio = await this.findExternalByIdOrThrow(portfolioId);
+        const portfolio = await this.findExternalByIdAndUserIdOrThrow(portfolioId, userId);
 
         if (update.name !== undefined) portfolio.name = update.name;
         if (update.description !== undefined) portfolio.description = update.description;
@@ -38,8 +60,8 @@ export class ExternalPortfolioService {
         return this.portfolioRepository.save(portfolio);
     }
 
-    async deleteExternalPortfolio(portfolioId: number): Promise<void> {
-        await this.findExternalByIdOrThrow(portfolioId);
+    async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
+        await this.findExternalByIdAndUserIdOrThrow(portfolioId, userId);
         await this.portfolioRepository.deleteById(portfolioId);
     }
 

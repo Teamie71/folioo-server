@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
-import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
+import {
+    ExternalPortfolioService,
+    ExternalPortfolioUpdateInput,
+} from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
@@ -94,22 +97,34 @@ export class ExternalPortfolioFacade {
     @Transactional()
     async updateExternalPortfolio(
         portfolioId: number,
+        userId: number,
         body: UpdatePortfolioBlockReqDTO
     ): Promise<StructuredPortfolioResDTO> {
+        const updateInput: ExternalPortfolioUpdateInput = {
+            name: body.name,
+            description: body.description,
+            responsibilities: body.responsibilities,
+            problemSolving: body.problemSolving,
+            learnings: body.learnings,
+        };
         const updatedPortfolio = await this.externalPortfolioService.updateExternalPortfolio(
             portfolioId,
-            body
+            userId,
+            updateInput
         );
         return StructuredPortfolioResDTO.from(updatedPortfolio);
     }
 
     @Transactional()
-    async deleteExternalPortfolio(portfolioId: number): Promise<void> {
-        const portfolio = await this.externalPortfolioService.findExternalByIdOrThrow(portfolioId);
+    async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
+        const portfolio = await this.externalPortfolioService.findExternalByIdAndUserIdOrThrow(
+            portfolioId,
+            userId
+        );
         if (!this.externalPortfolioService.isEmptyPortfolio(portfolio)) {
             throw new BusinessException(ErrorCode.PORTFOLIO_NOT_EMPTY);
         }
 
-        await this.externalPortfolioService.deleteExternalPortfolio(portfolioId);
+        await this.externalPortfolioService.deleteExternalPortfolio(portfolioId, userId);
     }
 }
