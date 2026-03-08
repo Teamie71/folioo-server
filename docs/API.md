@@ -220,6 +220,9 @@ Legend:
 - GET `/users/me/tickets` -> IMPLEMENTED
 - GET `/users/me/tickets/expiring` -> IMPLEMENTED
 - GET `/users/me/tickets/history` -> IMPLEMENTED (이용권 사용 이력)
+- GET `/users/me/ticket-grant-notices/next` -> IMPLEMENTED (다음 PENDING 보상 안내 1건 조회, 없으면 null)
+- PATCH `/users/me/ticket-grant-notices/{noticeId}/shown` -> IMPLEMENTED (보상 안내 shown 처리)
+- PATCH `/users/me/ticket-grant-notices/{noticeId}/dismiss` -> IMPLEMENTED (보상 안내 dismiss 처리)
 - PATCH `/users/me` -> IMPLEMENTED
 - PATCH `/users/me/marketing-consent` -> IMPLEMENTED
 - DELETE `/users/me` -> IMPLEMENTED (soft delete + social unlink policy)
@@ -296,7 +299,7 @@ Legend:
 - GET `/events/{eventCode}/feedback-modal` -> IMPLEMENTED (보상 수령 여부에 따라 피드백 모달 문구/CTA 반환)
 - GET `/events/{eventCode}/progress-card` -> IMPLEMENTED (진행도/남은 개수/동적 문구/CTA 반환)
 - POST `/events/{eventCode}/reward-claim` -> IMPLEMENTED (완료된 챌린지 보상 직접 수령)
-- POST `/events/admin/{eventCode}/feedback-rewards/grants` -> IMPLEMENTED (`@Public`, 레거시 수동 지급, Admin API로 이관 예정)
+- POST `/events/admin/{eventCode}/feedback-rewards/grants` -> DEPRECATED (레거시 수동 지급 경로, 현재는 `/admin/api/events/{eventCode}/grants` 사용)
 
 ### Admin
 
@@ -305,3 +308,4 @@ Legend:
 - POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급)
 - POST `/admin/api/tickets/grant` -> IMPLEMENTED (이용권 수동 지급)
 - GET `/admin/api/tickets/history` -> IMPLEMENTED (이용권 지급 이력 조회)
+- GET `/admin/api/ticket-grants` -> IMPLEMENTED (이용권 지급 ledger + notice 상태 조회)
