@@ -17,6 +17,7 @@ import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
+import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 
 @Injectable()
 export class PortfolioCorrectionFacade {
@@ -119,6 +120,7 @@ export class PortfolioCorrectionFacade {
                 const message = `Failed to delegate correction generation to AI server: correctionId=${correctionId}`;
                 const stack = error instanceof Error ? error.stack : undefined;
                 this.logger.error(message, stack);
+                this.fallbackToFailed(correctionId);
             });
     }
 
@@ -132,6 +134,19 @@ export class PortfolioCorrectionFacade {
                 const message = `Failed to delegate company insight generation to AI server: correctionId=${correctionId}`;
                 const stack = error instanceof Error ? error.stack : undefined;
                 this.logger.error(message, stack);
+                this.fallbackToFailed(correctionId);
+            });
+    }
+
+    private fallbackToFailed(correctionId: number): void {
+        this.portfolioCorrectionService
+            .updateStatusWithTransition(correctionId, CorrectionStatus.FAILED)
+            .catch((error: unknown) => {
+                const stack = error instanceof Error ? error.stack : undefined;
+                this.logger.error(
+                    `Failed to transition correction to FAILED status: correctionId=${correctionId}`,
+                    stack
+                );
             });
     }
 
