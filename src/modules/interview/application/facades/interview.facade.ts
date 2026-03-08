@@ -81,9 +81,7 @@ export class InterviewFacade {
         }
 
         await this.insightService.findByIdAndUserOrThrow(insightId, userId);
-        return [];
-        // TODO: AI 서버 측 스펙 변경 이후 코드 수정
-        //return [insightId];
+        return [insightId];
     }
 
     async getSessionState(
