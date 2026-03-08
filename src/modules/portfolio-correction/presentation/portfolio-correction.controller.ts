@@ -9,7 +9,7 @@ import {
     Post,
     Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
     ApiCommonMessageResponse,
@@ -37,6 +37,7 @@ import {
     CorrectionItemResDTO,
     CorrectionResultResDTO,
 } from '../application/dtos/correction-result.dto';
+import { ApiKeywordListResponse } from './decorators/portfolio-correction-swagger.decorator';
 
 @ApiTags('Portfolio-Correction')
 @Controller('portfolio-corrections')
@@ -52,8 +53,7 @@ export class PortfolioCorrectionController {
         description:
             '포트폴리오 첨삭 목록을 조회합니다. 검색어를 입력하면 제목에 키워드를 포함하는 목록만 조회됩니다.',
     })
-    @ApiQuery({ name: 'keyword', required: false })
-    @ApiCommonResponseArray(CorrectionResDTO)
+    @ApiKeywordListResponse(CorrectionResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async getCorrections(
         @User('sub') userId: number,

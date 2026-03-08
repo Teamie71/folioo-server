@@ -20,6 +20,7 @@ import { ExternalPortfolioFacade } from './application/facades/external-portfoli
 import { PortfolioModule } from '../portfolio/portfolio.module';
 import { PortfolioCorrectionFacade } from './application/facades/portfolio-correction.facade';
 import { TicketModule } from '../ticket/ticket.module';
+import { ExternalPortfolioExtractRequestParserService } from './presentation/services/external-portfolio-extract-request-parser.service';
 
 @Module({
     imports: [
@@ -46,6 +47,7 @@ import { TicketModule } from '../ticket/ticket.module';
         PdfExtractService,
         ExternalPortfolioFacade,
         PortfolioCorrectionFacade,
+        ExternalPortfolioExtractRequestParserService,
     ],
     exports: [
         PortfolioCorrectionService,
