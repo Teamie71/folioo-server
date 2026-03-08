@@ -41,12 +41,11 @@ export class ExperienceFacade {
 
     async getExperience(experienceId: number, userId: number): Promise<ExperienceStateResDTO> {
         const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
-        let portfolioId: number | null = null;
-        if (experience.status === ExperienceStatus.DONE) {
-            const portfolio = await this.portfolioService.findByExperienceId(experienceId);
-            portfolioId = portfolio?.id ?? null;
+        if (experience.status !== ExperienceStatus.DONE) {
+            return ExperienceStateResDTO.from(experience, null);
         }
-        return ExperienceStateResDTO.from(experience, portfolioId);
+        const portfolio = await this.portfolioService.findByExperienceId(experienceId);
+        return ExperienceStateResDTO.from(experience, portfolio?.id ?? null);
     }
 
     @Transactional()
