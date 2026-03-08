@@ -153,10 +153,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: `활동 분류 태그는 최대 ${MAX_ACTIVITY_TAG_PER_USER}개까지 가질 수 있습니다.`,
         statusCode: HttpStatus.CONFLICT,
     },
-    [ErrorCode.DUPLICATE_EXPERIENCE_NAME]: {
-        message: '경험 정리 제목은 중복될 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
     [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
         message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,

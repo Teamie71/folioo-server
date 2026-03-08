@@ -30,7 +30,7 @@ export class ExperienceFacade {
         hopeJob: JobCategory
     ): Promise<ExperienceResDTO> {
         await this.ticketService.consumeTicket(userId, TicketType.EXPERIENCE);
-        await this.experienceService.validateCreation(userId, name);
+        await this.experienceService.validateCreation(userId);
         return this.experienceService.createExperience(userId, name, hopeJob);
     }
 
@@ -48,7 +48,17 @@ export class ExperienceFacade {
         userId: number,
         body: UpdateExperienceReqDTO
     ): Promise<ExperienceResDTO> {
-        return this.experienceService.updateExperience(experienceId, userId, body);
+        const result = await this.experienceService.updateExperience(experienceId, userId, body);
+
+        if (body.name !== undefined) {
+            const portfolio = await this.portfolioService.findByExperienceId(experienceId);
+            if (portfolio) {
+                portfolio.update({ name: body.name });
+                await this.portfolioService.savePortfolio(portfolio);
+            }
+        }
+
+        return result;
     }
 
     @Transactional()

@@ -51,8 +51,9 @@ export class PortfolioService {
     ): Promise<PortfolioDetailResDTO> {
         const portfolio = await this.findByIdOrThrow(portfolioId, userId);
         portfolio.update(body);
-        const saved = await this.portfolioRepository.save(portfolio);
-        return PortfolioDetailResDTO.from(saved);
+        await this.portfolioRepository.save(portfolio);
+        const savedPortfolio = await this.findByIdOrThrow(portfolio.id, userId);
+        return PortfolioDetailResDTO.from(savedPortfolio);
     }
 
     async deletePortfolio(portfolioId: number, userId: number): Promise<void> {
