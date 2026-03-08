@@ -117,14 +117,6 @@ export class ExternalPortfolioFacade {
 
     @Transactional()
     async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
-        const portfolio = await this.externalPortfolioService.findExternalByIdAndUserIdOrThrow(
-            portfolioId,
-            userId
-        );
-        if (!this.externalPortfolioService.isEmptyPortfolio(portfolio)) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_EMPTY);
-        }
-
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId, userId);
     }
 }
