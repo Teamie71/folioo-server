@@ -99,10 +99,11 @@ export class ExternalPortfolioController {
     @ApiCommonResponse(StructuredPortfolioResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     async updateExternalPortfolio(
+        @User('sub') userId: number,
         @Param('portfolioId', ParseIntPipe) portfolioId: number,
         @Body() body: UpdatePortfolioBlockReqDTO
     ): Promise<StructuredPortfolioResDTO> {
-        return this.externalPortfolioFacade.updateExternalPortfolio(portfolioId, body);
+        return this.externalPortfolioFacade.updateExternalPortfolio(portfolioId, userId, body);
     }
 
     @Delete(':portfolioId')
@@ -114,9 +115,10 @@ export class ExternalPortfolioController {
     @ApiCommonMessageResponse('포트폴리오가 삭제되었습니다.')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     async deleteExternalPortfolio(
+        @User('sub') userId: number,
         @Param('portfolioId', ParseIntPipe) portfolioId: number
     ): Promise<string> {
-        await this.externalPortfolioFacade.deleteExternalPortfolio(portfolioId);
+        await this.externalPortfolioFacade.deleteExternalPortfolio(portfolioId, userId);
         return '포트폴리오가 삭제되었습니다.';
     }
 }
