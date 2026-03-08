@@ -7,6 +7,7 @@ import { Toast } from '../components/Toast.js';
 
 export function UserManagementTab() {
     const [users, setUsers] = useState(null);
+    const [eventOptions, setEventOptions] = useState([]);
     const [keyword, setKeyword] = useState('');
     const [total, setTotal] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -42,6 +43,19 @@ export function UserManagementTab() {
     useEffect(() => {
         loadUsers();
     }, [loadUsers]);
+
+    useEffect(() => {
+        const loadEventOptions = async () => {
+            try {
+                const result = await api('/admin/api/events/manual-reward-options');
+                setEventOptions(result.events || []);
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        };
+
+        loadEventOptions();
+    }, [showToast]);
 
     const handleGrant = (user) => {
         setSelectedUser(user);
@@ -105,6 +119,7 @@ export function UserManagementTab() {
             <${GrantEventRewardModal}
                 open=${eventModalOpen}
                 user=${selectedUser}
+                eventOptions=${eventOptions}
                 onClose=${() => setEventModalOpen(false)}
                 onSuccess=${handleEventGrantSuccess}
             />
