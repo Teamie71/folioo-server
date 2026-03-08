@@ -8,6 +8,7 @@ import {
     UpdateExperienceReqDTO,
 } from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
+import { ExperienceStatus } from '../../domain/enums/experience-status.enum';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { CorrectionPortfolioSelectionService } from 'src/modules/portfolio-correction/application/services/correction-portfolio-selection.service';
 import { BusinessException } from 'src/common/exceptions/business.exception';
@@ -39,7 +40,12 @@ export class ExperienceFacade {
     }
 
     async getExperience(experienceId: number, userId: number): Promise<ExperienceStateResDTO> {
-        return this.experienceService.getExperience(experienceId, userId);
+        const experience = await this.experienceService.findByIdOrThrow(experienceId, userId);
+        if (experience.status !== ExperienceStatus.DONE) {
+            return ExperienceStateResDTO.from(experience, null);
+        }
+        const portfolio = await this.portfolioService.findByExperienceId(experienceId);
+        return ExperienceStateResDTO.from(experience, portfolio?.id ?? null);
     }
 
     @Transactional()

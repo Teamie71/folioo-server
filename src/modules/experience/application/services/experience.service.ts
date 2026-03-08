@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ExperienceRepository } from '../../infrastructure/repositories/experience.repository';
 import { Experience, MAX_EXPERIENCES_PER_USER } from '../../domain/experience.entity';
-import {
-    ExperienceResDTO,
-    ExperienceStateResDTO,
-    UpdateExperienceReqDTO,
-} from '../dtos/experience.dto';
+import { ExperienceResDTO, UpdateExperienceReqDTO } from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { ExperienceStatus } from '../../domain/enums/experience-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
@@ -77,11 +73,6 @@ export class ExperienceService {
     async getExperiences(userId: number, keyword?: string): Promise<ExperienceResDTO[]> {
         const experiences = await this.experienceRepository.findAllByUserId(userId, keyword);
         return experiences.map((experience) => ExperienceResDTO.from(experience));
-    }
-
-    async getExperience(experienceId: number, userId: number): Promise<ExperienceStateResDTO> {
-        const experience = await this.findByIdOrThrow(experienceId, userId);
-        return ExperienceStateResDTO.from(experience);
     }
 
     async updateExperience(
