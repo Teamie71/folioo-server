@@ -228,7 +228,7 @@ export class PortfolioCorrectionService {
             return;
         }
 
-        if (newStatus === CorrectionStatus.FAILED) {
+        if (newStatus === CorrectionStatus.FAILED || newStatus === CorrectionStatus.RAG_FAILED) {
             return;
         }
 
@@ -238,6 +238,7 @@ export class PortfolioCorrectionService {
             [CorrectionStatus.COMPANY_INSIGHT]: [CorrectionStatus.GENERATING],
             [CorrectionStatus.GENERATING]: [CorrectionStatus.DONE],
             [CorrectionStatus.DONE]: [],
+            [CorrectionStatus.RAG_FAILED]: [],
             [CorrectionStatus.FAILED]: [],
         };
 
