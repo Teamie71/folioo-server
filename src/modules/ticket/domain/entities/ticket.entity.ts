@@ -6,11 +6,13 @@ import { TicketSource } from '../enums/ticket-source.enum';
 import { User } from '../../../user/domain/user.entity';
 import { Payment } from '../../../payment/domain/entities/payment.entity';
 import { EventParticipation } from '../../../event/domain/entities/event-participation.entity';
+import { TicketGrant } from './ticket-grant.entity';
 
 @Entity('ticket')
 @Index(['userId'])
 @Index(['paymentId'])
 @Index(['eventParticipationId'])
+@Index(['ticketGrantId'])
 export class Ticket extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
@@ -51,6 +53,13 @@ export class Ticket extends BaseEntity {
 
     @Column({ name: 'event_participation_id', nullable: true })
     eventParticipationId: number;
+
+    @ManyToOne(() => TicketGrant, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'ticket_grant_id' })
+    ticketGrant: TicketGrant | null;
+
+    @Column({ name: 'ticket_grant_id', nullable: true })
+    ticketGrantId: number | null;
 
     @Column({ nullable: true })
     usedAt: Date;
