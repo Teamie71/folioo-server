@@ -46,6 +46,22 @@ export class EventRepository {
             .getOne();
     }
 
+    async findActiveManualRewardEvents(now: string): Promise<Event[]> {
+        return this.eventRepository
+            .createQueryBuilder('event')
+            .where('event.isActive = :isActive', { isActive: true })
+            .andWhere('event.startDate <= :now', { now })
+            .andWhere(
+                new Brackets((qb) => {
+                    qb.where('event.endDate >= :now', { now }).orWhere('event.endDate IS NULL');
+                })
+            )
+            .andWhere(`COALESCE(event.opsConfig->>'manualRewardOnly', 'false') = 'true'`)
+            .orderBy('event.displayOrder', 'ASC')
+            .addOrderBy('event.id', 'ASC')
+            .getMany();
+    }
+
     async existsById(id: number): Promise<boolean> {
         return this.eventRepository.exists({ where: { id } });
     }

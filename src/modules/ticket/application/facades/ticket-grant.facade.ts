@@ -151,9 +151,8 @@ export class TicketGrantFacade {
         rewards: RewardItem[];
         expiresAt?: Date | null;
     }): NoticeInput {
-        const body = displayReason
-            ? `${displayReason}으로 ${rewardSummary}이 지급되었어요.`
-            : `${rewardSummary}이 지급되었어요.`;
+        const normalizedDisplayReason = this.normalizeDisplayReason(displayReason);
+        const body = `${rewardSummary}이 지급되었어요.`;
 
         return {
             title,
@@ -162,10 +161,23 @@ export class TicketGrantFacade {
             ctaLink: ctaLink ?? null,
             expiresAt: expiresAt ?? null,
             payload: {
-                displayReason: displayReason ?? null,
+                displayReason: normalizedDisplayReason,
                 rewards,
             },
         };
+    }
+
+    normalizeDisplayReason(displayReason?: string | null): string | null {
+        const trimmedDisplayReason = displayReason?.trim();
+        if (!trimmedDisplayReason) {
+            return null;
+        }
+
+        if (trimmedDisplayReason === '서비스 이용 불편에 대한 보상') {
+            return '서비스 이용 불편에 대한';
+        }
+
+        return trimmedDisplayReason;
     }
 
     formatRewardSummary(rewards: RewardItem[]): string {

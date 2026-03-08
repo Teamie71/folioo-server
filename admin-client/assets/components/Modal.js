@@ -2,8 +2,21 @@
 import { html, useState, useEffect } from '../lib/setup.js';
 import { TICKET_TYPE_LABELS, GRANT_REASONS, api } from '../lib/api.js';
 
-function buildDefaultNoticeBody(displayReason, typeLabel, quantity) {
-    return `${displayReason}으로 ${typeLabel} ${quantity}개가 지급되었어요.`;
+function normalizeDisplayReason(displayReason) {
+    const trimmedDisplayReason = displayReason?.trim();
+    if (!trimmedDisplayReason) return '';
+    if (trimmedDisplayReason === '서비스 이용 불편에 대한 보상') {
+        return '서비스 이용 불편에 대한';
+    }
+    return trimmedDisplayReason;
+}
+
+function formatRewardSummary(typeLabel, quantity) {
+    return `${typeLabel} ${quantity}회권`;
+}
+
+function buildDefaultNoticeBody(typeLabel, quantity) {
+    return `${formatRewardSummary(typeLabel, quantity)}이 지급되었어요.`;
 }
 
 function useNoticeFormState(open) {
@@ -13,6 +26,7 @@ function useNoticeFormState(open) {
     const [noticeBody, setNoticeBody] = useState('');
     const [noticeCtaText, setNoticeCtaText] = useState('');
     const [noticeCtaLink, setNoticeCtaLink] = useState('');
+    const [detailsOpen, setDetailsOpen] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -22,6 +36,7 @@ function useNoticeFormState(open) {
             setNoticeBody('');
             setNoticeCtaText('');
             setNoticeCtaLink('');
+            setDetailsOpen(false);
         }
     }, [open]);
 
@@ -38,6 +53,8 @@ function useNoticeFormState(open) {
         setNoticeCtaText,
         noticeCtaLink,
         setNoticeCtaLink,
+        detailsOpen,
+        setDetailsOpen,
     };
 }
 
@@ -54,9 +71,15 @@ function NoticeFormFields({
     setNoticeCtaText,
     noticeCtaLink,
     setNoticeCtaLink,
+    detailsOpen,
+    setDetailsOpen,
     previewBody,
+    summaryText,
     previewVariant,
     ctaLinkPlaceholder,
+    displayReasonReadonly,
+    displayReasonReadonlyLabel,
+    embedded,
 }) {
     const previewStyle =
         previewVariant === 'amber'
@@ -65,7 +88,7 @@ function NoticeFormFields({
     const previewTitleStyle = previewVariant === 'amber' ? 'font-semibold text-amber-600 mb-1' : 'font-semibold text-primary-600 mb-1';
 
     return html`
-        <div class="border-t border-gray-200 pt-4 space-y-4">
+        <div class=${embedded ? 'space-y-4' : 'border-t border-gray-200 pt-4 space-y-4'}>
             <label class="flex items-center justify-between gap-3">
                 <span>
                     <span class="block text-sm font-semibold text-gray-600">보상 안내 모달 생성</span>
@@ -79,43 +102,69 @@ function NoticeFormFields({
             </label>
 
             ${createNotice ? html`
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">사용자 노출 사유</label>
-                    <select value=${displayReason} onChange=${(e) => setDisplayReason(e.target.value)}
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                   focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none">
-                        ${GRANT_REASONS.map(r => html`<option key=${r} value=${r}>${r}</option>`)}
-                    </select>
+                <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3 items-start">
+                    ${displayReasonReadonly ? html`
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1.5">${displayReasonReadonlyLabel || '사용자 노출 사유'}</label>
+                            <div class="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-700">
+                                ${normalizeDisplayReason(displayReason) || '-'}
+                            </div>
+                        </div>
+                    ` : html`
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1.5">사용자 노출 사유</label>
+                            <select value=${displayReason} onChange=${(e) => setDisplayReason(e.target.value)}
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+                                           focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none">
+                                ${GRANT_REASONS.map(r => html`<option key=${r} value=${r}>${r}</option>`)}
+                            </select>
+                        </div>
+                    `}
+                    <button type="button"
+                            onClick=${() => setDetailsOpen(!detailsOpen)}
+                            class="mt-7 px-3 py-2 text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 whitespace-nowrap">
+                        ${detailsOpen ? '고급 설정 닫기' : '고급 설정'}
+                    </button>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">모달 제목</label>
-                    <input type="text" value=${noticeTitle}
-                           onInput=${(e) => setNoticeTitle(e.target.value)}
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                  focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
-                           placeholder="보상이 지급되었어요" />
+                <div class=${previewStyle}>
+                    <div class=${previewTitleStyle}>미리보기</div>
+                    <div class="font-medium text-gray-800">${noticeTitle || '보상이 지급되었어요'}</div>
+                    <div class="mt-1 text-[11px] text-gray-500">${normalizeDisplayReason(displayReason) || '표시 사유 없음'}</div>
+                    <div class="mt-1 leading-relaxed">${previewBody}</div>
+                    <div class="mt-1 text-[11px] text-gray-500">${summaryText}</div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">모달 본문 (선택)</label>
-                    <textarea value=${noticeBody}
-                              onInput=${(e) => setNoticeBody(e.target.value)}
-                              rows="3"
-                              class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                     focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none resize-none"
-                              placeholder="비워두면 기본 문구가 생성됩니다."></textarea>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-600 mb-1.5">CTA 문구 (선택)</label>
-                        <input type="text" value=${noticeCtaText}
-                               onInput=${(e) => setNoticeCtaText(e.target.value)}
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                      focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
-                               placeholder="예: 보러가기" />
+                ${detailsOpen ? html`
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1.5">모달 제목</label>
+                            <input type="text" value=${noticeTitle}
+                                   onInput=${(e) => setNoticeTitle(e.target.value)}
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+                                          focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+                                   placeholder="보상이 지급되었어요" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1.5">CTA 문구 (선택)</label>
+                            <input type="text" value=${noticeCtaText}
+                                   onInput=${(e) => setNoticeCtaText(e.target.value)}
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+                                          focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+                                   placeholder="예: 보러가기" />
+                        </div>
                     </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-1.5">모달 본문 (선택)</label>
+                        <textarea value=${noticeBody}
+                                  onInput=${(e) => setNoticeBody(e.target.value)}
+                                  rows="2"
+                                  class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+                                         focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none resize-none"
+                                  placeholder="비워두면 서버 규칙으로 기본 문구가 생성됩니다."></textarea>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-semibold text-gray-600 mb-1.5">CTA 링크 (선택)</label>
                         <input type="text" value=${noticeCtaLink}
@@ -124,26 +173,20 @@ function NoticeFormFields({
                                       focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
                                placeholder=${ctaLinkPlaceholder} />
                     </div>
-                </div>
-
-                <div class=${previewStyle}>
-                    <div class=${previewTitleStyle}>미리보기</div>
-                    <div class="font-medium text-gray-800">${noticeTitle || '보상이 지급되었어요'}</div>
-                    <div class="mt-1 leading-relaxed">${previewBody}</div>
-                </div>
+                ` : null}
             ` : null}
         </div>
     `;
 }
 
-export function Modal({ open, onClose, children }) {
+export function Modal({ open, onClose, children, panelClassName = 'max-w-md' }) {
     if (!open) return null;
 
     return html`
         <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-40"
              onClick=${(e) => { if (e.target === e.currentTarget) onClose(); }}>
-            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-[90%] p-6
-                        animate-[fadeIn_0.2s_ease]">
+            <div class=${`bg-white rounded-2xl shadow-2xl ${panelClassName} w-[90%] max-h-[85vh] overflow-y-auto p-6
+                        animate-[fadeIn_0.2s_ease]`}>
                 ${children}
             </div>
         </div>
@@ -168,15 +211,14 @@ export function GrantTicketModal({ open, user, onClose, onSuccess }) {
         }
     }, [open]);
 
+    useEffect(() => {
+        noticeForm.setDisplayReason(reason);
+    }, [reason]);
+
     if (!user) return null;
 
     const noticePreviewBody =
-        noticeForm.noticeBody ||
-        buildDefaultNoticeBody(
-            noticeForm.displayReason,
-            TICKET_TYPE_LABELS[type],
-            quantity
-        );
+        noticeForm.noticeBody || buildDefaultNoticeBody(TICKET_TYPE_LABELS[type], quantity);
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -260,6 +302,7 @@ export function GrantTicketModal({ open, user, onClose, onSuccess }) {
                 <${NoticeFormFields}
                     ...${noticeForm}
                     previewBody=${noticePreviewBody}
+                    summaryText=${`기본 표시 사유: ${normalizeDisplayReason(noticeForm.displayReason) || '없음'}`}
                     previewVariant="primary"
                     ctaLinkPlaceholder="예: /tickets"
                 />
@@ -333,25 +376,26 @@ export function GrantTicketModal({ open, user, onClose, onSuccess }) {
     `;
 
     return html`
-        <${Modal} open=${open} onClose=${onClose}>
+        <${Modal} open=${open} onClose=${onClose} panelClassName="max-w-5xl">
             ${step === 'form' ? formView : confirmView}
         <//>
     `;
 }
 
-export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
+export function GrantEventRewardModal({ open, user, eventOptions, onClose, onSuccess }) {
     const [eventCode, setEventCode] = useState('');
-    const [reviewedBy, setReviewedBy] = useState('admin-ui');
+    const [reviewedBy, setReviewedBy] = useState('김수빈');
     const [externalSubmissionId, setExternalSubmissionId] = useState('');
     const [reviewNote, setReviewNote] = useState('');
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState('form');
     const noticeForm = useNoticeFormState(open);
+    const selectedEvent = (eventOptions || []).find((event) => event.code === eventCode) || null;
 
     useEffect(() => {
         if (open) {
             setEventCode('');
-            setReviewedBy('admin-ui');
+            setReviewedBy('김수빈');
             setExternalSubmissionId('');
             setReviewNote('');
             setStep('form');
@@ -359,10 +403,14 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
         }
     }, [open]);
 
+    useEffect(() => {
+        noticeForm.setDisplayReason(selectedEvent?.title ?? '');
+    }, [selectedEvent]);
+
     if (!user) return null;
 
     const previewBody =
-        noticeForm.noticeBody || `${noticeForm.displayReason}으로 이벤트 보상이 지급되었어요.`;
+        noticeForm.noticeBody || '기본 문구는 서버가 이벤트명과 이용권 규칙으로 자동 생성합니다.';
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -410,52 +458,62 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
                 님에게 이벤트 보상을 지급합니다.
             </p>
 
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">이벤트 코드</label>
-                    <input type="text" value=${eventCode}
-                           onInput=${(e) => setEventCode(e.target.value.toUpperCase())}
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                  focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
-                           placeholder="예: FEEDBACK_REWARD" />
-                    <p class="text-xs text-gray-400 mt-1">수동 보상이 허용된 활성 이벤트 코드여야 합니다.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-4 items-start">
+                <div class="space-y-4 rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-600 mb-1.5">검토자</label>
-                        <input type="text" value=${reviewedBy}
-                               onInput=${(e) => setReviewedBy(e.target.value)}
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                      focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
-                               placeholder="예: admin-ui" />
+                        <label class="block text-sm font-semibold text-gray-600 mb-1.5">이벤트 코드</label>
+                        <select value=${eventCode}
+                                onChange=${(e) => setEventCode(e.target.value)}
+                                class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm
+                                       focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none">
+                            <option value="">이벤트 선택</option>
+                            ${(eventOptions || []).map((event) => html`<option key=${event.code} value=${event.code}>${event.title} (${event.code})</option>`)}
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">수동 보상이 허용된 활성 이벤트만 표시됩니다.</p>
                     </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1.5">검토자</label>
+                            <input type="text" value=${reviewedBy}
+                                   onInput=${(e) => setReviewedBy(e.target.value)}
+                                   class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm
+                                          focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+                                   placeholder="김수빈" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1.5">외부 제출 ID (선택)</label>
+                            <input type="text" value=${externalSubmissionId}
+                                   onInput=${(e) => setExternalSubmissionId(e.target.value)}
+                                   class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm
+                                          focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+                                   placeholder="예: google-form-row-123" />
+                        </div>
+                    </div>
+
                     <div>
-                        <label class="block text-sm font-semibold text-gray-600 mb-1.5">외부 제출 ID (선택)</label>
-                        <input type="text" value=${externalSubmissionId}
-                               onInput=${(e) => setExternalSubmissionId(e.target.value)}
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                      focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
-                               placeholder="예: google-form-row-123" />
+                        <label class="block text-sm font-semibold text-gray-600 mb-1.5">검토 메모 (선택)</label>
+                        <textarea value=${reviewNote}
+                                  onInput=${(e) => setReviewNote(e.target.value)}
+                                  rows="3"
+                                  class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm
+                                         focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none resize-none"
+                                  placeholder="예: 유효 피드백 확인 완료"></textarea>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1.5">검토 메모 (선택)</label>
-                    <textarea value=${reviewNote}
-                              onInput=${(e) => setReviewNote(e.target.value)}
-                              rows="3"
-                              class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                                     focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none resize-none"
-                              placeholder="예: 유효 피드백 확인 완료"></textarea>
+                <div class="rounded-2xl border border-amber-100 bg-white p-4">
+                    <${NoticeFormFields}
+                        ...${noticeForm}
+                        previewBody=${previewBody}
+                        summaryText="기본 표시 사유와 이용권 문구는 서버 규칙으로 자동 생성됩니다."
+                        previewVariant="amber"
+                        ctaLinkPlaceholder="예: /insights"
+                        displayReasonReadonly=${true}
+                        displayReasonReadonlyLabel="표시 이벤트명"
+                        embedded=${true}
+                    />
                 </div>
-
-                <${NoticeFormFields}
-                    ...${noticeForm}
-                    previewBody=${previewBody}
-                    previewVariant="amber"
-                    ctaLinkPlaceholder="예: /insights"
-                />
             </div>
 
             <div class="flex gap-3 justify-end mt-6">

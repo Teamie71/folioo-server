@@ -43,4 +43,9 @@ export class EventService {
         const event = await this.eventRepository.findActiveSignUpEvent(today);
         return event;
     }
+
+    async findActiveManualRewardEvents(): Promise<Event[]> {
+        const today = getSeoulDateString();
+        return this.eventRepository.findActiveManualRewardEvents(today);
+    }
 }

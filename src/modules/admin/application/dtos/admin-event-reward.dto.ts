@@ -66,6 +66,29 @@ export class AdminUserSearchResDTO {
     }
 }
 
+export class AdminManualRewardEventItemResDTO {
+    @ApiProperty({ example: 'FEEDBACK_REWARD' })
+    code: string;
+
+    @ApiProperty({ example: '피드백 제출' })
+    title: string;
+}
+
+export class AdminManualRewardEventListResDTO {
+    @ApiProperty({ type: [AdminManualRewardEventItemResDTO] })
+    events: AdminManualRewardEventItemResDTO[];
+
+    @ApiProperty({ example: 2 })
+    total: number;
+
+    static from(events: AdminManualRewardEventItemResDTO[]): AdminManualRewardEventListResDTO {
+        const dto = new AdminManualRewardEventListResDTO();
+        dto.events = events;
+        dto.total = events.length;
+        return dto;
+    }
+}
+
 export class AdminGrantRewardReqDTO {
     @ApiProperty({ description: '보상 대상 사용자 ID', example: 1 })
     @IsInt()

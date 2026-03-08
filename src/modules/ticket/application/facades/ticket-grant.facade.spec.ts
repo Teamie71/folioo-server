@@ -41,14 +41,21 @@ describe('TicketGrantFacade', () => {
 
         expect(result).toEqual({
             title: '보상이 지급되었어요',
-            body: '서비스 이용 불편에 대한 보상으로 경험 정리 1회권이 지급되었어요.',
+            body: '경험 정리 1회권이 지급되었어요.',
             ctaText: '보러가기',
             ctaLink: '/tickets',
             expiresAt,
             payload: {
-                displayReason: '서비스 이용 불편에 대한 보상',
+                displayReason: '서비스 이용 불편에 대한',
                 rewards: [{ type: TicketType.EXPERIENCE, quantity: 1 }],
             },
         });
+    });
+
+    it('normalizes the special CS display reason label', () => {
+        expect(ticketGrantFacade.normalizeDisplayReason('서비스 이용 불편에 대한 보상')).toBe(
+            '서비스 이용 불편에 대한'
+        );
+        expect(ticketGrantFacade.normalizeDisplayReason('피드백 제출')).toBe('피드백 제출');
     });
 });

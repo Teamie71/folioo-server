@@ -11,6 +11,7 @@ import {
     AdminGrantRewardResDTO,
     AdminGrantTicketsReqDTO,
     AdminGrantTicketsResDTO,
+    AdminManualRewardEventListResDTO,
     AdminTicketHistoryResDTO,
     AdminUserSearchReqDTO,
     AdminUserSearchResDTO,
@@ -44,6 +45,13 @@ export class AdminEventRewardController {
     @ApiCommonResponse(AdminUserSearchResDTO)
     async searchUsers(@Query() query: AdminUserSearchReqDTO): Promise<AdminUserSearchResDTO> {
         return this.adminEventRewardFacade.searchUsers(query.keyword);
+    }
+
+    @Get('api/events/manual-reward-options')
+    @ApiOperation({ summary: '수동 이벤트 보상 가능 이벤트 목록 조회 (Admin)' })
+    @ApiCommonResponse(AdminManualRewardEventListResDTO)
+    async getManualRewardEvents(): Promise<AdminManualRewardEventListResDTO> {
+        return this.adminEventRewardFacade.getManualRewardEvents();
     }
 
     @Post('api/events/:eventCode/grants')
