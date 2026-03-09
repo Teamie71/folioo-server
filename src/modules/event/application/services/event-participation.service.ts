@@ -41,6 +41,10 @@ export class EventParticipationService {
         return this.eventParticipationRepository.save(participation);
     }
 
+    async findGrantedEventIdsByUserId(userId: number, eventIds: number[]): Promise<Set<number>> {
+        return this.eventParticipationRepository.findGrantedEventIdsByUserId(userId, eventIds);
+    }
+
     async create(userId: number, eventId: number): Promise<EventParticipation> {
         const participation = new EventParticipation();
         participation.userId = userId;

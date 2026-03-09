@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { EventParticipation } from '../../domain/entities/event-participation.entity';
+import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
 
 @Injectable()
 export class EventParticipationRepository {
@@ -47,6 +48,23 @@ export class EventParticipationRepository {
             .where('participation.userId = :userId', { userId })
             .andWhere('event.code = :eventCode', { eventCode })
             .getOne();
+    }
+
+    async findGrantedEventIdsByUserId(userId: number, eventIds: number[]): Promise<Set<number>> {
+        if (eventIds.length === 0) {
+            return new Set();
+        }
+
+        const rows = await this.eventParticipationRepository.find({
+            select: ['eventId'],
+            where: {
+                userId,
+                eventId: In(eventIds),
+                rewardStatus: EventRewardStatus.GRANTED,
+            },
+        });
+
+        return new Set(rows.map((r) => r.eventId));
     }
 
     async existsById(id: number): Promise<boolean> {
