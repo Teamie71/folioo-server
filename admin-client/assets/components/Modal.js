@@ -40,6 +40,7 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
     const [reviewNote, setReviewNote] = useState('');
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState('form');
+    const [eventLoadError, setEventLoadError] = useState('');
 
     // CS custom rewards
     const [csExperienceQty, setCsExperienceQty] = useState(0);
@@ -51,13 +52,15 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
     // Load event options with userId for isGranted check
     const loadEventOptions = useCallback(async () => {
         if (!user) return;
+        setEventLoadError('');
         try {
             const result = await api(
                 `/admin/api/events/manual-reward-options?userId=${user.userId}`
             );
             setEventOptions(result.events || []);
-        } catch (_) {
+        } catch (err) {
             setEventOptions([]);
+            setEventLoadError(err.message || '이벤트 목록을 불러오지 못했습니다.');
         }
     }, [user]);
 
@@ -71,6 +74,7 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
             setLoading(false);
             setCsExperienceQty(0);
             setCsCorrectionQty(0);
+            setEventLoadError('');
             loadEventOptions();
         }
     }, [open, loadEventOptions]);
@@ -145,7 +149,9 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
                                 return html`<option key=${event.code} value=${event.code} disabled=${disabled}>${label}</option>`;
                             })}
                         </select>
-                        <p class="text-xs text-gray-400 mt-1">수동 보상이 허용된 활성 이벤트만 표시됩니다.</p>
+                        ${eventLoadError
+                            ? html`<p class="text-xs text-red-500 mt-1">${eventLoadError}</p>`
+                            : html`<p class="text-xs text-gray-400 mt-1">수동 보상이 허용된 활성 이벤트만 표시됩니다.</p>`}
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
