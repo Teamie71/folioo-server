@@ -304,8 +304,7 @@ Legend:
 ### Admin
 
 - GET `/admin/dashboard` -> IMPLEMENTED (React SPA 대시보드 페이지)
-- GET `/admin/api/users/search` -> IMPLEMENTED (사용자 검색, 이름/전화번호)
-- POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급)
-- POST `/admin/api/tickets/grant` -> IMPLEMENTED (이용권 수동 지급)
-- GET `/admin/api/tickets/history` -> IMPLEMENTED (이용권 지급 이력 조회)
+- GET `/admin/api/users/search` -> IMPLEMENTED (사용자 검색, 이름/이메일)
+- GET `/admin/api/events/manual-reward-options` -> IMPLEMENTED (수동 보상 이벤트 목록, ?userId로 보상 수령 여부 포함)
+- POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급, CS 커스텀 이용권 포함)
 - GET `/admin/api/ticket-grants` -> IMPLEMENTED (이용권 지급 ledger + notice 상태 조회)

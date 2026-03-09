@@ -33,6 +33,7 @@ export interface EventUiConfig {
 export interface EventOpsConfig {
     manualRewardOnly?: boolean;
     allowFeedbackAfterReward?: boolean;
+    allowMultipleRewards?: boolean;
 }
 
 @Entity('event')
