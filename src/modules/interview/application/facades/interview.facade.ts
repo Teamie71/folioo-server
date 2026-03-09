@@ -81,7 +81,9 @@ export class InterviewFacade {
         }
 
         await this.insightService.findByIdAndUserOrThrow(insightId, userId);
-        return [insightId];
+        return [];
+        // TODO: 로그 멘션 주석 처리
+        //return [insightId];
     }
 
     async getSessionState(
