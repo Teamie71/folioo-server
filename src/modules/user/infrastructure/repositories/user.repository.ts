@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../domain/user.entity';
 import { SocialUser } from '../../domain/social-user.entity';
 import { Repository } from 'typeorm';
+import { getSeoulNow } from '../../../../common/utils/seoul-date.util';
 
 export interface UserWithSocialInfoProjection {
     userId: number;
@@ -88,6 +89,7 @@ export class UserRepository {
                 name: '탈퇴한 사용자',
                 isActive: false,
                 deactivatedAt,
+                updatedAt: getSeoulNow(),
             })
             .where('id = :userId', { userId })
             .andWhere('isActive = :isActive', { isActive: true })
