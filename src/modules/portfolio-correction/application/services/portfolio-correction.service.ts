@@ -228,7 +228,7 @@ export class PortfolioCorrectionService {
             return;
         }
 
-        if (newStatus === CorrectionStatus.FAILED) {
+        if (newStatus === CorrectionStatus.FAILED || newStatus === CorrectionStatus.RAG_FAILED) {
             return;
         }
 
@@ -238,6 +238,7 @@ export class PortfolioCorrectionService {
             [CorrectionStatus.COMPANY_INSIGHT]: [CorrectionStatus.GENERATING],
             [CorrectionStatus.GENERATING]: [CorrectionStatus.DONE],
             [CorrectionStatus.DONE]: [],
+            [CorrectionStatus.RAG_FAILED]: [],
             [CorrectionStatus.FAILED]: [],
         };
 
@@ -249,7 +250,8 @@ export class PortfolioCorrectionService {
 
     async saveCorrectionResult(
         correctionId: number,
-        items: { portfolioId: number; data: Partial<CorrectionItem> }[]
+        items: { portfolioId: number; data: Partial<CorrectionItem> }[],
+        overallReview: string
     ): Promise<void> {
         if (items.length === 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
@@ -282,7 +284,6 @@ export class PortfolioCorrectionService {
             existingItem.responsibilities = data.responsibilities ?? existingItem.responsibilities;
             existingItem.problemSolving = data.problemSolving ?? existingItem.problemSolving;
             existingItem.learnings = data.learnings ?? existingItem.learnings;
-            existingItem.overallReview = data.overallReview ?? existingItem.overallReview;
             itemsToUpdate.push(existingItem);
         }
 
@@ -296,6 +297,7 @@ export class PortfolioCorrectionService {
 
         await this.portfolioCorrectionRepository.updateById(correctionId, {
             status: CorrectionStatus.DONE,
+            overallReview,
         });
     }
 

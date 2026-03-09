@@ -1,9 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     IsArray,
     IsNotEmpty,
     IsNumber,
     IsObject,
+    IsOptional,
     IsString,
     MaxLength,
     ValidateNested,
@@ -11,30 +12,60 @@ import {
 import { Type } from 'class-transformer';
 import { CorrectionRagData } from 'src/modules/portfolio-correction/domain/correction-rag-data.entity';
 
+export class CorrectionLineItemReqDTO {
+    @IsNumber()
+    @ApiProperty({ description: '줄 번호 (1-indexed)' })
+    lineNumber: number;
+
+    @IsString()
+    @ApiProperty({ description: '원본 텍스트' })
+    originalText: string;
+
+    @IsString()
+    @ApiProperty({ description: '첨삭 유형 (keep / reduce / emphasize 등)' })
+    type: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiPropertyOptional({
+        description: '첨삭 코멘트. type이 keep이면 null',
+        nullable: true,
+    })
+    comment: string | null;
+}
+
+export class CorrectionFieldReqDTO {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CorrectionLineItemReqDTO)
+    @ApiProperty({ type: [CorrectionLineItemReqDTO], description: '라인별 첨삭 결과' })
+    lines: CorrectionLineItemReqDTO[];
+}
+
 export class CorrectionResultItemReqDTO {
     @IsNumber()
     @ApiProperty({ description: '포트폴리오 ID' })
     portfolioId: number;
 
-    @IsObject()
-    @ApiProperty({ description: '상세정보 첨삭 결과' })
-    description: Record<string, unknown>;
+    @ValidateNested()
+    @Type(() => CorrectionFieldReqDTO)
+    @ApiProperty({ type: CorrectionFieldReqDTO, description: '상세정보 첨삭 결과' })
+    description: CorrectionFieldReqDTO;
 
-    @IsObject()
-    @ApiProperty({ description: '담당업무 첨삭 결과' })
-    responsibilities: Record<string, unknown>;
+    @ValidateNested()
+    @Type(() => CorrectionFieldReqDTO)
+    @ApiProperty({ type: CorrectionFieldReqDTO, description: '담당업무 첨삭 결과' })
+    responsibilities: CorrectionFieldReqDTO;
 
-    @IsObject()
-    @ApiProperty({ description: '문제해결/성과 첨삭 결과' })
-    problemSolving: Record<string, unknown>;
+    @ValidateNested()
+    @Type(() => CorrectionFieldReqDTO)
+    @ApiProperty({ type: CorrectionFieldReqDTO, description: '문제해결/성과 첨삭 결과' })
+    problemSolving: CorrectionFieldReqDTO;
 
-    @IsObject()
-    @ApiProperty({ description: '배운 점 첨삭 결과' })
-    learnings: Record<string, unknown>;
-
-    @IsObject()
-    @ApiProperty({ description: '종합 리뷰' })
-    overallReview: Record<string, unknown>;
+    @ValidateNested()
+    @Type(() => CorrectionFieldReqDTO)
+    @ApiProperty({ type: CorrectionFieldReqDTO, description: '배운 점 첨삭 결과' })
+    learnings: CorrectionFieldReqDTO;
 }
 
 export class SaveCorrectionResultReqDTO {
@@ -43,6 +74,11 @@ export class SaveCorrectionResultReqDTO {
     @Type(() => CorrectionResultItemReqDTO)
     @ApiProperty({ type: [CorrectionResultItemReqDTO], description: '포트폴리오별 첨삭 결과' })
     result: CorrectionResultItemReqDTO[];
+
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({ description: '전체 포트폴리오 총평' })
+    overallReview: string;
 }
 
 export class CreateRagDataReqDTO {

@@ -20,7 +20,6 @@ interface CompatStructuredResult {
     responsibilities?: unknown;
     problemSolving?: unknown;
     learnings?: unknown;
-    overallReview?: unknown;
 }
 
 export interface CompatResultItem {
@@ -30,12 +29,12 @@ export interface CompatResultItem {
         responsibilities: CompatFieldResult;
         problemSolving: CompatFieldResult;
         learnings: CompatFieldResult;
-        overallReview: CompatFieldResult;
     };
 }
 
 export interface CompatSaveCorrectionResultBody {
     result?: unknown;
+    overallReview?: unknown;
 }
 
 export interface CompatCreateRagDataBody {
@@ -54,8 +53,13 @@ export class AiCorrectionCompatService {
         correctionId: number,
         body: CompatSaveCorrectionResultBody
     ): Promise<void> {
+        const overallReview = this.extractOverallReview(body);
         const normalizedItems = await this.normalizeResultItems(correctionId, body);
-        await this.portfolioCorrectionService.saveCorrectionResult(correctionId, normalizedItems);
+        await this.portfolioCorrectionService.saveCorrectionResult(
+            correctionId,
+            normalizedItems,
+            overallReview
+        );
     }
 
     async createCompatRagData(correctionId: number, body: CompatCreateRagDataBody): Promise<void> {
@@ -83,6 +87,18 @@ export class AiCorrectionCompatService {
             searchQuery,
             searchResults as Record<string, unknown>
         );
+    }
+
+    private extractOverallReview(body: CompatSaveCorrectionResultBody): string {
+        const raw = body.overallReview;
+
+        if (typeof raw !== 'string' || raw.trim().length === 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                reason: 'overallReview must be a non-empty string.',
+            });
+        }
+
+        return raw;
     }
 
     private async normalizeResultItems(
@@ -118,7 +134,6 @@ export class AiCorrectionCompatService {
                     responsibilities: this.toObjectOrUndefined(rawItem.responsibilities),
                     problemSolving: this.toObjectOrUndefined(rawItem.problemSolving),
                     learnings: this.toObjectOrUndefined(rawItem.learnings),
-                    overallReview: this.toObjectOrUndefined(rawItem.overallReview),
                 },
             };
         }
@@ -140,7 +155,6 @@ export class AiCorrectionCompatService {
                 responsibilities: fieldMap.get('contributions'),
                 problemSolving: fieldMap.get('achievements'),
                 learnings: fieldMap.get('insights'),
-                overallReview: { summary: overallSummary },
             },
         };
     }
@@ -150,8 +164,7 @@ export class AiCorrectionCompatService {
             item.description !== undefined ||
             item.responsibilities !== undefined ||
             item.problemSolving !== undefined ||
-            item.learnings !== undefined ||
-            item.overallReview !== undefined
+            item.learnings !== undefined
         );
     }
 
