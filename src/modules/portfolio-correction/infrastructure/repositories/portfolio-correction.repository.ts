@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
-import { getSeoulNow } from '../../../../common/utils/seoul-date.util';
 
 @Injectable()
 export class PortfolioCorrectionRepository {
@@ -23,7 +22,7 @@ export class PortfolioCorrectionRepository {
     async updateById(id: number, correction: Partial<PortfolioCorrection>): Promise<number> {
         const result = await this.portfolioCorrectionRepository.update(id, {
             ...correction,
-            updatedAt: getSeoulNow(),
+            updatedAt: new Date(),
         });
         return result.affected ?? 0;
     }
