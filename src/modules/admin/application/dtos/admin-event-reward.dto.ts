@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     IsArray,
-    IsBoolean,
     IsEnum,
     IsInt,
     IsOptional,
@@ -145,12 +144,6 @@ export class AdminGrantRewardReqDTO {
     @MaxLength(500)
     reviewNote?: string;
 
-    @ApiPropertyOptional({ description: '보상 안내 모달 생성 여부', example: true })
-    @IsOptional()
-    @IsBoolean()
-    @Type(() => Boolean)
-    createNotice?: boolean;
-
     @ApiPropertyOptional({
         description:
             '커스텀 보상 (allowMultipleRewards 이벤트 전용, 미지정 시 이벤트 rewardConfig 사용)',
@@ -184,6 +177,5 @@ export interface GrantRewardByUserIdParams {
     externalSubmissionId?: string;
     reviewedBy?: string;
     reviewNote?: string;
-    createNotice?: boolean;
     customRewards?: CustomRewardItemDTO[];
 }

@@ -97,7 +97,6 @@ export class AdminEventRewardFacade {
             externalSubmissionId: body.externalSubmissionId,
             reviewedBy: body.reviewedBy,
             reviewNote: body.reviewNote,
-            createNotice: body.createNotice,
             customRewards: body.customRewards,
         });
 
@@ -176,7 +175,7 @@ export class AdminEventRewardFacade {
         const savedParticipation = await this.eventParticipationService.save(participation);
 
         const rewards = this.resolveRewards(event, params.customRewards);
-        const notice = this.buildNoticeFromEvent(event, rewards, params.createNotice);
+        const notice = this.buildNoticeFromEvent(event, rewards);
 
         await this.ticketGrantFacade.issueGrantAndTickets({
             userId: user.id,
@@ -224,19 +223,14 @@ export class AdminEventRewardFacade {
 
     private buildNoticeFromEvent(
         event: Event,
-        rewards: RewardConfigItem[],
-        createNotice?: boolean
+        rewards: RewardConfigItem[]
     ): {
         title: string;
         body: string;
         ctaText: string | null;
         ctaLink: string | null;
         payload: Record<string, unknown>;
-    } | null {
-        if (createNotice === false) {
-            return null;
-        }
-
+    } {
         const rewardSummary = this.ticketGrantFacade.formatRewardSummary(rewards);
 
         return {

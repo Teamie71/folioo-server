@@ -38,7 +38,6 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
     const [reviewedBy, setReviewedBy] = useState('김수빈');
     const [externalSubmissionId, setExternalSubmissionId] = useState('');
     const [reviewNote, setReviewNote] = useState('');
-    const [createNotice, setCreateNotice] = useState(true);
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState('form');
 
@@ -68,7 +67,6 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
             setReviewedBy('김수빈');
             setExternalSubmissionId('');
             setReviewNote('');
-            setCreateNotice(true);
             setStep('form');
             setLoading(false);
             setCsExperienceQty(0);
@@ -100,7 +98,6 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
                 reviewedBy: reviewedBy || undefined,
                 externalSubmissionId: externalSubmissionId || undefined,
                 reviewNote: reviewNote || undefined,
-                createNotice,
             };
 
             if (isCs && effectiveRewards.length > 0) {
@@ -219,49 +216,41 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
                     ` : null}
                 </div>
 
-                <!-- Right: Notice preview (read-only) -->
+                <!-- Right: Notice preview (read-only, always generated) -->
                 <div class="rounded-2xl border border-amber-100 bg-white p-4 space-y-4">
-                    <label class="flex items-center justify-between gap-3">
-                        <span>
-                            <span class="block text-sm font-semibold text-gray-600">보상 안내 모달 생성</span>
-                            <span class="block text-xs text-gray-400 mt-1">
-                                사용자가 다음 접속 시 보상 안내를 보게 합니다.
-                            </span>
+                    <div>
+                        <span class="block text-sm font-semibold text-gray-600">보상 안내 모달</span>
+                        <span class="block text-xs text-gray-400 mt-1">
+                            사용자가 다음 접속 시 보상 안내를 보게 됩니다.
                         </span>
-                        <input type="checkbox" checked=${createNotice}
-                               onChange=${(e) => setCreateNotice(e.target.checked)}
-                               class="w-4 h-4 accent-primary-500" />
-                    </label>
+                    </div>
 
-                    ${createNotice ? html`
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-1.5">표시 이벤트명</label>
-                            <div class="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-700">
-                                ${selectedEvent?.title || '-'}
-                            </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-1.5">표시 이벤트명</label>
+                        <div class="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-700">
+                            ${selectedEvent?.title || '-'}
                         </div>
+                    </div>
 
-                        <div class="rounded-xl bg-amber-50 border border-amber-100 p-3 text-xs text-gray-600">
-                            <div class="font-semibold text-amber-600 mb-1">미리보기</div>
-                            <div class="font-medium text-gray-800">보상이 지급되었어요</div>
-                            <div class="mt-1 text-[11px] text-gray-500">${selectedEvent?.title || '(이벤트 선택 시 표시)'}</div>
-                            <div class="mt-1 leading-relaxed">
-                                ${rewardSummary
-                                    ? `${rewardSummary}이 지급되었어요.`
-                                    : '(보상 내용이 표시됩니다)'}
-                            </div>
-                            ${cta ? html`
-                                <div class="mt-2 text-[11px] text-amber-600">
-                                    CTA: ${cta.ctaText} → ${cta.ctaLink}
-                                </div>
-                            ` : null}
+                    <div class="rounded-xl bg-amber-50 border border-amber-100 p-3 text-xs text-gray-600">
+                        <div class="font-semibold text-amber-600 mb-1">미리보기</div>
+                        <div class="font-medium text-gray-800">보상이 지급되었어요</div>
+                        <div class="mt-1 text-[11px] text-gray-500">${selectedEvent?.title || '(이벤트 선택 시 표시)'}</div>
+                        <div class="mt-1 leading-relaxed">
+                            ${rewardSummary
+                                ? `${rewardSummary}이 지급되었어요.`
+                                : '(보상 내용이 표시됩니다)'}
                         </div>
+                        ${cta ? html`
+                            <div class="mt-2 text-[11px] text-amber-600">
+                                CTA: ${cta.ctaText} → ${cta.ctaLink}
+                            </div>
+                        ` : null}
+                    </div>
 
-                        <p class="text-[11px] text-gray-400 leading-relaxed">
-                            기본 문구는 서버가 이벤트명과 이용권 규칙으로 자동 생성합니다.
-                            기본 표시 사유와 이용권 문구는 서버 규칙으로 자동 생성됩니다.
-                        </p>
-                    ` : null}
+                    <p class="text-[11px] text-gray-400 leading-relaxed">
+                        서버가 이벤트명과 이용권 규칙으로 자동 생성합니다.
+                    </p>
                 </div>
             </div>
 
@@ -307,9 +296,7 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
                 ` : null}
                 <div class="flex justify-between items-start gap-3">
                     <span class="text-gray-500">보상 안내</span>
-                    <span class="font-semibold text-right">
-                        ${createNotice ? '생성' : '생성 안 함'}
-                    </span>
+                    <span class="font-semibold text-right">자동 생성</span>
                 </div>
             </div>
 
