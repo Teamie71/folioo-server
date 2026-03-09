@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Ticket } from '../../domain/entities/ticket.entity';
 import { TicketStatus } from '../../domain/enums/ticket-status.enum';
 import { TicketType } from '../../domain/enums/ticket-type.enum';
+import { getSeoulNow } from '../../../../common/utils/seoul-date.util';
 
 interface TicketCountByType {
     type: TicketType;
@@ -98,6 +99,7 @@ export class TicketRepository {
             {
                 status: TicketStatus.EXPIRED,
                 expiredAt,
+                updatedAt: getSeoulNow(),
             }
         );
     }

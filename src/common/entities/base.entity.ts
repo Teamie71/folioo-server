@@ -23,7 +23,7 @@ export abstract class BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: 'timestamp', transformer: seoulTimestampTransformer })
+    @Column({ type: 'timestamp', transformer: seoulTimestampTransformer, update: false })
     createdAt: Date;
 
     @Column({ type: 'timestamp', transformer: seoulTimestampTransformer })

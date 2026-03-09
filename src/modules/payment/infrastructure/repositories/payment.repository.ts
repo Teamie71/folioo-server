@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Payment } from '../../domain/entities/payment.entity';
 import { PaymentStatus } from '../../domain/enums/payment-status.enum';
+import { getSeoulNow } from '../../../../common/utils/seoul-date.util';
 
 @Injectable()
 export class PaymentRepository {
@@ -42,7 +43,7 @@ export class PaymentRepository {
         const result = await this.paymentRepository
             .createQueryBuilder()
             .update(Payment)
-            .set(update)
+            .set({ ...update, updatedAt: getSeoulNow() })
             .where('id = :id', { id })
             .andWhere('status = :status', { status: PaymentStatus.REQUESTED })
             .execute();
