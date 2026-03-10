@@ -3,11 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import {
-    ClaimEventRewardResDTO,
-    EventProgressCardResDTO,
-    FeedbackModalResDTO,
-} from '../application/dtos/event.dto';
+import { ClaimEventRewardResDTO, FeedbackModalResDTO } from '../application/dtos/event.dto';
 import { EventRewardFacade } from '../application/facades/event-reward.facade';
 
 @ApiTags('Event')
@@ -27,21 +23,6 @@ export class EventController {
         @Param('eventCode') eventCode: string
     ): Promise<FeedbackModalResDTO> {
         return this.eventRewardFacade.getFeedbackModal(userId, eventCode);
-    }
-
-    @Get(':eventCode/progress-card')
-    @ApiOperation({
-        summary: '이벤트 진행 카드 조회',
-        description:
-            '인사이트 챌린지 등 진행형 이벤트의 동적 문구/진행도/CTA 노출을 위한 데이터를 반환합니다.',
-    })
-    @ApiCommonResponse(EventProgressCardResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.EVENT_NOT_FOUND)
-    async getProgressCard(
-        @User('sub') userId: number,
-        @Param('eventCode') eventCode: string
-    ): Promise<EventProgressCardResDTO> {
-        return this.eventRewardFacade.getProgressCard(userId, eventCode);
     }
 
     @Post(':eventCode/reward-claim')

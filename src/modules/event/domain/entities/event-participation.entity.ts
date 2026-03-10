@@ -23,20 +23,8 @@ export class EventParticipation extends BaseEntity {
     @Column({ name: 'event_id' })
     eventId: number;
 
-    @Column({ default: 0 })
-    progress: number;
-
-    @Column({ default: false })
-    isCompleted: boolean;
-
-    @Column({ nullable: true })
-    completedAt: Date;
-
     @Column({ nullable: true })
     rewardGrantedAt: Date;
-
-    @Column({ type: 'timestamp', nullable: true })
-    lastProgressedAt: Date | null;
 
     @Column({
         type: 'enum',
@@ -44,10 +32,4 @@ export class EventParticipation extends BaseEntity {
         default: EventRewardStatus.NOT_GRANTED,
     })
     rewardStatus: EventRewardStatus;
-
-    @Column({ type: 'varchar', nullable: true, length: 64 })
-    grantedBy: string | null;
-
-    @Column({ type: 'varchar', nullable: true, length: 500 })
-    grantReason: string | null;
 }

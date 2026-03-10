@@ -29,41 +29,6 @@ export class FeedbackModalResDTO {
     ctaLink: string | null;
 }
 
-export class EventProgressCardResDTO {
-    @ApiProperty({ example: 'INSIGHT_LOG_CHALLENGE' })
-    eventCode: string;
-
-    @ApiProperty({ example: '인사이트 로그 작성 챌린지' })
-    title: string;
-
-    @ApiProperty({ example: '오늘의 인사이트 로그 작성 챌린지 참여 완료!' })
-    subtitle: string;
-
-    @ApiProperty({ example: '9개의 로그를 더 작성하고 보상을 받으세요.' })
-    content: string;
-
-    @ApiProperty({ example: 1 })
-    progress: number;
-
-    @ApiProperty({ example: 10 })
-    target: number;
-
-    @ApiProperty({ example: 9 })
-    remaining: number;
-
-    @ApiProperty({ example: false })
-    isCompleted: boolean;
-
-    @ApiProperty({ enum: EventRewardStatus, example: EventRewardStatus.NOT_GRANTED })
-    rewardStatus: EventRewardStatus;
-
-    @ApiProperty({ example: '오늘의 로그 작성하기' })
-    ctaText: string;
-
-    @ApiPropertyOptional({ example: '/insights', nullable: true })
-    ctaLink: string | null;
-}
-
 export class ClaimEventRewardResDTO {
     @ApiProperty({ example: 'INSIGHT_LOG_CHALLENGE' })
     eventCode: string;

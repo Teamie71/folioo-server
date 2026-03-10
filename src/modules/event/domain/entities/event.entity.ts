@@ -7,11 +7,6 @@ export interface RewardConfigItem {
     quantity: number;
 }
 
-export interface GoalConfig {
-    target: number;
-    dailyLimit?: number;
-}
-
 export interface EventUiConfig {
     feedbackModal?: {
         eligibleTitle?: string;
@@ -20,13 +15,6 @@ export interface EventUiConfig {
         rewardedDescription?: string;
         ctaText?: string;
         ctaLink?: string;
-    };
-    progressCard?: {
-        titleTemplate?: string;
-        subtitleTemplate?: string;
-        contentTemplate?: string;
-        ctaDefaultText?: string;
-        ctaCompletedText?: string;
     };
 }
 
@@ -44,9 +32,6 @@ export class Event extends BaseEntity {
     @Column({ length: 100 })
     title: string;
 
-    @Column({ length: 500 })
-    description: string;
-
     @Column({ length: 50 })
     ctaText: string;
 
@@ -55,9 +40,6 @@ export class Event extends BaseEntity {
 
     @Column({ type: 'jsonb' })
     rewardConfig: RewardConfigItem[];
-
-    @Column({ type: 'jsonb', nullable: true })
-    goalConfig: GoalConfig | null;
 
     @Column({ type: 'jsonb', nullable: true })
     uiConfig: EventUiConfig | null;
@@ -73,9 +55,6 @@ export class Event extends BaseEntity {
 
     @Column({ default: true })
     isActive: boolean;
-
-    @Column({ default: 1 })
-    maxParticipation: number;
 
     @Column({ default: 0 })
     displayOrder: number;
