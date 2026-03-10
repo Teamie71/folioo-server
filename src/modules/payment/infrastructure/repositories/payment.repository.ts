@@ -42,7 +42,7 @@ export class PaymentRepository {
         const result = await this.paymentRepository
             .createQueryBuilder()
             .update(Payment)
-            .set(update)
+            .set({ ...update, updatedAt: new Date() })
             .where('id = :id', { id })
             .andWhere('status = :status', { status: PaymentStatus.REQUESTED })
             .execute();

@@ -2,16 +2,14 @@
 import { html, useState, useEffect, useCallback } from '../lib/setup.js';
 import { api } from '../lib/api.js';
 import { UserTable, SearchToolbar } from '../components/Table.js';
-import { GrantEventRewardModal, GrantTicketModal } from '../components/Modal.js';
+import { GrantEventRewardModal } from '../components/Modal.js';
 import { Toast } from '../components/Toast.js';
 
 export function UserManagementTab() {
     const [users, setUsers] = useState(null);
-    const [eventOptions, setEventOptions] = useState([]);
     const [keyword, setKeyword] = useState('');
     const [total, setTotal] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [ticketModalOpen, setTicketModalOpen] = useState(false);
     const [eventModalOpen, setEventModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [toast, setToast] = useState({ message: '', type: 'success', visible: false });
@@ -44,39 +42,9 @@ export function UserManagementTab() {
         loadUsers();
     }, [loadUsers]);
 
-    useEffect(() => {
-        const loadEventOptions = async () => {
-            try {
-                const result = await api('/admin/api/events/manual-reward-options');
-                setEventOptions(result.events || []);
-            } catch (err) {
-                showToast(err.message, 'error');
-            }
-        };
-
-        loadEventOptions();
-    }, [showToast]);
-
-    const handleGrant = (user) => {
-        setSelectedUser(user);
-        setTicketModalOpen(true);
-    };
-
     const handleEventGrant = (user) => {
         setSelectedUser(user);
         setEventModalOpen(true);
-    };
-
-    const handleGrantSuccess = (name, typeLabel, qty, remaining, errorMsg) => {
-        if (errorMsg) {
-            showToast(errorMsg, 'error');
-            return;
-        }
-        showToast(
-            `${name}님에게 ${typeLabel} ${qty}개 지급 완료 (잔여: ${remaining}개)`,
-            'success'
-        );
-        loadUsers(keyword || undefined);
     };
 
     const handleEventGrantSuccess = (name, eventCode, grantedAt, errorMsg) => {
@@ -106,20 +74,12 @@ export function UserManagementTab() {
                     ? html`<div class="text-center py-16 text-gray-400 text-sm">
                           불러오는 중...
                       </div>`
-                    : html`<${UserTable} users=${users} onGrant=${handleGrant} onEventGrant=${handleEventGrant} />`}
+                    : html`<${UserTable} users=${users} onEventGrant=${handleEventGrant} />`}
             </div>
-
-            <${GrantTicketModal}
-                open=${ticketModalOpen}
-                user=${selectedUser}
-                onClose=${() => setTicketModalOpen(false)}
-                onSuccess=${handleGrantSuccess}
-            />
 
             <${GrantEventRewardModal}
                 open=${eventModalOpen}
                 user=${selectedUser}
-                eventOptions=${eventOptions}
                 onClose=${() => setEventModalOpen(false)}
                 onSuccess=${handleEventGrantSuccess}
             />

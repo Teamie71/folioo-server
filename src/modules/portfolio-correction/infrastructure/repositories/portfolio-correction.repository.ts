@@ -20,7 +20,10 @@ export class PortfolioCorrectionRepository {
     }
 
     async updateById(id: number, correction: Partial<PortfolioCorrection>): Promise<number> {
-        const result = await this.portfolioCorrectionRepository.update(id, correction);
+        const result = await this.portfolioCorrectionRepository.update(id, {
+            ...correction,
+            updatedAt: new Date(),
+        });
         return result.affected ?? 0;
     }
 

@@ -20,15 +20,8 @@ export const GRANT_SOURCE_LABELS = {
     PURCHASE: '구매',
 };
 
-export const GRANT_REASONS = [
-    '피드백 제출',
-    '인사이트 로그 작성 챌린지',
-    '서비스 이용 불편에 대한 보상',
-];
-
 export const TABS = [
     { id: 'users', label: '회원 관리', enabled: true },
-    { id: 'tickets', label: '이용권 거래 내역', enabled: true },
     { id: 'grants', label: '지급/안내 이력', enabled: true },
 ];
 

@@ -55,14 +55,17 @@ export class InternalCorrectionResultController {
         const items = body.result.map((item) => ({
             portfolioId: item.portfolioId,
             data: {
-                description: item.description,
-                responsibilities: item.responsibilities,
-                problemSolving: item.problemSolving,
-                learnings: item.learnings,
-                overallReview: item.overallReview,
+                description: item.description as unknown as Record<string, unknown>,
+                responsibilities: item.responsibilities as unknown as Record<string, unknown>,
+                problemSolving: item.problemSolving as unknown as Record<string, unknown>,
+                learnings: item.learnings as unknown as Record<string, unknown>,
             },
         }));
-        await this.portfolioCorrectionService.saveCorrectionResult(correctionId, items);
+        await this.portfolioCorrectionService.saveCorrectionResult(
+            correctionId,
+            items,
+            body.overallReview
+        );
         return '첨삭 결과가 저장되었습니다.';
     }
 

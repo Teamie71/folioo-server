@@ -98,6 +98,7 @@ export class TicketRepository {
             {
                 status: TicketStatus.EXPIRED,
                 expiredAt,
+                updatedAt: new Date(),
             }
         );
     }

@@ -48,4 +48,8 @@ export class EventService {
         const today = getSeoulDateString();
         return this.eventRepository.findActiveManualRewardEvents(today);
     }
+
+    async findAllManualRewardEvents(): Promise<Event[]> {
+        return this.eventRepository.findAllManualRewardEvents();
+    }
 }

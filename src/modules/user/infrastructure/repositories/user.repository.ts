@@ -88,6 +88,7 @@ export class UserRepository {
                 name: '탈퇴한 사용자',
                 isActive: false,
                 deactivatedAt,
+                updatedAt: new Date(),
             })
             .where('id = :userId', { userId })
             .andWhere('isActive = :isActive', { isActive: true })

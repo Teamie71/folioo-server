@@ -9,10 +9,7 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     AdminGrantRewardReqDTO,
     AdminGrantRewardResDTO,
-    AdminGrantTicketsReqDTO,
-    AdminGrantTicketsResDTO,
     AdminManualRewardEventListResDTO,
-    AdminTicketHistoryResDTO,
     AdminUserSearchReqDTO,
     AdminUserSearchResDTO,
 } from '../application/dtos/admin-event-reward.dto';
@@ -49,9 +46,18 @@ export class AdminEventRewardController {
 
     @Get('api/events/manual-reward-options')
     @ApiOperation({ summary: '수동 이벤트 보상 가능 이벤트 목록 조회 (Admin)' })
+    @ApiQuery({
+        name: 'userId',
+        type: Number,
+        required: false,
+        description: '유저 ID 지정 시 해당 유저의 보상 수령 여부(isGranted) 포함',
+    })
     @ApiCommonResponse(AdminManualRewardEventListResDTO)
-    async getManualRewardEvents(): Promise<AdminManualRewardEventListResDTO> {
-        return this.adminEventRewardFacade.getManualRewardEvents();
+    async getManualRewardEvents(
+        @Query('userId') userId?: string
+    ): Promise<AdminManualRewardEventListResDTO> {
+        const parsedUserId = userId ? Number(userId) : undefined;
+        return this.adminEventRewardFacade.getManualRewardEvents(parsedUserId);
     }
 
     @Post('api/events/:eventCode/grants')
@@ -71,22 +77,6 @@ export class AdminEventRewardController {
         @Body() body: AdminGrantRewardReqDTO
     ): Promise<AdminGrantRewardResDTO> {
         return this.adminEventRewardFacade.grantReward(eventCode, body);
-    }
-
-    @Post('api/tickets/grant')
-    @ApiOperation({ summary: '이용권 수동 지급 (Admin)' })
-    @ApiBody({ type: AdminGrantTicketsReqDTO })
-    @ApiCommonResponse(AdminGrantTicketsResDTO)
-    @ApiCommonErrorResponse(ErrorCode.USER_NOT_FOUND)
-    async grantTickets(@Body() body: AdminGrantTicketsReqDTO): Promise<AdminGrantTicketsResDTO> {
-        return this.adminEventRewardFacade.grantTickets(body);
-    }
-
-    @Get('api/tickets/history')
-    @ApiOperation({ summary: '이용권 거래 내역 (Admin)' })
-    @ApiCommonResponse(AdminTicketHistoryResDTO)
-    async getTicketHistory(): Promise<AdminTicketHistoryResDTO> {
-        return this.adminEventRewardFacade.getTicketHistory();
     }
 
     @Get('api/ticket-grants')

@@ -29,12 +29,6 @@ export class CorrectionItem extends BaseEntity {
     })
     learnings: Record<string, unknown>;
 
-    @Column({
-        type: 'jsonb',
-        nullable: true,
-    })
-    overallReview: Record<string, unknown>;
-
     @ManyToOne(() => PortfolioCorrection, { onDelete: 'CASCADE' })
     portfolioCorrection: PortfolioCorrection;
 

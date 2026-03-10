@@ -1,16 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserService } from 'src/modules/user/application/services/user.service';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import {
     AdminGrantRewardReqDTO,
     AdminGrantRewardResDTO,
-    AdminGrantTicketsReqDTO,
-    AdminGrantTicketsResDTO,
     AdminManualRewardEventItemResDTO,
     AdminManualRewardEventListResDTO,
-    AdminTicketHistoryItemResDTO,
-    AdminTicketHistoryResDTO,
     AdminUserItemResDTO,
     AdminUserSearchResDTO,
 } from '../dtos/admin-event-reward.dto';
@@ -31,11 +27,11 @@ import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-gr
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { AdminTicketGrantListResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
 import { EventRewardLifecycleFacade } from 'src/modules/event/application/facades/event-reward-lifecycle.facade';
+import type { RewardConfigItem } from 'src/modules/event/domain/entities/event.entity';
+import { Event } from 'src/modules/event/domain/entities/event.entity';
 
 @Injectable()
 export class AdminEventRewardFacade {
-    private readonly logger = new Logger(AdminEventRewardFacade.name);
-
     constructor(
         private readonly userService: UserService,
         private readonly eventFeedbackSubmissionService: EventFeedbackSubmissionService,
@@ -67,12 +63,25 @@ export class AdminEventRewardFacade {
         return AdminUserSearchResDTO.from(users, users.length);
     }
 
-    async getManualRewardEvents(): Promise<AdminManualRewardEventListResDTO> {
-        const events = await this.eventService.findActiveManualRewardEvents();
+    async getManualRewardEvents(userId?: number): Promise<AdminManualRewardEventListResDTO> {
+        const events = await this.eventService.findAllManualRewardEvents();
+
+        let grantedEventIds = new Set<number>();
+        if (userId) {
+            const eventIds = events.map((e) => e.id);
+            grantedEventIds = await this.eventParticipationService.findGrantedEventIdsByUserId(
+                userId,
+                eventIds
+            );
+        }
+
         const items = events.map((event) => {
             const item = new AdminManualRewardEventItemResDTO();
             item.code = event.code;
             item.title = event.title;
+            item.rewardConfig = event.rewardConfig;
+            item.allowMultipleRewards = event.opsConfig?.allowMultipleRewards === true;
+            item.isGranted = grantedEventIds.has(event.id);
             return item;
         });
 
@@ -88,12 +97,7 @@ export class AdminEventRewardFacade {
             externalSubmissionId: body.externalSubmissionId,
             reviewedBy: body.reviewedBy,
             reviewNote: body.reviewNote,
-            createNotice: body.createNotice,
-            displayReason: body.displayReason,
-            noticeTitle: body.noticeTitle,
-            noticeBody: body.noticeBody,
-            noticeCtaText: body.noticeCtaText,
-            noticeCtaLink: body.noticeCtaLink,
+            customRewards: body.customRewards,
         });
 
         const dto = new AdminGrantRewardResDTO();
@@ -104,100 +108,8 @@ export class AdminEventRewardFacade {
         return dto;
     }
 
-    async grantTickets(body: AdminGrantTicketsReqDTO): Promise<AdminGrantTicketsResDTO> {
-        await this.userService.findByIdOrThrow(body.userId);
-
-        const rewards = [{ type: body.type, quantity: body.quantity }];
-        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(rewards);
-        const normalizedDisplayReason = this.ticketGrantFacade.normalizeDisplayReason(
-            body.displayReason ?? body.reason
-        );
-        const shouldCreateNotice =
-            body.createNotice === true ||
-            !!body.noticeTitle ||
-            !!body.noticeBody ||
-            !!body.displayReason;
-        const notice = !shouldCreateNotice
-            ? null
-            : body.noticeBody
-              ? {
-                    title: body.noticeTitle ?? '보상이 지급되었어요',
-                    body: body.noticeBody,
-                    ctaText: body.noticeCtaText ?? null,
-                    ctaLink: body.noticeCtaLink ?? null,
-                    payload: {
-                        displayReason: normalizedDisplayReason,
-                        rewards,
-                    },
-                }
-              : this.ticketGrantFacade.createDefaultNotice({
-                    title: body.noticeTitle ?? '보상이 지급되었어요',
-                    rewardSummary,
-                    displayReason: normalizedDisplayReason,
-                    ctaText: body.noticeCtaText ?? null,
-                    ctaLink: body.noticeCtaLink ?? null,
-                    rewards,
-                });
-
-        await this.ticketGrantFacade.issueGrantAndTickets({
-            userId: body.userId,
-            rewards,
-            grantSourceType: TicketGrantSourceType.ADMIN,
-            issueContext: {
-                source: TicketSource.ADMIN,
-            },
-            actorType: TicketGrantActorType.ADMIN,
-            actorId: 'admin-ui',
-            reasonCode: 'admin_manual_ticket_grant',
-            reasonText: body.reason,
-            notice,
-        });
-
-        this.logger.log(
-            `Admin ticket grant: userId=${body.userId}, type=${body.type}, qty=${body.quantity}, reason="${body.reason}"`
-        );
-
-        const balance = await this.ticketService.getBalance(body.userId);
-        const remainingBalance =
-            body.type === TicketType.EXPERIENCE
-                ? balance.experience.count
-                : balance.portfolioCorrection.count;
-
-        const dto = new AdminGrantTicketsResDTO();
-        dto.userId = body.userId;
-        dto.type = body.type;
-        dto.quantity = body.quantity;
-        dto.reason = body.reason;
-        dto.remainingBalance = remainingBalance;
-        return dto;
-    }
-
     async getTicketGrants(): Promise<AdminTicketGrantListResDTO> {
         return this.ticketGrantFacade.getAdminTicketGrants();
-    }
-
-    async getTicketHistory(): Promise<AdminTicketHistoryResDTO> {
-        const rows = await this.ticketService.getTicketHistory();
-
-        const history: AdminTicketHistoryItemResDTO[] = rows.map((r) => {
-            const item = new AdminTicketHistoryItemResDTO();
-            item.ticketId = r.ticketId;
-            item.userId = r.userId;
-            item.userName = r.userName;
-            item.userEmail = r.userEmail;
-            item.type = r.type;
-            item.status = r.status;
-            item.source = r.source;
-            item.createdAt = r.createdAt.toISOString();
-            item.usedAt = r.usedAt ? r.usedAt.toISOString() : null;
-            item.expiredAt = r.expiredAt ? r.expiredAt.toISOString() : null;
-            return item;
-        });
-
-        const dto = new AdminTicketHistoryResDTO();
-        dto.history = history;
-        dto.total = history.length;
-        return dto;
     }
 
     @Transactional()
@@ -205,12 +117,17 @@ export class AdminEventRewardFacade {
         eventCode: string,
         params: GrantRewardByUserIdParams
     ): Promise<{ userId: number; rewardStatus: EventRewardStatus; rewardGrantedAt: Date }> {
-        const event = await this.eventService.findActiveByCodeOrThrow(eventCode);
-        if (event.opsConfig?.manualRewardOnly === false) {
+        const event = await this.eventService.findByCodeOrThrow(eventCode);
+        if (!event.isActive) {
+            throw new BusinessException(ErrorCode.EVENT_NOT_ACTIVE);
+        }
+        if (event.opsConfig?.manualRewardOnly !== true) {
             throw new BusinessException(ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED);
         }
 
         const user = await this.userService.findByIdOrThrow(params.userId);
+
+        const allowMultiple = event.opsConfig?.allowMultipleRewards === true;
 
         if (params.externalSubmissionId) {
             const existingSubmission =
@@ -221,7 +138,7 @@ export class AdminEventRewardFacade {
             if (existingSubmission) {
                 throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
             }
-        } else {
+        } else if (!allowMultiple) {
             const latestSubmission =
                 await this.eventFeedbackSubmissionService.findLatestByUserIdAndEventId(
                     user.id,
@@ -238,11 +155,13 @@ export class AdminEventRewardFacade {
                 event.id
             );
 
-        if (
-            participation.rewardStatus === EventRewardStatus.GRANTED ||
-            participation.rewardGrantedAt
-        ) {
-            throw new BusinessException(ErrorCode.EVENT_REWARD_ALREADY_GRANTED);
+        if (!allowMultiple) {
+            if (
+                participation.rewardStatus === EventRewardStatus.GRANTED ||
+                participation.rewardGrantedAt
+            ) {
+                throw new BusinessException(ErrorCode.EVENT_REWARD_ALREADY_GRANTED);
+            }
         }
 
         const now = new Date();
@@ -255,36 +174,12 @@ export class AdminEventRewardFacade {
         participation.grantReason = params.reviewNote ?? null;
         const savedParticipation = await this.eventParticipationService.save(participation);
 
-        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(event.rewardConfig);
-        const normalizedDisplayReason = this.ticketGrantFacade.normalizeDisplayReason(
-            params.displayReason ?? event.title
-        );
-        const notice =
-            params.createNotice === false
-                ? null
-                : params.noticeBody
-                  ? {
-                        title: params.noticeTitle ?? `${event.title}`,
-                        body: params.noticeBody,
-                        ctaText: params.noticeCtaText ?? event.ctaText,
-                        ctaLink: params.noticeCtaLink ?? event.ctaLink ?? null,
-                        payload: {
-                            displayReason: normalizedDisplayReason,
-                            rewards: event.rewardConfig,
-                        },
-                    }
-                  : this.ticketGrantFacade.createDefaultNotice({
-                        title: params.noticeTitle ?? '보상이 지급되었어요',
-                        rewardSummary,
-                        displayReason: normalizedDisplayReason,
-                        ctaText: params.noticeCtaText ?? event.ctaText,
-                        ctaLink: params.noticeCtaLink ?? event.ctaLink ?? null,
-                        rewards: event.rewardConfig,
-                    });
+        const rewards = this.resolveRewards(event, params.customRewards);
+        const notice = this.buildNoticeFromEvent(event, rewards);
 
         await this.ticketGrantFacade.issueGrantAndTickets({
             userId: user.id,
-            rewards: event.rewardConfig,
+            rewards,
             grantSourceType: TicketGrantSourceType.EVENT,
             issueContext: {
                 source: TicketSource.EVENT,
@@ -317,5 +212,64 @@ export class AdminEventRewardFacade {
             rewardStatus: savedParticipation.rewardStatus,
             rewardGrantedAt: now,
         };
+    }
+
+    private resolveRewards(event: Event, customRewards?: RewardConfigItem[]): RewardConfigItem[] {
+        if (event.opsConfig?.allowMultipleRewards === true && customRewards?.length) {
+            return customRewards;
+        }
+        return event.rewardConfig;
+    }
+
+    private buildNoticeFromEvent(
+        event: Event,
+        rewards: RewardConfigItem[]
+    ): {
+        title: string;
+        body: string;
+        ctaText: string | null;
+        ctaLink: string | null;
+        payload: Record<string, unknown>;
+    } {
+        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(rewards);
+
+        return {
+            title: '보상이 지급되었어요',
+            body: `${rewardSummary}이 지급되었어요.`,
+            ctaText: event.ctaText ?? this.resolveCtaText(rewards),
+            ctaLink: event.ctaLink ?? this.resolveCtaLink(rewards),
+            payload: {
+                displayReason: event.title,
+                rewards,
+            },
+        };
+    }
+
+    private resolveCtaText(rewards: RewardConfigItem[]): string {
+        const hasExperience = rewards.some(
+            (r) => r.type === TicketType.EXPERIENCE && r.quantity > 0
+        );
+        const hasCorrection = rewards.some(
+            (r) => r.type === TicketType.PORTFOLIO_CORRECTION && r.quantity > 0
+        );
+
+        if (!hasExperience && hasCorrection) {
+            return '첨삭 의뢰하기';
+        }
+        return '경험 정리하기';
+    }
+
+    private resolveCtaLink(rewards: RewardConfigItem[]): string {
+        const hasExperience = rewards.some(
+            (r) => r.type === TicketType.EXPERIENCE && r.quantity > 0
+        );
+        const hasCorrection = rewards.some(
+            (r) => r.type === TicketType.PORTFOLIO_CORRECTION && r.quantity > 0
+        );
+
+        if (!hasExperience && hasCorrection) {
+            return '/correction';
+        }
+        return '/experience';
     }
 }

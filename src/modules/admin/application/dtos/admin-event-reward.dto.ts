@@ -1,22 +1,21 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-    IsBoolean,
+    IsArray,
     IsEnum,
     IsInt,
     IsOptional,
     IsString,
     Max,
     MaxLength,
-    Matches,
     Min,
+    ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
 import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
+import { RewardConfigItem } from 'src/modules/event/domain/entities/event.entity';
 
-const NOTICE_CTA_LINK_REGEX = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
-const NOTICE_CTA_LINK_MESSAGE =
-    'noticeCtaLink는 http/https URL 또는 /로 시작하는 상대 경로만 허용합니다.';
+/* ──────────────────── User Search ──────────────────── */
 
 export class AdminUserSearchReqDTO {
     @IsOptional()
@@ -66,12 +65,23 @@ export class AdminUserSearchResDTO {
     }
 }
 
+/* ──────────────── Manual Reward Events ──────────────── */
+
 export class AdminManualRewardEventItemResDTO {
-    @ApiProperty({ example: 'FEEDBACK_REWARD' })
+    @ApiProperty({ example: 'FEEDBACK' })
     code: string;
 
     @ApiProperty({ example: '피드백 제출' })
     title: string;
+
+    @ApiProperty({ description: '이벤트 보상 설정', type: 'array' })
+    rewardConfig: RewardConfigItem[];
+
+    @ApiProperty({ example: false, description: '다중 보상 지급 허용 여부' })
+    allowMultipleRewards: boolean;
+
+    @ApiProperty({ example: false, description: '해당 유저에게 이미 보상 지급 완료 여부' })
+    isGranted: boolean;
 }
 
 export class AdminManualRewardEventListResDTO {
@@ -89,6 +99,23 @@ export class AdminManualRewardEventListResDTO {
     }
 }
 
+/* ──────────────── Custom Reward Item ──────────────── */
+
+export class CustomRewardItemDTO {
+    @ApiProperty({ enum: TicketType, description: '이용권 종류' })
+    @IsEnum(TicketType)
+    type: TicketType;
+
+    @ApiProperty({ description: '수량 (1~10)', example: 1 })
+    @IsInt()
+    @Min(1)
+    @Max(10)
+    @Type(() => Number)
+    quantity: number;
+}
+
+/* ──────────────── Grant Event Reward ──────────────── */
+
 export class AdminGrantRewardReqDTO {
     @ApiProperty({ description: '보상 대상 사용자 ID', example: 1 })
     @IsInt()
@@ -105,64 +132,32 @@ export class AdminGrantRewardReqDTO {
     @MaxLength(100)
     externalSubmissionId?: string;
 
-    @ApiPropertyOptional({ description: '검토자 식별자', example: 'pm.lee' })
+    @ApiPropertyOptional({ description: '검토자 식별자', example: '김수빈' })
     @IsOptional()
     @IsString()
     @MaxLength(64)
     reviewedBy?: string;
 
-    @ApiPropertyOptional({ description: '보상 메모', example: '유효 피드백 확인 완료' })
+    @ApiPropertyOptional({ description: '검토 메모', example: '유효 피드백 확인 완료' })
     @IsOptional()
     @IsString()
     @MaxLength(500)
     reviewNote?: string;
 
-    @ApiPropertyOptional({ description: '보상 안내 모달 생성 여부', example: true })
-    @IsOptional()
-    @IsBoolean()
-    @Type(() => Boolean)
-    createNotice?: boolean;
-
     @ApiPropertyOptional({
-        description: '사용자 노출 사유 문구',
-        example: '서비스 이용 불편에 대한 보상',
+        description:
+            '커스텀 보상 (allowMultipleRewards 이벤트 전용, 미지정 시 이벤트 rewardConfig 사용)',
+        type: [CustomRewardItemDTO],
     })
     @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    displayReason?: string;
-
-    @ApiPropertyOptional({ description: '보상 안내 제목', example: '보상이 지급되었어요' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    noticeTitle?: string;
-
-    @ApiPropertyOptional({
-        description: '보상 안내 본문',
-        example: '경험 정리 1회권이 지급되었어요.',
-    })
-    @IsOptional()
-    @IsString()
-    @MaxLength(1000)
-    noticeBody?: string;
-
-    @ApiPropertyOptional({ description: '보상 안내 CTA 문구', example: '첨삭 의뢰하기' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(50)
-    noticeCtaText?: string;
-
-    @ApiPropertyOptional({ description: '보상 안내 CTA 링크', example: '/correction/new' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(255)
-    @Matches(NOTICE_CTA_LINK_REGEX, { message: NOTICE_CTA_LINK_MESSAGE })
-    noticeCtaLink?: string;
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CustomRewardItemDTO)
+    customRewards?: CustomRewardItemDTO[];
 }
 
 export class AdminGrantRewardResDTO {
-    @ApiProperty({ example: 'FEEDBACK_REWARD' })
+    @ApiProperty({ example: 'FEEDBACK' })
     eventCode: string;
 
     @ApiProperty({ example: 1 })
@@ -175,143 +170,12 @@ export class AdminGrantRewardResDTO {
     rewardGrantedAt: string;
 }
 
-export class AdminGrantTicketsReqDTO {
-    @ApiProperty({ description: '대상 사용자 ID', example: 1 })
-    @IsInt()
-    @Min(1)
-    @Type(() => Number)
-    userId: number;
-
-    @ApiProperty({
-        description: '이용권 종류',
-        enum: TicketType,
-        example: TicketType.EXPERIENCE,
-    })
-    @IsEnum(TicketType)
-    type: TicketType;
-
-    @ApiProperty({ description: '지급 수량 (1~10)', example: 1 })
-    @IsInt()
-    @Min(1)
-    @Max(10)
-    @Type(() => Number)
-    quantity: number;
-
-    @ApiProperty({ description: '지급 사유', example: '피드백 제출' })
-    @IsString()
-    @MaxLength(200)
-    reason: string;
-
-    @ApiPropertyOptional({ description: '보상 안내 모달 생성 여부', example: true })
-    @IsOptional()
-    @IsBoolean()
-    @Type(() => Boolean)
-    createNotice?: boolean;
-
-    @ApiPropertyOptional({
-        description: '사용자 노출 사유 문구',
-        example: '서비스 이용 불편에 대한 보상',
-    })
-    @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    displayReason?: string;
-
-    @ApiPropertyOptional({ description: '보상 안내 제목', example: '보상이 지급되었어요' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    noticeTitle?: string;
-
-    @ApiPropertyOptional({
-        description: '보상 안내 본문',
-        example: '경험 정리 1회권이 지급되었어요.',
-    })
-    @IsOptional()
-    @IsString()
-    @MaxLength(1000)
-    noticeBody?: string;
-
-    @ApiPropertyOptional({ description: '보상 안내 CTA 문구', example: '첨삭 의뢰하기' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(50)
-    noticeCtaText?: string;
-
-    @ApiPropertyOptional({ description: '보상 안내 CTA 링크', example: '/correction/new' })
-    @IsOptional()
-    @IsString()
-    @MaxLength(255)
-    @Matches(NOTICE_CTA_LINK_REGEX, { message: NOTICE_CTA_LINK_MESSAGE })
-    noticeCtaLink?: string;
-}
-
-export class AdminGrantTicketsResDTO {
-    @ApiProperty({ example: 1 })
-    userId: number;
-
-    @ApiProperty({ enum: TicketType, example: TicketType.EXPERIENCE })
-    type: TicketType;
-
-    @ApiProperty({ example: 1 })
-    quantity: number;
-
-    @ApiProperty({ example: '피드백 제출' })
-    reason: string;
-
-    @ApiProperty({ example: 3, description: '지급 후 해당 타입 잔여 수량' })
-    remainingBalance: number;
-}
-
-export class AdminTicketHistoryItemResDTO {
-    @ApiProperty({ example: 1 })
-    ticketId: number;
-
-    @ApiProperty({ example: 1 })
-    userId: number;
-
-    @ApiProperty({ example: '김효인' })
-    userName: string;
-
-    @ApiPropertyOptional({ example: 'hyoin@test.com', nullable: true })
-    userEmail: string | null;
-
-    @ApiProperty({ enum: TicketType, example: TicketType.EXPERIENCE })
-    type: TicketType;
-
-    @ApiProperty({ example: 'AVAILABLE' })
-    status: string;
-
-    @ApiProperty({ example: 'PURCHASE' })
-    source: string;
-
-    @ApiProperty({ example: '2026-03-08T00:00:00.000Z' })
-    createdAt: string;
-
-    @ApiPropertyOptional({ example: null, nullable: true })
-    usedAt: string | null;
-
-    @ApiPropertyOptional({ example: null, nullable: true })
-    expiredAt: string | null;
-}
-
-export class AdminTicketHistoryResDTO {
-    @ApiProperty({ type: [AdminTicketHistoryItemResDTO] })
-    history: AdminTicketHistoryItemResDTO[];
-
-    @ApiProperty({ example: 10 })
-    total: number;
-}
+/* ──────────────── Internal Interfaces ──────────────── */
 
 export interface GrantRewardByUserIdParams {
     userId: number;
     externalSubmissionId?: string;
     reviewedBy?: string;
     reviewNote?: string;
-    createNotice?: boolean;
-    displayReason?: string;
-    noticeTitle?: string;
-    noticeBody?: string;
-    noticeCtaText?: string;
-    noticeCtaLink?: string;
+    customRewards?: CustomRewardItemDTO[];
 }

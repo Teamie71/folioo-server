@@ -17,6 +17,7 @@ import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
+import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 
 @Injectable()
 export class PortfolioCorrectionFacade {
@@ -91,7 +92,7 @@ export class PortfolioCorrectionFacade {
         const items = await this.replaceCorrectionItems(correctionId, correction, portfolios);
         await this.portfolioCorrectionService.transitionToGenerating(correctionId);
 
-        this.delegateCorrectionGeneration(correctionId);
+        void this.delegateCorrectionGeneration(correctionId);
 
         return items;
     }
@@ -106,33 +107,50 @@ export class PortfolioCorrectionFacade {
             return;
         }
 
-        this.delegateCompanyInsightCreation(correctionId);
+        void this.delegateCompanyInsightCreation(correctionId);
     }
 
-    private delegateCorrectionGeneration(correctionId: number): void {
-        this.aiRelayPort
-            .postJson({
+    private async delegateCorrectionGeneration(correctionId: number): Promise<void> {
+        try {
+            await this.aiRelayPort.postJson({
                 path: `/api/v1/corrections/${correctionId}/generate`,
                 body: {},
-            })
-            .catch((error: unknown) => {
-                const message = `Failed to delegate correction generation to AI server: correctionId=${correctionId}`;
-                const stack = error instanceof Error ? error.stack : undefined;
-                this.logger.error(message, stack);
             });
+        } catch (error: unknown) {
+            const message = `Failed to delegate correction generation to AI server: correctionId=${correctionId}`;
+            const stack = error instanceof Error ? error.stack : undefined;
+            this.logger.error(message, stack);
+            void this.fallbackToStatus(correctionId, CorrectionStatus.FAILED);
+        }
     }
 
-    private delegateCompanyInsightCreation(correctionId: number): void {
-        this.aiRelayPort
-            .postJson({
+    private async delegateCompanyInsightCreation(correctionId: number): Promise<void> {
+        try {
+            await this.aiRelayPort.postJson({
                 path: `/api/v1/corrections/${correctionId}/rag`,
                 body: {},
-            })
-            .catch((error: unknown) => {
-                const message = `Failed to delegate company insight generation to AI server: correctionId=${correctionId}`;
-                const stack = error instanceof Error ? error.stack : undefined;
-                this.logger.error(message, stack);
             });
+        } catch (error: unknown) {
+            const message = `Failed to delegate company insight generation to AI server: correctionId=${correctionId}`;
+            const stack = error instanceof Error ? error.stack : undefined;
+            this.logger.error(message, stack);
+            void this.fallbackToStatus(correctionId, CorrectionStatus.RAG_FAILED);
+        }
+    }
+
+    private async fallbackToStatus(
+        correctionId: number,
+        status: CorrectionStatus.FAILED | CorrectionStatus.RAG_FAILED
+    ): Promise<void> {
+        try {
+            await this.portfolioCorrectionService.updateStatusWithTransition(correctionId, status);
+        } catch (error: unknown) {
+            const stack = error instanceof Error ? error.stack : undefined;
+            this.logger.error(
+                `Failed to transition correction to ${status} status: correctionId=${correctionId}`,
+                stack
+            );
+        }
     }
 
     private async resolveSelectionTargets(

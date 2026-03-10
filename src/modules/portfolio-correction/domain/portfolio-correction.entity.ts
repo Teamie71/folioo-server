@@ -34,6 +34,9 @@ export class PortfolioCorrection extends BaseEntity {
     highlightPoint: string;
 
     @Column({ type: 'text', nullable: true })
+    overallReview: string | null;
+
+    @Column({ type: 'text', nullable: true })
     extractedText: string;
 
     @Column({ type: 'timestamptz', nullable: true })
