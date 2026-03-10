@@ -123,15 +123,6 @@ export class AdminGrantRewardReqDTO {
     @Type(() => Number)
     userId: number;
 
-    @ApiPropertyOptional({
-        description: '외부 제출 건 ID(멱등 키)',
-        example: 'google-form-row-123',
-    })
-    @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    externalSubmissionId?: string;
-
     @ApiPropertyOptional({ description: '검토자 식별자', example: '김수빈' })
     @IsOptional()
     @IsString()
@@ -174,7 +165,6 @@ export class AdminGrantRewardResDTO {
 
 export interface GrantRewardByUserIdParams {
     userId: number;
-    externalSubmissionId?: string;
     reviewedBy?: string;
     reviewNote?: string;
     customRewards?: CustomRewardItemDTO[];

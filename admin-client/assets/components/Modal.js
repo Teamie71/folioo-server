@@ -42,7 +42,6 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
     const [eventOptions, setEventOptions] = useState([]);
     const [eventCode, setEventCode] = useState('');
     const [reviewedBy, setReviewedBy] = useState('김수빈');
-    const [externalSubmissionId, setExternalSubmissionId] = useState('');
     const [reviewNote, setReviewNote] = useState('');
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState('form');
@@ -74,7 +73,6 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
         if (open) {
             setEventCode('');
             setReviewedBy('김수빈');
-            setExternalSubmissionId('');
             setReviewNote('');
             setStep('form');
             setLoading(false);
@@ -106,7 +104,6 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
             const body = {
                 userId: user.userId,
                 reviewedBy: reviewedBy || undefined,
-                externalSubmissionId: externalSubmissionId || undefined,
                 reviewNote: reviewNote || undefined,
             };
 
@@ -174,33 +171,18 @@ export function GrantEventRewardModal({ open, user, onClose, onSuccess }) {
                               </p>`}
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-1.5"
-                                >검토자</label
-                            >
-                            <input
-                                type="text"
-                                value=${reviewedBy}
-                                onInput=${(e) => setReviewedBy(e.target.value)}
-                                class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm
-                                          focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
-                                placeholder="김수빈"
-                            />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-1.5"
-                                >외부 제출 ID (선택)</label
-                            >
-                            <input
-                                type="text"
-                                value=${externalSubmissionId}
-                                onInput=${(e) => setExternalSubmissionId(e.target.value)}
-                                class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm
-                                          focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
-                                placeholder="예: google-form-row-123"
-                            />
-                        </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-1.5"
+                            >검토자</label
+                        >
+                        <input
+                            type="text"
+                            value=${reviewedBy}
+                            onInput=${(e) => setReviewedBy(e.target.value)}
+                            class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2.5 text-sm
+                                      focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+                            placeholder="김수빈"
+                        />
                     </div>
 
                     <div>

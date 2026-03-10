@@ -1,5 +1,0 @@
-export enum EventFeedbackSource {
-    GOOGLE_FORM = 'GOOGLE_FORM',
-    IN_APP = 'IN_APP',
-    ADMIN_UI = 'ADMIN_UI',
-}
