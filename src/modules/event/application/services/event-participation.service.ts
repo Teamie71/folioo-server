@@ -49,9 +49,6 @@ export class EventParticipationService {
         const participation = new EventParticipation();
         participation.userId = userId;
         participation.eventId = eventId;
-        participation.progress = 0;
-        participation.isCompleted = false;
-        participation.lastProgressedAt = null;
         return this.eventParticipationRepository.save(participation);
     }
 }

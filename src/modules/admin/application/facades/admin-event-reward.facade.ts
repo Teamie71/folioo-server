@@ -13,14 +13,10 @@ import {
 import type { GrantRewardByUserIdParams } from '../dtos/admin-event-reward.dto';
 import { Transactional } from 'typeorm-transactional';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
-import { EventFeedbackSubmissionService } from '../services/event-feedback-submission.service';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { EventFeedbackReviewStatus } from '../../domain/enums/event-feedback-review-status.enum';
 import { EventService } from 'src/modules/event/application/services/event.service';
 import { EventParticipationService } from 'src/modules/event/application/services/event-participation.service';
-import { EventFeedbackSubmission } from '../../domain/entities/event-feedback-submission.entity';
-import { EventFeedbackSource } from '../../domain/enums/event-feedback-source.enum';
 import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
 import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
 import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
@@ -34,7 +30,6 @@ import { Event } from 'src/modules/event/domain/entities/event.entity';
 export class AdminEventRewardFacade {
     constructor(
         private readonly userService: UserService,
-        private readonly eventFeedbackSubmissionService: EventFeedbackSubmissionService,
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
         private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade,
@@ -94,7 +89,6 @@ export class AdminEventRewardFacade {
     ): Promise<AdminGrantRewardResDTO> {
         const result = await this.grantFeedbackRewardByUserId(eventCode, {
             userId: body.userId,
-            externalSubmissionId: body.externalSubmissionId,
             reviewedBy: body.reviewedBy,
             reviewNote: body.reviewNote,
             customRewards: body.customRewards,
@@ -113,7 +107,7 @@ export class AdminEventRewardFacade {
     }
 
     @Transactional()
-    async grantFeedbackRewardByUserId(
+    private async grantFeedbackRewardByUserId(
         eventCode: string,
         params: GrantRewardByUserIdParams
     ): Promise<{ userId: number; rewardStatus: EventRewardStatus; rewardGrantedAt: Date }> {
@@ -126,28 +120,7 @@ export class AdminEventRewardFacade {
         }
 
         const user = await this.userService.findByIdOrThrow(params.userId);
-
         const allowMultiple = event.opsConfig?.allowMultipleRewards === true;
-
-        if (params.externalSubmissionId) {
-            const existingSubmission =
-                await this.eventFeedbackSubmissionService.findByEventIdAndExternalSubmissionId(
-                    event.id,
-                    params.externalSubmissionId
-                );
-            if (existingSubmission) {
-                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
-            }
-        } else if (!allowMultiple) {
-            const latestSubmission =
-                await this.eventFeedbackSubmissionService.findLatestByUserIdAndEventId(
-                    user.id,
-                    event.id
-                );
-            if (latestSubmission?.reviewStatus === EventFeedbackReviewStatus.REWARDED) {
-                throw new BusinessException(ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED);
-            }
-        }
 
         const participation =
             await this.eventRewardLifecycleFacade.getOrCreateParticipationForUpdate(
@@ -168,10 +141,6 @@ export class AdminEventRewardFacade {
 
         participation.rewardStatus = EventRewardStatus.GRANTED;
         participation.rewardGrantedAt = now;
-        participation.isCompleted = true;
-        participation.completedAt = participation.completedAt ?? now;
-        participation.grantedBy = params.reviewedBy ?? 'admin-ui';
-        participation.grantReason = params.reviewNote ?? null;
         const savedParticipation = await this.eventParticipationService.save(participation);
 
         const rewards = this.resolveRewards(event, params.customRewards);
@@ -193,19 +162,6 @@ export class AdminEventRewardFacade {
             notice,
             grantedAt: now,
         });
-
-        const submission = new EventFeedbackSubmission();
-        submission.eventId = event.id;
-        submission.userId = user.id;
-        submission.phoneNum = null;
-        submission.source = EventFeedbackSource.ADMIN_UI;
-        submission.externalSubmissionId = params.externalSubmissionId ?? null;
-        submission.reviewStatus = EventFeedbackReviewStatus.REWARDED;
-        submission.reviewedBy = params.reviewedBy ?? 'admin-ui';
-        submission.reviewedAt = now;
-        submission.reviewNote = params.reviewNote ?? null;
-        submission.rewardedParticipationId = savedParticipation.id;
-        await this.eventFeedbackSubmissionService.save(submission);
 
         return {
             userId: user.id,

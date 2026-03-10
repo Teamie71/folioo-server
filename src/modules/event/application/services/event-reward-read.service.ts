@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-    EventProgressCardResDTO,
-    FeedbackModalResDTO,
-    FeedbackModalVariant,
-} from '../dtos/event.dto';
+import { FeedbackModalResDTO, FeedbackModalVariant } from '../dtos/event.dto';
 import { EventService } from './event.service';
 import { EventParticipationService } from './event-participation.service';
 import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
@@ -60,62 +56,5 @@ export class EventRewardReadService {
         dto.ctaLink = feedbackConfig?.ctaLink ?? event.ctaLink ?? null;
 
         return dto;
-    }
-
-    async getProgressCard(userId: number, eventCode: string): Promise<EventProgressCardResDTO> {
-        const event = await this.eventService.findByCodeOrThrow(eventCode);
-        const participation = await this.eventParticipationService.findByUserIdAndEventId(
-            userId,
-            event.id
-        );
-
-        const target = event.goalConfig?.target ?? 1;
-        const progress = Math.max(0, participation?.progress ?? 0);
-        const remaining = Math.max(0, target - progress);
-        const isCompleted = participation?.isCompleted ?? false;
-        const rewardStatus = participation?.rewardStatus ?? EventRewardStatus.NOT_GRANTED;
-
-        const context = {
-            target: String(target),
-            progress: String(progress),
-            remaining: String(remaining),
-        };
-
-        const progressCard = event.uiConfig?.progressCard;
-
-        const dto = new EventProgressCardResDTO();
-        dto.eventCode = event.code;
-        dto.title = this.interpolate(progressCard?.titleTemplate ?? event.title, context);
-        dto.subtitle = this.interpolate(
-            progressCard?.subtitleTemplate ??
-                (isCompleted
-                    ? '인사이트 로그 작성 챌린지 성공!'
-                    : '오늘의 인사이트 로그 작성 챌린지 참여 완료!'),
-            context
-        );
-        dto.content = this.interpolate(
-            progressCard?.contentTemplate ??
-                (isCompleted
-                    ? '챌린지 달성 완료! 보상을 확인해보세요.'
-                    : '{remaining}개의 로그를 더 작성하고 보상을 받으세요!'),
-            context
-        );
-        dto.progress = progress;
-        dto.target = target;
-        dto.remaining = remaining;
-        dto.isCompleted = isCompleted;
-        dto.rewardStatus = rewardStatus;
-        dto.ctaText =
-            (isCompleted ? progressCard?.ctaCompletedText : progressCard?.ctaDefaultText) ??
-            event.ctaText;
-        dto.ctaLink = event.ctaLink ?? null;
-
-        return dto;
-    }
-
-    private interpolate(template: string, variables: Record<string, string>): string {
-        return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (full, key: string) => {
-            return variables[key] ?? full;
-        });
     }
 }

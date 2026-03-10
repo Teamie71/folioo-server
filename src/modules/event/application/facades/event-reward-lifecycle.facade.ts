@@ -7,13 +7,11 @@ import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventParticipation } from '../../domain/entities/event-participation.entity';
-import { isSameSeoulDate } from '../../../../common/utils/seoul-date.util';
 import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
 import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
 
-const INSIGHT_LOG_CHALLENGE_EVENT_CODE = 'INSIGHT_LOG_CHALLENGE';
 const UNIQUE_VIOLATION_CODE = '23505';
 
 @Injectable()
@@ -25,45 +23,6 @@ export class EventRewardLifecycleFacade {
     ) {}
 
     @Transactional()
-    async trackInsightChallengeProgress(userId: number): Promise<void> {
-        const event = await this.eventService.findActiveByCode(INSIGHT_LOG_CHALLENGE_EVENT_CODE);
-        if (!event || !event.goalConfig?.target) {
-            return;
-        }
-
-        const participation = await this.getOrCreateParticipationForUpdate(userId, event.id);
-        if (participation.isCompleted) {
-            return;
-        }
-
-        const now = new Date();
-        const dailyLimit = event.goalConfig.dailyLimit;
-        if (
-            dailyLimit === 1 &&
-            participation.lastProgressedAt &&
-            isSameSeoulDate(participation.lastProgressedAt, now)
-        ) {
-            return;
-        }
-
-        const currentProgress = participation.progress;
-        const nextProgress = Math.min(event.goalConfig.target, currentProgress + 1);
-        if (nextProgress === currentProgress) {
-            return;
-        }
-
-        participation.progress = nextProgress;
-        participation.lastProgressedAt = now;
-
-        if (nextProgress >= event.goalConfig.target) {
-            participation.isCompleted = true;
-            participation.completedAt = participation.completedAt ?? now;
-        }
-
-        await this.eventParticipationService.save(participation);
-    }
-
-    @Transactional()
     async claimEventReward(userId: number, eventCode: string): Promise<ClaimEventRewardResDTO> {
         const event = await this.eventService.findActiveByCodeOrThrow(eventCode);
         if (event.opsConfig?.manualRewardOnly === true) {
@@ -71,9 +30,6 @@ export class EventRewardLifecycleFacade {
         }
 
         const participation = await this.getOrCreateParticipationForUpdate(userId, event.id);
-        if (!participation.isCompleted) {
-            throw new BusinessException(ErrorCode.EVENT_REWARD_NOT_CLAIMABLE);
-        }
 
         if (
             participation.rewardStatus === EventRewardStatus.GRANTED ||
@@ -85,8 +41,6 @@ export class EventRewardLifecycleFacade {
         const now = new Date();
         participation.rewardStatus = EventRewardStatus.GRANTED;
         participation.rewardGrantedAt = now;
-        participation.grantedBy = 'self-claim';
-        participation.grantReason = '챌린지 보상 직접 수령';
 
         const savedParticipation = await this.eventParticipationService.save(participation);
         await this.ticketGrantFacade.issueGrantAndTickets({
