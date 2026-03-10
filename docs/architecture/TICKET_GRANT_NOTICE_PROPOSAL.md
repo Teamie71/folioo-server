@@ -309,7 +309,7 @@ src/modules/ticket/
     "ticketGrantId": 55,
     "status": "PENDING",
     "title": "보상이 지급되었어요",
-    "body": "경험 정리 1회권 + 포트폴리오 첨삭 1회권이 지급되었어요.",
+    "body": "경험 정리 1회권 + 포트폴리오 첨삭 1회권",
     "ctaText": "첨삭 의뢰하기",
     "ctaLink": "/correction/new",
     "payload": {

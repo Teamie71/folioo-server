@@ -21,7 +21,7 @@
     "ticketGrantId": 55,
     "status": "PENDING",
     "title": "보상이 지급되었어요",
-    "body": "서비스 이용 불편에 대한 보상으로 경험 정리 1회권이 지급되었어요.",
+    "body": "경험 정리 1회권",
     "ctaText": "보러가기",
     "ctaLink": "/tickets",
     "payload": {
