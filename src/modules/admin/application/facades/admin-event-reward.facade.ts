@@ -235,7 +235,7 @@ export class AdminEventRewardFacade {
 
         return {
             title: '보상이 지급되었어요',
-            body: `${rewardSummary}이 지급되었어요.`,
+            body: rewardSummary,
             ctaText: event.ctaText ?? this.resolveCtaText(rewards),
             ctaLink: event.ctaLink ?? this.resolveCtaLink(rewards),
             payload: {

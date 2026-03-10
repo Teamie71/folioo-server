@@ -34,7 +34,7 @@ export class TicketGrantNoticeResDTO {
     @ApiProperty({ example: '보상이 지급되었어요' })
     title: string;
 
-    @ApiProperty({ example: '경험 정리 1회권이 지급되었어요.' })
+    @ApiProperty({ example: '경험 정리 1회권' })
     body: string;
 
     @ApiPropertyOptional({ example: '첨삭 의뢰하기', nullable: true })
