@@ -152,7 +152,7 @@ export class TicketGrantFacade {
         expiresAt?: Date | null;
     }): NoticeInput {
         const normalizedDisplayReason = this.normalizeDisplayReason(displayReason);
-        const body = `${rewardSummary}이 지급되었어요.`;
+        const body = rewardSummary;
 
         return {
             title,

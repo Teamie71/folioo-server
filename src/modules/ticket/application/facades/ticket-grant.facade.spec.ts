@@ -41,7 +41,7 @@ describe('TicketGrantFacade', () => {
 
         expect(result).toEqual({
             title: '보상이 지급되었어요',
-            body: '경험 정리 1회권이 지급되었어요.',
+            body: '경험 정리 1회권',
             ctaText: '보러가기',
             ctaLink: '/tickets',
             expiresAt,
