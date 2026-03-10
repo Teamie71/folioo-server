@@ -20,18 +20,26 @@ ALTER TABLE "event_participation" DROP COLUMN IF EXISTS "last_progressed_at";
 ALTER TABLE "event_participation" DROP COLUMN IF EXISTS "granted_by";
 ALTER TABLE "event_participation" DROP COLUMN IF EXISTS "grant_reason";
 
--- 5. Remove unused enum values from event_reward_status
--- PostgreSQL doesn't support DROP VALUE from enum directly.
--- Create new enum, migrate column, drop old enum.
-ALTER TYPE "event_participation_reward_status_enum"
-    RENAME TO "event_participation_reward_status_enum_old";
+-- 5. Remove unused enum values from event_reward_status (idempotent)
+DO $$
+BEGIN
+    -- Only run if old enum still has UNDER_REVIEW (i.e., not yet migrated)
+    IF EXISTS (
+        SELECT 1 FROM pg_enum
+        WHERE enumlabel = 'UNDER_REVIEW'
+        AND enumtypid = 'event_participation_reward_status_enum'::regtype
+    ) THEN
+        ALTER TYPE "event_participation_reward_status_enum"
+            RENAME TO "event_participation_reward_status_enum_old";
 
-CREATE TYPE "event_participation_reward_status_enum" AS ENUM ('NOT_GRANTED', 'GRANTED');
+        CREATE TYPE "event_participation_reward_status_enum" AS ENUM ('NOT_GRANTED', 'GRANTED');
 
-ALTER TABLE "event_participation"
-    ALTER COLUMN "reward_status" DROP DEFAULT,
-    ALTER COLUMN "reward_status" TYPE "event_participation_reward_status_enum"
-        USING "reward_status"::text::"event_participation_reward_status_enum",
-    ALTER COLUMN "reward_status" SET DEFAULT 'NOT_GRANTED';
+        ALTER TABLE "event_participation"
+            ALTER COLUMN "reward_status" DROP DEFAULT,
+            ALTER COLUMN "reward_status" TYPE "event_participation_reward_status_enum"
+                USING "reward_status"::text::"event_participation_reward_status_enum",
+            ALTER COLUMN "reward_status" SET DEFAULT 'NOT_GRANTED';
 
-DROP TYPE "event_participation_reward_status_enum_old";
+        DROP TYPE "event_participation_reward_status_enum_old";
+    END IF;
+END $$;
