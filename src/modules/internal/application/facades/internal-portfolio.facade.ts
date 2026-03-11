@@ -43,7 +43,7 @@ export class InternalPortfolioFacade {
 
         await this.portfolioService.failGeneration(portfolioId);
         if (experienceId) {
-            await this.experienceService.revertToOnChat(experienceId);
+            await this.experienceService.transitionToGenerateFailed(experienceId);
         }
     }
 }
