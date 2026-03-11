@@ -190,7 +190,7 @@ export class InterviewFacade {
         try {
             await Promise.all([
                 this.portfolioService.removeGeneratingPortfolio(portfolioId),
-                this.experienceService.revertToOnChat(experienceId),
+                this.experienceService.transitionToGenerateFailed(experienceId),
             ]);
             this.logger.log(
                 `Compensation completed: portfolioId=${portfolioId}, experienceId=${experienceId}`
