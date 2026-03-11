@@ -30,7 +30,8 @@ export class ExperienceService {
     }
 
     async transitionToGenerate(experience: Experience): Promise<Experience> {
-        if (experience.status !== ExperienceStatus.ON_CHAT) {
+        const allowedStatuses = [ExperienceStatus.ON_CHAT, ExperienceStatus.GENERATE_FAILED];
+        if (!allowedStatuses.includes(experience.status)) {
             throw new BusinessException(ErrorCode.EXPERIENCE_INVALID_STATUS, {
                 currentStatus: experience.status,
             });
