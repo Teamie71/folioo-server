@@ -10,12 +10,35 @@ export class StreamRetrieverStatusDTO {
 }
 
 // --- 2. RAG 검색 결과 (retriever_result) ---
+export class StreamRetrieverInsightDTO {
+    @ApiProperty({ example: '60', description: '인사이트 ID (문자열)' })
+    id: string;
+
+    @ApiProperty({ example: '로그로그' })
+    title: string;
+
+    @ApiProperty({ example: '마케팅 인턴' })
+    activity_name: string;
+
+    @ApiProperty({ example: '기타' })
+    category: string;
+
+    @ApiProperty({ example: '10:57' })
+    content: string;
+
+    @ApiProperty({ example: null, nullable: true, type: Number })
+    similarity_score: number | null;
+
+    @ApiProperty({ example: 'mention', description: '검색 소스 (mention | rag 등)' })
+    source: string;
+}
+
 export class StreamRetrieverResultDTO {
     @ApiProperty({ example: 'retriever_result' })
     type: string;
 
-    @ApiProperty({ description: '검색된 인사이트 배열', example: [] })
-    insights: unknown[];
+    @ApiProperty({ type: [StreamRetrieverInsightDTO], description: '검색된 인사이트 배열' })
+    insights: StreamRetrieverInsightDTO[];
 }
 
 // --- 3. 연결 유지용 Ping (ping) ---
