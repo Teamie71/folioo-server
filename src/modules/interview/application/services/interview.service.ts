@@ -40,7 +40,7 @@ export class InterviewService {
             body: {
                 message,
                 ...(mentionedInsightId !== undefined && {
-                    mentioned_insight: mentionedInsightId,
+                    mentioned_insight: mentionedInsightId.toString(),
                 }),
             },
         });
