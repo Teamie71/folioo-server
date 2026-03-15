@@ -63,7 +63,7 @@ describe('InterviewService', () => {
             path: '/api/v1/interview/sessions/session_123/chat/stream',
             body: {
                 message: '안녕하세요',
-                mentioned_insight: 1,
+                mentioned_insight: '1',
             },
         });
     });
