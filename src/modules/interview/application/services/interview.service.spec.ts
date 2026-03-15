@@ -57,25 +57,24 @@ describe('InterviewService', () => {
     });
 
     it('maps chat stream request to AI server schema', async () => {
-        await interviewService.sendChatStream('session_123', '안녕하세요', [1]);
+        await interviewService.sendChatStream('session_123', '안녕하세요', 1);
 
         expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
             path: '/api/v1/interview/sessions/session_123/chat/stream',
             body: {
                 message: '안녕하세요',
-                mentioned_insight_ids: ['1'],
+                mentioned_insight: 1,
             },
         });
     });
 
-    it('uses empty arrays when optional chat arrays are omitted', async () => {
-        await interviewService.sendChatStream('session 1/2', '추가 질문입니다.', []);
+    it('omits mentioned_insight from body when insightId is not provided', async () => {
+        await interviewService.sendChatStream('session 1/2', '추가 질문입니다.');
 
         expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
             path: '/api/v1/interview/sessions/session%201%2F2/chat/stream',
             body: {
                 message: '추가 질문입니다.',
-                mentioned_insight_ids: [],
             },
         });
     });
@@ -89,6 +88,8 @@ describe('InterviewService', () => {
             experience_name: '서비스 기획 인턴십 경험',
             current_stage: 2,
             all_complete: false,
+            turn_number: 2,
+            insight_turn_history: [],
         };
         aiRelayPortStub.getJsonMock.mockResolvedValue({
             data: payload,
@@ -109,6 +110,8 @@ describe('InterviewService', () => {
             experienceName: '서비스 기획 인턴십 경험',
             currentStage: 2,
             allComplete: false,
+            turnNumber: 2,
+            insightTurnHistory: [],
         });
     });
 

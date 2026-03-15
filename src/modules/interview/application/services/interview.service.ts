@@ -33,13 +33,15 @@ export class InterviewService {
     async sendChatStream(
         sessionId: string,
         message: string,
-        mentionedInsightIds: number[]
+        mentionedInsightId?: number
     ): Promise<AiRelayConnection> {
         return this.aiRelayPort.openPostStream({
             path: sessionPath(sessionId, '/chat/stream'),
             body: {
                 message,
-                mentioned_insight_ids: mentionedInsightIds.map(String),
+                ...(mentionedInsightId !== undefined && {
+                    mentioned_insight: mentionedInsightId,
+                }),
             },
         });
     }
