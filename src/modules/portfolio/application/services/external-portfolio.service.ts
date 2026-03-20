@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PortfolioRepository } from '../../infrastructure/repositories/portfolio.repository';
 import { Portfolio } from '../../domain/portfolio.entity';
+import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
@@ -40,6 +41,7 @@ export class ExternalPortfolioService {
 
     async createEmptyPortfolio(userId: number): Promise<Portfolio> {
         const portfolio = Portfolio.createExternal(userId);
+        portfolio.status = PortfolioStatus.COMPLETED;
         return this.portfolioRepository.save(portfolio);
     }
 
