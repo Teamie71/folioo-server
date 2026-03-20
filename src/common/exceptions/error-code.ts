@@ -193,6 +193,14 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '유효하지 않은 첨삭 상태 전이입니다.',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
+    [ErrorCode.CORRECTION_PDF_EXTRACTION_INVALID_STATUS]: {
+        message: 'PDF 추출 상태가 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.CORRECTION_PDF_EXTRACTION_EMPTY_ACTIVITIES]: {
+        message: 'PDF 추출 결과에 activities가 없습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
     [ErrorCode.CORRECTION_AI_RELAY_FAILED]: {
         message: 'AI 첨삭 생성 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PortfolioRepository } from '../../infrastructure/repositories/portfolio.repository';
 import { Portfolio } from '../../domain/portfolio.entity';
+import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
@@ -40,7 +41,27 @@ export class ExternalPortfolioService {
 
     async createEmptyPortfolio(userId: number): Promise<Portfolio> {
         const portfolio = Portfolio.createExternal(userId);
+        portfolio.status = PortfolioStatus.COMPLETED;
         return this.portfolioRepository.save(portfolio);
+    }
+
+    async createExternalPortfolios(
+        userId: number,
+        updatesList: ExternalPortfolioUpdateInput[]
+    ): Promise<Portfolio[]> {
+        // 완성된 엔티티를 만들어 한 번에 저장합니다.
+        const portfolios = updatesList.map((updates) => {
+            const portfolio = Portfolio.createExternal(userId);
+            portfolio.status = PortfolioStatus.COMPLETED;
+            portfolio.name = updates.name ?? portfolio.name;
+            portfolio.description = updates.description ?? portfolio.description;
+            portfolio.responsibilities = updates.responsibilities ?? portfolio.responsibilities;
+            portfolio.problemSolving = updates.problemSolving ?? portfolio.problemSolving;
+            portfolio.learnings = updates.learnings ?? portfolio.learnings;
+            return portfolio;
+        });
+
+        return this.portfolioRepository.saveAll(portfolios);
     }
 
     async updateExternalPortfolio(
