@@ -16,6 +16,10 @@ export class PortfolioRepository {
         return this.portfolioRepository.save(portfolio);
     }
 
+    saveAll(portfolios: Portfolio[]): Promise<Portfolio[]> {
+        return this.portfolioRepository.save(portfolios);
+    }
+
     async findById(id: number): Promise<Portfolio | null> {
         return this.portfolioRepository.findOne({
             where: { id },

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
+import type { ExternalPortfolioUpdateInput } from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { CorrectionItemService } from 'src/modules/portfolio-correction/application/services/correction-item.service';
 import { CorrectionPortfolioSelectionService } from 'src/modules/portfolio-correction/application/services/correction-portfolio-selection.service';
 import { PortfolioCorrectionService } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
@@ -62,26 +63,14 @@ export class InternalCorrectionResultFacade {
             this.logger.error(
                 `PDF extraction callback invalid payload: correctionId=${correctionId}, activities is empty`
             );
-            await this.portfolioCorrectionService.updatePdfExtractionStatus(
-                correctionId,
-                PdfExtractionStatus.FAILED
-            );
             throw new BusinessException(ErrorCode.CORRECTION_PDF_EXTRACTION_EMPTY_ACTIVITIES);
         }
 
-        const createdPortfolios: Portfolio[] = [];
-        for (const activity of body.activities) {
-            const portfolio = await this.externalPortfolioService.createEmptyPortfolio(
-                correction.user.id
-            );
-            const mapped = this.mapActivity(activity);
-            const updatedPortfolio = await this.externalPortfolioService.updateExternalPortfolio(
-                portfolio.id,
+        const createdPortfolios: Portfolio[] =
+            await this.externalPortfolioService.createExternalPortfolios(
                 correction.user.id,
-                mapped
+                body.activities.map((activity) => this.mapActivity(activity))
             );
-            createdPortfolios.push(updatedPortfolio);
-        }
 
         await this.correctionPortfolioSelectionService.activateSelections(
             correction,
@@ -98,13 +87,7 @@ export class InternalCorrectionResultFacade {
         );
     }
 
-    private mapActivity(activity: PdfExtractionActivityReqDTO): {
-        name: string;
-        description: string;
-        responsibilities: string;
-        problemSolving: string;
-        learnings: string;
-    } {
+    private mapActivity(activity: PdfExtractionActivityReqDTO): ExternalPortfolioUpdateInput {
         return {
             name: this.truncate(activity.activityName, PORTFOLIO_NAME_MAX_LENGTH),
             description: this.truncate(
@@ -136,6 +119,6 @@ export class InternalCorrectionResultFacade {
     }
 
     private truncate(value: string, maxLength: number): string {
-        return value.slice(0, maxLength);
+        return Array.from(value).slice(0, maxLength).join('');
     }
 }
