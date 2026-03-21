@@ -2,7 +2,11 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isAxiosError } from 'axios';
-import { AiPdfExtractAccepted, AiPdfExtractPort } from 'src/common/ports/ai-pdf-extract.port';
+import {
+    AiPdfExtractAccepted,
+    AiPdfExtractPort,
+    DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
+} from 'src/common/ports/ai-pdf-extract.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
@@ -108,7 +112,9 @@ export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
         const status = body.status;
         if (typeof status === 'string' && status.toLowerCase() === 'accepted') {
             const message =
-                typeof body.message === 'string' ? body.message : 'PDF 추출 요청이 접수되었습니다.';
+                typeof body.message === 'string'
+                    ? body.message
+                    : DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE;
             return { message };
         }
 

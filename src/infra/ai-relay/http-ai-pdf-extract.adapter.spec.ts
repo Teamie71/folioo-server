@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE } from 'src/common/ports/ai-pdf-extract.port';
 import { HttpAiPdfExtractAdapter } from './http-ai-pdf-extract.adapter';
 
 class HttpServiceStub {
@@ -45,7 +46,7 @@ describe('HttpAiPdfExtractAdapter', () => {
                 data: {
                     correction_id: '1',
                     status: 'accepted',
-                    message: 'PDF 추출 요청이 접수되었습니다.',
+                    message: DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
                 },
             });
 
@@ -64,7 +65,7 @@ describe('HttpAiPdfExtractAdapter', () => {
             );
 
             expect(result).toEqual({
-                message: 'PDF 추출 요청이 접수되었습니다.',
+                message: DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
             });
         });
 
@@ -116,7 +117,7 @@ describe('HttpAiPdfExtractAdapter', () => {
             const result = await adapter.extractText(99, fileBuffer, 'sample.pdf');
 
             expect(result).toEqual({
-                message: 'PDF 추출 요청이 접수되었습니다.',
+                message: DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
             });
         });
 

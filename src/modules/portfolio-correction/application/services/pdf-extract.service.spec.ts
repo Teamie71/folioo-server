@@ -1,4 +1,8 @@
-import { AiPdfExtractAccepted, AiPdfExtractPort } from 'src/common/ports/ai-pdf-extract.port';
+import {
+    AiPdfExtractAccepted,
+    AiPdfExtractPort,
+    DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
+} from 'src/common/ports/ai-pdf-extract.port';
 import { PdfExtractService } from './pdf-extract.service';
 
 class AiPdfExtractPortStub extends AiPdfExtractPort {
@@ -27,7 +31,7 @@ describe('PdfExtractService', () => {
         const fileBuffer = Buffer.from('fake-pdf-content');
         const fileName = 'portfolio.pdf';
         const portResult: AiPdfExtractAccepted = {
-            message: 'PDF 추출 요청이 접수되었습니다.',
+            message: DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
         };
 
         aiPdfExtractPortStub.extractTextMock.mockResolvedValue(portResult);
