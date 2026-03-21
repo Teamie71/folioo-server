@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AiPdfExtractPort } from 'src/common/ports/ai-pdf-extract.port';
+import { AiPdfExtractAccepted, AiPdfExtractPort } from 'src/common/ports/ai-pdf-extract.port';
 
 @Injectable()
 export class PdfExtractService {
@@ -8,8 +8,11 @@ export class PdfExtractService {
         private readonly aiPdfExtractPort: AiPdfExtractPort
     ) {}
 
-    async extractText(fileBuffer: Buffer, fileName: string): Promise<string> {
-        const result = await this.aiPdfExtractPort.extractText(fileBuffer, fileName);
-        return result.extractedText;
+    async extractText(
+        correctionId: number,
+        fileBuffer: Buffer,
+        fileName: string
+    ): Promise<AiPdfExtractAccepted> {
+        return this.aiPdfExtractPort.extractText(correctionId, fileBuffer, fileName);
     }
 }

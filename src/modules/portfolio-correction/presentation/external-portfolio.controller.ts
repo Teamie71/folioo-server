@@ -41,11 +41,12 @@ export class ExternalPortfolioController {
 
     @Post('extract')
     @ApiOperation({
-        summary: 'PDF 포트폴리오 텍스트 추출',
-        description: '업로드한 포트폴리오 파일에서 텍스트를 추출합니다.',
+        summary: 'PDF 포트폴리오 추출 요청 위임',
+        description:
+            'PDF를 AI 서버에 전달해 추출·구조화 작업을 비동기로 접수합니다. 결과는 서버 간 콜백 후 조회 API로 확인합니다.',
     })
     @ApiExternalPortfolioExtractRequest()
-    @ApiCommonMessageResponse('AI가 파일을 구조화하여 정리합니다.')
+    @ApiCommonMessageResponse('추출 요청이 접수되었습니다. 처리 완료 후 결과를 조회해 주세요.')
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_EXTRACT_FAILED)
     async extractPortfolios(@User('sub') userId: number, @Req() req: Request): Promise<string> {
         const { correctionId, fileBuffer, fileName } = await this.extractRequestParser.parse(req);
