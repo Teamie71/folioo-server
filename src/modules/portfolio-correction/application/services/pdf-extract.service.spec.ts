@@ -1,11 +1,15 @@
-import { AiPdfExtractPort, AiPdfExtractResult } from 'src/common/ports/ai-pdf-extract.port';
+import { AiPdfExtractAccepted, AiPdfExtractPort } from 'src/common/ports/ai-pdf-extract.port';
 import { PdfExtractService } from './pdf-extract.service';
 
 class AiPdfExtractPortStub extends AiPdfExtractPort {
-    readonly extractTextMock = jest.fn<Promise<AiPdfExtractResult>, [Buffer, string]>();
+    readonly extractTextMock = jest.fn<Promise<AiPdfExtractAccepted>, [number, Buffer, string]>();
 
-    extractText(fileBuffer: Buffer, fileName: string): Promise<AiPdfExtractResult> {
-        return this.extractTextMock(fileBuffer, fileName);
+    extractText(
+        correctionId: number,
+        fileBuffer: Buffer,
+        fileName: string
+    ): Promise<AiPdfExtractAccepted> {
+        return this.extractTextMock(correctionId, fileBuffer, fileName);
     }
 }
 
@@ -18,29 +22,35 @@ describe('PdfExtractService', () => {
         pdfExtractService = new PdfExtractService(aiPdfExtractPortStub);
     });
 
-    it('delegates to AiPdfExtractPort and returns extracted text', async () => {
+    it('delegates to AiPdfExtractPort and returns accepted payload', async () => {
+        const correctionId = 7;
         const fileBuffer = Buffer.from('fake-pdf-content');
         const fileName = 'portfolio.pdf';
-        const expectedText = '추출된 포트폴리오 텍스트입니다.';
+        const portResult: AiPdfExtractAccepted = {
+            message: 'PDF 추출 요청이 접수되었습니다.',
+        };
 
-        aiPdfExtractPortStub.extractTextMock.mockResolvedValue({
-            extractedText: expectedText,
-        });
+        aiPdfExtractPortStub.extractTextMock.mockResolvedValue(portResult);
 
-        const result = await pdfExtractService.extractText(fileBuffer, fileName);
+        const result = await pdfExtractService.extractText(correctionId, fileBuffer, fileName);
 
-        expect(result).toBe(expectedText);
-        expect(aiPdfExtractPortStub.extractTextMock).toHaveBeenCalledWith(fileBuffer, fileName);
+        expect(result).toEqual(portResult);
+        expect(aiPdfExtractPortStub.extractTextMock).toHaveBeenCalledWith(
+            correctionId,
+            fileBuffer,
+            fileName
+        );
     });
 
     it('propagates errors from the port', async () => {
+        const correctionId = 3;
         const fileBuffer = Buffer.from('bad-pdf');
         const fileName = 'broken.pdf';
 
         aiPdfExtractPortStub.extractTextMock.mockRejectedValue(new Error('AI server down'));
 
-        await expect(pdfExtractService.extractText(fileBuffer, fileName)).rejects.toThrow(
-            'AI server down'
-        );
+        await expect(
+            pdfExtractService.extractText(correctionId, fileBuffer, fileName)
+        ).rejects.toThrow('AI server down');
     });
 });

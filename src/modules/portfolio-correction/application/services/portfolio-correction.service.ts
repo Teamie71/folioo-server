@@ -154,17 +154,6 @@ export class PortfolioCorrectionService {
         return UpdateCompanyInsightResDTO.from(saved);
     }
 
-    async saveExtractedText(
-        correctionId: number,
-        userId: number,
-        extractedText: string
-    ): Promise<void> {
-        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
-        correction.extractedText = extractedText;
-        correction.extractedAt = new Date();
-        await this.portfolioCorrectionRepository.save(correction);
-    }
-
     async updatePdfExtractionStatus(
         correctionId: number,
         status: PdfExtractionStatus
