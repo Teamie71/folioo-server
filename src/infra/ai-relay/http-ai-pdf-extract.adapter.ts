@@ -2,11 +2,18 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isAxiosError } from 'axios';
-import { AiPdfExtractPort, AiPdfExtractResult } from 'src/common/ports/ai-pdf-extract.port';
+import {
+    AiPdfExtractAccepted,
+    AiPdfExtractPort,
+    DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
+} from 'src/common/ports/ai-pdf-extract.port';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
-const EXTRACT_PATH = '/api/v1/portfolio/extract';
+/** AI server: POST /api/v1/corrections/{correction_id}/pdf-extraction */
+function buildExtractPath(correctionId: number): string {
+    return `/api/v1/corrections/${correctionId}/pdf-extraction`;
+}
 
 @Injectable()
 export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
@@ -19,7 +26,11 @@ export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
         super();
     }
 
-    async extractText(fileBuffer: Buffer, fileName: string): Promise<AiPdfExtractResult> {
+    async extractText(
+        correctionId: number,
+        fileBuffer: Buffer,
+        fileName: string
+    ): Promise<AiPdfExtractAccepted> {
         const baseUrl = this.configService.get<string>('AI_BASE_URL');
         if (!baseUrl) {
             this.logger.error('AI_BASE_URL is not configured');
@@ -32,30 +43,26 @@ export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
             throw new BusinessException(ErrorCode.PORTFOLIO_EXTRACT_FAILED);
         }
 
-        const requestUrl = this.buildRequestUrl(baseUrl, EXTRACT_PATH);
+        const requestUrl = this.buildRequestUrl(baseUrl, buildExtractPath(correctionId));
         const formData = this.buildFormData(fileBuffer, fileName);
 
         try {
-            const response = await this.httpService.axiosRef.post<{ extracted_text: string }>(
-                requestUrl,
-                formData,
-                {
-                    timeout: 60_000,
-                    headers: {
-                        'X-API-Key': apiKey,
-                    },
-                }
-            );
+            const response = await this.httpService.axiosRef.post<unknown>(requestUrl, formData, {
+                timeout: 60_000,
+                headers: {
+                    'X-API-Key': apiKey,
+                },
+            });
 
-            const extractedText = response.data?.extracted_text;
-            if (typeof extractedText !== 'string') {
+            const parsed = this.parseExtractResponse(response.data);
+            if (!parsed) {
                 this.logger.error(
                     `Unexpected AI extract response shape: ${JSON.stringify(response.data)}`
                 );
                 throw new BusinessException(ErrorCode.PORTFOLIO_EXTRACT_FAILED);
             }
 
-            return { extractedText };
+            return parsed;
         } catch (error: unknown) {
             if (error instanceof BusinessException) {
                 throw error;
@@ -94,5 +101,23 @@ export class HttpAiPdfExtractAdapter extends AiPdfExtractPort {
         } catch {
             return '[unserializable-response-data]';
         }
+    }
+
+    private parseExtractResponse(data: unknown): AiPdfExtractAccepted | null {
+        if (!data || typeof data !== 'object') {
+            return null;
+        }
+        const body = data as Record<string, unknown>;
+
+        const status = body.status;
+        if (typeof status === 'string' && status.toLowerCase() === 'accepted') {
+            const message =
+                typeof body.message === 'string'
+                    ? body.message
+                    : DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE;
+            return { message };
+        }
+
+        return null;
     }
 }

@@ -15,6 +15,7 @@ import {
 import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { PdfExtractionStatus } from 'src/modules/portfolio-correction/domain/enums/pdf-extraction-status.enum';
 
 @Injectable()
 export class ExternalPortfolioFacade {
@@ -32,13 +33,19 @@ export class ExternalPortfolioFacade {
         fileBuffer: Buffer,
         fileName: string
     ): Promise<string> {
-        const extractedText = await this.pdfExtractService.extractText(fileBuffer, fileName);
-        await this.portfolioCorrectionService.saveExtractedText(
+        await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(correctionId, userId);
+
+        const { message } = await this.pdfExtractService.extractText(
             correctionId,
-            userId,
-            extractedText
+            fileBuffer,
+            fileName
         );
-        return extractedText;
+
+        await this.portfolioCorrectionService.updatePdfExtractionStatus(
+            correctionId,
+            PdfExtractionStatus.GENERATING
+        );
+        return message;
     }
 
     async getSelectedPortfolios(

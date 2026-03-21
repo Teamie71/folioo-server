@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE } from 'src/common/ports/ai-pdf-extract.port';
 import { HttpAiPdfExtractAdapter } from './http-ai-pdf-extract.adapter';
 
 class HttpServiceStub {
@@ -34,7 +35,7 @@ describe('HttpAiPdfExtractAdapter', () => {
     });
 
     describe('extractText', () => {
-        it('includes X-API-Key header when AI_SERVICE_API_KEY is configured', async () => {
+        it('posts to corrections pdf-extraction path with X-API-Key', async () => {
             configServiceStub.mockGet.mockImplementation((key: string) => {
                 if (key === 'AI_BASE_URL') return 'https://ai.example.com';
                 if (key === 'AI_SERVICE_API_KEY') return 'test-extract-key-789';
@@ -42,15 +43,19 @@ describe('HttpAiPdfExtractAdapter', () => {
             });
 
             httpServiceStub.axiosRef.post.mockResolvedValue({
-                data: { extracted_text: 'Sample extracted text from PDF' },
+                data: {
+                    correction_id: '1',
+                    status: 'accepted',
+                    message: DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
+                },
             });
 
+            const correctionId = 42;
             const fileBuffer = Buffer.from('fake pdf content');
-            const result = await adapter.extractText(fileBuffer, 'test.pdf');
+            const result = await adapter.extractText(correctionId, fileBuffer, 'test.pdf');
 
             expect(httpServiceStub.axiosRef.post).toHaveBeenCalledWith(
-                'https://ai.example.com/api/v1/portfolio/extract',
-
+                'https://ai.example.com/api/v1/corrections/42/pdf-extraction',
                 expect.any(FormData),
                 expect.objectContaining({
                     headers: expect.objectContaining({
@@ -59,7 +64,9 @@ describe('HttpAiPdfExtractAdapter', () => {
                 })
             );
 
-            expect(result).toBeDefined();
+            expect(result).toEqual({
+                message: DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
+            });
         });
 
         it('throws BusinessException when AI_SERVICE_API_KEY is not configured', async () => {
@@ -71,11 +78,11 @@ describe('HttpAiPdfExtractAdapter', () => {
 
             const fileBuffer = Buffer.from('fake pdf content');
 
-            await expect(adapter.extractText(fileBuffer, 'test.pdf')).rejects.toThrow(
+            await expect(adapter.extractText(1, fileBuffer, 'test.pdf')).rejects.toThrow(
                 BusinessException
             );
 
-            await expect(adapter.extractText(fileBuffer, 'test.pdf')).rejects.toMatchObject({
+            await expect(adapter.extractText(1, fileBuffer, 'test.pdf')).rejects.toMatchObject({
                 response: expect.objectContaining({
                     errorCode: ErrorCode.PORTFOLIO_EXTRACT_FAILED,
                 }),
@@ -90,29 +97,45 @@ describe('HttpAiPdfExtractAdapter', () => {
 
             const fileBuffer = Buffer.from('fake pdf content');
 
-            await expect(adapter.extractText(fileBuffer, 'test.pdf')).rejects.toThrow(
+            await expect(adapter.extractText(1, fileBuffer, 'test.pdf')).rejects.toThrow(
                 BusinessException
             );
         });
 
-        it('returns extracted text when request succeeds', async () => {
+        it('returns default message when accepted response omits message', async () => {
             configServiceStub.mockGet.mockImplementation((key: string) => {
                 if (key === 'AI_BASE_URL') return 'https://ai.example.com';
                 if (key === 'AI_SERVICE_API_KEY') return 'valid-key';
                 return undefined;
             });
 
-            const expectedText = 'This is the extracted text from the PDF document.';
             httpServiceStub.axiosRef.post.mockResolvedValue({
-                data: { extracted_text: expectedText },
+                data: { status: 'accepted' },
             });
 
             const fileBuffer = Buffer.from('fake pdf content');
-            const result = await adapter.extractText(fileBuffer, 'sample.pdf');
+            const result = await adapter.extractText(99, fileBuffer, 'sample.pdf');
 
             expect(result).toEqual({
-                extractedText: expectedText,
+                message: DEFAULT_AI_PDF_EXTRACTION_ACCEPTED_MESSAGE,
             });
+        });
+
+        it('throws when response is not accepted (e.g. legacy extracted_text only)', async () => {
+            configServiceStub.mockGet.mockImplementation((key: string) => {
+                if (key === 'AI_BASE_URL') return 'https://ai.example.com';
+                if (key === 'AI_SERVICE_API_KEY') return 'valid-key';
+                return undefined;
+            });
+
+            httpServiceStub.axiosRef.post.mockResolvedValue({
+                data: { extracted_text: 'sync no longer supported' },
+            });
+
+            const fileBuffer = Buffer.from('fake pdf content');
+            await expect(adapter.extractText(1, fileBuffer, 'x.pdf')).rejects.toThrow(
+                BusinessException
+            );
         });
     });
 });
