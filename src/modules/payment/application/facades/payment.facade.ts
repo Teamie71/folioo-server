@@ -8,9 +8,13 @@ import { TicketProductService } from 'src/modules/ticket/application/services/ti
 import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
 import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
+import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { PayAppWebhookReqDTO } from '../dtos/payment.dto';
 import { PayAppClient } from '../../infrastructure/clients/payapp.client';
+import { UserService } from 'src/modules/user/application/services/user.service';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { BusinessException } from 'src/common/exceptions/business.exception';
 
 @Injectable()
 export class PaymentFacade {
@@ -21,12 +25,40 @@ export class PaymentFacade {
         private readonly ticketProductService: TicketProductService,
         private readonly ticketGrantFacade: TicketGrantFacade,
         private readonly ticketService: TicketService,
-        private readonly payAppClient: PayAppClient
+        private readonly payAppClient: PayAppClient,
+        private readonly userService: UserService
     ) {}
 
     async createPayment(userId: number, ticketProductId: number): Promise<Payment> {
-        const ticketProduct = await this.ticketProductService.findByIdOrThrow(ticketProductId);
-        return this.paymentService.createPayment(userId, ticketProduct.id, ticketProduct.price);
+        const [ticketProduct, user] = await Promise.all([
+            this.ticketProductService.findByIdOrThrow(ticketProductId),
+            this.userService.findByIdOrThrow(userId),
+        ]);
+
+        if (!user.phoneNum) {
+            throw new BusinessException(ErrorCode.PAYMENT_PHONE_REQUIRED);
+        }
+
+        const payment = await this.paymentService.createPayment(
+            userId,
+            ticketProduct.id,
+            ticketProduct.price
+        );
+
+        const payUrl = await this.payAppClient.requestPayment({
+            mulNo: payment.mulNo,
+            price: payment.amount,
+            goodname: PaymentFacade.buildGoodname(ticketProduct.type, ticketProduct.quantity),
+            recvphone: user.phoneNum,
+        });
+
+        return this.paymentService.savePayUrl(payment, payUrl);
+    }
+
+    private static buildGoodname(type: TicketType, quantity: number): string {
+        const typeName =
+            type === TicketType.EXPERIENCE ? '경험 정리 이용권' : '포트폴리오 첨삭 이용권';
+        return `${typeName} ${quantity}장`;
     }
 
     @Transactional()
