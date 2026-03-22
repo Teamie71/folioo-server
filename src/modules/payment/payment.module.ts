@@ -7,9 +7,10 @@ import { PaymentService } from './application/services/payment.service';
 import { PaymentController } from './presentation/payment.controller';
 import { TicketModule } from '../ticket/ticket.module';
 import { PayAppClient } from './infrastructure/clients/payapp.client';
+import { UserModule } from '../user/user.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Payment]), TicketModule],
+    imports: [TypeOrmModule.forFeature([Payment]), TicketModule, UserModule],
     controllers: [PaymentController],
     providers: [PaymentRepository, PayAppClient, PaymentService, PaymentFacade],
     exports: [PaymentService],

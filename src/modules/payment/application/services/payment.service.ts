@@ -150,6 +150,11 @@ export class PaymentService {
         return payState === PAYAPP_PAY_STATE_PAID;
     }
 
+    async savePayUrl(payment: Payment, payUrl: string): Promise<Payment> {
+        payment.payUrl = payUrl;
+        return this.paymentRepository.save(payment);
+    }
+
     async markCancelled(payment: Payment): Promise<Payment> {
         if (payment.status === PaymentStatus.CANCELLED) {
             return payment;
