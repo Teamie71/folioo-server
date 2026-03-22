@@ -28,7 +28,6 @@ export class PaymentFacade {
         private readonly userService: UserService
     ) {}
 
-    @Transactional()
     async createPayment(userId: number, ticketProductId: number): Promise<Payment> {
         const [ticketProduct, user] = await Promise.all([
             this.ticketProductService.findByIdOrThrow(ticketProductId),
@@ -45,14 +44,18 @@ export class PaymentFacade {
             ticketProduct.price
         );
 
-        const payUrl = await this.payAppClient.requestPayment({
-            mulNo: payment.mulNo,
-            price: payment.amount,
-            goodname: ticketProduct.getDisplayName(),
-            recvphone: user.phoneNum,
-        });
-
-        return this.paymentService.savePayUrl(payment, payUrl);
+        try {
+            const payUrl = await this.payAppClient.requestPayment({
+                mulNo: payment.mulNo,
+                price: payment.amount,
+                goodname: ticketProduct.getDisplayName(),
+                recvphone: user.phoneNum,
+            });
+            return this.paymentService.savePayUrl(payment, payUrl);
+        } catch (error) {
+            await this.paymentService.markCancelled(payment);
+            throw error;
+        }
     }
 
     @Transactional()
