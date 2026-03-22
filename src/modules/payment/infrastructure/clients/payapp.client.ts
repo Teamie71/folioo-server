@@ -119,10 +119,9 @@ export class PayAppClient {
     }
 
     async requestPayment(params: {
-        mulNo: number;
         price: number;
         goodname: string;
-    }): Promise<string> {
+    }): Promise<{ payUrl: string; mulNo: number }> {
         if (!this.userId || !this.linkKey || !this.feedbackUrl) {
             this.logger.error(
                 'PayApp requestPayment: missing config (userId, linkKey, or feedbackUrl)'
@@ -136,7 +135,6 @@ export class PayAppClient {
             linkkey: this.linkKey,
             goodname: params.goodname,
             price: String(params.price),
-            mul_no: String(params.mulNo),
             feedbackurl: this.feedbackUrl,
             recvphone: '01000000000',
             smsuse: 'n',
@@ -154,7 +152,7 @@ export class PayAppClient {
             const kind: RequestFailureKind =
                 error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK';
             this.logger.error(
-                `PayApp request ${kind}: mulNo=${params.mulNo}, error=${error instanceof Error ? error.message : String(error)}`,
+                `PayApp request ${kind}: price=${params.price}, error=${error instanceof Error ? error.message : String(error)}`,
                 error instanceof Error ? error.stack : undefined
             );
             throw this.buildRequestFailure(kind);
@@ -162,7 +160,7 @@ export class PayAppClient {
 
         if (!response.ok) {
             this.logger.warn(
-                `PayApp request HTTP_ERROR: mulNo=${params.mulNo}, httpStatus=${response.status}`
+                `PayApp request HTTP_ERROR: price=${params.price}, httpStatus=${response.status}`
             );
             throw this.buildRequestFailure('HTTP_ERROR', response.status);
         }
@@ -172,37 +170,40 @@ export class PayAppClient {
             text = (await response.text()).trim();
         } catch (error) {
             this.logger.error(
-                `PayApp request RESPONSE_READ_FAILED: mulNo=${params.mulNo}, error=${error instanceof Error ? error.message : String(error)}`,
+                `PayApp request RESPONSE_READ_FAILED: price=${params.price}, error=${error instanceof Error ? error.message : String(error)}`,
                 error instanceof Error ? error.stack : undefined
             );
             throw this.buildRequestFailure('RESPONSE_READ_FAILED');
         }
 
-        const payUrl = this.extractPayUrl(text);
-        if (!payUrl) {
+        const result = this.parsePayResponse(text);
+        if (!result) {
             this.logger.warn(
-                `PayApp request REJECTED: mulNo=${params.mulNo}, response=${text.slice(0, 200)}`
+                `PayApp request REJECTED: price=${params.price}, response=${text.slice(0, 200)}`
             );
             throw this.buildRequestFailure('REJECTED');
         }
 
-        return payUrl;
+        return result;
     }
 
-    private extractPayUrl(text: string): string | null {
-        // PayApp returns 'payurl=' (without underscore)
-        const match = /payurl=([^\s&]+)/.exec(text);
-        if (match) {
-            try {
-                return decodeURIComponent(match[1]);
-            } catch {
-                return match[1];
-            }
+    private parsePayResponse(text: string): { payUrl: string; mulNo: number } | null {
+        const urlMatch = /payurl=([^\s&]+)/.exec(text);
+        const mulNoMatch = /(?:^|&)mul_no=(\d+)/.exec(text);
+
+        if (!urlMatch) {
+            return null;
         }
-        if (text.startsWith('https://')) {
-            return text;
+
+        let payUrl: string;
+        try {
+            payUrl = decodeURIComponent(urlMatch[1]);
+        } catch {
+            payUrl = urlMatch[1];
         }
-        return null;
+
+        const mulNo = mulNoMatch ? Number(mulNoMatch[1]) : 0;
+        return { payUrl, mulNo };
     }
 
     private buildRequestFailure(kind: RequestFailureKind, httpStatus?: number): BusinessException {
