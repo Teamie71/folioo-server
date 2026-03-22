@@ -11,9 +11,6 @@ import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { PayAppWebhookReqDTO } from '../dtos/payment.dto';
 import { PayAppClient } from '../../infrastructure/clients/payapp.client';
-import { UserService } from 'src/modules/user/application/services/user.service';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { BusinessException } from 'src/common/exceptions/business.exception';
 
 @Injectable()
 export class PaymentFacade {
@@ -24,19 +21,11 @@ export class PaymentFacade {
         private readonly ticketProductService: TicketProductService,
         private readonly ticketGrantFacade: TicketGrantFacade,
         private readonly ticketService: TicketService,
-        private readonly payAppClient: PayAppClient,
-        private readonly userService: UserService
+        private readonly payAppClient: PayAppClient
     ) {}
 
     async createPayment(userId: number, ticketProductId: number): Promise<Payment> {
-        const [ticketProduct, user] = await Promise.all([
-            this.ticketProductService.findByIdOrThrow(ticketProductId),
-            this.userService.findByIdOrThrow(userId),
-        ]);
-
-        if (!user.phoneNum) {
-            throw new BusinessException(ErrorCode.PAYMENT_PHONE_REQUIRED);
-        }
+        const ticketProduct = await this.ticketProductService.findByIdOrThrow(ticketProductId);
 
         const payment = await this.paymentService.createPayment(
             userId,
@@ -49,7 +38,6 @@ export class PaymentFacade {
                 mulNo: payment.mulNo,
                 price: payment.amount,
                 goodname: ticketProduct.getDisplayName(),
-                recvphone: user.phoneNum,
             });
             return this.paymentService.savePayUrl(payment, payUrl);
         } catch (error) {

@@ -241,10 +241,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '유효하지 않은 결제 콜백 요청입니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
-    [ErrorCode.PAYMENT_PHONE_REQUIRED]: {
-        message: '결제를 진행하려면 전화번호 등록이 필요합니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
     [ErrorCode.PAYMENT_EXTERNAL_API_FAILED]: {
         message: '결제 서비스 일시적 오류입니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

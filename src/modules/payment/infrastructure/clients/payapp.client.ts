@@ -122,7 +122,6 @@ export class PayAppClient {
         mulNo: number;
         price: number;
         goodname: string;
-        recvphone: string;
     }): Promise<string> {
         if (!this.userId || !this.linkKey || !this.feedbackUrl) {
             this.logger.error(
@@ -139,7 +138,8 @@ export class PayAppClient {
             price: String(params.price),
             mul_no: String(params.mulNo),
             feedbackurl: this.feedbackUrl,
-            recvphone: params.recvphone,
+            recvphone: '01000000000',
+            smsuse: 'n',
         });
 
         let response: Response;
