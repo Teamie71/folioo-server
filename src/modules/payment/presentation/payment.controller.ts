@@ -24,6 +24,7 @@ import {
     PaymentResDTO,
 } from '../application/dtos/payment.dto';
 import { plainToInstance } from 'class-transformer';
+import { validateOrReject } from 'class-validator';
 import type { Request } from 'express';
 
 @ApiTags('Payment')
@@ -87,6 +88,7 @@ export class PaymentController {
         });
 
         try {
+            await validateOrReject(dto, { whitelist: true });
             await this.paymentFacade.handleWebhook(dto);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
