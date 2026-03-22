@@ -34,12 +34,11 @@ export class PaymentFacade {
         );
 
         try {
-            const payUrl = await this.payAppClient.requestPayment({
-                mulNo: payment.mulNo,
+            const { payUrl, mulNo } = await this.payAppClient.requestPayment({
                 price: payment.amount,
                 goodname: ticketProduct.getDisplayName(),
             });
-            return this.paymentService.savePayUrl(payment, payUrl);
+            return this.paymentService.savePayResult(payment, payUrl, mulNo);
         } catch (error) {
             await this.paymentService.markCancelled(payment);
             throw error;
