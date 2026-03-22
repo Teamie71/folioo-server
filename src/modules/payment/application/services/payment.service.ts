@@ -150,8 +150,11 @@ export class PaymentService {
         return payState === PAYAPP_PAY_STATE_PAID;
     }
 
-    async savePayUrl(payment: Payment, payUrl: string): Promise<Payment> {
+    async savePayResult(payment: Payment, payUrl: string, mulNo: number): Promise<Payment> {
         payment.payUrl = payUrl;
+        if (mulNo > 0) {
+            payment.mulNo = mulNo;
+        }
         return this.paymentRepository.save(payment);
     }
 
