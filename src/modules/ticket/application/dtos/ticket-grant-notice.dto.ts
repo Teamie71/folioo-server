@@ -5,6 +5,8 @@ import { TicketGrantSourceType } from '../../domain/enums/ticket-grant-source-ty
 import { TicketGrantNotice } from '../../domain/entities/ticket-grant-notice.entity';
 import { AdminTicketGrantProjection } from '../../infrastructure/repositories/ticket-grant.repository';
 
+const DEFAULT_NOTICE_DISPLAY_PERIOD = '6개월 간';
+
 export class TicketGrantRewardItemResDTO {
     @ApiProperty({ enum: TicketType, example: TicketType.EXPERIENCE })
     type: TicketType;
@@ -16,6 +18,9 @@ export class TicketGrantRewardItemResDTO {
 export class TicketGrantNoticePayloadResDTO {
     @ApiPropertyOptional({ example: '서비스 이용 불편에 대한 보상', nullable: true })
     displayReason?: string;
+
+    @ApiPropertyOptional({ example: '6개월 간', nullable: true })
+    displayPeriod?: string;
 
     @ApiPropertyOptional({ type: [TicketGrantRewardItemResDTO] })
     rewards?: TicketGrantRewardItemResDTO[];
@@ -58,7 +63,24 @@ export class TicketGrantNoticeResDTO {
         dto.body = notice.body;
         dto.ctaText = notice.ctaText;
         dto.ctaLink = notice.ctaLink;
-        dto.payload = (notice.payload as TicketGrantNoticePayloadResDTO | null) ?? null;
+        if (notice.payload) {
+            const payload = new TicketGrantNoticePayloadResDTO();
+            payload.displayReason =
+                typeof notice.payload.displayReason === 'string'
+                    ? notice.payload.displayReason
+                    : undefined;
+            payload.displayPeriod =
+                typeof notice.payload.displayPeriod === 'string' &&
+                notice.payload.displayPeriod.trim().length > 0
+                    ? notice.payload.displayPeriod
+                    : DEFAULT_NOTICE_DISPLAY_PERIOD;
+            payload.rewards = Array.isArray(notice.payload.rewards)
+                ? (notice.payload.rewards as TicketGrantRewardItemResDTO[])
+                : undefined;
+            dto.payload = payload;
+        } else {
+            dto.payload = null;
+        }
         dto.createdAt = notice.createdAt.toISOString();
         return dto;
     }
