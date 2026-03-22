@@ -6,6 +6,7 @@ import { TicketGrantNoticeStatus } from '../enums/ticket-grant-notice-status.enu
 
 export interface TicketGrantNoticePayload {
     displayReason?: string;
+    displayPeriod?: string;
     rewards?: Array<{
         type: string;
         quantity: number;

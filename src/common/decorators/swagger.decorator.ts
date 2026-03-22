@@ -13,6 +13,13 @@ const baseResponseSchema = {
 interface ApiCommonResponseOptions {
     description?: string;
     exampleResult?: unknown;
+    exampleResults?: Record<
+        string,
+        {
+            summary: string;
+            result: unknown;
+        }
+    >;
     status?: number;
 }
 
@@ -47,7 +54,7 @@ export const ApiCommonResponse = <T extends Type<unknown> | null>(
         },
     };
 
-    if (options?.exampleResult !== undefined) {
+    if (options?.exampleResult !== undefined && !options.exampleResults) {
         schema.example = {
             timestamp: '2024-01-02T12:34:56.000Z',
             isSuccess: true,
@@ -55,6 +62,34 @@ export const ApiCommonResponse = <T extends Type<unknown> | null>(
             result: options.exampleResult,
         };
     }
+
+    const successExamples = options?.exampleResults
+        ? Object.entries(options.exampleResults).reduce<
+              Record<
+                  string,
+                  {
+                      summary: string;
+                      value: {
+                          timestamp: string;
+                          isSuccess: boolean;
+                          error: null;
+                          result: unknown;
+                      };
+                  }
+              >
+          >((acc, [key, example]) => {
+              acc[key] = {
+                  summary: example.summary,
+                  value: {
+                      timestamp: '2024-01-02T12:34:56.000Z',
+                      isSuccess: true,
+                      error: null,
+                      result: example.result,
+                  },
+              };
+              return acc;
+          }, {})
+        : undefined;
 
     const decorators = model
         ? [ApiExtraModels(CommonResponse, model)]
@@ -65,7 +100,16 @@ export const ApiCommonResponse = <T extends Type<unknown> | null>(
         ApiResponse({
             status: options?.status ?? HttpStatus.OK,
             description: options?.description ?? '성공 응답',
-            schema,
+            ...(successExamples
+                ? {
+                      content: {
+                          'application/json': {
+                              schema,
+                              examples: successExamples,
+                          },
+                      },
+                  }
+                : { schema }),
         })
     );
 };
