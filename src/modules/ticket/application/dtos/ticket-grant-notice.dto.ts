@@ -6,6 +6,17 @@ import { TicketGrantNotice } from '../../domain/entities/ticket-grant-notice.ent
 import { AdminTicketGrantProjection } from '../../infrastructure/repositories/ticket-grant.repository';
 
 const DEFAULT_NOTICE_DISPLAY_PERIOD = '6개월 간';
+const WEEKLY_FREE_TICKET_NOTICE_TITLE = '이번 주의 무료 이용권';
+const WEEKLY_FREE_TICKET_NOTICE_DISPLAY_PERIOD = '일요일까지';
+
+const resolveDefaultDisplayPeriod = (title: string): string => {
+    // TODO: Remove this temporary title-based fallback after official launch.
+    if (title === WEEKLY_FREE_TICKET_NOTICE_TITLE) {
+        return WEEKLY_FREE_TICKET_NOTICE_DISPLAY_PERIOD;
+    }
+
+    return DEFAULT_NOTICE_DISPLAY_PERIOD;
+};
 
 export class TicketGrantRewardItemResDTO {
     @ApiProperty({ enum: TicketType, example: TicketType.EXPERIENCE })
@@ -73,7 +84,7 @@ export class TicketGrantNoticeResDTO {
                 typeof notice.payload.displayPeriod === 'string' &&
                 notice.payload.displayPeriod.trim().length > 0
                     ? notice.payload.displayPeriod
-                    : DEFAULT_NOTICE_DISPLAY_PERIOD;
+                    : resolveDefaultDisplayPeriod(notice.title);
             payload.rewards = Array.isArray(notice.payload.rewards)
                 ? (notice.payload.rewards as TicketGrantRewardItemResDTO[])
                 : undefined;

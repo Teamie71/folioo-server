@@ -46,4 +46,17 @@ describe('TicketGrantNoticeResDTO', () => {
 
         expect(dto.payload?.displayPeriod).toBe('3개월 간');
     });
+
+    it('uses weekly fallback when title is 이번 주의 무료 이용권', () => {
+        const notice = createBaseNotice();
+        notice.title = '이번 주의 무료 이용권';
+        notice.payload = {
+            displayReason: '주간 보상',
+            rewards: [{ type: TicketType.EXPERIENCE, quantity: 1 }],
+        };
+
+        const dto = TicketGrantNoticeResDTO.from(notice);
+
+        expect(dto.payload?.displayPeriod).toBe('일요일까지');
+    });
 });
