@@ -26,7 +26,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.AI_RELAY_REQUEST_FAILED]: {
         message: 'AI 서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.BAD_GATEWAY,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
     [ErrorCode.INVALID_SOCIAL_PROFILE]: {
         message: '소셜 로그인 프로필 정보가 유효하지 않습니다.',
@@ -54,7 +54,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.SOCIAL_UNLINK_FAILED]: {
         message: '소셜 계정 연결 해제에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.BAD_GATEWAY,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
     [ErrorCode.ALREADY_VERIFY_USER]: {
         message: '이미 인증 이력이 있는 번호입니다.',
@@ -114,7 +114,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.PORTFOLIO_EXTRACT_FAILED]: {
         message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.BAD_GATEWAY,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
     [ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED]: {
         message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
@@ -131,7 +131,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.INTERVIEW_AI_RELAY_FAILED]: {
         message: 'AI 인터뷰 세션 중계에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.BAD_GATEWAY,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
@@ -203,7 +203,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.CORRECTION_AI_RELAY_FAILED]: {
         message: 'AI 첨삭 생성 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.BAD_GATEWAY,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
     [ErrorCode.TICKET_NOT_FOUND]: {
         message: '해당하는 티켓을 찾을 수 없습니다.',
@@ -247,7 +247,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.PAYMENT_EXTERNAL_API_FAILED]: {
         message: '결제 서비스 일시적 오류입니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.BAD_GATEWAY,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
     [ErrorCode.EVENT_NOT_FOUND]: {
         message: '해당하는 이벤트를 찾을 수 없습니다.',
