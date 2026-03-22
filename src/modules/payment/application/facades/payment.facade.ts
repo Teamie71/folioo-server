@@ -28,6 +28,7 @@ export class PaymentFacade {
         private readonly userService: UserService
     ) {}
 
+    @Transactional()
     async createPayment(userId: number, ticketProductId: number): Promise<Payment> {
         const [ticketProduct, user] = await Promise.all([
             this.ticketProductService.findByIdOrThrow(ticketProductId),
