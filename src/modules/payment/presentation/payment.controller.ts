@@ -8,6 +8,8 @@ import {
     Param,
     ParseIntPipe,
     Post,
+    UsePipes,
+    ValidationPipe,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
@@ -71,6 +73,7 @@ export class PaymentController {
     @Post('webhook')
     @Public()
     @SkipTransform()
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @ApiOperation({
         summary: 'PayApp 결제 콜백(feedbackurl) 수신',
         description:
