@@ -8,7 +8,6 @@ import { TicketProductService } from 'src/modules/ticket/application/services/ti
 import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
 import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
-import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { PayAppWebhookReqDTO } from '../dtos/payment.dto';
 import { PayAppClient } from '../../infrastructure/clients/payapp.client';
@@ -48,17 +47,11 @@ export class PaymentFacade {
         const payUrl = await this.payAppClient.requestPayment({
             mulNo: payment.mulNo,
             price: payment.amount,
-            goodname: PaymentFacade.buildGoodname(ticketProduct.type, ticketProduct.quantity),
+            goodname: ticketProduct.getDisplayName(),
             recvphone: user.phoneNum,
         });
 
         return this.paymentService.savePayUrl(payment, payUrl);
-    }
-
-    private static buildGoodname(type: TicketType, quantity: number): string {
-        const typeName =
-            type === TicketType.EXPERIENCE ? '경험 정리 이용권' : '포트폴리오 첨삭 이용권';
-        return `${typeName} ${quantity}장`;
     }
 
     @Transactional()

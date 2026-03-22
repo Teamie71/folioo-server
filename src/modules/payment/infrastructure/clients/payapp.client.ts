@@ -32,6 +32,13 @@ export class PayAppClient {
         this.linkKey = String(this.configService.get<string>('PAYAPP_LINK_KEY') ?? '');
         this.linkValue = String(this.configService.get<string>('PAYAPP_LINK_VALUE') ?? '');
         this.feedbackUrl = String(this.configService.get<string>('PAYAPP_FEEDBACK_URL') ?? '');
+
+        if (!this.userId || !this.linkKey || !this.feedbackUrl) {
+            this.logger.error(
+                'PayApp 필수 환경변수가 누락되었습니다. ' +
+                    'PAYAPP_USER_ID, PAYAPP_LINK_KEY, PAYAPP_FEEDBACK_URL을 확인하세요.'
+            );
+        }
     }
 
     verifyWebhook(params: { userid?: string; linkkey?: string; linkval?: string }): void {
