@@ -1,5 +1,4 @@
 import {
-    Body,
     Controller,
     Get,
     HttpCode,
@@ -8,8 +7,8 @@ import {
     Param,
     ParseIntPipe,
     Post,
-    UsePipes,
-    ValidationPipe,
+    Req,
+    Body,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
@@ -24,6 +23,8 @@ import {
     PayAppWebhookReqDTO,
     PaymentResDTO,
 } from '../application/dtos/payment.dto';
+import { plainToInstance } from 'class-transformer';
+import type { Request } from 'express';
 
 @ApiTags('Payment')
 @Controller('payments')
@@ -73,7 +74,6 @@ export class PaymentController {
     @Post('webhook')
     @Public()
     @SkipTransform()
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     @ApiOperation({
         summary: 'PayApp 결제 콜백(feedbackurl) 수신',
         description:
@@ -81,7 +81,11 @@ export class PaymentController {
     })
     @ApiCommonErrorResponse(ErrorCode.PAYMENT_NOT_FOUND, ErrorCode.PAYMENT_WEBHOOK_INVALID)
     @HttpCode(HttpStatus.OK)
-    async handleWebhook(@Body() dto: PayAppWebhookReqDTO): Promise<string> {
+    async handleWebhook(@Req() req: Request): Promise<string> {
+        const dto = plainToInstance(PayAppWebhookReqDTO, req.body, {
+            enableImplicitConversion: true,
+        });
+
         try {
             await this.paymentFacade.handleWebhook(dto);
         } catch (error) {
