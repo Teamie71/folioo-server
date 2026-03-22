@@ -69,7 +69,7 @@ export class PayAppClient {
             : `mulNo=${mulNo}`;
 
         const body = new URLSearchParams({
-            cmd: 'paycancelreq',
+            cmd: 'paycancel',
             userid: this.userId,
             linkkey: this.linkKey,
             mul_no: String(mulNo),
@@ -112,7 +112,7 @@ export class PayAppClient {
             throw this.cancelFailure('RESPONSE_READ_FAILED', mulNo, context);
         }
 
-        if (!text.startsWith('OK')) {
+        if (!text.includes('state=1') && !text.startsWith('OK')) {
             this.logger.warn(`PayApp cancel REJECTED: ${logCtx}, response=${text.slice(0, 200)}`);
             throw this.cancelFailure('REJECTED', mulNo, context);
         }
