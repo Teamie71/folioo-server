@@ -100,7 +100,9 @@ export class PaymentFacade {
             return payment;
         }
 
-        if (payment.status === PaymentStatus.PAID) {
+        const wasPaid = payment.status === PaymentStatus.PAID;
+
+        if (wasPaid) {
             try {
                 await this.payAppClient.requestCancel(payment.mulNo, 'user_requested', {
                     paymentId,
@@ -116,7 +118,7 @@ export class PaymentFacade {
 
         const cancelledPayment = await this.paymentService.markCancelled(payment);
 
-        if (payment.status === PaymentStatus.PAID) {
+        if (wasPaid) {
             await this.ticketService.revokeAvailableTicketsForPayment(cancelledPayment.id);
         }
 
