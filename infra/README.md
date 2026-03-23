@@ -29,8 +29,10 @@ infra/
     compute/
     cloudflare/
   docs/
-    backend-bootstrap.md  # One-time bootstrap procedure
-    env-contract.md       # Environment/secret contract
+    backend-bootstrap.md      # One-time bootstrap procedure
+    env-contract.md           # Environment/secret contract
+    TERRAFORM_HANDOVER.md     # Terraform handover guide
+    GCP_MIGRATION_GUIDE.md    # GCP project migration runbook
 ```
 
 ## Required Inputs
@@ -59,6 +61,11 @@ terraform -chdir=infra validate
 
 First-time setup requires a manual bootstrap sequence.
 See [docs/backend-bootstrap.md](docs/backend-bootstrap.md) for the full procedure.
+
+## Handover & Migration
+
+- [docs/TERRAFORM_HANDOVER.md](docs/TERRAFORM_HANDOVER.md) — Terraform 인수인계 가이드 (운영 시나리오, 트러블슈팅 포함)
+- [docs/GCP_MIGRATION_GUIDE.md](docs/GCP_MIGRATION_GUIDE.md) — GCP 프로젝트 마이그레이션 런북
 
 ## CI Workflow
 
