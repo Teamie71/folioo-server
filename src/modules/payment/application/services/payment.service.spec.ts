@@ -43,10 +43,11 @@ describe('PaymentService', () => {
         it('payment이 없으면 PAYMENT_NOT_FOUND throw', async () => {
             mockRepository.findById.mockResolvedValue(null);
 
-            await expect(service.findByIdOrThrow(999)).rejects.toThrow(BusinessException);
             try {
                 await service.findByIdOrThrow(999);
+                fail('BusinessException should have been thrown');
             } catch (error) {
+                expect(error).toBeInstanceOf(BusinessException);
                 const response = (error as BusinessException).getResponse() as Record<
                     string,
                     unknown
