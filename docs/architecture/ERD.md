@@ -1,7 +1,7 @@
 # Folioo ERD
 
 > 포트폴리오 관리 플랫폼 데이터베이스 설계서
-> v2.4.0 | 2026-02-09
+> v2.8.0 | 2026-03-23
 
 ---
 
@@ -12,12 +12,15 @@
 | **user**                 | `users`                          | 사용자 정보               |
 |                          | `social_user`                    | 소셜 로그인 정보          |
 |                          | `user_agreement`                 | 약관 동의                 |
+|                          | `term`                           | 약관 정의                 |
+|                          | `withdrawn_user`                 | 탈퇴 사용자 이력          |
 | **experience**           | `experience`                     | 경험 정리                 |
 |                          | `experience_source`              | 경험 정리 파일 (OCR 추출) |
 | **portfolio**            | `portfolio`                      | 포트폴리오                |
 | **portfolio-correction** | `portfolio_correction`           | 포트폴리오 첨삭           |
 |                          | `correction_portfolio_selection` | 첨삭-포트폴리오 선택 매핑 |
 |                          | `correction_item`                | 첨삭 항목                 |
+|                          | `correction_rag_data`            | RAG 데이터 (기업 분석용)  |
 | **insight**              | `insight`                        | 인사이트                  |
 |                          | `insight_activity`               | 인사이트-활동 매핑        |
 |                          | `activity`                       | 활동                      |
@@ -83,13 +86,22 @@ LoginType: 'KAKAO' | 'NAVER' | 'GOOGLE';
 TermType: 'SERVICE' | 'PRIVACY' | 'MARKETING';
 
 // 경험 정리
-ExperienceStatus: 'ON_CHAT' | 'GENERATE' | 'DONE';
+ExperienceStatus: 'ON_CHAT' | 'GENERATE' | 'DONE' | 'GENERATE_FAILED';
 
 // 포트폴리오
 SourceType: 'INTERNAL' | 'EXTERNAL';
 
 // 포트폴리오 첨삭
-PortfolioCorrectionStatus: 'DONE' | 'NOT_STARTED' | 'DOING_RAG' | 'COMPANY_INSIGHT' | 'GENERATING';
+PortfolioCorrectionStatus: 'DONE' |
+    'NOT_STARTED' |
+    'DOING_RAG' |
+    'COMPANY_INSIGHT' |
+    'GENERATING' |
+    'FAILED' |
+    'RAG_FAILED';
+
+// PDF 추출
+PdfExtractionStatus: 'PENDING' | 'EXTRACTING' | 'DONE' | 'FAILED';
 
 // 인사이트
 InsightCategory: '대인관계' | '문제해결' | '학습' | '레퍼런스' | '기타';
@@ -444,7 +456,8 @@ PayType: 'CARD' |
 ## 변경 이력
 
 | 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                    |
-| ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 2.8.0 | 2026-03-23 | 문서 현행화 — `correction_rag_data`, `term`, `withdrawn_user` 테이블 추가, `ExperienceStatus.GENERATE_FAILED`/`CorrectionStatus.FAILED                                                                                                                                                       | RAG_FAILED`/`PdfExtractionStatus` enum 반영, 버전 헤더 동기화 |
 | 2.7.0 | 2026-03-08 | 이용권 지급/노출 분리 구조 반영 — `ticket_grant`, `ticket_grant_notice` 추가, `ticket.ticket_grant_id` 연결, `TicketSource.ADMIN` 반영, 기존 이벤트/결제/운영 지급 흐름과의 공존 구조 문서화                                                                                                 |
 | 2.6.0 | 2026-03-03 | 포트폴리오 첨삭 선택 매핑 테이블(`correction_portfolio_selection`) 추가 및 관련 인덱스 설계 반영                                                                                                                                                                                             |
 | 2.5.0 | 2026-02-25 | 이벤트 하이브리드 스키마 보강 — `event.ui_config`, `event.ops_config`, `event_participation.reward_status/granted_by/grant_reason` 추가, `event_feedback_submission` 신규(외부 피드백 이력/멱등 처리), 운영 수동 지급 시나리오 반영                                                          |

@@ -1,100 +1,106 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Folioo Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+포트폴리오 관리 및 첨삭 플랫폼 백엔드 서버
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 기술 스택
 
-## Description
+| 구분            | 기술                                                   |
+| --------------- | ------------------------------------------------------ |
+| Runtime         | Node.js 20+                                            |
+| Framework       | NestJS 11.x                                            |
+| Language        | TypeScript (Strict Mode)                               |
+| ORM             | TypeORM                                                |
+| Database        | PostgreSQL (로컬: Docker pgvector, dev/prod: Supabase) |
+| Cache           | Upstash Redis REST (dev/prod) / ioredis Docker (로컬)  |
+| Package Manager | pnpm                                                   |
+| CI/CD           | GitHub Actions                                         |
+| Infra           | GCP (GCE, Artifact Registry, Cloud NAT, WIF)           |
+| Tunnel/DNS      | Cloudflare Tunnel + Zero Trust                         |
+| Monitoring      | Sentry                                                 |
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 도메인 구조
 
-## Project setup
+| 도메인               | 분류       | 설명                                    |
+| -------------------- | ---------- | --------------------------------------- |
+| Experience           | Core       | 경험 정리 (AI 채팅 포함)                |
+| Interview            | Core       | AI 인터뷰 세션 관리 (SSE 스트림)        |
+| Portfolio            | Core       | 경험 정리의 결과물                      |
+| Portfolio-Correction | Core       | 포트폴리오 첨삭 서비스 (RAG, 기업 분석) |
+| Insight              | Core       | 인사이트/팁 정리 (벡터 유사도 검색)     |
+| Event                | Core       | 이벤트/챌린지 관리, 보상 수령           |
+| User                 | Generic    | 사용자 관리                             |
+| Auth                 | Generic    | 인증 (Kakao/Google/Naver OAuth)         |
+| Ticket               | Generic    | 이용권 관리 (발급, 차감, 만료)          |
+| Payment              | Generic    | 결제 (PayApp 연동, 웹훅, 취소)          |
+| Admin                | Supporting | 관리자 대시보드                         |
+| Internal             | Supporting | AI 서버 연동 내부 API                   |
+| Embedding            | Infra      | 벡터 임베딩 (pgvector)                  |
+
+## 로컬 개발 환경 설정
+
+### 사전 요구사항
+
+- Node.js 20+
+- pnpm (`corepack enable && corepack prepare pnpm@10.28.0 --activate`)
+- Docker & Docker Compose
+
+### 실행
 
 ```bash
-$ pnpm install
+# 1. 의존성 설치
+pnpm install
+
+# 2. PostgreSQL + Redis 실행 (Docker)
+docker compose up -d
+
+# 3. 환경변수 설정
+cp .env.example .env  # 필요 시 값 수정
+
+# 4. 개발 서버 실행
+pnpm run start:dev
 ```
 
-## Compile and run the project
+### 전체 Docker 실행 (PostgreSQL + Redis + NestJS)
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+docker compose --profile full up -d
 ```
 
-## Run tests
+## 주요 명령어
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm run start:dev    # 개발 서버 (watch mode)
+pnpm run build        # 빌드
+pnpm run lint         # 린트
+pnpm run test         # 테스트
+pnpm run test:cov     # 테스트 커버리지
 ```
 
-## Deployment
+## 배포
 
-Folioo deploys through GitHub Actions to GCP (Compute Engine) with blue-green strategy.
+GitHub Actions를 통해 GCP Compute Engine에 Blue-Green 방식으로 자동 배포됩니다.
 
-- Dev deploy workflow: `.github/workflows/deploy-dev.yml`
-- Prod deploy workflow: `.github/workflows/deploy.yml`
-- Terraform workflow: `.github/workflows/terraform.yml`
+| 브랜치 | 환경     | 워크플로우                         |
+| ------ | -------- | ---------------------------------- |
+| `dev`  | 개발     | `.github/workflows/deploy-dev.yml` |
+| `main` | 프로덕션 | `.github/workflows/deploy.yml`     |
 
-Related docs:
+인프라 변경 시 `.github/workflows/terraform.yml`이 자동 실행됩니다.
 
-- `infra/README.md`
-- `infra/docs/backend-bootstrap.md`
-- `infra/docs/env-contract.md`
-- `docs/infrastructure/ENV_MANAGEMENT.md`
-- `docs/infrastructure/COST_ESTIMATE.md`
+## 문서
 
-## Resources
+| 문서               | 경로                                    |
+| ------------------ | --------------------------------------- |
+| 아키텍처           | `docs/architecture/ARCHITECTURE.md`     |
+| 도메인 전략        | `docs/architecture/DOMAIN_STRATEGY.md`  |
+| ERD/DB 설계        | `docs/architecture/ERD.md`              |
+| 코드 스타일        | `docs/development/CODE_STYLE.md`        |
+| 예외 처리          | `docs/development/ERROR_HANDLING.md`    |
+| Git 컨벤션         | `docs/development/GIT_CONVENTIONS.md`   |
+| API 현황           | `docs/API.md`                           |
+| 환경변수 관리      | `docs/infrastructure/ENV_MANAGEMENT.md` |
+| 인프라 (Terraform) | `infra/README.md`                       |
+| Terraform 인수인계 | `infra/docs/TERRAFORM_HANDOVER.md`      |
+| GCP 마이그레이션   | `infra/docs/GCP_MIGRATION_GUIDE.md`     |
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+전체 문서 목록은 `CLAUDE.md`의 문서 경로 테이블을 참고하세요.

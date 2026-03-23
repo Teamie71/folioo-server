@@ -22,10 +22,18 @@ assignees: ''
 
 - [ ] Auth (인증)
 - [ ] User (사용자)
+- [ ] Experience (경험 정리)
+- [ ] Interview (AI 인터뷰)
 - [ ] Portfolio (포트폴리오)
-- [ ] Experience (경력)
+- [ ] Portfolio-Correction (포트폴리오 첨삭)
 - [ ] Insight (인사이트)
-- [ ] Global (공통)
+- [ ] Event (이벤트)
+- [ ] Ticket (이용권)
+- [ ] Payment (결제)
+- [ ] Admin (관리자)
+- [ ] Internal (AI 연동)
+- [ ] Embedding (벡터 임베딩)
+- [ ] Infrastructure (인프라)
 - [ ] CI/CD
 - [ ] Documentation
 
