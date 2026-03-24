@@ -134,7 +134,7 @@ export class TicketProductSeedService implements OnModuleInit {
     }
 
     static getExpectedProducts(): SeedTicketProduct[] {
-        const basePrice = 990;
+        const basePrice = 1000;
 
         const mk = (
             type: TicketType,
@@ -152,11 +152,11 @@ export class TicketProductSeedService implements OnModuleInit {
 
         return [
             mk(TicketType.EXPERIENCE, 1, basePrice, null, 1),
-            mk(TicketType.EXPERIENCE, 3, 2700, basePrice * 3, 2),
-            mk(TicketType.EXPERIENCE, 5, 4100, basePrice * 5, 3),
+            mk(TicketType.EXPERIENCE, 3, 2800, basePrice * 3, 2),
+            mk(TicketType.EXPERIENCE, 5, 4400, basePrice * 5, 3),
             mk(TicketType.PORTFOLIO_CORRECTION, 1, basePrice, null, 4),
-            mk(TicketType.PORTFOLIO_CORRECTION, 3, 2700, basePrice * 3, 5),
-            mk(TicketType.PORTFOLIO_CORRECTION, 5, 4100, basePrice * 5, 6),
+            mk(TicketType.PORTFOLIO_CORRECTION, 3, 2800, basePrice * 3, 5),
+            mk(TicketType.PORTFOLIO_CORRECTION, 5, 4400, basePrice * 5, 6),
         ];
     }
 }

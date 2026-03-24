@@ -290,7 +290,7 @@ PayType: 'CARD' |
 | is_active      | boolean    | 판매 활성 여부 (NOT NULL, DEFAULT true)        |
 | display_order  | int        | 표시 순서 (NOT NULL, DEFAULT 0)                |
 
-> **Note**: 이용권 상품 예시 — 경험 정리 1회권 990원, 3회권 2,700원(~9%↓), 5회권 4,100원(~17%↓)
+> **Note**: 이용권 상품 예시 — 경험 정리 1회권 1000원, 3회권 2,800원(~7%↓), 5회권 4,400원(~12%↓)
 
 ### ticket (이용권)
 

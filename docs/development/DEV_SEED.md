@@ -41,12 +41,12 @@ Seed values (6 products):
 
 | type                 | quantity | price | originalPrice | displayOrder |
 | -------------------- | -------- | ----- | ------------- | ------------ |
-| EXPERIENCE           | 1        | 990   | null          | 1            |
-| EXPERIENCE           | 3        | 2700  | 2970          | 2            |
-| EXPERIENCE           | 5        | 4100  | 4950          | 3            |
-| PORTFOLIO_CORRECTION | 1        | 990   | null          | 4            |
-| PORTFOLIO_CORRECTION | 3        | 2700  | 2970          | 5            |
-| PORTFOLIO_CORRECTION | 5        | 4100  | 4950          | 6            |
+| EXPERIENCE           | 1        | 1000  | null          | 1            |
+| EXPERIENCE           | 3        | 2800  | 3000          | 2            |
+| EXPERIENCE           | 5        | 4400  | 5000          | 3            |
+| PORTFOLIO_CORRECTION | 1        | 1000  | null          | 4            |
+| PORTFOLIO_CORRECTION | 3        | 2800  | 3000          | 5            |
+| PORTFOLIO_CORRECTION | 5        | 4400  | 5000          | 6            |
 
 ## Verifying seed data
 
