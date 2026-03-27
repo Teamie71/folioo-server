@@ -68,7 +68,7 @@ export class InterviewFacade {
         userId: number,
         experienceId: number,
         dto: SendInterviewChatReqDTO,
-        file?: InterviewChatUploadFile
+        files?: InterviewChatUploadFile[]
     ): Promise<AiRelayConnection> {
         const { sessionId } = await this.getInitializedSession(userId, experienceId);
 
@@ -76,7 +76,7 @@ export class InterviewFacade {
             await this.insightService.findByIdAndUserOrThrow(dto.insightId, userId);
         }
 
-        return this.interviewService.sendChatStream(sessionId, dto.message, dto.insightId, file);
+        return this.interviewService.sendChatStream(sessionId, dto.message, dto.insightId, files);
     }
 
     async getSessionState(

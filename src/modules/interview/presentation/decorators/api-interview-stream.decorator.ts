@@ -65,9 +65,12 @@ export function ApiInterviewStreamRequest() {
                         minimum: 1,
                     },
                     files: {
-                        type: 'string',
-                        format: 'binary',
-                        description: '첨부 파일 (application/pdf 또는 image/*, 최대 1개)',
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                            format: 'binary',
+                        },
+                        description: '첨부 파일 (application/pdf 또는 image/*, 최대 3개)',
                     },
                 },
                 required: ['message'],

@@ -105,7 +105,7 @@ export class InterviewController {
             userId,
             experienceId,
             body,
-            parsedRequest.file
+            parsedRequest.files
         );
         SseRelayUtil.relayStream({
             connection: relayConnection,

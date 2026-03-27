@@ -6,7 +6,9 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 const MULTIPART_CONTENT_TYPE = 'multipart/form-data';
 const CHAT_STREAM_FILE_FIELD = 'files';
+const MAX_FILE_COUNT = 3;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_FIELD_SIZE_BYTES = 2 * 1024 * 1024;
 const PDF_MIME_TYPE = 'application/pdf';
 
 export interface MultipartRequestLike {
@@ -24,7 +26,7 @@ export interface InterviewChatUploadFile {
 export interface InterviewChatStreamParsedRequest {
     message: string;
     insightId?: number;
-    file?: InterviewChatUploadFile;
+    files?: InterviewChatUploadFile[];
 }
 
 @Injectable()
@@ -41,18 +43,16 @@ export class InterviewChatStreamRequestParserService {
             const parser = Busboy({
                 headers: req.headers,
                 limits: {
-                    files: 1,
+                    files: MAX_FILE_COUNT,
                     fields: 10,
+                    fieldSize: MAX_FIELD_SIZE_BYTES,
                     fileSize: MAX_FILE_SIZE_BYTES,
                 },
             });
 
-            const chunks: Buffer[] = [];
+            const parsedFiles: InterviewChatUploadFile[] = [];
             let parsedMessage: string | null = null;
             let parsedInsightId: number | undefined;
-            let hasFile = false;
-            let parsedFileName: string | null = null;
-            let parsedFileMimeType: string | null = null;
             let settled = false;
 
             const fail = (errorCode: ErrorCode, detail: Record<string, unknown>): void => {
@@ -64,7 +64,16 @@ export class InterviewChatStreamRequestParserService {
                 reject(new BusinessException(errorCode, detail));
             };
 
-            parser.on('field', (fieldName, value) => {
+            parser.on('field', (fieldName, value, info) => {
+                if (info.valueTruncated) {
+                    fail(ErrorCode.BAD_REQUEST, {
+                        reason: 'multipart field value exceeds size limit',
+                        fieldName,
+                        maxFieldSizeBytes: MAX_FIELD_SIZE_BYTES,
+                    });
+                    return;
+                }
+
                 if (fieldName === 'message') {
                     const normalized = value.trim();
                     if (!normalized) {
@@ -103,12 +112,6 @@ export class InterviewChatStreamRequestParserService {
                     return;
                 }
 
-                if (hasFile) {
-                    fileStream.resume();
-                    fail(ErrorCode.BAD_REQUEST, { reason: 'only one file is allowed' });
-                    return;
-                }
-
                 if (
                     info.mimeType !== PDF_MIME_TYPE &&
                     !info.mimeType.toLowerCase().startsWith('image/')
@@ -121,9 +124,9 @@ export class InterviewChatStreamRequestParserService {
                     return;
                 }
 
-                hasFile = true;
-                parsedFileName = info.filename || 'upload.bin';
-                parsedFileMimeType = info.mimeType;
+                const chunks: Buffer[] = [];
+                const parsedFileName = info.filename || 'upload.bin';
+                const parsedFileMimeType = info.mimeType;
 
                 fileStream.on('data', (chunk: Buffer) => {
                     chunks.push(chunk);
@@ -141,10 +144,25 @@ export class InterviewChatStreamRequestParserService {
                         reason: 'failed while reading uploaded file stream',
                     });
                 });
+
+                fileStream.on('end', () => {
+                    if (settled) {
+                        return;
+                    }
+
+                    parsedFiles.push({
+                        fileName: parsedFileName,
+                        mimeType: parsedFileMimeType,
+                        buffer: Buffer.concat(chunks),
+                    });
+                });
             });
 
             parser.on('filesLimit', () => {
-                fail(ErrorCode.BAD_REQUEST, { reason: 'only one file is allowed' });
+                fail(ErrorCode.BAD_REQUEST, {
+                    reason: 'up to 3 files are allowed',
+                    maxFileCount: MAX_FILE_COUNT,
+                });
             });
 
             parser.on('error', () => {
@@ -167,15 +185,9 @@ export class InterviewChatStreamRequestParserService {
                 resolve({
                     message: parsedMessage,
                     insightId: parsedInsightId,
-                    ...(hasFile &&
-                        parsedFileName &&
-                        parsedFileMimeType && {
-                            file: {
-                                fileName: parsedFileName,
-                                mimeType: parsedFileMimeType,
-                                buffer: Buffer.concat(chunks),
-                            },
-                        }),
+                    ...(parsedFiles.length > 0 && {
+                        files: parsedFiles,
+                    }),
                 });
             });
 

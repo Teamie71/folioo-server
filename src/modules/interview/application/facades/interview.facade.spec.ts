@@ -16,7 +16,7 @@ class InterviewServiceStub {
 
     readonly sendChatStream = jest.fn<
         Promise<AiRelayConnection>,
-        [string, string, string | undefined, InterviewChatUploadFile | undefined]
+        [string, string, number | undefined, InterviewChatUploadFile[] | undefined]
     >();
 
     readonly getSessionState = jest.fn<Promise<InterviewSessionStateResDTO>, [string]>();

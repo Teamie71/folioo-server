@@ -35,7 +35,7 @@ export class InterviewService {
         sessionId: string,
         message: string,
         mentionedInsightId?: number,
-        file?: InterviewChatUploadFile
+        files?: InterviewChatUploadFile[]
     ): Promise<AiRelayConnection> {
         const formData = new FormData();
         formData.append('message', message);
@@ -43,9 +43,11 @@ export class InterviewService {
             formData.append('mentioned_insight', mentionedInsightId.toString());
         }
 
-        if (file) {
-            const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimeType });
-            formData.append('files', blob, file.fileName);
+        if (files) {
+            for (const file of files) {
+                const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimeType });
+                formData.append('files', blob, file.fileName);
+            }
         }
 
         return this.aiRelayPort.openPostStream({

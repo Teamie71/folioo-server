@@ -239,7 +239,7 @@ Legend:
 ### Interview (SSE 스트림)
 
 - POST `/interview/experiences/{experienceId}/session/stream` -> IMPLEMENTED (SSE, 인터뷰 세션 시작)
-- POST `/interview/experiences/{experienceId}/messages/stream` -> IMPLEMENTED (SSE, multipart/form-data: `message` + optional `mentioned_insight` + optional single `files` PDF/image)
+- POST `/interview/experiences/{experienceId}/messages/stream` -> IMPLEMENTED (SSE, multipart/form-data: `message` + optional `insightId` + optional `files` PDF/image up to 3)
 - GET `/interview/experiences/{experienceId}/status` -> IMPLEMENTED (세션 상태 조회)
 - POST `/interview/experiences/{experienceId}/portfolio/generate` -> IMPLEMENTED (인터뷰 완료 후 포트폴리오 생성)
 - POST `/interview/experiences/{experienceId}/extend/stream` -> IMPLEMENTED (SSE, 연장 모드)

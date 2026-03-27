@@ -93,11 +93,13 @@ describe('InterviewService', () => {
     });
 
     it('sends multipart/form-data when a file is provided', async () => {
-        await interviewService.sendChatStream('session_123', '프로젝트 보고서 첨부합니다', 1, {
-            fileName: 'report.pdf',
-            mimeType: 'application/pdf',
-            buffer: Buffer.from('pdf-bytes'),
-        });
+        await interviewService.sendChatStream('session_123', '프로젝트 보고서 첨부합니다', 1, [
+            {
+                fileName: 'report.pdf',
+                mimeType: 'application/pdf',
+                buffer: Buffer.from('pdf-bytes'),
+            },
+        ]);
 
         expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledTimes(1);
         const request = aiRelayPortStub.openPostStreamMock.mock.calls[0]?.[0];
@@ -118,6 +120,38 @@ describe('InterviewService', () => {
         if (fileValue instanceof File) {
             expect(fileValue.name).toBe('report.pdf');
             expect(fileValue.type).toBe('application/pdf');
+        }
+    });
+
+    it('appends all provided files as multipart files fields', async () => {
+        await interviewService.sendChatStream('session_123', '파일 두 개 첨부', 1, [
+            {
+                fileName: 'report.pdf',
+                mimeType: 'application/pdf',
+                buffer: Buffer.from('pdf-bytes'),
+            },
+            {
+                fileName: 'screenshot.png',
+                mimeType: 'image/png',
+                buffer: Buffer.from('png-bytes'),
+            },
+        ]);
+
+        const request = aiRelayPortStub.openPostStreamMock.mock.calls[0]?.[0];
+        const formData = request?.body;
+        if (!(formData instanceof FormData)) {
+            throw new Error('Expected FormData body');
+        }
+
+        const files = formData.getAll('files');
+        expect(files).toHaveLength(2);
+        expect(files[0]).toBeInstanceOf(File);
+        expect(files[1]).toBeInstanceOf(File);
+        if (files[0] instanceof File) {
+            expect(files[0].name).toBe('report.pdf');
+        }
+        if (files[1] instanceof File) {
+            expect(files[1].name).toBe('screenshot.png');
         }
     });
 

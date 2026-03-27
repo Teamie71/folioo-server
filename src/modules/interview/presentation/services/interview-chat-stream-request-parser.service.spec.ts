@@ -45,11 +45,13 @@ describe('InterviewChatStreamRequestParserService', () => {
         await expect(parser.parse(createMultipartRequest(body, boundary))).resolves.toEqual({
             message: '프로젝트 보고서 첨부합니다',
             insightId: 1,
-            file: {
-                fileName: 'report.pdf',
-                mimeType: 'application/pdf',
-                buffer: fileBuffer,
-            },
+            files: [
+                {
+                    fileName: 'report.pdf',
+                    mimeType: 'application/pdf',
+                    buffer: fileBuffer,
+                },
+            ],
         });
     });
 
@@ -74,6 +76,29 @@ describe('InterviewChatStreamRequestParserService', () => {
             expect((error as BusinessException).getResponse()).toMatchObject({
                 errorCode: ErrorCode.BAD_REQUEST,
                 details: { reason: 'insightId must be a positive integer' },
+            });
+        }
+    });
+
+    it('rejects truncated field value when message exceeds fieldSize limit', async () => {
+        const boundary = 'folioo-interview-boundary';
+        const oversizedMessage = 'a'.repeat(1024 * 1024 + 1);
+        const body = Buffer.from(
+            `--${boundary}\r\nContent-Disposition: form-data; name="message"\r\n\r\n${oversizedMessage}\r\n--${boundary}--\r\n`
+        );
+
+        expect.assertions(2);
+
+        try {
+            await parser.parse(createMultipartRequest(body, boundary));
+        } catch (error) {
+            expect(error).toBeInstanceOf(BusinessException);
+            expect((error as BusinessException).getResponse()).toMatchObject({
+                errorCode: ErrorCode.BAD_REQUEST,
+                details: {
+                    reason: 'multipart field value exceeds size limit',
+                    fieldName: 'message',
+                },
             });
         }
     });
@@ -118,7 +143,7 @@ describe('InterviewChatStreamRequestParserService', () => {
         }
     });
 
-    it('rejects duplicate files field', async () => {
+    it('accepts up to 3 files under files field', async () => {
         const boundary = 'folioo-interview-boundary';
         const body = Buffer.concat([
             Buffer.from(
@@ -133,6 +158,49 @@ describe('InterviewChatStreamRequestParserService', () => {
                 `--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="second.png"\r\nContent-Type: image/png\r\n\r\n`
             ),
             Buffer.from('second-image'),
+            Buffer.from('\r\n'),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="third.pdf"\r\nContent-Type: application/pdf\r\n\r\n`
+            ),
+            Buffer.from('%PDF-1.4\nthird'),
+            Buffer.from(`\r\n--${boundary}--\r\n`),
+        ]);
+
+        await expect(parser.parse(createMultipartRequest(body, boundary))).resolves.toMatchObject({
+            message: '안녕하세요',
+            files: [
+                { fileName: 'first.png', mimeType: 'image/png' },
+                { fileName: 'second.png', mimeType: 'image/png' },
+                { fileName: 'third.pdf', mimeType: 'application/pdf' },
+            ],
+        });
+    });
+
+    it('rejects when more than 3 files are uploaded', async () => {
+        const boundary = 'folioo-interview-boundary';
+        const body = Buffer.concat([
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="message"\r\n\r\n안녕하세요\r\n`
+            ),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="f1.png"\r\nContent-Type: image/png\r\n\r\n`
+            ),
+            Buffer.from('f1'),
+            Buffer.from('\r\n'),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="f2.png"\r\nContent-Type: image/png\r\n\r\n`
+            ),
+            Buffer.from('f2'),
+            Buffer.from('\r\n'),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="f3.png"\r\nContent-Type: image/png\r\n\r\n`
+            ),
+            Buffer.from('f3'),
+            Buffer.from('\r\n'),
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="f4.png"\r\nContent-Type: image/png\r\n\r\n`
+            ),
+            Buffer.from('f4'),
             Buffer.from(`\r\n--${boundary}--\r\n`),
         ]);
 
@@ -144,7 +212,7 @@ describe('InterviewChatStreamRequestParserService', () => {
             expect(error).toBeInstanceOf(BusinessException);
             expect((error as BusinessException).getResponse()).toMatchObject({
                 errorCode: ErrorCode.BAD_REQUEST,
-                details: { reason: 'only one file is allowed' },
+                details: { reason: 'up to 3 files are allowed', maxFileCount: 3 },
             });
         }
     });
