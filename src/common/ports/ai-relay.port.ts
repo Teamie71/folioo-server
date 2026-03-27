@@ -2,7 +2,8 @@ import { Readable } from 'stream';
 
 export interface AiRelayRequest {
     path: string;
-    body: Record<string, unknown>;
+    body: unknown;
+    headers?: Record<string, string>;
 }
 
 export interface AiRelayGetRequest {
