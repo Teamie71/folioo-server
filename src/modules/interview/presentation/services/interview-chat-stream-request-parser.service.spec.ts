@@ -74,15 +74,45 @@ describe('InterviewChatStreamRequestParserService', () => {
         } catch (error) {
             expect(error).toBeInstanceOf(BusinessException);
             expect((error as BusinessException).getResponse()).toMatchObject({
-                errorCode: ErrorCode.BAD_REQUEST,
+                errorCode: ErrorCode.INTERVIEW_INSIGHT_ID_INVALID,
                 details: { reason: 'insightId must be a positive integer' },
+            });
+        }
+    });
+
+    it('rejects when multipart fields count exceeds limit', async () => {
+        const boundary = 'folioo-interview-boundary';
+        const body = Buffer.concat([
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="message"\r\n\r\n안녕하세요\r\n`
+            ),
+            ...Array.from({ length: 10 }, (_, index) =>
+                Buffer.from(
+                    `--${boundary}\r\nContent-Disposition: form-data; name="extraField${index}"\r\n\r\nvalue${index}\r\n`
+                )
+            ),
+            Buffer.from(`--${boundary}--\r\n`),
+        ]);
+
+        expect.assertions(2);
+
+        try {
+            await parser.parse(createMultipartRequest(body, boundary));
+        } catch (error) {
+            expect(error).toBeInstanceOf(BusinessException);
+            expect((error as BusinessException).getResponse()).toMatchObject({
+                errorCode: ErrorCode.INTERVIEW_FIELD_COUNT_EXCEEDED,
+                details: {
+                    reason: 'too many multipart fields were provided',
+                    maxFieldCount: 10,
+                },
             });
         }
     });
 
     it('rejects truncated field value when message exceeds fieldSize limit', async () => {
         const boundary = 'folioo-interview-boundary';
-        const oversizedMessage = 'a'.repeat(1024 * 1024 + 1);
+        const oversizedMessage = 'a'.repeat(2 * 1024 * 1024 + 1);
         const body = Buffer.from(
             `--${boundary}\r\nContent-Disposition: form-data; name="message"\r\n\r\n${oversizedMessage}\r\n--${boundary}--\r\n`
         );
@@ -94,7 +124,7 @@ describe('InterviewChatStreamRequestParserService', () => {
         } catch (error) {
             expect(error).toBeInstanceOf(BusinessException);
             expect((error as BusinessException).getResponse()).toMatchObject({
-                errorCode: ErrorCode.BAD_REQUEST,
+                errorCode: ErrorCode.INTERVIEW_MULTIPART_FIELD_VALUE_TOO_LARGE,
                 details: {
                     reason: 'multipart field value exceeds size limit',
                     fieldName: 'message',
@@ -134,7 +164,7 @@ describe('InterviewChatStreamRequestParserService', () => {
         } catch (error) {
             expect(error).toBeInstanceOf(BusinessException);
             expect((error as BusinessException).getResponse()).toMatchObject({
-                errorCode: ErrorCode.BAD_REQUEST,
+                errorCode: ErrorCode.INTERVIEW_FILE_MIME_INVALID,
                 details: {
                     reason: 'only application/pdf or image/* is allowed',
                     mimeType: 'text/plain',
@@ -211,8 +241,28 @@ describe('InterviewChatStreamRequestParserService', () => {
         } catch (error) {
             expect(error).toBeInstanceOf(BusinessException);
             expect((error as BusinessException).getResponse()).toMatchObject({
-                errorCode: ErrorCode.BAD_REQUEST,
+                errorCode: ErrorCode.INTERVIEW_FILE_COUNT_EXCEEDED,
                 details: { reason: 'up to 3 files are allowed', maxFileCount: 3 },
+            });
+        }
+    });
+
+    it('rejects field name truncation as bad request', async () => {
+        const boundary = 'folioo-interview-boundary';
+        const oversizedFieldName = 'a'.repeat(2 * 1024 * 1024 + 1);
+        const body = Buffer.from(
+            `--${boundary}\r\nContent-Disposition: form-data; name="${oversizedFieldName}"\r\n\r\nvalue\r\n--${boundary}--\r\n`
+        );
+
+        expect.assertions(2);
+
+        try {
+            await parser.parse(createMultipartRequest(body, boundary));
+        } catch (error) {
+            expect(error).toBeInstanceOf(BusinessException);
+            expect((error as BusinessException).getResponse()).toMatchObject({
+                errorCode: ErrorCode.INTERVIEW_MULTIPART_INVALID_PAYLOAD,
+                details: { reason: 'invalid multipart payload' },
             });
         }
     });

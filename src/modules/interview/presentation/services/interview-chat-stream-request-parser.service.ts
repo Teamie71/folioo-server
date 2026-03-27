@@ -7,9 +7,29 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 const MULTIPART_CONTENT_TYPE = 'multipart/form-data';
 const CHAT_STREAM_FILE_FIELD = 'files';
 const MAX_FILE_COUNT = 3;
+const MAX_FIELD_COUNT = 10;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_FIELD_SIZE_BYTES = 2 * 1024 * 1024;
 const PDF_MIME_TYPE = 'application/pdf';
+
+function getBusboyErrorCode(
+    error: unknown
+): 'ERR_BUSBOY_FILES_LIMIT' | 'ERR_BUSBOY_FIELDS_LIMIT' | 'ERR_BUSBOY_PARTS_LIMIT' | null {
+    if (!error || typeof error !== 'object' || !('code' in error)) {
+        return null;
+    }
+
+    const code = (error as { code?: unknown }).code;
+    if (
+        code === 'ERR_BUSBOY_FILES_LIMIT' ||
+        code === 'ERR_BUSBOY_FIELDS_LIMIT' ||
+        code === 'ERR_BUSBOY_PARTS_LIMIT'
+    ) {
+        return code;
+    }
+
+    return null;
+}
 
 export interface MultipartRequestLike {
     headers: IncomingHttpHeaders;
@@ -34,7 +54,7 @@ export class InterviewChatStreamRequestParserService {
     async parse(req: MultipartRequestLike): Promise<InterviewChatStreamParsedRequest> {
         const contentType = req.headers['content-type'];
         if (!contentType || !contentType.includes(MULTIPART_CONTENT_TYPE)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+            throw new BusinessException(ErrorCode.INTERVIEW_MULTIPART_INVALID_CONTENT_TYPE, {
                 reason: 'content-type must be multipart/form-data',
             });
         }
@@ -44,7 +64,7 @@ export class InterviewChatStreamRequestParserService {
                 headers: req.headers,
                 limits: {
                     files: MAX_FILE_COUNT,
-                    fields: 10,
+                    fields: MAX_FIELD_COUNT,
                     fieldSize: MAX_FIELD_SIZE_BYTES,
                     fileSize: MAX_FILE_SIZE_BYTES,
                 },
@@ -65,8 +85,16 @@ export class InterviewChatStreamRequestParserService {
             };
 
             parser.on('field', (fieldName, value, info) => {
+                if (info.nameTruncated) {
+                    fail(ErrorCode.INTERVIEW_MULTIPART_FIELD_NAME_TOO_LONG, {
+                        reason: 'multipart field name exceeds size limit',
+                        maxFieldSizeBytes: MAX_FIELD_SIZE_BYTES,
+                    });
+                    return;
+                }
+
                 if (info.valueTruncated) {
-                    fail(ErrorCode.BAD_REQUEST, {
+                    fail(ErrorCode.INTERVIEW_MULTIPART_FIELD_VALUE_TOO_LARGE, {
                         reason: 'multipart field value exceeds size limit',
                         fieldName,
                         maxFieldSizeBytes: MAX_FIELD_SIZE_BYTES,
@@ -77,7 +105,9 @@ export class InterviewChatStreamRequestParserService {
                 if (fieldName === 'message') {
                     const normalized = value.trim();
                     if (!normalized) {
-                        fail(ErrorCode.BAD_REQUEST, { reason: 'message must not be empty' });
+                        fail(ErrorCode.INTERVIEW_MESSAGE_EMPTY, {
+                            reason: 'message must not be empty',
+                        });
                         return;
                     }
                     parsedMessage = normalized;
@@ -93,7 +123,7 @@ export class InterviewChatStreamRequestParserService {
 
                     const insightId = Number.parseInt(normalized, 10);
                     if (!Number.isInteger(insightId) || insightId <= 0) {
-                        fail(ErrorCode.BAD_REQUEST, {
+                        fail(ErrorCode.INTERVIEW_INSIGHT_ID_INVALID, {
                             reason: 'insightId must be a positive integer',
                         });
                         return;
@@ -106,7 +136,7 @@ export class InterviewChatStreamRequestParserService {
             parser.on('file', (fieldName, fileStream, info) => {
                 if (fieldName !== CHAT_STREAM_FILE_FIELD) {
                     fileStream.resume();
-                    fail(ErrorCode.BAD_REQUEST, {
+                    fail(ErrorCode.INTERVIEW_FILE_FIELD_INVALID, {
                         reason: `unsupported file field: ${fieldName}`,
                     });
                     return;
@@ -117,7 +147,7 @@ export class InterviewChatStreamRequestParserService {
                     !info.mimeType.toLowerCase().startsWith('image/')
                 ) {
                     fileStream.resume();
-                    fail(ErrorCode.BAD_REQUEST, {
+                    fail(ErrorCode.INTERVIEW_FILE_MIME_INVALID, {
                         reason: 'only application/pdf or image/* is allowed',
                         mimeType: info.mimeType,
                     });
@@ -134,7 +164,7 @@ export class InterviewChatStreamRequestParserService {
 
                 fileStream.on('limit', () => {
                     fileStream.resume();
-                    fail(ErrorCode.BAD_REQUEST, {
+                    fail(ErrorCode.INTERVIEW_FILE_SIZE_EXCEEDED, {
                         reason: 'file size exceeds 10MB limit',
                     });
                 });
@@ -159,15 +189,63 @@ export class InterviewChatStreamRequestParserService {
             });
 
             parser.on('filesLimit', () => {
-                fail(ErrorCode.BAD_REQUEST, {
+                fail(ErrorCode.INTERVIEW_FILE_COUNT_EXCEEDED, {
                     reason: 'up to 3 files are allowed',
                     maxFileCount: MAX_FILE_COUNT,
                 });
             });
 
-            parser.on('error', () => {
-                fail(ErrorCode.INTERVIEW_AI_RELAY_FAILED, {
-                    reason: 'failed to parse multipart payload',
+            parser.on('fieldsLimit', () => {
+                fail(ErrorCode.INTERVIEW_FIELD_COUNT_EXCEEDED, {
+                    reason: 'too many multipart fields were provided',
+                    maxFieldCount: MAX_FIELD_COUNT,
+                });
+            });
+
+            parser.on('partsLimit', () => {
+                fail(ErrorCode.INTERVIEW_PART_COUNT_EXCEEDED, {
+                    reason: 'too many multipart parts were provided',
+                    maxFileCount: MAX_FILE_COUNT,
+                    maxFieldCount: MAX_FIELD_COUNT,
+                });
+            });
+
+            parser.on('error', (error: unknown) => {
+                const code = getBusboyErrorCode(error);
+                const errorMessage =
+                    error instanceof Error ? error.message : 'unknown busboy error';
+                if (code === 'ERR_BUSBOY_FILES_LIMIT') {
+                    fail(ErrorCode.INTERVIEW_FILE_COUNT_EXCEEDED, {
+                        reason: 'up to 3 files are allowed',
+                        maxFileCount: MAX_FILE_COUNT,
+                        busboyErrorCode: code,
+                    });
+                    return;
+                }
+
+                if (code === 'ERR_BUSBOY_FIELDS_LIMIT') {
+                    fail(ErrorCode.INTERVIEW_FIELD_COUNT_EXCEEDED, {
+                        reason: 'too many multipart fields were provided',
+                        maxFieldCount: MAX_FIELD_COUNT,
+                        busboyErrorCode: code,
+                    });
+                    return;
+                }
+
+                if (code === 'ERR_BUSBOY_PARTS_LIMIT') {
+                    fail(ErrorCode.INTERVIEW_PART_COUNT_EXCEEDED, {
+                        reason: 'too many multipart parts were provided',
+                        maxFileCount: MAX_FILE_COUNT,
+                        maxFieldCount: MAX_FIELD_COUNT,
+                        busboyErrorCode: code,
+                    });
+                    return;
+                }
+
+                fail(ErrorCode.INTERVIEW_MULTIPART_INVALID_PAYLOAD, {
+                    reason: 'invalid multipart payload',
+                    busboyErrorCode: code,
+                    busboyErrorMessage: errorMessage,
                 });
             });
 
@@ -177,7 +255,7 @@ export class InterviewChatStreamRequestParserService {
                 }
 
                 if (!parsedMessage) {
-                    fail(ErrorCode.BAD_REQUEST, { reason: 'message is required' });
+                    fail(ErrorCode.INTERVIEW_MESSAGE_REQUIRED, { reason: 'message is required' });
                     return;
                 }
 
