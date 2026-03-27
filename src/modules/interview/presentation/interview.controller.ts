@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Logger, Param, ParseIntPipe, Post, Req, Res } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiProduces, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Logger, Param, ParseIntPipe, Post, Req, Res } from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiProduces, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
@@ -14,8 +14,10 @@ import {
 } from '../application/dtos/interview.dto';
 import {
     ApiInterviewStreamResponse,
+    ApiInterviewStreamRequest,
     ApiInterviewStreamStartResponse,
 } from './decorators/api-interview-stream.decorator';
+import { InterviewChatStreamRequestParserService } from './services/interview-chat-stream-request-parser.service';
 
 @ApiTags('Interview')
 @Controller('interview/experiences')
@@ -26,7 +28,10 @@ export class InterviewController {
         reason: 'AI stream relay failed',
     });
 
-    constructor(private readonly interviewFacade: InterviewFacade) {}
+    constructor(
+        private readonly interviewFacade: InterviewFacade,
+        private readonly interviewChatStreamRequestParser: InterviewChatStreamRequestParserService
+    ) {}
 
     @Post(':experienceId/session/stream')
     @SkipTransform()
@@ -73,9 +78,10 @@ export class InterviewController {
     })
     @ApiParam({ name: 'experienceId', description: '경험 정리 ID', example: 42 })
     @ApiProduces('text/event-stream')
-    @ApiBody({ type: SendInterviewChatReqDTO })
+    @ApiInterviewStreamRequest()
     @ApiInterviewStreamResponse()
     @ApiCommonErrorResponse(
+        ErrorCode.BAD_REQUEST,
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
         ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,
@@ -84,14 +90,22 @@ export class InterviewController {
     async sendChatStream(
         @User('sub') userId: number,
         @Param('experienceId', ParseIntPipe) experienceId: number,
-        @Body() body: SendInterviewChatReqDTO,
         @Req() req: Request,
         @Res() res: Response
     ): Promise<void> {
+        const parsedRequest = await this.interviewChatStreamRequestParser.parse(req);
+        const body: SendInterviewChatReqDTO = {
+            message: parsedRequest.message,
+            ...(parsedRequest.insightId !== undefined && {
+                insightId: parsedRequest.insightId,
+            }),
+        };
+
         const relayConnection = await this.interviewFacade.sendChatStream(
             userId,
             experienceId,
-            body
+            body,
+            parsedRequest.file
         );
         SseRelayUtil.relayStream({
             connection: relayConnection,

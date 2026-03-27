@@ -59,24 +59,66 @@ describe('InterviewService', () => {
     it('maps chat stream request to AI server schema', async () => {
         await interviewService.sendChatStream('session_123', '안녕하세요', 1);
 
-        expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
-            path: '/api/v1/interview/sessions/session_123/chat/stream',
-            body: {
-                message: '안녕하세요',
-                mentioned_insight: '1',
-            },
-        });
+        expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledTimes(1);
+        const request = aiRelayPortStub.openPostStreamMock.mock.calls[0]?.[0];
+        expect(request?.path).toBe('/api/v1/interview/sessions/session_123/chat/stream');
+        expect(request?.body).toBeInstanceOf(FormData);
+
+        const formData = request?.body;
+        if (!(formData instanceof FormData)) {
+            throw new Error('Expected FormData body');
+        }
+
+        expect(formData.get('message')).toBe('안녕하세요');
+        expect(formData.get('mentioned_insight')).toBe('1');
+        expect(formData.get('files')).toBeNull();
     });
 
-    it('omits mentioned_insight from body when insightId is not provided', async () => {
+    it('sends multipart body without mentioned_insight when insightId is not provided', async () => {
         await interviewService.sendChatStream('session 1/2', '추가 질문입니다.');
 
-        expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
-            path: '/api/v1/interview/sessions/session%201%2F2/chat/stream',
-            body: {
-                message: '추가 질문입니다.',
-            },
+        expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledTimes(1);
+        const request = aiRelayPortStub.openPostStreamMock.mock.calls[0]?.[0];
+        expect(request?.path).toBe('/api/v1/interview/sessions/session%201%2F2/chat/stream');
+        expect(request?.body).toBeInstanceOf(FormData);
+
+        const formData = request?.body;
+        if (!(formData instanceof FormData)) {
+            throw new Error('Expected FormData body');
+        }
+
+        expect(formData.get('message')).toBe('추가 질문입니다.');
+        expect(formData.get('mentioned_insight')).toBeNull();
+        expect(formData.get('files')).toBeNull();
+    });
+
+    it('sends multipart/form-data when a file is provided', async () => {
+        await interviewService.sendChatStream('session_123', '프로젝트 보고서 첨부합니다', 1, {
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            buffer: Buffer.from('pdf-bytes'),
         });
+
+        expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledTimes(1);
+        const request = aiRelayPortStub.openPostStreamMock.mock.calls[0]?.[0];
+        expect(request?.path).toBe('/api/v1/interview/sessions/session_123/chat/stream');
+        expect(request?.body).toBeInstanceOf(FormData);
+
+        const formData = request?.body;
+        if (!(formData instanceof FormData)) {
+            throw new Error('Expected FormData body');
+        }
+
+        expect(formData.get('message')).toBe('프로젝트 보고서 첨부합니다');
+        expect(formData.get('mentioned_insight')).toBe('1');
+
+        const fileValue = formData.get('files');
+        expect(fileValue).toBeDefined();
+        expect(fileValue).toBeInstanceOf(File);
+        if (fileValue instanceof File) {
+            expect(fileValue.name).toBe('report.pdf');
+            expect(fileValue.type).toBe('application/pdf');
+        }
     });
 
     it('fetches interview session state via AI relay and maps response', async () => {
