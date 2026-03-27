@@ -9,11 +9,15 @@ import { PortfolioService } from 'src/modules/portfolio/application/services/por
 import { InterviewService } from '../services/interview.service';
 import { InterviewSessionStateResDTO, SendInterviewChatReqDTO } from '../dtos/interview.dto';
 import { InterviewFacade } from './interview.facade';
+import { InterviewChatUploadFile } from '../../presentation/services/interview-chat-stream-request-parser.service';
 
 class InterviewServiceStub {
     readonly createSessionStream = jest.fn<Promise<AiRelayConnection>, [number, string]>();
 
-    readonly sendChatStream = jest.fn<Promise<AiRelayConnection>, [string, string, number[]]>();
+    readonly sendChatStream = jest.fn<
+        Promise<AiRelayConnection>,
+        [string, string, number | undefined, InterviewChatUploadFile[] | undefined]
+    >();
 
     readonly getSessionState = jest.fn<Promise<InterviewSessionStateResDTO>, [string]>();
 
@@ -184,7 +188,8 @@ describe('InterviewFacade', () => {
         expect(interviewServiceStub.sendChatStream).toHaveBeenCalledWith(
             'session_resolved',
             '안녕하세요',
-            []
+            1,
+            undefined
         );
         expect(result).toBe(relayConnection);
     });
@@ -240,6 +245,8 @@ describe('InterviewFacade', () => {
             experienceName: experience.name,
             currentStage: 1,
             allComplete: false,
+            turnNumber: 0,
+            insightTurnHistory: [],
         };
 
         experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
@@ -263,6 +270,8 @@ describe('InterviewFacade', () => {
             experienceName: experience.name,
             currentStage: 3,
             allComplete: true,
+            turnNumber: 0,
+            insightTurnHistory: [],
         };
         const relayConnection: AiRelayConnection = {
             stream: Readable.from([]),
@@ -312,6 +321,8 @@ describe('InterviewFacade', () => {
             experienceName: experience.name,
             currentStage: 1,
             allComplete: false,
+            turnNumber: 0,
+            insightTurnHistory: [],
         };
 
         experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);

@@ -15,6 +15,7 @@ import {
     SendInterviewChatReqDTO,
 } from '../dtos/interview.dto';
 import { InterviewService } from '../services/interview.service';
+import { InterviewChatUploadFile } from '../../presentation/services/interview-chat-stream-request-parser.service';
 
 @Injectable()
 export class InterviewFacade {
@@ -66,7 +67,8 @@ export class InterviewFacade {
     async sendChatStream(
         userId: number,
         experienceId: number,
-        dto: SendInterviewChatReqDTO
+        dto: SendInterviewChatReqDTO,
+        files?: InterviewChatUploadFile[]
     ): Promise<AiRelayConnection> {
         const { sessionId } = await this.getInitializedSession(userId, experienceId);
 
@@ -74,7 +76,7 @@ export class InterviewFacade {
             await this.insightService.findByIdAndUserOrThrow(dto.insightId, userId);
         }
 
-        return this.interviewService.sendChatStream(sessionId, dto.message, dto.insightId);
+        return this.interviewService.sendChatStream(sessionId, dto.message, dto.insightId, files);
     }
 
     async getSessionState(

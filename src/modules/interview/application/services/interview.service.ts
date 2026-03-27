@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AiRelayConnection, AiRelayPort } from 'src/common/ports/ai-relay.port';
+import { InterviewChatUploadFile } from '../../presentation/services/interview-chat-stream-request-parser.service';
 import {
     AiInterviewSessionStateResponse,
     InterviewSessionStateResDTO,
@@ -33,16 +34,25 @@ export class InterviewService {
     async sendChatStream(
         sessionId: string,
         message: string,
-        mentionedInsightId?: number
+        mentionedInsightId?: number,
+        files?: InterviewChatUploadFile[]
     ): Promise<AiRelayConnection> {
+        const formData = new FormData();
+        formData.append('message', message);
+        if (mentionedInsightId !== undefined) {
+            formData.append('mentioned_insight', mentionedInsightId.toString());
+        }
+
+        if (files) {
+            for (const file of files) {
+                const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimeType });
+                formData.append('files', blob, file.fileName);
+            }
+        }
+
         return this.aiRelayPort.openPostStream({
             path: sessionPath(sessionId, '/chat/stream'),
-            body: {
-                message,
-                ...(mentionedInsightId !== undefined && {
-                    mentioned_insight: mentionedInsightId.toString(),
-                }),
-            },
+            body: formData,
         });
     }
 
