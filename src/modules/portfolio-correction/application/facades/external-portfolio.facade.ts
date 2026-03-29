@@ -124,6 +124,12 @@ export class ExternalPortfolioFacade {
 
     @Transactional()
     async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
+        const hasCorrections =
+            await this.correctionPortfolioSelectionService.existsByPortfolioId(portfolioId);
+        if (hasCorrections) {
+            throw new BusinessException(ErrorCode.PORTFOLIO_HAS_CORRECTIONS);
+        }
+
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId, userId);
     }
 }
