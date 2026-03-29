@@ -238,7 +238,7 @@ export class PortfolioCorrectionService {
             [CorrectionStatus.GENERATING]: [CorrectionStatus.DONE],
             [CorrectionStatus.DONE]: [],
             [CorrectionStatus.RAG_FAILED]: [],
-            [CorrectionStatus.FAILED]: [],
+            [CorrectionStatus.FAILED]: [CorrectionStatus.GENERATING],
         };
 
         const allowed = allowedTransitions[currentStatus] ?? [];
