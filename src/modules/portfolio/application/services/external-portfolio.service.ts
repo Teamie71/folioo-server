@@ -82,20 +82,7 @@ export class ExternalPortfolioService {
     }
 
     async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
-        const portfolio = await this.findExternalByIdAndUserIdOrThrow(portfolioId, userId);
-        if (!this.isEmptyPortfolio(portfolio)) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_EMPTY);
-        }
+        await this.findExternalByIdAndUserIdOrThrow(portfolioId, userId);
         await this.portfolioRepository.deleteById(portfolioId);
-    }
-
-    private isEmptyPortfolio(portfolio: Portfolio): boolean {
-        return (
-            !portfolio.name &&
-            !portfolio.description &&
-            !portfolio.responsibilities &&
-            !portfolio.problemSolving &&
-            !portfolio.learnings
-        );
     }
 }

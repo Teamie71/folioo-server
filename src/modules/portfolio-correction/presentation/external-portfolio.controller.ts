@@ -114,7 +114,11 @@ export class ExternalPortfolioController {
             'AI가 구조화한 포트폴리오 활동을 삭제합니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
     })
     @ApiCommonMessageResponse('포트폴리오가 삭제되었습니다.')
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.PORTFOLIO_NOT_FOUND,
+        ErrorCode.PORTFOLIO_HAS_CORRECTIONS
+    )
     async deleteExternalPortfolio(
         @User('sub') userId: number,
         @Param('portfolioId', ParseIntPipe) portfolioId: number
