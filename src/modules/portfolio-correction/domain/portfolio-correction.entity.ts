@@ -3,6 +3,7 @@ import { JobDescriptionType } from './enums/jobdescription-type.enum';
 import { User } from 'src/modules/user/domain/user.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { CorrectionStatus } from './enums/correction-status.enum';
+import { PdfExtractionStatus } from './enums/pdf-extraction-status.enum';
 
 export const MAX_CORRECTIONS_PER_USER = 15;
 
@@ -41,6 +42,13 @@ export class PortfolioCorrection extends BaseEntity {
 
     @Column({ type: 'timestamptz', nullable: true })
     extractedAt: Date;
+
+    @Column({
+        type: 'enum',
+        enum: PdfExtractionStatus,
+        default: PdfExtractionStatus.NONE,
+    })
+    pdfExtractionStatus: PdfExtractionStatus;
 
     @Column({
         type: 'enum',

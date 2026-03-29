@@ -70,20 +70,11 @@ export class InterviewFacade {
     ): Promise<AiRelayConnection> {
         const { sessionId } = await this.getInitializedSession(userId, experienceId);
 
-        const validatedInsightIds = await this.resolveInsightIds(userId, dto.insightId);
-
-        return this.interviewService.sendChatStream(sessionId, dto.message, validatedInsightIds);
-    }
-
-    private async resolveInsightIds(userId: number, insightId?: number): Promise<number[]> {
-        if (!insightId) {
-            return [];
+        if (dto.insightId) {
+            await this.insightService.findByIdAndUserOrThrow(dto.insightId, userId);
         }
 
-        await this.insightService.findByIdAndUserOrThrow(insightId, userId);
-        return [];
-        // TODO: 로그 멘션 주석 처리
-        //return [insightId];
+        return this.interviewService.sendChatStream(sessionId, dto.message, dto.insightId);
     }
 
     async getSessionState(
@@ -190,7 +181,7 @@ export class InterviewFacade {
         try {
             await Promise.all([
                 this.portfolioService.removeGeneratingPortfolio(portfolioId),
-                this.experienceService.revertToOnChat(experienceId),
+                this.experienceService.transitionToGenerateFailed(experienceId),
             ]);
             this.logger.log(
                 `Compensation completed: portfolioId=${portfolioId}, experienceId=${experienceId}`

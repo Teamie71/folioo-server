@@ -158,6 +158,18 @@ describe('PortfolioCorrectionService', () => {
         expect(repository.updateById).not.toHaveBeenCalled();
     });
 
+    it('allows retry transition from FAILED to GENERATING', async () => {
+        repository.findById.mockResolvedValue(
+            createCorrection({ status: CorrectionStatus.FAILED })
+        );
+
+        await expect(service.transitionToGenerating(1)).resolves.toBeUndefined();
+
+        expect(repository.updateById).toHaveBeenCalledWith(1, {
+            status: CorrectionStatus.GENERATING,
+        });
+    });
+
     it('rejects correction results when not all selected portfolio items are returned', async () => {
         repository.findById.mockResolvedValue(
             createCorrection({ status: CorrectionStatus.GENERATING })

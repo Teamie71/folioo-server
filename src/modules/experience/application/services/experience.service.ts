@@ -30,7 +30,8 @@ export class ExperienceService {
     }
 
     async transitionToGenerate(experience: Experience): Promise<Experience> {
-        if (experience.status !== ExperienceStatus.ON_CHAT) {
+        const allowedStatuses = [ExperienceStatus.ON_CHAT, ExperienceStatus.GENERATE_FAILED];
+        if (!allowedStatuses.includes(experience.status)) {
             throw new BusinessException(ErrorCode.EXPERIENCE_INVALID_STATUS, {
                 currentStatus: experience.status,
             });
@@ -53,12 +54,12 @@ export class ExperienceService {
         await this.experienceRepository.save(experience);
     }
 
-    async revertToOnChat(experienceId: number): Promise<void> {
+    async transitionToGenerateFailed(experienceId: number): Promise<void> {
         const experience = await this.findByIdInternalOrThrow(experienceId);
         if (experience.status !== ExperienceStatus.GENERATE) {
             return;
         }
-        experience.status = ExperienceStatus.ON_CHAT;
+        experience.status = ExperienceStatus.GENERATE_FAILED;
         await this.experienceRepository.save(experience);
     }
 

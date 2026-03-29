@@ -18,6 +18,7 @@ import { CorrectionItemService } from './correction-item.service';
 import { CorrectionPortfolioSelectionService } from './correction-portfolio-selection.service';
 import { UpdateCorrectionTitleReqDTO } from '../dtos/portfolio-correction.dto';
 import { CorrectionItem } from '../../domain/correction-item.entity';
+import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
 
 export interface InternalCorrectionPayload {
     correction: PortfolioCorrection;
@@ -153,14 +154,12 @@ export class PortfolioCorrectionService {
         return UpdateCompanyInsightResDTO.from(saved);
     }
 
-    async saveExtractedText(
+    async updatePdfExtractionStatus(
         correctionId: number,
-        userId: number,
-        extractedText: string
+        status: PdfExtractionStatus
     ): Promise<void> {
-        const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
-        correction.extractedText = extractedText;
-        correction.extractedAt = new Date();
+        const correction = await this.findByIdOrThrow(correctionId);
+        correction.pdfExtractionStatus = status;
         await this.portfolioCorrectionRepository.save(correction);
     }
 
@@ -239,7 +238,7 @@ export class PortfolioCorrectionService {
             [CorrectionStatus.GENERATING]: [CorrectionStatus.DONE],
             [CorrectionStatus.DONE]: [],
             [CorrectionStatus.RAG_FAILED]: [],
-            [CorrectionStatus.FAILED]: [],
+            [CorrectionStatus.FAILED]: [CorrectionStatus.GENERATING],
         };
 
         const allowed = allowedTransitions[currentStatus] ?? [];
