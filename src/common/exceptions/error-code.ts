@@ -114,7 +114,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.PORTFOLIO_EXTRACT_FAILED]: {
         message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        statusCode: HttpStatus.BAD_GATEWAY,
     },
     [ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED]: {
         message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
