@@ -220,7 +220,7 @@ PayType: 'CARD' |
 | company_name    | varchar(20)   | 지원기업명      |
 | position_name   | varchar(20)   | 지원직무명      |
 | job_description | varchar(700)  | Job Description |
-| company_insight | varchar(1500) | 기업분석정보    |
+| company_insight | varchar(2000) | 기업분석정보    |
 | highlight_point | varchar(200)  | 참조포인트      |
 | status          | ENUM          | 상태            |
 

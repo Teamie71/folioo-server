@@ -7,7 +7,11 @@ import { CorrectionPortfolioSelectionService } from 'src/modules/portfolio-corre
 import { PortfolioCorrectionService } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
 import { PdfExtractionStatus } from 'src/modules/portfolio-correction/domain/enums/pdf-extraction-status.enum';
 import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
-import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
+import {
+    Portfolio,
+    PORTFOLIO_BLOCK_FIELD_MAX_LENGTH,
+    PORTFOLIO_NAME_MAX_LENGTH,
+} from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
@@ -15,9 +19,6 @@ import {
     PdfExtractionCallbackStatus,
     SavePdfExtractionResultReqDTO,
 } from '../dtos/internal-correction-result.dto';
-
-const PORTFOLIO_NAME_MAX_LENGTH = 20;
-const PORTFOLIO_BLOCK_FIELD_MAX_LENGTH = 1000;
 
 @Injectable()
 export class InternalCorrectionResultFacade {

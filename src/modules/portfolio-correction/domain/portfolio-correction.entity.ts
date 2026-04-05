@@ -6,6 +6,7 @@ import { CorrectionStatus } from './enums/correction-status.enum';
 import { PdfExtractionStatus } from './enums/pdf-extraction-status.enum';
 
 export const MAX_CORRECTIONS_PER_USER = 15;
+export const COMPANY_INSIGHT_MAX_LENGTH = 2000;
 
 @Entity()
 export class PortfolioCorrection extends BaseEntity {
@@ -28,7 +29,7 @@ export class PortfolioCorrection extends BaseEntity {
     })
     jobDescriptionType: JobDescriptionType;
 
-    @Column({ length: 1500, nullable: true })
+    @Column({ length: COMPANY_INSIGHT_MAX_LENGTH, nullable: true })
     companyInsight: string;
 
     @Column({ length: 200, nullable: true })

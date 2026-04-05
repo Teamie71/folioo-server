@@ -1,14 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
+import {
+    COMPANY_INSIGHT_MAX_LENGTH,
+    PortfolioCorrection,
+} from '../../domain/portfolio-correction.entity';
 
 export class UpdateCompanyInsightReqDTO {
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
-    @MaxLength(1500)
-    @ApiProperty({ required: false, nullable: true, maxLength: 1500 })
+    @MaxLength(COMPANY_INSIGHT_MAX_LENGTH)
+    @ApiProperty({ required: false, nullable: true, maxLength: COMPANY_INSIGHT_MAX_LENGTH })
     companyInsight?: string;
 
     @Transform(({ value }: { value: string }) => value?.trim())
@@ -23,7 +26,7 @@ export class UpdateCompanyInsightResDTO {
     @ApiProperty({ nullable: true })
     id: number;
 
-    @ApiProperty({ nullable: true, maxLength: 1500 })
+    @ApiProperty({ nullable: true, maxLength: COMPANY_INSIGHT_MAX_LENGTH })
     companyInsight: string | null;
 
     @ApiProperty({ nullable: true, maxLength: 200 })

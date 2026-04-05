@@ -3,6 +3,7 @@ import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { CorrectionStatus } from 'src/modules/portfolio-correction/domain/enums/correction-status.enum';
 import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
 import { InternalCorrectionPayload } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
+import { COMPANY_INSIGHT_MAX_LENGTH } from 'src/modules/portfolio-correction/domain/portfolio-correction.entity';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -84,7 +85,10 @@ export class UpdateCorrectionStatusReqDTO {
 export class UpdateCompanyInsightInternalReqDTO {
     @IsString()
     @IsNotEmpty()
-    @MaxLength(1500)
-    @ApiProperty({ description: 'RAG로 생성된 기업 분석 텍스트' })
+    @MaxLength(COMPANY_INSIGHT_MAX_LENGTH)
+    @ApiProperty({
+        description: 'RAG로 생성된 기업 분석 텍스트',
+        maxLength: COMPANY_INSIGHT_MAX_LENGTH,
+    })
     companyInsight: string;
 }
