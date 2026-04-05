@@ -28,7 +28,7 @@ export class PortfolioCorrection extends BaseEntity {
     })
     jobDescriptionType: JobDescriptionType;
 
-    @Column({ length: 1500, nullable: true })
+    @Column({ length: 2000, nullable: true })
     companyInsight: string;
 
     @Column({ length: 200, nullable: true })

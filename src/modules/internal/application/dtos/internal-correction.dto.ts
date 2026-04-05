@@ -84,7 +84,7 @@ export class UpdateCorrectionStatusReqDTO {
 export class UpdateCompanyInsightInternalReqDTO {
     @IsString()
     @IsNotEmpty()
-    @MaxLength(1500)
+    @MaxLength(2000)
     @ApiProperty({ description: 'RAG로 생성된 기업 분석 텍스트' })
     companyInsight: string;
 }
