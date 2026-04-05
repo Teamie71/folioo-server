@@ -13,22 +13,24 @@ interface PortfolioContent {
 }
 
 export const MAX_EXTERNAL_PORTFOLIO_BLOCKS = 5;
+export const PORTFOLIO_NAME_MAX_LENGTH = 20;
+export const PORTFOLIO_BLOCK_FIELD_MAX_LENGTH = 1000;
 
 @Entity()
 export class Portfolio extends BaseEntity {
-    @Column({ length: 20 })
+    @Column({ length: PORTFOLIO_NAME_MAX_LENGTH })
     name: string;
 
-    @Column({ length: 1000 })
+    @Column({ length: PORTFOLIO_BLOCK_FIELD_MAX_LENGTH })
     description: string;
 
-    @Column({ length: 1000 })
+    @Column({ length: PORTFOLIO_BLOCK_FIELD_MAX_LENGTH })
     responsibilities: string;
 
-    @Column({ length: 1000 })
+    @Column({ length: PORTFOLIO_BLOCK_FIELD_MAX_LENGTH })
     problemSolving: string;
 
-    @Column({ length: 1000 })
+    @Column({ length: PORTFOLIO_BLOCK_FIELD_MAX_LENGTH })
     learnings: string;
 
     @Column({ nullable: true })
