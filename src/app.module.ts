@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { TypeOrmConfigService } from './config/typeorm-config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
@@ -20,6 +21,7 @@ import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { TicketAutomationModule } from './modules/ticket-automation/ticket-automation.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -43,6 +45,7 @@ import { DataSource } from 'typeorm';
                 );
             },
         }),
+        ScheduleModule.forRoot(),
         RedisModule,
         AuthModule,
         UserModule,
@@ -56,6 +59,7 @@ import { DataSource } from 'typeorm';
         InterviewModule,
         InternalModule,
         AdminModule,
+        TicketAutomationModule,
     ],
     providers: [
         {

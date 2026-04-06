@@ -105,6 +105,10 @@ export class TicketService {
         await this.ticketRepository.expireAvailableByPaymentId(paymentId, new Date());
     }
 
+    async expireOutdatedAvailableTickets(now: Date): Promise<number> {
+        return this.ticketRepository.expireOutdatedAvailableTickets(now);
+    }
+
     @Transactional()
     async consumeTicket(userId: number, type: TicketType): Promise<Ticket> {
         const now = new Date();
