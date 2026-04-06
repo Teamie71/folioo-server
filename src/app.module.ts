@@ -21,9 +21,9 @@ import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { TicketAutomationModule } from './modules/ticket-automation/ticket-automation.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
-import { WeeklyEventTicketScheduler } from './modules/ticket/application/schedulers/weekly-event-ticket.scheduler';
 
 @Module({
     imports: [
@@ -59,6 +59,7 @@ import { WeeklyEventTicketScheduler } from './modules/ticket/application/schedul
         InterviewModule,
         InternalModule,
         AdminModule,
+        TicketAutomationModule,
     ],
     providers: [
         {
@@ -69,7 +70,6 @@ import { WeeklyEventTicketScheduler } from './modules/ticket/application/schedul
             provide: APP_INTERCEPTOR,
             useClass: TransformInterceptor,
         },
-        WeeklyEventTicketScheduler,
     ],
     controllers: [AppController],
 })
