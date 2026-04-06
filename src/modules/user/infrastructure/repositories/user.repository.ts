@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../domain/user.entity';
 import { SocialUser } from '../../domain/social-user.entity';
 import { Repository } from 'typeorm';
+import { UserStatus } from '../../domain/enums/user-status.enum';
 
 export interface UserWithSocialInfoProjection {
     userId: number;
@@ -95,5 +96,17 @@ export class UserRepository {
             .execute();
 
         return (result.affected ?? 0) > 0;
+    }
+
+    async findAllActiveUserIds(): Promise<number[]> {
+        const rows = await this.userRepository
+            .createQueryBuilder('u')
+            .select('u.id', 'id')
+            .where('u.is_active = :isActive', { isActive: true })
+            .andWhere('u.status = :status', { status: UserStatus.ACTIVE })
+            .orderBy('u.id', 'ASC')
+            .getRawMany<{ id: number }>();
+
+        return rows.map((row) => Number(row.id));
     }
 }

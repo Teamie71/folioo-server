@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { TypeOrmConfigService } from './config/typeorm-config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
@@ -22,6 +23,7 @@ import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
+import { WeeklyEventTicketScheduler } from './modules/ticket/application/schedulers/weekly-event-ticket.scheduler';
 
 @Module({
     imports: [
@@ -43,6 +45,7 @@ import { DataSource } from 'typeorm';
                 );
             },
         }),
+        ScheduleModule.forRoot(),
         RedisModule,
         AuthModule,
         UserModule,
@@ -66,6 +69,7 @@ import { DataSource } from 'typeorm';
             provide: APP_INTERCEPTOR,
             useClass: TransformInterceptor,
         },
+        WeeklyEventTicketScheduler,
     ],
     controllers: [AppController],
 })
