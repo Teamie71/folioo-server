@@ -55,7 +55,7 @@ export function ApiInterviewStreamRequest() {
                 properties: {
                     message: {
                         type: 'string',
-                        description: '사용자 메시지',
+                        description: '사용자 메시지 (files가 없으면 필수)',
                         example: '프로젝트 보고서 첨부합니다',
                     },
                     insightId: {
@@ -70,10 +70,10 @@ export function ApiInterviewStreamRequest() {
                             type: 'string',
                             format: 'binary',
                         },
-                        description: '첨부 파일 (application/pdf 또는 image/*, 최대 3개)',
+                        description:
+                            '첨부 파일 (application/pdf 또는 image/*, 최대 3개). message 없이 단독 전송 가능',
                     },
                 },
-                required: ['message'],
             },
         })
     );

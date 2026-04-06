@@ -103,14 +103,7 @@ export class InterviewChatStreamRequestParserService {
                 }
 
                 if (fieldName === 'message') {
-                    const normalized = value.trim();
-                    if (!normalized) {
-                        fail(ErrorCode.INTERVIEW_MESSAGE_EMPTY, {
-                            reason: 'message must not be empty',
-                        });
-                        return;
-                    }
-                    parsedMessage = normalized;
+                    parsedMessage = value.trim();
                     return;
                 }
 
@@ -254,14 +247,16 @@ export class InterviewChatStreamRequestParserService {
                     return;
                 }
 
-                if (!parsedMessage) {
+                if (parsedMessage === null && parsedFiles.length === 0) {
                     fail(ErrorCode.INTERVIEW_MESSAGE_REQUIRED, { reason: 'message is required' });
                     return;
                 }
 
+                const message = parsedMessage ?? '';
+
                 settled = true;
                 resolve({
-                    message: parsedMessage,
+                    message,
                     insightId: parsedInsightId,
                     ...(parsedFiles.length > 0 && {
                         files: parsedFiles,
