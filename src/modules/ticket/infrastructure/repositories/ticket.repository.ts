@@ -109,11 +109,11 @@ export class TicketRepository {
             .update(Ticket)
             .set({
                 status: TicketStatus.EXPIRED,
-                updatedAt: new Date(),
+                updatedAt: now,
             })
             .where('status = :status', { status: TicketStatus.AVAILABLE })
             .andWhere('expired_at IS NOT NULL')
-            .andWhere('expired_at < :now', { now })
+            .andWhere('expired_at <= :now', { now })
             .execute();
 
         return result.affected ?? 0;
