@@ -1,4 +1,6 @@
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export function getSeoulDateString(date: Date = new Date()): string {
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -31,4 +33,13 @@ export function isSameSeoulDate(left: Date, right: Date): boolean {
 export function getEndOfSeoulDay(date: Date): Date {
     const dateString = getSeoulDateString(date);
     return new Date(`${dateString}T23:59:59+09:00`);
+}
+
+export function getEndOfThisSeoulWeekSunday(date: Date = new Date()): Date {
+    const seoulAdjustedDate = new Date(date.getTime() + KST_OFFSET_MS);
+    const seoulDayOfWeek = seoulAdjustedDate.getUTCDay();
+    const daysUntilSunday = (7 - seoulDayOfWeek) % 7;
+    const sundayDate = new Date(date.getTime() + daysUntilSunday * ONE_DAY_MS);
+
+    return getEndOfSeoulDay(sundayDate);
 }

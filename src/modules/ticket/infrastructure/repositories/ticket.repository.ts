@@ -103,6 +103,22 @@ export class TicketRepository {
         );
     }
 
+    async expireOutdatedAvailableTickets(now: Date): Promise<number> {
+        const result = await this.ticketRepository
+            .createQueryBuilder()
+            .update(Ticket)
+            .set({
+                status: TicketStatus.EXPIRED,
+                updatedAt: now,
+            })
+            .where('status = :status', { status: TicketStatus.AVAILABLE })
+            .andWhere('expired_at IS NOT NULL')
+            .andWhere('expired_at <= :now', { now })
+            .execute();
+
+        return result.affected ?? 0;
+    }
+
     async countAvailableByUserIdGroupByType(userId: number): Promise<TicketCountByType[]> {
         const rows = await this.ticketRepository
             .createQueryBuilder('ticket')
