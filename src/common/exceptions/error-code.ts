@@ -132,10 +132,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '요청 필드 값 크기가 허용 범위를 초과했습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
-    [ErrorCode.INTERVIEW_MESSAGE_EMPTY]: {
-        message: '메시지는 비어 있을 수 없습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
     [ErrorCode.INTERVIEW_MESSAGE_REQUIRED]: {
         message: '메시지는 필수 입력값입니다.',
         statusCode: HttpStatus.BAD_REQUEST,
