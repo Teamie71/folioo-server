@@ -1,5 +1,12 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiExtraModels, ApiOkResponse, ApiOperation, getSchemaPath } from '@nestjs/swagger';
+import {
+    ApiBody,
+    ApiConsumes,
+    ApiExtraModels,
+    ApiOkResponse,
+    ApiOperation,
+    getSchemaPath,
+} from '@nestjs/swagger';
 import {
     StreamContentBlockDeltaDTO,
     StreamMessageCompleteDTO,
@@ -34,6 +41,41 @@ SSE 스트림의 \`type\` 필드를 확인하여 이벤트별로 분기 처리�
                     { $ref: getSchemaPath(StreamContentBlockDeltaDTO) },
                     { $ref: getSchemaPath(StreamMessageCompleteDTO) },
                 ],
+            },
+        })
+    );
+}
+
+export function ApiInterviewStreamRequest() {
+    return applyDecorators(
+        ApiConsumes('multipart/form-data'),
+        ApiBody({
+            schema: {
+                type: 'object',
+                properties: {
+                    message: {
+                        type: 'string',
+                        description: '사용자 메시지 (files가 없으면 필수)',
+                        example: '프로젝트 보고서 첨부합니다',
+                    },
+                    insightId: {
+                        type: 'integer',
+                        description: '언급한 인사이트 ID (양의 정수).',
+                        example: 1,
+                        minimum: 1,
+                    },
+                    files: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                            format: 'binary',
+                        },
+                        minItems: 1,
+                        description:
+                            '첨부 파일 (application/pdf 또는 image/*, 최대 3개). message 없이 단독 전송 가능',
+                    },
+                },
+                oneOf: [{ required: ['message'] }, { required: ['files'] }],
             },
         })
     );

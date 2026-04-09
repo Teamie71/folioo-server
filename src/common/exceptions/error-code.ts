@@ -120,6 +120,54 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.INTERVIEW_MULTIPART_INVALID_CONTENT_TYPE]: {
+        message: 'multipart/form-data 요청 형식이 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_MULTIPART_FIELD_NAME_TOO_LONG]: {
+        message: '요청 필드 이름 길이가 허용 범위를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_MULTIPART_FIELD_VALUE_TOO_LARGE]: {
+        message: '요청 필드 값 크기가 허용 범위를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_MESSAGE_REQUIRED]: {
+        message: '메시지는 필수 입력값입니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_INSIGHT_ID_INVALID]: {
+        message: 'insightId 값이 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_FILE_FIELD_INVALID]: {
+        message: '파일 필드 이름이 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_FILE_MIME_INVALID]: {
+        message: '지원하지 않는 파일 형식입니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_FILE_SIZE_EXCEEDED]: {
+        message: '파일 크기가 허용 범위를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_FILE_COUNT_EXCEEDED]: {
+        message: '첨부 파일 개수가 허용 범위를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_FIELD_COUNT_EXCEEDED]: {
+        message: '요청 필드 개수가 허용 범위를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_PART_COUNT_EXCEEDED]: {
+        message: 'multipart 파트 개수가 허용 범위를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.INTERVIEW_MULTIPART_INVALID_PAYLOAD]: {
+        message: 'multipart 요청 본문이 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
     [ErrorCode.INTERVIEW_NOT_COMPLETED]: {
         message:
             '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변한 후 포트폴리오를 생성할 수 있습니다.',
