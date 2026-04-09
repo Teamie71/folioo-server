@@ -247,12 +247,12 @@ export class InterviewChatStreamRequestParserService {
                     return;
                 }
 
-                if (parsedMessage === null && parsedFiles.length === 0) {
+                const message = parsedMessage ?? '';
+
+                if (!message && parsedFiles.length === 0) {
                     fail(ErrorCode.INTERVIEW_MESSAGE_REQUIRED, { reason: 'message is required' });
                     return;
                 }
-
-                const message = parsedMessage ?? '';
 
                 settled = true;
                 resolve({

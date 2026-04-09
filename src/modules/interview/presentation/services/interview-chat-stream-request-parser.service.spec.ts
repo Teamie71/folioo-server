@@ -186,6 +186,27 @@ describe('InterviewChatStreamRequestParserService', () => {
         }
     });
 
+    it('rejects whitespace-only message when files are missing', async () => {
+        const boundary = 'folioo-interview-boundary';
+        const body = Buffer.from(
+            `--${boundary}\r\nContent-Disposition: form-data; name="message"\r\n\r\n    \t\r\n--${boundary}--\r\n`
+        );
+
+        expect.assertions(2);
+
+        try {
+            await parser.parse(createMultipartRequest(body, boundary));
+        } catch (error) {
+            expect(error).toBeInstanceOf(BusinessException);
+            expect((error as BusinessException).getResponse()).toMatchObject({
+                errorCode: ErrorCode.INTERVIEW_MESSAGE_REQUIRED,
+                details: {
+                    reason: 'message is required',
+                },
+            });
+        }
+    });
+
     it('rejects unsupported file mime type', async () => {
         const boundary = 'folioo-interview-boundary';
         const body = Buffer.concat([

@@ -70,10 +70,12 @@ export function ApiInterviewStreamRequest() {
                             type: 'string',
                             format: 'binary',
                         },
+                        minItems: 1,
                         description:
                             '첨부 파일 (application/pdf 또는 image/*, 최대 3개). message 없이 단독 전송 가능',
                     },
                 },
+                oneOf: [{ required: ['message'] }, { required: ['files'] }],
             },
         })
     );
