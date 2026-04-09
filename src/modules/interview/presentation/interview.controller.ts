@@ -76,6 +76,19 @@ export class InterviewController {
     @ApiBody({ type: SendInterviewChatReqDTO })
     @ApiInterviewStreamResponse()
     @ApiCommonErrorResponse(
+        ErrorCode.BAD_REQUEST,
+        ErrorCode.INTERVIEW_MULTIPART_INVALID_CONTENT_TYPE,
+        ErrorCode.INTERVIEW_MULTIPART_FIELD_NAME_TOO_LONG,
+        ErrorCode.INTERVIEW_MULTIPART_FIELD_VALUE_TOO_LARGE,
+        ErrorCode.INTERVIEW_MESSAGE_REQUIRED,
+        ErrorCode.INTERVIEW_INSIGHT_ID_INVALID,
+        ErrorCode.INTERVIEW_FILE_FIELD_INVALID,
+        ErrorCode.INTERVIEW_FILE_MIME_INVALID,
+        ErrorCode.INTERVIEW_FILE_SIZE_EXCEEDED,
+        ErrorCode.INTERVIEW_FILE_COUNT_EXCEEDED,
+        ErrorCode.INTERVIEW_FIELD_COUNT_EXCEEDED,
+        ErrorCode.INTERVIEW_PART_COUNT_EXCEEDED,
+        ErrorCode.INTERVIEW_MULTIPART_INVALID_PAYLOAD,
         ErrorCode.UNAUTHORIZED,
         ErrorCode.EXPERIENCE_NOT_FOUND,
         ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED,

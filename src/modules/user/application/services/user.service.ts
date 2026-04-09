@@ -182,6 +182,10 @@ export class UserService {
         return false;
     }
 
+    async findAllActiveUserIds(): Promise<number[]> {
+        return this.userRepository.findAllActiveUserIds();
+    }
+
     async findByPhoneNumOrThrow(phoneNum: string): Promise<User> {
         const user = await this.userRepository.findByPhoneNum(phoneNum);
         if (!user) {
