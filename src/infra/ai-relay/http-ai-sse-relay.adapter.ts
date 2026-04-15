@@ -29,6 +29,15 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
 
         const abortController = new AbortController();
         const requestUrl = this.buildRequestUrl(baseUrl, request.path);
+        const requestHeaders: Record<string, string> = {
+            Accept: 'text/event-stream',
+            'X-API-Key': apiKey,
+            ...(request.headers ?? {}),
+        };
+
+        if (!(request.body instanceof FormData)) {
+            requestHeaders['Content-Type'] = 'application/json';
+        }
 
         try {
             const response = await this.httpService.axiosRef.post<Readable>(
@@ -38,11 +47,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
                     responseType: 'stream',
                     signal: abortController.signal,
                     timeout: 0,
-                    headers: {
-                        Accept: 'text/event-stream',
-                        'Content-Type': 'application/json',
-                        'X-API-Key': apiKey,
-                    },
+                    headers: requestHeaders,
                 }
             );
 

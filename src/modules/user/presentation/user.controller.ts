@@ -143,7 +143,37 @@ export class UserController {
         description:
             '로그인 사용자의 다음 PENDING 보상 안내 1건을 최신순으로 조회합니다. 없으면 null을 반환합니다.',
     })
-    @ApiCommonResponse(TicketGrantNoticeResDTO, { exampleResult: null })
+    @ApiCommonResponse(TicketGrantNoticeResDTO, {
+        exampleResults: {
+            success: {
+                summary: '다음 보상 안내가 있는 경우',
+                result: {
+                    id: 101,
+                    ticketGrantId: 55,
+                    status: 'PENDING',
+                    title: '보상이 지급되었어요',
+                    body: '경험 정리 1회권',
+                    ctaText: '보러가기',
+                    ctaLink: '/tickets',
+                    payload: {
+                        displayReason: '서비스 이용 불편에 대한 보상',
+                        displayPeriod: '6개월 간',
+                        rewards: [
+                            {
+                                type: 'EXPERIENCE',
+                                quantity: 1,
+                            },
+                        ],
+                    },
+                    createdAt: '2026-03-08T00:00:00.000Z',
+                },
+            },
+            empty: {
+                summary: '다음 보상 안내가 없는 경우',
+                result: null,
+            },
+        },
+    })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async getNextTicketGrantNotice(
         @User('sub') userId: number
