@@ -17,7 +17,9 @@ class ExternalPortfolioServiceStub {
     readonly deleteExternalPortfolio = jest.fn<Promise<void>, [number, number]>();
 }
 
-class PortfolioServiceStub {}
+class PortfolioServiceStub {
+    readonly findByIdsAndUserIdOrThrow = jest.fn<Promise<unknown[]>, [number[], number]>();
+}
 
 class PortfolioCorrectionServiceStub {}
 
@@ -34,17 +36,19 @@ class PdfExtractServiceStub {}
 describe('ExternalPortfolioFacade', () => {
     let externalPortfolioFacade: ExternalPortfolioFacade;
     let externalPortfolioServiceStub: ExternalPortfolioServiceStub;
+    let portfolioServiceStub: PortfolioServiceStub;
     let correctionPortfolioSelectionServiceStub: CorrectionPortfolioSelectionServiceStub;
     let correctionItemServiceStub: CorrectionItemServiceStub;
 
     beforeEach(() => {
         externalPortfolioServiceStub = new ExternalPortfolioServiceStub();
+        portfolioServiceStub = new PortfolioServiceStub();
         correctionPortfolioSelectionServiceStub = new CorrectionPortfolioSelectionServiceStub();
         correctionItemServiceStub = new CorrectionItemServiceStub();
 
         externalPortfolioFacade = new ExternalPortfolioFacade(
             externalPortfolioServiceStub as unknown as ExternalPortfolioService,
-            new PortfolioServiceStub() as unknown as PortfolioService,
+            portfolioServiceStub as unknown as PortfolioService,
             new PortfolioCorrectionServiceStub() as unknown as PortfolioCorrectionService,
             correctionPortfolioSelectionServiceStub as unknown as CorrectionPortfolioSelectionService,
             correctionItemServiceStub as unknown as CorrectionItemService,
@@ -52,19 +56,23 @@ describe('ExternalPortfolioFacade', () => {
         );
     });
 
-    it('deletes correction links first, then deletes external portfolio', async () => {
+    it('validates ownership first, then deletes related links and portfolio', async () => {
+        portfolioServiceStub.findByIdsAndUserIdOrThrow.mockResolvedValue([{}]);
         correctionItemServiceStub.deleteByPortfolioId.mockResolvedValue();
         correctionPortfolioSelectionServiceStub.deleteByPortfolioId.mockResolvedValue();
         externalPortfolioServiceStub.deleteExternalPortfolio.mockResolvedValue();
 
         await externalPortfolioFacade.deleteExternalPortfolio(55, 9);
 
+        expect(portfolioServiceStub.findByIdsAndUserIdOrThrow).toHaveBeenCalledWith([55], 9);
         expect(correctionItemServiceStub.deleteByPortfolioId).toHaveBeenCalledWith(55);
         expect(correctionPortfolioSelectionServiceStub.deleteByPortfolioId).toHaveBeenCalledWith(
             55
         );
         expect(externalPortfolioServiceStub.deleteExternalPortfolio).toHaveBeenCalledWith(55, 9);
 
+        const validateOrder =
+            portfolioServiceStub.findByIdsAndUserIdOrThrow.mock.invocationCallOrder[0];
         const itemDeleteOrder =
             correctionItemServiceStub.deleteByPortfolioId.mock.invocationCallOrder[0];
         const selectionDeleteOrder =
@@ -72,7 +80,22 @@ describe('ExternalPortfolioFacade', () => {
         const portfolioDeleteOrder =
             externalPortfolioServiceStub.deleteExternalPortfolio.mock.invocationCallOrder[0];
 
-        expect(itemDeleteOrder).toBeLessThan(selectionDeleteOrder);
+        expect(validateOrder).toBeLessThan(itemDeleteOrder);
+        expect(validateOrder).toBeLessThan(selectionDeleteOrder);
         expect(selectionDeleteOrder).toBeLessThan(portfolioDeleteOrder);
+        expect(itemDeleteOrder).toBeLessThan(portfolioDeleteOrder);
+    });
+
+    it('does not delete related data when ownership validation fails', async () => {
+        const validationError = new Error('validation failed');
+        portfolioServiceStub.findByIdsAndUserIdOrThrow.mockRejectedValue(validationError);
+
+        await expect(externalPortfolioFacade.deleteExternalPortfolio(55, 9)).rejects.toThrow(
+            validationError
+        );
+
+        expect(correctionItemServiceStub.deleteByPortfolioId).not.toHaveBeenCalled();
+        expect(correctionPortfolioSelectionServiceStub.deleteByPortfolioId).not.toHaveBeenCalled();
+        expect(externalPortfolioServiceStub.deleteExternalPortfolio).not.toHaveBeenCalled();
     });
 });

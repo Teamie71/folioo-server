@@ -126,8 +126,13 @@ export class ExternalPortfolioFacade {
 
     @Transactional()
     async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
-        await this.correctionItemService.deleteByPortfolioId(portfolioId);
-        await this.correctionPortfolioSelectionService.deleteByPortfolioId(portfolioId);
+        await this.portfolioService.findByIdsAndUserIdOrThrow([portfolioId], userId);
+
+        await Promise.all([
+            this.correctionItemService.deleteByPortfolioId(portfolioId),
+            this.correctionPortfolioSelectionService.deleteByPortfolioId(portfolioId),
+        ]);
+
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId, userId);
     }
 }
