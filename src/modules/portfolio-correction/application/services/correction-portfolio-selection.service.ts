@@ -46,4 +46,8 @@ export class CorrectionPortfolioSelectionService {
     async existsByPortfolioId(portfolioId: number): Promise<boolean> {
         return this.correctionPortfolioSelectionRepository.existsByPortfolioId(portfolioId);
     }
+
+    async deleteByPortfolioId(portfolioId: number): Promise<void> {
+        await this.correctionPortfolioSelectionRepository.deleteByPortfolioId(portfolioId);
+    }
 }

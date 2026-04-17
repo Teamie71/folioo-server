@@ -108,10 +108,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 포트폴리오를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
-    [ErrorCode.PORTFOLIO_HAS_CORRECTIONS]: {
-        message: '연결된 첨삭이 존재하여 포트폴리오를 삭제할 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
     [ErrorCode.PORTFOLIO_EXTRACT_FAILED]: {
         message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,

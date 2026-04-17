@@ -38,4 +38,11 @@ export class CorrectionPortfolioSelectionRepository {
             where: { portfolio: { id: portfolioId } },
         });
     }
+
+    async deleteByPortfolioId(portfolioId: number): Promise<number> {
+        const result = await this.correctionPortfolioSelectionRepository.delete({
+            portfolio: { id: portfolioId },
+        });
+        return result.affected ?? 0;
+    }
 }
