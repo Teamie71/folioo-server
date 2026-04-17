@@ -26,6 +26,15 @@ export class PortfolioRepository {
         });
     }
 
+    async findInternalById(id: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: {
+                id,
+                sourceType: SourceType.INTERNAL,
+            },
+        });
+    }
+
     async findByIdWithExperience(id: number): Promise<Portfolio | null> {
         return this.portfolioRepository.findOne({
             where: { id },
@@ -33,9 +42,30 @@ export class PortfolioRepository {
         });
     }
 
+    async findInternalByIdWithExperience(id: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: {
+                id,
+                sourceType: SourceType.INTERNAL,
+            },
+            relations: { experience: true, user: true },
+        });
+    }
+
     async findByIdAndUserId(id: number, userId: number): Promise<Portfolio | null> {
         return this.portfolioRepository.findOne({
             where: { id, user: { id: userId } },
+            relations: { experience: true },
+        });
+    }
+
+    async findInternalByIdAndUserId(id: number, userId: number): Promise<Portfolio | null> {
+        return this.portfolioRepository.findOne({
+            where: {
+                id,
+                user: { id: userId },
+                sourceType: SourceType.INTERNAL,
+            },
             relations: { experience: true },
         });
     }
@@ -86,6 +116,7 @@ export class PortfolioRepository {
             where: {
                 user: { id: userId },
                 status: PortfolioStatus.COMPLETED,
+                sourceType: SourceType.INTERNAL,
             },
             relations: { experience: true },
             order: { createdAt: 'DESC' },
