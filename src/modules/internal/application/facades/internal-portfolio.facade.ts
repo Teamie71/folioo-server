@@ -16,7 +16,7 @@ export class InternalPortfolioFacade {
     ) {}
 
     async getPortfolioDetail(portfolioId: number): Promise<InternalPortfolioDetailResDTO> {
-        const portfolio = await this.portfolioService.findByIdWithExperienceOrThrow(portfolioId);
+        const portfolio = await this.portfolioService.findByIdWithRelationsOrThrow(portfolioId);
         return InternalPortfolioDetailResDTO.from(portfolio);
     }
 
