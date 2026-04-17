@@ -7,6 +7,7 @@ import {
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
+import { CorrectionItemService } from '../services/correction-item.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
 import {
     StructuredPortfolioResDTO,
@@ -24,6 +25,7 @@ export class ExternalPortfolioFacade {
         private readonly portfolioService: PortfolioService,
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
         private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
+        private readonly correctionItemService: CorrectionItemService,
         private readonly pdfExtractService: PdfExtractService
     ) {}
 
@@ -124,12 +126,8 @@ export class ExternalPortfolioFacade {
 
     @Transactional()
     async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
-        const hasCorrections =
-            await this.correctionPortfolioSelectionService.existsByPortfolioId(portfolioId);
-        if (hasCorrections) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_HAS_CORRECTIONS);
-        }
-
+        await this.correctionItemService.deleteByPortfolioId(portfolioId);
+        await this.correctionPortfolioSelectionService.deleteByPortfolioId(portfolioId);
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId, userId);
     }
 }
