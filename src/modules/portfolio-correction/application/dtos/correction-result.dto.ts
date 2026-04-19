@@ -1,5 +1,6 @@
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { CorrectionItem } from '../../domain/correction-item.entity';
+import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -13,6 +14,7 @@ type ProblemSolvingPayload = JsonObject;
 type LearningsPayload = JsonObject;
 
 export class CorrectionResultResDTO {
+    status: CorrectionStatus;
     companyName: string;
     positionName: string;
     jobDescription: string;
@@ -23,6 +25,7 @@ export class CorrectionResultResDTO {
 
     static from(correction: PortfolioCorrection, items: CorrectionItem[]): CorrectionResultResDTO {
         const dto = new CorrectionResultResDTO();
+        dto.status = correction.status;
         dto.companyName = correction.companyName;
         dto.positionName = correction.positionName;
         dto.jobDescription = correction.jobDescription;

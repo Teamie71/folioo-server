@@ -163,6 +163,12 @@ export class PortfolioCorrectionService {
         await this.portfolioCorrectionRepository.save(correction);
     }
 
+    async updateOriginalFileName(correctionId: number, originalFileName: string): Promise<void> {
+        const correction = await this.findByIdOrThrow(correctionId);
+        correction.originalFileName = originalFileName;
+        await this.portfolioCorrectionRepository.save(correction);
+    }
+
     async getCorrectionDetail(
         correctionId: number,
         userId: number
