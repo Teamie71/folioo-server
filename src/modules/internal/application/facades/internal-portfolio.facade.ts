@@ -16,7 +16,7 @@ export class InternalPortfolioFacade {
     ) {}
 
     async getPortfolioDetail(portfolioId: number): Promise<InternalPortfolioDetailResDTO> {
-        const portfolio = await this.portfolioService.findByIdWithRelationsOrThrow(portfolioId);
+        const portfolio = await this.portfolioService.findByIdWithExperienceOrThrow(portfolioId);
         return InternalPortfolioDetailResDTO.from(portfolio);
     }
 
@@ -25,7 +25,8 @@ export class InternalPortfolioFacade {
         portfolioId: number,
         body: UpdatePortfolioResultReqDTO
     ): Promise<void> {
-        const portfolio = await this.portfolioService.findByIdWithExperienceOrThrow(portfolioId);
+        const portfolio =
+            await this.portfolioService.findInternalByIdWithExperienceOrThrow(portfolioId);
         const experienceId = portfolio.experience?.id;
 
         if (body.status === PortfolioGenerationStatus.COMPLETED) {

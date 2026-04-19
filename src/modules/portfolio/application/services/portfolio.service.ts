@@ -32,7 +32,7 @@ export class PortfolioService {
         return this.portfolioRepository.save(portfolio);
     }
 
-    async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
+    async findInternalByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
         const portfolio = await this.portfolioRepository.findInternalByIdWithExperience(id);
         if (!portfolio) {
             throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
@@ -40,7 +40,7 @@ export class PortfolioService {
         return portfolio;
     }
 
-    async findByIdWithRelationsOrThrow(id: number): Promise<Portfolio> {
+    async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
         const portfolio = await this.portfolioRepository.findByIdWithExperience(id);
         if (!portfolio) {
             throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
