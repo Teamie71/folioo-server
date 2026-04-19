@@ -3,6 +3,7 @@ import Busboy from 'busboy';
 import type { IncomingHttpHeaders } from 'http';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { normalizeOriginalFileName } from '../../common/utils/original-file-name-normalizer.util';
 
 const MULTIPART_CONTENT_TYPE = 'multipart/form-data';
 const PDF_MIME_TYPE = 'application/pdf';
@@ -94,7 +95,9 @@ export class ExternalPortfolioExtractRequestParserService {
                 }
 
                 hasFile = true;
-                parsedFileName = info.filename || 'upload.pdf';
+                parsedFileName = info.filename
+                    ? normalizeOriginalFileName(info.filename)
+                    : 'upload.pdf';
 
                 fileStream.on('data', (chunk: Buffer) => {
                     chunks.push(chunk);

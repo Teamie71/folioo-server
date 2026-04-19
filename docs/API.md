@@ -256,7 +256,7 @@ Legend:
 - POST `/portfolio-corrections` -> IMPLEMENTED (`title` required, consumes tickets, can return `TICKET402`)
 - GET `/portfolio-corrections/{correctionId}/status` -> IMPLEMENTED
 - GET `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
-- GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
+- GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED (응답: `CorrectionResultResDTO`, `status: CorrectionStatus` 포함)
 - POST `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - PATCH `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택 포트폴리오를 매핑 테이블에 활성화 상태로 저장)
@@ -266,7 +266,7 @@ Legend:
 
 ### External Portfolios
 
-- GET `/external-portfolios?correctionId=...` -> IMPLEMENTED
+- GET `/external-portfolios?correctionId=...` -> IMPLEMENTED (응답: `ExternalPortfolioListResDTO` = `{ status: PdfExtractionStatus, originalFileName: string \| null, portfolios: StructuredPortfolioResDTO[] }`)
 - POST `/external-portfolios` -> IMPLEMENTED
 - POST `/external-portfolios/extract` -> IMPLEMENTED (multipart PDF + `correctionId`, busboy 파싱, AI 추출 후 DB 저장)
 - PATCH `/external-portfolios/{portfolioId}` -> IMPLEMENTED

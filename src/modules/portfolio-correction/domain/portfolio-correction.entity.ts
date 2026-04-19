@@ -41,6 +41,9 @@ export class PortfolioCorrection extends BaseEntity {
     @Column({ type: 'text', nullable: true })
     extractedText: string;
 
+    @Column({ type: 'text', nullable: true })
+    originalFileName: string | null;
+
     @Column({ type: 'timestamptz', nullable: true })
     extractedAt: Date;
 
