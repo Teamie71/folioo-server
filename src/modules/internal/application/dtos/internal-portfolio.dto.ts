@@ -17,15 +17,15 @@ export class InternalPortfolioDetailResDTO {
     contributionRate: number | null;
 
     static from(portfolio: Portfolio): InternalPortfolioDetailResDTO {
-        if (!portfolio.user || !portfolio.experience) {
+        if (!portfolio.user) {
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         const dto = new InternalPortfolioDetailResDTO();
         dto.id = portfolio.id;
         dto.sessionId = portfolio.experience?.sessionId ?? null;
-        dto.userId = portfolio.user?.id;
-        dto.experienceName = portfolio.experience?.name;
+        dto.userId = portfolio.user.id;
+        dto.experienceName = portfolio.experience?.name ?? portfolio.name;
         dto.status = portfolio.status;
         dto.description = portfolio.description;
         dto.responsibilities = portfolio.responsibilities;

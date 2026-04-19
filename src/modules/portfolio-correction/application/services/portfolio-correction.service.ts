@@ -191,7 +191,9 @@ export class PortfolioCorrectionService {
         return correction;
     }
 
-    async getInternalCorrectionDetail(correctionId: number): Promise<InternalCorrectionPayload> {
+    private async getCorrectionDetailPayload(
+        correctionId: number
+    ): Promise<InternalCorrectionPayload> {
         const correction = await this.findByIdWithUser(correctionId);
         const [portfolioIds, items] = await Promise.all([
             this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
@@ -200,6 +202,10 @@ export class PortfolioCorrectionService {
             this.correctionItemService.findByCorrectionId(correctionId),
         ]);
         return { correction, portfolioIds, items };
+    }
+
+    async getInternalCorrectionDetail(correctionId: number): Promise<InternalCorrectionPayload> {
+        return this.getCorrectionDetailPayload(correctionId);
     }
 
     async updateStatusWithTransition(
@@ -250,7 +256,8 @@ export class PortfolioCorrectionService {
     async saveCorrectionResult(
         correctionId: number,
         items: { portfolioId: number; data: Partial<CorrectionItem> }[],
-        overallReview: string
+        overallReview: string,
+        expectedPortfolioIds?: number[]
     ): Promise<void> {
         if (items.length === 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
@@ -268,10 +275,41 @@ export class PortfolioCorrectionService {
             });
         }
 
+        const targetPortfolioIds = expectedPortfolioIds
+            ? [...new Set(expectedPortfolioIds)]
+            : existingItems.map((item) => item.portfolio.id);
+
+        if (targetPortfolioIds.length === 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                reason: 'No target portfolio items to update.',
+            });
+        }
+
         const itemMap = new Map(existingItems.map((item) => [item.portfolio.id, item]));
+        const providedIds = new Set<number>();
+
+        for (const targetPortfolioId of targetPortfolioIds) {
+            if (!itemMap.has(targetPortfolioId)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                    reason: `Unknown target portfolioId for correction result: ${targetPortfolioId}`,
+                });
+            }
+        }
 
         const itemsToUpdate: CorrectionItem[] = [];
         for (const { portfolioId, data } of items) {
+            if (!targetPortfolioIds.includes(portfolioId)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                    reason: `Unexpected portfolioId in correction result: ${portfolioId}`,
+                });
+            }
+            if (providedIds.has(portfolioId)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                    reason: `Duplicate portfolioId in correction result: ${portfolioId}`,
+                });
+            }
+            providedIds.add(portfolioId);
+
             const existingItem = itemMap.get(portfolioId);
             if (!existingItem) {
                 throw new BusinessException(ErrorCode.BAD_REQUEST, {
@@ -286,7 +324,7 @@ export class PortfolioCorrectionService {
             itemsToUpdate.push(existingItem);
         }
 
-        if (itemsToUpdate.length !== existingItems.length) {
+        if (itemsToUpdate.length !== targetPortfolioIds.length) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
                 reason: 'Correction result must include all selected portfolio items.',
             });
