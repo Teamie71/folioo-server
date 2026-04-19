@@ -183,6 +183,20 @@ describe('ExternalPortfolioFacade', () => {
         expect(result.originalFileName).not.toBe(nfdName);
     });
 
+    it('sanitizes directory and control characters on get response', async () => {
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.GENERATING,
+            originalFileName: 'C:\\fakepath\\folioo\u0000-report.pdf',
+        });
+        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
+            []
+        );
+
+        const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
+
+        expect(result.originalFileName).toBe('folioo-report.pdf');
+    });
+
     it('validates ownership first, then deletes related links and portfolio', async () => {
         portfolioServiceStub.findByIdsAndUserIdOrThrow.mockResolvedValue([{}]);
         correctionItemServiceStub.deleteByPortfolioId.mockResolvedValue();

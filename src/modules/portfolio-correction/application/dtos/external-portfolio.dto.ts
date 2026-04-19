@@ -3,40 +3,7 @@ import { Transform } from 'class-transformer';
 import { IsInt, IsOptional, IsPositive, IsString, MaxLength, MinLength } from 'class-validator';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
-
-function normalizeOriginalFileNameForResponse(originalFileName: string | null): string | null {
-    if (originalFileName === null) {
-        return null;
-    }
-
-    const decodeLatin1 = (value: string): string => Buffer.from(value, 'latin1').toString('utf8');
-    const once = decodeLatin1(originalFileName);
-    const twice = decodeLatin1(once);
-
-    const hasHangul = (value: string): boolean =>
-        /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/.test(value);
-    const score = (value: string): number => {
-        const matched = value.match(/[ÃÂáâãð�\u0080-\u009F]/g);
-        return matched ? matched.length : 0;
-    };
-
-    const candidates = [originalFileName, once, twice]
-        .filter((value) => !value.includes('�'))
-        .map((value) => value.normalize('NFC'));
-    if (candidates.length === 0) {
-        return originalFileName.normalize('NFC');
-    }
-
-    const uniqueCandidates = [...new Set(candidates)];
-    const withKorean = uniqueCandidates.filter((value) => hasHangul(value));
-    const pool = withKorean.length > 0 ? withKorean : uniqueCandidates;
-
-    const selected = pool.reduce((best, current) =>
-        score(current) < score(best) ? current : best
-    );
-
-    return selected.normalize('NFC');
-}
+import { normalizeOriginalFileName } from '../../common/utils/original-file-name-normalizer.util';
 
 export class StructuredPortfolioResDTO {
     portfolioId: number;
@@ -75,7 +42,9 @@ export class ExternalPortfolioListResDTO {
     ): ExternalPortfolioListResDTO {
         const dto = new ExternalPortfolioListResDTO();
         dto.status = status;
-        dto.originalFileName = normalizeOriginalFileNameForResponse(originalFileName);
+        dto.originalFileName = originalFileName
+            ? normalizeOriginalFileName(originalFileName)
+            : null;
         dto.portfolios = portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
         return dto;
     }

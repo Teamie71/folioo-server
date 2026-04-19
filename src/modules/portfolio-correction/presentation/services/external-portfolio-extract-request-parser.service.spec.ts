@@ -93,6 +93,26 @@ describe('ExternalPortfolioExtractRequestParserService', () => {
         expect(result.fileName).not.toBe(nfdName);
     });
 
+    it('sanitizes path segments from filename', async () => {
+        const boundary = 'folioo-boundary';
+        const fileBuffer = Buffer.from('%PDF-1.4\nfolioo');
+        const request = createMultipartRequest(
+            createMultipartBody(
+                boundary,
+                '3',
+                'C:\\fakepath\\portfolio_report.pdf',
+                'application/pdf',
+                fileBuffer
+            ),
+            boundary
+        );
+
+        await expect(parser.parse(request)).resolves.toMatchObject({
+            correctionId: 3,
+            fileName: 'portfolio_report.pdf',
+        });
+    });
+
     it('rejects non-pdf uploads', async () => {
         const boundary = 'folioo-boundary';
         const request = createMultipartRequest(
