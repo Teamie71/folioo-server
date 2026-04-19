@@ -25,9 +25,11 @@ class PortfolioServiceStub {
 
 class PortfolioCorrectionServiceStub {
     readonly findByIdAndUserIdOrThrow = jest.fn<
-        Promise<{ pdfExtractionStatus: PdfExtractionStatus }>,
+        Promise<{ pdfExtractionStatus: PdfExtractionStatus; originalFileName: string | null }>,
         [number, number]
     >();
+    readonly updatePdfExtractionStatus = jest.fn<Promise<void>, [number, PdfExtractionStatus]>();
+    readonly updateOriginalFileName = jest.fn<Promise<void>, [number, string]>();
 }
 
 class CorrectionPortfolioSelectionServiceStub {
@@ -39,7 +41,9 @@ class CorrectionItemServiceStub {
     readonly deleteByPortfolioId = jest.fn<Promise<void>, [number]>();
 }
 
-class PdfExtractServiceStub {}
+class PdfExtractServiceStub {
+    readonly extractText = jest.fn<Promise<{ message: string }>, [number, Buffer, string]>();
+}
 
 describe('ExternalPortfolioFacade', () => {
     let externalPortfolioFacade: ExternalPortfolioFacade;
@@ -48,6 +52,7 @@ describe('ExternalPortfolioFacade', () => {
     let portfolioCorrectionServiceStub: PortfolioCorrectionServiceStub;
     let correctionPortfolioSelectionServiceStub: CorrectionPortfolioSelectionServiceStub;
     let correctionItemServiceStub: CorrectionItemServiceStub;
+    let pdfExtractServiceStub: PdfExtractServiceStub;
 
     beforeEach(() => {
         externalPortfolioServiceStub = new ExternalPortfolioServiceStub();
@@ -55,6 +60,7 @@ describe('ExternalPortfolioFacade', () => {
         portfolioCorrectionServiceStub = new PortfolioCorrectionServiceStub();
         correctionPortfolioSelectionServiceStub = new CorrectionPortfolioSelectionServiceStub();
         correctionItemServiceStub = new CorrectionItemServiceStub();
+        pdfExtractServiceStub = new PdfExtractServiceStub();
 
         externalPortfolioFacade = new ExternalPortfolioFacade(
             externalPortfolioServiceStub as unknown as ExternalPortfolioService,
@@ -62,13 +68,41 @@ describe('ExternalPortfolioFacade', () => {
             portfolioCorrectionServiceStub as unknown as PortfolioCorrectionService,
             correctionPortfolioSelectionServiceStub as unknown as CorrectionPortfolioSelectionService,
             correctionItemServiceStub as unknown as CorrectionItemService,
-            new PdfExtractServiceStub() as unknown as PdfExtractService
+            pdfExtractServiceStub as unknown as PdfExtractService
+        );
+    });
+
+    it('stores original file name when extraction is accepted', async () => {
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.NONE,
+            originalFileName: null,
+        });
+        pdfExtractServiceStub.extractText.mockResolvedValue({
+            message: 'ok',
+        });
+
+        const result = await externalPortfolioFacade.extractPortfolio(
+            9,
+            1,
+            Buffer.from('pdf'),
+            'resume.pdf'
+        );
+
+        expect(result).toBe('ok');
+        expect(portfolioCorrectionServiceStub.updatePdfExtractionStatus).toHaveBeenCalledWith(
+            1,
+            PdfExtractionStatus.GENERATING
+        );
+        expect(portfolioCorrectionServiceStub.updateOriginalFileName).toHaveBeenCalledWith(
+            1,
+            'resume.pdf'
         );
     });
 
     it('returns top-level pdf extraction status with portfolios list', async () => {
         portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
             pdfExtractionStatus: PdfExtractionStatus.GENERATING,
+            originalFileName: 'portfolio.pdf',
         });
         correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
             [10, 20]
@@ -95,6 +129,7 @@ describe('ExternalPortfolioFacade', () => {
         const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
 
         expect(result.status).toBe(PdfExtractionStatus.GENERATING);
+        expect(result.originalFileName).toBe('portfolio.pdf');
         expect(result.portfolios).toEqual([
             {
                 portfolioId: 10,
@@ -113,6 +148,39 @@ describe('ExternalPortfolioFacade', () => {
                 learnings: 'L2',
             },
         ]);
+    });
+
+    it('normalizes legacy mojibake original file name on get response', async () => {
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.GENERATING,
+            originalFileName: 'Ã¬Â²Â¨Ã¬ÂÂ­_Ã¬ÂÂ´Ã«Â Â¥Ã¬ÂÂ.pdf',
+        });
+        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
+            []
+        );
+
+        const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
+
+        expect(result.originalFileName).toBe('첨삭_이력서.pdf');
+        expect(result.portfolios).toEqual([]);
+    });
+
+    it('normalizes NFD original file name to NFC on get response', async () => {
+        const nfcName = '첨삭_이력서.pdf';
+        const nfdName = nfcName.normalize('NFD');
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.GENERATING,
+            originalFileName: nfdName,
+        });
+        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
+            []
+        );
+
+        const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
+
+        expect(result.originalFileName).toBe(nfcName);
+        expect(result.originalFileName?.normalize('NFC')).toBe(result.originalFileName);
+        expect(result.originalFileName).not.toBe(nfdName);
     });
 
     it('validates ownership first, then deletes related links and portfolio', async () => {

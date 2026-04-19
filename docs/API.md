@@ -266,7 +266,7 @@ Legend:
 
 ### External Portfolios
 
-- GET `/external-portfolios?correctionId=...` -> IMPLEMENTED (응답: `ExternalPortfolioListResDTO` = `{ status: PdfExtractionStatus, portfolios: StructuredPortfolioResDTO[] }`)
+- GET `/external-portfolios?correctionId=...` -> IMPLEMENTED (응답: `ExternalPortfolioListResDTO` = `{ status: PdfExtractionStatus, originalFileName: string \| null, portfolios: StructuredPortfolioResDTO[] }`)
 - POST `/external-portfolios` -> IMPLEMENTED
 - POST `/external-portfolios/extract` -> IMPLEMENTED (multipart PDF + `correctionId`, busboy 파싱, AI 추출 후 DB 저장)
 - PATCH `/external-portfolios/{portfolioId}` -> IMPLEMENTED

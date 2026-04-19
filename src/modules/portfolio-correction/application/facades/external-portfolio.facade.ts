@@ -48,6 +48,7 @@ export class ExternalPortfolioFacade {
             correctionId,
             PdfExtractionStatus.GENERATING
         );
+        await this.portfolioCorrectionService.updateOriginalFileName(correctionId, fileName);
         return message;
     }
 
@@ -66,11 +67,19 @@ export class ExternalPortfolioFacade {
             );
 
         if (portfolioIds.length === 0) {
-            return ExternalPortfolioListResDTO.from(correction.pdfExtractionStatus, []);
+            return ExternalPortfolioListResDTO.from(
+                correction.pdfExtractionStatus,
+                correction.originalFileName,
+                []
+            );
         }
 
         const portfolios = await this.portfolioService.findByIds(portfolioIds);
-        return ExternalPortfolioListResDTO.from(correction.pdfExtractionStatus, portfolios);
+        return ExternalPortfolioListResDTO.from(
+            correction.pdfExtractionStatus,
+            correction.originalFileName,
+            portfolios
+        );
     }
 
     @Transactional()

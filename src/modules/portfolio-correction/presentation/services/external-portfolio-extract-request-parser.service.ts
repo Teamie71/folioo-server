@@ -9,6 +9,40 @@ const PDF_MIME_TYPE = 'application/pdf';
 const PDF_SIGNATURE = '%PDF';
 const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
 
+function normalizeOriginalFileName(fileName: string | undefined): string {
+    if (!fileName) {
+        return 'upload.pdf';
+    }
+
+    const decodeLatin1 = (value: string): string => Buffer.from(value, 'latin1').toString('utf8');
+    const once = decodeLatin1(fileName);
+    const twice = decodeLatin1(once);
+
+    const hasHangul = (value: string): boolean =>
+        /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/.test(value);
+    const score = (value: string): number => {
+        const matched = value.match(/[ÃÂáâãð�\u0080-\u009F]/g);
+        return matched ? matched.length : 0;
+    };
+
+    const candidates = [fileName, once, twice]
+        .filter((value) => !value.includes('�'))
+        .map((value) => value.normalize('NFC'));
+    if (candidates.length === 0) {
+        return fileName.normalize('NFC');
+    }
+
+    const uniqueCandidates = [...new Set(candidates)];
+    const withKorean = uniqueCandidates.filter((value) => hasHangul(value));
+    const pool = withKorean.length > 0 ? withKorean : uniqueCandidates;
+
+    const selected = pool.reduce((best, current) =>
+        score(current) < score(best) ? current : best
+    );
+
+    return selected.normalize('NFC');
+}
+
 export interface MultipartRequestLike {
     headers: IncomingHttpHeaders;
     pipe<T extends NodeJS.WritableStream>(destination: T, options?: { end?: boolean }): T;
@@ -94,7 +128,7 @@ export class ExternalPortfolioExtractRequestParserService {
                 }
 
                 hasFile = true;
-                parsedFileName = info.filename || 'upload.pdf';
+                parsedFileName = normalizeOriginalFileName(info.filename);
 
                 fileStream.on('data', (chunk: Buffer) => {
                     chunks.push(chunk);
