@@ -1,6 +1,8 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsInt, IsOptional, IsPositive, IsString, MaxLength, MinLength } from 'class-validator';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
+import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
 
 export class StructuredPortfolioResDTO {
     portfolioId: number;
@@ -18,6 +20,21 @@ export class StructuredPortfolioResDTO {
         dto.responsibilities = portfolio.responsibilities;
         dto.problemSolving = portfolio.problemSolving;
         dto.learnings = portfolio.learnings;
+        return dto;
+    }
+}
+
+export class ExternalPortfolioListResDTO {
+    @ApiProperty({ enum: PdfExtractionStatus })
+    status: PdfExtractionStatus;
+
+    @ApiProperty({ type: [StructuredPortfolioResDTO] })
+    portfolios: StructuredPortfolioResDTO[];
+
+    static from(status: PdfExtractionStatus, portfolios: Portfolio[]): ExternalPortfolioListResDTO {
+        const dto = new ExternalPortfolioListResDTO();
+        dto.status = status;
+        dto.portfolios = portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
         return dto;
     }
 }

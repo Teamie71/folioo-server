@@ -10,6 +10,7 @@ import { CorrectionPortfolioSelectionService } from '../services/correction-port
 import { CorrectionItemService } from '../services/correction-item.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
 import {
+    ExternalPortfolioListResDTO,
     StructuredPortfolioResDTO,
     UpdatePortfolioBlockReqDTO,
 } from '../dtos/external-portfolio.dto';
@@ -53,8 +54,11 @@ export class ExternalPortfolioFacade {
     async getSelectedPortfolios(
         correctionId: number,
         userId: number
-    ): Promise<StructuredPortfolioResDTO[]> {
-        await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(correctionId, userId);
+    ): Promise<ExternalPortfolioListResDTO> {
+        const correction = await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(
+            correctionId,
+            userId
+        );
 
         const portfolioIds =
             await this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
@@ -62,11 +66,11 @@ export class ExternalPortfolioFacade {
             );
 
         if (portfolioIds.length === 0) {
-            return [];
+            return ExternalPortfolioListResDTO.from(correction.pdfExtractionStatus, []);
         }
 
         const portfolios = await this.portfolioService.findByIds(portfolioIds);
-        return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
+        return ExternalPortfolioListResDTO.from(correction.pdfExtractionStatus, portfolios);
     }
 
     @Transactional()

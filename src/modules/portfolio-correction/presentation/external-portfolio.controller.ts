@@ -21,12 +21,13 @@ import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateExternalPortfolioReqDTO,
+    ExternalPortfolioListResDTO,
     StructuredPortfolioResDTO,
     UpdatePortfolioBlockReqDTO,
 } from '../application/dtos/external-portfolio.dto';
 import { ExternalPortfolioFacade } from '../application/facades/external-portfolio.facade';
 import {
-    ApiCorrectionIdListResponse,
+    ApiCorrectionIdResponse,
     ApiExternalPortfolioExtractRequest,
 } from './decorators/portfolio-correction-swagger.decorator';
 import { ExternalPortfolioExtractRequestParserService } from './services/external-portfolio-extract-request-parser.service';
@@ -83,12 +84,12 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 정리 결과 조회',
         description: 'AI가 구조화한 포트폴리오 정보를 조회합니다.',
     })
-    @ApiCorrectionIdListResponse(StructuredPortfolioResDTO)
+    @ApiCorrectionIdResponse(ExternalPortfolioListResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getSelectedPortfolios(
         @User('sub') userId: number,
         @Query('correctionId', ParseIntPipe) correctionId: number
-    ): Promise<StructuredPortfolioResDTO[]> {
+    ): Promise<ExternalPortfolioListResDTO> {
         return this.externalPortfolioFacade.getSelectedPortfolios(correctionId, userId);
     }
 

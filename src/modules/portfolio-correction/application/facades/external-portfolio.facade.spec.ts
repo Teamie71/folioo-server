@@ -12,6 +12,7 @@ import { PortfolioCorrectionService } from '../services/portfolio-correction.ser
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
 import { CorrectionItemService } from '../services/correction-item.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
+import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
 
 class ExternalPortfolioServiceStub {
     readonly deleteExternalPortfolio = jest.fn<Promise<void>, [number, number]>();
@@ -19,12 +20,19 @@ class ExternalPortfolioServiceStub {
 
 class PortfolioServiceStub {
     readonly findByIdsAndUserIdOrThrow = jest.fn<Promise<unknown[]>, [number[], number]>();
+    readonly findByIds = jest.fn<Promise<unknown[]>, [number[]]>();
 }
 
-class PortfolioCorrectionServiceStub {}
+class PortfolioCorrectionServiceStub {
+    readonly findByIdAndUserIdOrThrow = jest.fn<
+        Promise<{ pdfExtractionStatus: PdfExtractionStatus }>,
+        [number, number]
+    >();
+}
 
 class CorrectionPortfolioSelectionServiceStub {
     readonly deleteByPortfolioId = jest.fn<Promise<void>, [number]>();
+    readonly findActivePortfolioIdsByCorrectionId = jest.fn<Promise<number[]>, [number]>();
 }
 
 class CorrectionItemServiceStub {
@@ -37,23 +45,74 @@ describe('ExternalPortfolioFacade', () => {
     let externalPortfolioFacade: ExternalPortfolioFacade;
     let externalPortfolioServiceStub: ExternalPortfolioServiceStub;
     let portfolioServiceStub: PortfolioServiceStub;
+    let portfolioCorrectionServiceStub: PortfolioCorrectionServiceStub;
     let correctionPortfolioSelectionServiceStub: CorrectionPortfolioSelectionServiceStub;
     let correctionItemServiceStub: CorrectionItemServiceStub;
 
     beforeEach(() => {
         externalPortfolioServiceStub = new ExternalPortfolioServiceStub();
         portfolioServiceStub = new PortfolioServiceStub();
+        portfolioCorrectionServiceStub = new PortfolioCorrectionServiceStub();
         correctionPortfolioSelectionServiceStub = new CorrectionPortfolioSelectionServiceStub();
         correctionItemServiceStub = new CorrectionItemServiceStub();
 
         externalPortfolioFacade = new ExternalPortfolioFacade(
             externalPortfolioServiceStub as unknown as ExternalPortfolioService,
             portfolioServiceStub as unknown as PortfolioService,
-            new PortfolioCorrectionServiceStub() as unknown as PortfolioCorrectionService,
+            portfolioCorrectionServiceStub as unknown as PortfolioCorrectionService,
             correctionPortfolioSelectionServiceStub as unknown as CorrectionPortfolioSelectionService,
             correctionItemServiceStub as unknown as CorrectionItemService,
             new PdfExtractServiceStub() as unknown as PdfExtractService
         );
+    });
+
+    it('returns top-level pdf extraction status with portfolios list', async () => {
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.GENERATING,
+        });
+        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
+            [10, 20]
+        );
+        portfolioServiceStub.findByIds.mockResolvedValue([
+            {
+                id: 10,
+                name: 'A',
+                description: 'D1',
+                responsibilities: 'R1',
+                problemSolving: 'P1',
+                learnings: 'L1',
+            },
+            {
+                id: 20,
+                name: 'B',
+                description: 'D2',
+                responsibilities: 'R2',
+                problemSolving: 'P2',
+                learnings: 'L2',
+            },
+        ]);
+
+        const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
+
+        expect(result.status).toBe(PdfExtractionStatus.GENERATING);
+        expect(result.portfolios).toEqual([
+            {
+                portfolioId: 10,
+                name: 'A',
+                description: 'D1',
+                responsibilities: 'R1',
+                problemSolving: 'P1',
+                learnings: 'L1',
+            },
+            {
+                portfolioId: 20,
+                name: 'B',
+                description: 'D2',
+                responsibilities: 'R2',
+                problemSolving: 'P2',
+                learnings: 'L2',
+            },
+        ]);
     });
 
     it('validates ownership first, then deletes related links and portfolio', async () => {

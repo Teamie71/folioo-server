@@ -128,7 +128,11 @@ export class PortfolioCorrectionController {
         description: '특정 AI 첨삭의 기업 분석 정보를 조회합니다.',
     })
     @ApiCommonResponse(UpdateCompanyInsightResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.CORRECTION_NOT_FOUND,
+        ErrorCode.COMPANY_INSIGHT_NOT_READY
+    )
     async getCompanyInsight(
         @User('sub') userId: number,
         @Param('correctionId', ParseIntPipe) correctionId: number
