@@ -7,7 +7,6 @@ import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItem } from '../../domain/correction-item.entity';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
-import { SourceType } from 'src/modules/portfolio/domain/enums/source-type.enum';
 import {
     AiRelayConnection,
     AiRelayGetRequest,
@@ -89,11 +88,6 @@ describe('PortfolioCorrectionService', () => {
             typeof jest.fn<Promise<number[]>, [number]>
         >;
     };
-    let portfolioService: {
-        findByIds: ReturnType<
-            typeof jest.fn<Promise<Array<{ id: number; sourceType: SourceType }>>, [number[]]>
-        >;
-    };
 
     beforeEach(() => {
         repository = {
@@ -110,18 +104,11 @@ describe('PortfolioCorrectionService', () => {
         correctionPortfolioSelectionService = {
             findActivePortfolioIdsByCorrectionId: jest.fn<Promise<number[]>, [number]>(),
         };
-        portfolioService = {
-            findByIds: jest.fn<
-                Promise<Array<{ id: number; sourceType: SourceType }>>,
-                [number[]]
-            >(),
-        };
 
         service = new PortfolioCorrectionService(
             repository as unknown as never,
             correctionItemService as unknown as never,
-            correctionPortfolioSelectionService as unknown as never,
-            portfolioService as unknown as never
+            correctionPortfolioSelectionService as unknown as never
         );
     });
 
@@ -239,7 +226,7 @@ describe('PortfolioCorrectionService', () => {
         });
     });
 
-    it('filters internal correction detail payload to INTERNAL portfolios only', async () => {
+    it('returns correction detail payload with selected portfolios and items', async () => {
         repository.findByIdWithUser.mockResolvedValue(createCorrection({ id: 1 }));
         correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId.mockResolvedValue([
             10, 11,
@@ -247,16 +234,11 @@ describe('PortfolioCorrectionService', () => {
         const internalItem = createCorrectionItem(10);
         const externalItem = createCorrectionItem(11);
         correctionItemService.findByCorrectionId.mockResolvedValue([internalItem, externalItem]);
-        portfolioService.findByIds.mockResolvedValue([
-            { id: 10, sourceType: SourceType.INTERNAL },
-            { id: 11, sourceType: SourceType.EXTERNAL },
-        ]);
 
         const payload = await service.getInternalCorrectionDetail(1);
 
-        expect(payload.portfolioIds).toEqual([10]);
-        expect(payload.items).toHaveLength(1);
-        expect(payload.items[0].portfolio.id).toBe(10);
+        expect(payload.portfolioIds).toEqual([10, 11]);
+        expect(payload.items).toHaveLength(2);
     });
 
     it('accepts scoped correction result updates using expected portfolio ids', async () => {

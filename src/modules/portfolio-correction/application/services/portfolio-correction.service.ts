@@ -19,8 +19,6 @@ import { CorrectionPortfolioSelectionService } from './correction-portfolio-sele
 import { UpdateCorrectionTitleReqDTO } from '../dtos/portfolio-correction.dto';
 import { CorrectionItem } from '../../domain/correction-item.entity';
 import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
-import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
-import { SourceType } from 'src/modules/portfolio/domain/enums/source-type.enum';
 
 export interface InternalCorrectionPayload {
     correction: PortfolioCorrection;
@@ -33,8 +31,7 @@ export class PortfolioCorrectionService {
     constructor(
         private readonly portfolioCorrectionRepository: PortfolioCorrectionRepository,
         private readonly correctionItemService: CorrectionItemService,
-        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
-        private readonly portfolioService: PortfolioService
+        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService
     ) {}
 
     async getCorrections(userId: number, keyword?: string): Promise<CorrectionResDTO[]> {
@@ -195,8 +192,7 @@ export class PortfolioCorrectionService {
     }
 
     private async getCorrectionDetailPayload(
-        correctionId: number,
-        options?: { internalOnly?: boolean }
+        correctionId: number
     ): Promise<InternalCorrectionPayload> {
         const correction = await this.findByIdWithUser(correctionId);
         const [portfolioIds, items] = await Promise.all([
@@ -205,36 +201,11 @@ export class PortfolioCorrectionService {
             ),
             this.correctionItemService.findByCorrectionId(correctionId),
         ]);
-
-        if (!options?.internalOnly) {
-            return { correction, portfolioIds, items };
-        }
-
-        const candidateIds = [
-            ...new Set([...portfolioIds, ...items.map((item) => item.portfolio.id)]),
-        ];
-
-        if (candidateIds.length === 0) {
-            return { correction, portfolioIds: [], items: [] };
-        }
-
-        const portfolios = await this.portfolioService.findByIds(candidateIds);
-        const internalPortfolioIds = new Set(
-            portfolios
-                .filter((portfolio) => portfolio.sourceType === SourceType.INTERNAL)
-                .map((portfolio) => portfolio.id)
-        );
-
-        const filteredPortfolioIds = portfolioIds.filter((portfolioId) =>
-            internalPortfolioIds.has(portfolioId)
-        );
-        const filteredItems = items.filter((item) => internalPortfolioIds.has(item.portfolio.id));
-
-        return { correction, portfolioIds: filteredPortfolioIds, items: filteredItems };
+        return { correction, portfolioIds, items };
     }
 
     async getInternalCorrectionDetail(correctionId: number): Promise<InternalCorrectionPayload> {
-        return this.getCorrectionDetailPayload(correctionId, { internalOnly: true });
+        return this.getCorrectionDetailPayload(correctionId);
     }
 
     async updateStatusWithTransition(

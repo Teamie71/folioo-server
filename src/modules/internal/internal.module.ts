@@ -11,6 +11,7 @@ import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-cor
 import { AiClientExceptionFilter } from 'src/common/filters/ai-client-exception.filter';
 import { InternalCorrectionResultFacade } from './application/facades/internal-correction-result.facade';
 import { InternalPdfExtractionResultController } from './presentation/internal-pdf-extraction-result.controller';
+import { InternalCorrectionFacade } from './application/facades/internal-correction.facade';
 
 @Module({
     imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule, ExperienceModule],
@@ -23,6 +24,7 @@ import { InternalPdfExtractionResultController } from './presentation/internal-p
     providers: [
         InternalApiKeyGuard,
         InternalPortfolioFacade,
+        InternalCorrectionFacade,
         AiClientExceptionFilter,
         InternalCorrectionResultFacade,
     ],
