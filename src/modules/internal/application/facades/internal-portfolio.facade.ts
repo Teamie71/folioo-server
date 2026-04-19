@@ -25,7 +25,8 @@ export class InternalPortfolioFacade {
         portfolioId: number,
         body: UpdatePortfolioResultReqDTO
     ): Promise<void> {
-        const portfolio = await this.portfolioService.findByIdWithExperienceOrThrow(portfolioId);
+        const portfolio =
+            await this.portfolioService.findInternalByIdWithExperienceOrThrow(portfolioId);
         const experienceId = portfolio.experience?.id;
 
         if (body.status === PortfolioGenerationStatus.COMPLETED) {
