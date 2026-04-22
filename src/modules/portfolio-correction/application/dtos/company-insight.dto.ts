@@ -5,6 +5,7 @@ import {
     COMPANY_INSIGHT_MAX_LENGTH,
     PortfolioCorrection,
 } from '../../domain/portfolio-correction.entity';
+import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 
 export class UpdateCompanyInsightReqDTO {
     @Transform(({ value }: { value: string }) => value?.trim())
@@ -26,6 +27,9 @@ export class UpdateCompanyInsightResDTO {
     @ApiProperty({ nullable: true })
     id: number;
 
+    @ApiProperty({ enum: CorrectionStatus })
+    status: CorrectionStatus;
+
     @ApiProperty({ nullable: true, maxLength: COMPANY_INSIGHT_MAX_LENGTH })
     companyInsight: string | null;
 
@@ -35,6 +39,7 @@ export class UpdateCompanyInsightResDTO {
     static from(correction: PortfolioCorrection): UpdateCompanyInsightResDTO {
         const dto = new UpdateCompanyInsightResDTO();
         dto.id = correction.id;
+        dto.status = correction.status;
         dto.companyInsight = correction.companyInsight;
         dto.highlightPoint = correction.highlightPoint;
         return dto;
