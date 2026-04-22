@@ -108,11 +108,6 @@ export class PortfolioCorrectionService {
         userId: number
     ): Promise<UpdateCompanyInsightResDTO> {
         const correction = await this.findByIdAndUserIdOrThrow(correctionId, userId);
-
-        if (correction.companyInsight === null) {
-            throw new BusinessException(ErrorCode.COMPANY_INSIGHT_NOT_READY);
-        }
-
         return UpdateCompanyInsightResDTO.from(correction);
     }
 

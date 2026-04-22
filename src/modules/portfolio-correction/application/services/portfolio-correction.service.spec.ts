@@ -1,5 +1,4 @@
 import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayPort, AiRelayJsonResponse } from 'src/common/ports/ai-relay.port';
 import { PortfolioCorrectionFacade } from '../facades/portfolio-correction.facade';
 import { PortfolioCorrectionService } from './portfolio-correction.service';
@@ -112,18 +111,15 @@ describe('PortfolioCorrectionService', () => {
         );
     });
 
-    it('throws COMPANY_INSIGHT_NOT_READY when company insight is still null', async () => {
+    it('returns company insight response with status when company insight is still null', async () => {
         repository.findByIdAndUserId.mockResolvedValue(createCorrection({ companyInsight: null }));
 
-        try {
-            await service.getCompanyInsight(1, 7);
-            fail('Expected getCompanyInsight to throw');
-        } catch (error: unknown) {
-            expect(error).toBeInstanceOf(BusinessException);
-            expect(error).toMatchObject({
-                response: { errorCode: ErrorCode.COMPANY_INSIGHT_NOT_READY },
-            });
-        }
+        await expect(service.getCompanyInsight(1, 7)).resolves.toMatchObject({
+            id: 1,
+            status: CorrectionStatus.NOT_STARTED,
+            companyInsight: null,
+            highlightPoint: null,
+        });
     });
 
     it('moves status to DOING_RAG before company insight generation starts', async () => {
