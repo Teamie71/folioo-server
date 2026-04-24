@@ -39,4 +39,8 @@ export class CorrectionItemService {
     async deleteByCorrectionId(correctionId: number): Promise<void> {
         await this.correctionItemRepository.deleteByCorrectionId(correctionId);
     }
+
+    async deleteByPortfolioId(portfolioId: number): Promise<void> {
+        await this.correctionItemRepository.deleteByPortfolioId(portfolioId);
+    }
 }

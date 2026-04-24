@@ -59,6 +59,60 @@ describe('ExternalPortfolioExtractRequestParserService', () => {
         });
     });
 
+    it('normalizes korean filename encoded as latin1 bytes', async () => {
+        const boundary = 'folioo-boundary';
+        const fileBuffer = Buffer.from('%PDF-1.4\nfolioo');
+        const koreanName = '첨삭_이력서.pdf';
+        const latin1BrokenName = Buffer.from(koreanName, 'utf8').toString('latin1');
+        const request = createMultipartRequest(
+            createMultipartBody(boundary, '3', latin1BrokenName, 'application/pdf', fileBuffer),
+            boundary
+        );
+
+        await expect(parser.parse(request)).resolves.toEqual({
+            correctionId: 3,
+            fileBuffer,
+            fileName: koreanName,
+        });
+    });
+
+    it('normalizes macOS NFD korean filename to NFC', async () => {
+        const boundary = 'folioo-boundary';
+        const fileBuffer = Buffer.from('%PDF-1.4\nfolioo');
+        const nfcName = '첨삭_이력서.pdf';
+        const nfdName = nfcName.normalize('NFD');
+        const request = createMultipartRequest(
+            createMultipartBody(boundary, '3', nfdName, 'application/pdf', fileBuffer),
+            boundary
+        );
+
+        const result = await parser.parse(request);
+
+        expect(result.fileName).toBe(nfcName);
+        expect(result.fileName.normalize('NFC')).toBe(result.fileName);
+        expect(result.fileName).not.toBe(nfdName);
+    });
+
+    it('sanitizes path segments from filename', async () => {
+        const boundary = 'folioo-boundary';
+        const fileBuffer = Buffer.from('%PDF-1.4\nfolioo');
+        const request = createMultipartRequest(
+            createMultipartBody(
+                boundary,
+                '3',
+                'C:\\fakepath\\portfolio_report.pdf',
+                'application/pdf',
+                fileBuffer
+            ),
+            boundary
+        );
+
+        await expect(parser.parse(request)).resolves.toMatchObject({
+            correctionId: 3,
+            fileName: 'portfolio_report.pdf',
+        });
+    });
+
     it('rejects non-pdf uploads', async () => {
         const boundary = 'folioo-boundary';
         const request = createMultipartRequest(

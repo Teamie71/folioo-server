@@ -21,12 +21,13 @@ import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
     CreateExternalPortfolioReqDTO,
+    ExternalPortfolioListResDTO,
     StructuredPortfolioResDTO,
     UpdatePortfolioBlockReqDTO,
 } from '../application/dtos/external-portfolio.dto';
 import { ExternalPortfolioFacade } from '../application/facades/external-portfolio.facade';
 import {
-    ApiCorrectionIdListResponse,
+    ApiCorrectionIdResponse,
     ApiExternalPortfolioExtractRequest,
 } from './decorators/portfolio-correction-swagger.decorator';
 import { ExternalPortfolioExtractRequestParserService } from './services/external-portfolio-extract-request-parser.service';
@@ -83,12 +84,12 @@ export class ExternalPortfolioController {
         summary: 'PDF 포트폴리오 텍스트 정리 결과 조회',
         description: 'AI가 구조화한 포트폴리오 정보를 조회합니다.',
     })
-    @ApiCorrectionIdListResponse(StructuredPortfolioResDTO)
+    @ApiCorrectionIdResponse(ExternalPortfolioListResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
     async getSelectedPortfolios(
         @User('sub') userId: number,
         @Query('correctionId', ParseIntPipe) correctionId: number
-    ): Promise<StructuredPortfolioResDTO[]> {
+    ): Promise<ExternalPortfolioListResDTO> {
         return this.externalPortfolioFacade.getSelectedPortfolios(correctionId, userId);
     }
 
@@ -111,14 +112,10 @@ export class ExternalPortfolioController {
     @ApiOperation({
         summary: 'PDF 포트폴리오 텍스트 정리 결과 삭제',
         description:
-            'AI가 구조화한 포트폴리오 활동을 삭제합니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
+            'AI가 구조화한 포트폴리오 활동을 삭제합니다. 연결된 첨삭 선택/결과는 자동으로 해제됩니다. (활동 옆 마이너스 버튼을 눌러 활성화)',
     })
     @ApiCommonMessageResponse('포트폴리오가 삭제되었습니다.')
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.PORTFOLIO_NOT_FOUND,
-        ErrorCode.PORTFOLIO_HAS_CORRECTIONS
-    )
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
     async deleteExternalPortfolio(
         @User('sub') userId: number,
         @Param('portfolioId', ParseIntPipe) portfolioId: number

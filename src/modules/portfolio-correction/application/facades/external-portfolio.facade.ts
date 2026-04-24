@@ -7,8 +7,10 @@ import {
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
+import { CorrectionItemService } from '../services/correction-item.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
 import {
+    ExternalPortfolioListResDTO,
     StructuredPortfolioResDTO,
     UpdatePortfolioBlockReqDTO,
 } from '../dtos/external-portfolio.dto';
@@ -24,6 +26,7 @@ export class ExternalPortfolioFacade {
         private readonly portfolioService: PortfolioService,
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
         private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
+        private readonly correctionItemService: CorrectionItemService,
         private readonly pdfExtractService: PdfExtractService
     ) {}
 
@@ -45,14 +48,18 @@ export class ExternalPortfolioFacade {
             correctionId,
             PdfExtractionStatus.GENERATING
         );
+        await this.portfolioCorrectionService.updateOriginalFileName(correctionId, fileName);
         return message;
     }
 
     async getSelectedPortfolios(
         correctionId: number,
         userId: number
-    ): Promise<StructuredPortfolioResDTO[]> {
-        await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(correctionId, userId);
+    ): Promise<ExternalPortfolioListResDTO> {
+        const correction = await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(
+            correctionId,
+            userId
+        );
 
         const portfolioIds =
             await this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
@@ -60,11 +67,19 @@ export class ExternalPortfolioFacade {
             );
 
         if (portfolioIds.length === 0) {
-            return [];
+            return ExternalPortfolioListResDTO.from(
+                correction.pdfExtractionStatus,
+                correction.originalFileName,
+                []
+            );
         }
 
         const portfolios = await this.portfolioService.findByIds(portfolioIds);
-        return portfolios.map((portfolio) => StructuredPortfolioResDTO.from(portfolio));
+        return ExternalPortfolioListResDTO.from(
+            correction.pdfExtractionStatus,
+            correction.originalFileName,
+            portfolios
+        );
     }
 
     @Transactional()
@@ -124,11 +139,12 @@ export class ExternalPortfolioFacade {
 
     @Transactional()
     async deleteExternalPortfolio(portfolioId: number, userId: number): Promise<void> {
-        const hasCorrections =
-            await this.correctionPortfolioSelectionService.existsByPortfolioId(portfolioId);
-        if (hasCorrections) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_HAS_CORRECTIONS);
-        }
+        await this.portfolioService.findByIdsAndUserIdOrThrow([portfolioId], userId);
+
+        await Promise.all([
+            this.correctionItemService.deleteByPortfolioId(portfolioId),
+            this.correctionPortfolioSelectionService.deleteByPortfolioId(portfolioId),
+        ]);
 
         await this.externalPortfolioService.deleteExternalPortfolio(portfolioId, userId);
     }

@@ -47,4 +47,11 @@ export class CorrectionItemRepository {
         });
         return result.affected ?? 0;
     }
+
+    async deleteByPortfolioId(portfolioId: number): Promise<number> {
+        const result = await this.correctionItemRepository.delete({
+            portfolio: { id: portfolioId },
+        });
+        return result.affected ?? 0;
+    }
 }

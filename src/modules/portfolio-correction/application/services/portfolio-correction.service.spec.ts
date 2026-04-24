@@ -1,5 +1,4 @@
 import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayPort, AiRelayJsonResponse } from 'src/common/ports/ai-relay.port';
 import { PortfolioCorrectionFacade } from '../facades/portfolio-correction.facade';
 import { PortfolioCorrectionService } from './portfolio-correction.service';
@@ -73,6 +72,7 @@ describe('PortfolioCorrectionService', () => {
         >;
         save: ReturnType<typeof jest.fn<Promise<PortfolioCorrection>, [PortfolioCorrection]>>;
         findById: ReturnType<typeof jest.fn<Promise<PortfolioCorrection | null>, [number]>>;
+        findByIdWithUser: ReturnType<typeof jest.fn<Promise<PortfolioCorrection | null>, [number]>>;
         updateById: ReturnType<
             typeof jest.fn<Promise<void>, [number, Partial<PortfolioCorrection>]>
         >;
@@ -82,38 +82,44 @@ describe('PortfolioCorrectionService', () => {
         saveAll: ReturnType<typeof jest.fn<Promise<CorrectionItem[]>, [CorrectionItem[]]>>;
     };
     let service: PortfolioCorrectionService;
+    let correctionPortfolioSelectionService: {
+        findActivePortfolioIdsByCorrectionId: ReturnType<
+            typeof jest.fn<Promise<number[]>, [number]>
+        >;
+    };
 
     beforeEach(() => {
         repository = {
             findByIdAndUserId: jest.fn<Promise<PortfolioCorrection | null>, [number, number]>(),
             save: jest.fn<Promise<PortfolioCorrection>, [PortfolioCorrection]>(),
             findById: jest.fn<Promise<PortfolioCorrection | null>, [number]>(),
+            findByIdWithUser: jest.fn<Promise<PortfolioCorrection | null>, [number]>(),
             updateById: jest.fn<Promise<void>, [number, Partial<PortfolioCorrection>]>(),
         };
         correctionItemService = {
             findByCorrectionId: jest.fn<Promise<CorrectionItem[]>, [number]>(),
             saveAll: jest.fn<Promise<CorrectionItem[]>, [CorrectionItem[]]>(),
         };
+        correctionPortfolioSelectionService = {
+            findActivePortfolioIdsByCorrectionId: jest.fn<Promise<number[]>, [number]>(),
+        };
 
         service = new PortfolioCorrectionService(
             repository as unknown as never,
             correctionItemService as unknown as never,
-            {} as never
+            correctionPortfolioSelectionService as unknown as never
         );
     });
 
-    it('throws COMPANY_INSIGHT_NOT_READY when company insight is still null', async () => {
+    it('returns company insight response with status when company insight is still null', async () => {
         repository.findByIdAndUserId.mockResolvedValue(createCorrection({ companyInsight: null }));
 
-        try {
-            await service.getCompanyInsight(1, 7);
-            fail('Expected getCompanyInsight to throw');
-        } catch (error: unknown) {
-            expect(error).toBeInstanceOf(BusinessException);
-            expect(error).toMatchObject({
-                response: { errorCode: ErrorCode.COMPANY_INSIGHT_NOT_READY },
-            });
-        }
+        await expect(service.getCompanyInsight(1, 7)).resolves.toMatchObject({
+            id: 1,
+            status: CorrectionStatus.NOT_STARTED,
+            companyInsight: null,
+            highlightPoint: null,
+        });
     });
 
     it('moves status to DOING_RAG before company insight generation starts', async () => {
@@ -213,6 +219,41 @@ describe('PortfolioCorrectionService', () => {
         expect(repository.updateById).toHaveBeenCalledWith(1, {
             status: CorrectionStatus.DONE,
             overallReview: '전체 포트폴리오 총평',
+        });
+    });
+
+    it('returns correction detail payload with selected portfolios and items', async () => {
+        repository.findByIdWithUser.mockResolvedValue(createCorrection({ id: 1 }));
+        correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId.mockResolvedValue([
+            10, 11,
+        ]);
+        const internalItem = createCorrectionItem(10);
+        const externalItem = createCorrectionItem(11);
+        correctionItemService.findByCorrectionId.mockResolvedValue([internalItem, externalItem]);
+
+        const payload = await service.getInternalCorrectionDetail(1);
+
+        expect(payload.portfolioIds).toEqual([10, 11]);
+        expect(payload.items).toHaveLength(2);
+    });
+
+    it('accepts scoped correction result updates using expected portfolio ids', async () => {
+        repository.findById.mockResolvedValue(
+            createCorrection({ status: CorrectionStatus.GENERATING })
+        );
+        const first = createCorrectionItem(10);
+        const second = createCorrectionItem(11);
+        correctionItemService.findByCorrectionId.mockResolvedValue([first, second]);
+        correctionItemService.saveAll.mockImplementation((items) => Promise.resolve(items));
+
+        await expect(
+            service.saveCorrectionResult(1, [{ portfolioId: 10, data: {} }], '부분 총평', [10])
+        ).resolves.toBeUndefined();
+
+        expect(correctionItemService.saveAll).toHaveBeenCalledWith([first]);
+        expect(repository.updateById).toHaveBeenCalledWith(1, {
+            status: CorrectionStatus.DONE,
+            overallReview: '부분 총평',
         });
     });
 });
