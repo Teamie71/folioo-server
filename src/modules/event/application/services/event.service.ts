@@ -17,6 +17,28 @@ export class EventService {
         return event;
     }
 
+    /**
+     * 이벤트 ID로 조회 후, 현재 시점(서울 일자)에 참여/제출을 받는 활성 이벤트인지 검증합니다.
+     */
+    async findByIdAndAssertActiveForTodayOrThrow(id: number): Promise<Event> {
+        const event = await this.findByIdOrThrow(id);
+        const today = getSeoulDateString();
+        if (!event.isActive) {
+            throw new BusinessException(ErrorCode.EVENT_NOT_ACTIVE);
+        }
+        const startStr = getSeoulDateString(new Date(event.startDate));
+        if (startStr > today) {
+            throw new BusinessException(ErrorCode.EVENT_NOT_ACTIVE);
+        }
+        if (event.endDate != null) {
+            const endStr = getSeoulDateString(new Date(event.endDate));
+            if (endStr < today) {
+                throw new BusinessException(ErrorCode.EVENT_NOT_ACTIVE);
+            }
+        }
+        return event;
+    }
+
     async findByCodeOrThrow(code: string): Promise<Event> {
         const event = await this.eventRepository.findByCode(code);
         if (!event) {
