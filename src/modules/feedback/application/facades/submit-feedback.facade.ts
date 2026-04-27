@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { DateTime } from 'luxon';
 import { Transactional } from 'typeorm-transactional';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
@@ -13,6 +12,7 @@ import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-gr
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { FeedbackResponse } from '../../domain/entities/feedback-response.entity';
 import { SubmitFeedbackResponseReqDTO } from '../dtos/submit-feedback-response.req.dto';
+import { FeedbackSubmissionService } from '../services/feedback-submission.service';
 import { FeedbackFormRepository } from '../../infrastructure/repositories/feedback-form.repository';
 import { FeedbackResponseRepository } from '../../infrastructure/repositories/feedback-response.repository';
 
@@ -22,6 +22,7 @@ export class SubmitFeedbackFacade {
         private readonly eventService: EventService,
         private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade,
         private readonly eventParticipationService: EventParticipationService,
+        private readonly feedbackSubmissionService: FeedbackSubmissionService,
         private readonly feedbackFormRepository: FeedbackFormRepository,
         private readonly feedbackResponseRepository: FeedbackResponseRepository,
         private readonly ticketGrantFacade: TicketGrantFacade
@@ -54,24 +55,19 @@ export class SubmitFeedbackFacade {
             return;
         }
 
-        const lastSubmittedAt =
-            await this.feedbackResponseRepository.findLatestSubmittedAtByParticipationId(
-                participation.id
-            );
-
-        const now = new Date();
-        const canGrantByCooldown =
-            lastSubmittedAt == null ||
-            DateTime.fromJSDate(lastSubmittedAt, { zone: 'utc' }).plus({
-                days: FeedbackResponse.REWARD_COOLDOWN_DAYS,
-            }) <= DateTime.fromJSDate(now, { zone: 'utc' });
-
-        if (!canGrantByCooldown) {
-            throw new BusinessException(ErrorCode.FEEDBACK_REWARD_COOLDOWN_ACTIVE);
-        }
+        await this.feedbackSubmissionService.assertRewardSubmissionCooldownOrThrow(
+            participation.id
+        );
 
         await this.feedbackResponseRepository.save(response);
 
+        if (
+            this.feedbackSubmissionService.shouldSuppressTicketGrantForSubmit(event, participation)
+        ) {
+            return;
+        }
+
+        const now = new Date();
         await this.ticketGrantFacade.issueGrantAndTickets({
             userId,
             rewards: event.rewardConfig,
