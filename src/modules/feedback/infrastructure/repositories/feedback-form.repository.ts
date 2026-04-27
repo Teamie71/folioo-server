@@ -10,6 +10,10 @@ export class FeedbackFormRepository {
         private readonly feedbackFormRepository: Repository<FeedbackForm>
     ) {}
 
+    async findById(id: number): Promise<FeedbackForm | null> {
+        return this.feedbackFormRepository.findOne({ where: { id } });
+    }
+
     async findLatestByUpdatedAt(): Promise<FeedbackForm | null> {
         return this.feedbackFormRepository
             .createQueryBuilder('form')
