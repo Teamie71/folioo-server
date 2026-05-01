@@ -5,7 +5,6 @@ import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PortfolioCorrectionService } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
-import { InternalCorrectionFacade } from '../application/facades/internal-correction.facade';
 import {
     InternalCorrectionResDTO,
     UpdateCompanyInsightInternalReqDTO,
@@ -15,10 +14,7 @@ import {
 @ApiTags('Internal - Corrections')
 @Controller('corrections')
 export class InternalCorrectionController {
-    constructor(
-        private readonly portfolioCorrectionService: PortfolioCorrectionService,
-        private readonly internalCorrectionFacade: InternalCorrectionFacade
-    ) {}
+    constructor(private readonly portfolioCorrectionService: PortfolioCorrectionService) {}
 
     @Get(':correctionId')
     @Public()
@@ -39,7 +35,7 @@ export class InternalCorrectionController {
         @Param('correctionId', ParseIntPipe) correctionId: number
     ): Promise<InternalCorrectionResDTO> {
         const payload =
-            await this.internalCorrectionFacade.getInternalCorrectionDetail(correctionId);
+            await this.portfolioCorrectionService.getInternalCorrectionDetail(correctionId);
         return InternalCorrectionResDTO.from(payload);
     }
 
