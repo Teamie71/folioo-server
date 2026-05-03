@@ -1,6 +1,9 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { SourceType } from 'src/modules/portfolio/domain/enums/source-type.enum';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { CorrectionItem } from '../../domain/correction-item.entity';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
+import { resolveCorrectionPortfolioSource } from '../../common/utils/correction-portfolio-source.util';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -14,6 +17,13 @@ type ProblemSolvingPayload = JsonObject;
 type LearningsPayload = JsonObject;
 
 export class CorrectionResultResDTO {
+    @ApiProperty({
+        enum: SourceType,
+        description:
+            '첨삭 포트폴리오 출처. NONE→INTERNAL, GENERATING/GENERATED→EXTERNAL. FAILED는 서버 추론 로직에 따라 correction/items 데이터를 기준으로 결정됩니다.',
+    })
+    portfolioSource: SourceType;
+
     status: CorrectionStatus;
     companyName: string;
     positionName: string;
@@ -25,6 +35,7 @@ export class CorrectionResultResDTO {
 
     static from(correction: PortfolioCorrection, items: CorrectionItem[]): CorrectionResultResDTO {
         const dto = new CorrectionResultResDTO();
+        dto.portfolioSource = resolveCorrectionPortfolioSource(correction, items);
         dto.status = correction.status;
         dto.companyName = correction.companyName;
         dto.positionName = correction.positionName;
