@@ -37,7 +37,7 @@ export class InternalCorrectionResDTO {
     @ApiProperty({
         enum: SourceType,
         description:
-            '첨삭 포트폴리오 출처. NONE→INTERNAL, GENERATING/GENERATED→EXTERNAL. FAILED는 활성 선택·결과 item 기준 추론.',
+            '첨삭 포트폴리오 출처. NONE→INTERNAL, GENERATING/GENERATED→EXTERNAL. FAILED는 결과 item 기준으로 추론.',
     })
     portfolioSource: SourceType;
 
