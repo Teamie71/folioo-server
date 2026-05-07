@@ -4,26 +4,15 @@ import { Event } from 'src/modules/event/domain/entities/event.entity';
 import { EventParticipation } from 'src/modules/event/domain/entities/event-participation.entity';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
 import { FeedbackResponse } from '../../domain/entities/feedback-response.entity';
-import { FeedbackResponseRepository } from '../../infrastructure/repositories/feedback-response.repository';
 
 @Injectable()
 export class FeedbackSubmissionService {
-    constructor(private readonly feedbackResponseRepository: FeedbackResponseRepository) {}
-
-    async isRewardCooldownElapsedForParticipation(participationId: number): Promise<boolean> {
-        const lastSubmittedAt =
-            await this.feedbackResponseRepository.findLatestSubmittedAtByParticipationId(
-                participationId
-            );
-        return this.isRewardCooldownElapsed(lastSubmittedAt, new Date());
-    }
-
-    isRewardCooldownElapsed(lastSubmittedAt: Date | null, now: Date): boolean {
-        if (lastSubmittedAt == null) {
+    isRewardCooldownElapsed(lastGrantedAt: Date | null, now: Date): boolean {
+        if (lastGrantedAt == null) {
             return true;
         }
         return (
-            DateTime.fromJSDate(lastSubmittedAt, { zone: 'utc' }).plus({
+            DateTime.fromJSDate(lastGrantedAt, { zone: 'utc' }).plus({
                 days: FeedbackResponse.REWARD_COOLDOWN_DAYS,
             }) <= DateTime.fromJSDate(now, { zone: 'utc' })
         );

@@ -59,10 +59,10 @@ export class SubmitFeedbackFacade {
             return SubmitFeedbackResponseResDTO.of(false);
         }
 
-        const cooldownElapsed =
-            await this.feedbackSubmissionService.isRewardCooldownElapsedForParticipation(
-                participation.id
-            );
+        const cooldownElapsed = this.feedbackSubmissionService.isRewardCooldownElapsed(
+            participation.rewardGrantedAt,
+            new Date()
+        );
 
         await this.feedbackResponseRepository.save(response);
 
