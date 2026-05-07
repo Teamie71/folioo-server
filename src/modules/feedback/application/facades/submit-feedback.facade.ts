@@ -12,6 +12,7 @@ import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-gr
 import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { FeedbackResponse } from '../../domain/entities/feedback-response.entity';
 import { SubmitFeedbackResponseReqDTO } from '../dtos/submit-feedback-response.req.dto';
+import { SubmitFeedbackResponseResDTO } from '../dtos/submit-feedback-response.res.dto';
 import { FeedbackSubmissionService } from '../services/feedback-submission.service';
 import { FeedbackFormRepository } from '../../infrastructure/repositories/feedback-form.repository';
 import { FeedbackResponseRepository } from '../../infrastructure/repositories/feedback-response.repository';
@@ -29,7 +30,10 @@ export class SubmitFeedbackFacade {
     ) {}
 
     @Transactional()
-    async submit(userId: number, dto: SubmitFeedbackResponseReqDTO): Promise<void> {
+    async submit(
+        userId: number,
+        dto: SubmitFeedbackResponseReqDTO
+    ): Promise<SubmitFeedbackResponseResDTO> {
         const event = await this.eventService.findByIdAndAssertActiveForTodayOrThrow(dto.eventId);
 
         const participation =
@@ -52,19 +56,21 @@ export class SubmitFeedbackFacade {
         const hasRewards = event.rewardConfig.some((item) => item.quantity > 0);
         if (!hasRewards) {
             await this.feedbackResponseRepository.save(response);
-            return;
+            return SubmitFeedbackResponseResDTO.of(false);
         }
 
-        await this.feedbackSubmissionService.assertRewardSubmissionCooldownOrThrow(
-            participation.id
+        const cooldownElapsed = this.feedbackSubmissionService.isRewardCooldownElapsed(
+            participation.rewardGrantedAt,
+            new Date()
         );
 
         await this.feedbackResponseRepository.save(response);
 
         if (
+            !cooldownElapsed ||
             this.feedbackSubmissionService.shouldSuppressTicketGrantForSubmit(event, participation)
         ) {
-            return;
+            return SubmitFeedbackResponseResDTO.of(false);
         }
 
         const now = new Date();
@@ -86,5 +92,6 @@ export class SubmitFeedbackFacade {
         participation.rewardStatus = EventRewardStatus.GRANTED;
         participation.rewardGrantedAt = now;
         await this.eventParticipationService.save(participation);
+        return SubmitFeedbackResponseResDTO.of(true);
     }
 }
