@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { Event } from 'src/modules/event/domain/entities/event.entity';
 import { EventParticipation } from 'src/modules/event/domain/entities/event-participation.entity';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
@@ -12,18 +10,12 @@ import { FeedbackResponseRepository } from '../../infrastructure/repositories/fe
 export class FeedbackSubmissionService {
     constructor(private readonly feedbackResponseRepository: FeedbackResponseRepository) {}
 
-    /**
-     * 보상이 있는 피드백 제출에서, 직전 제출 시각 기준 쿨다운이 끝나지 않았으면 예외.
-     */
-    async assertRewardSubmissionCooldownOrThrow(participationId: number): Promise<void> {
+    async isRewardCooldownElapsedForParticipation(participationId: number): Promise<boolean> {
         const lastSubmittedAt =
             await this.feedbackResponseRepository.findLatestSubmittedAtByParticipationId(
                 participationId
             );
-        const now = new Date();
-        if (!this.isRewardCooldownElapsed(lastSubmittedAt, now)) {
-            throw new BusinessException(ErrorCode.FEEDBACK_REWARD_COOLDOWN_ACTIVE);
-        }
+        return this.isRewardCooldownElapsed(lastSubmittedAt, new Date());
     }
 
     isRewardCooldownElapsed(lastSubmittedAt: Date | null, now: Date): boolean {

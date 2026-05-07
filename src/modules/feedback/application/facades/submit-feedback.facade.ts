@@ -29,7 +29,10 @@ export class SubmitFeedbackFacade {
     ) {}
 
     @Transactional()
-    async submit(userId: number, dto: SubmitFeedbackResponseReqDTO): Promise<void> {
+    async submit(
+        userId: number,
+        dto: SubmitFeedbackResponseReqDTO
+    ): Promise<{ rewardGranted: boolean }> {
         const event = await this.eventService.findByIdAndAssertActiveForTodayOrThrow(dto.eventId);
 
         const participation =
@@ -52,19 +55,21 @@ export class SubmitFeedbackFacade {
         const hasRewards = event.rewardConfig.some((item) => item.quantity > 0);
         if (!hasRewards) {
             await this.feedbackResponseRepository.save(response);
-            return;
+            return { rewardGranted: false };
         }
 
-        await this.feedbackSubmissionService.assertRewardSubmissionCooldownOrThrow(
-            participation.id
-        );
+        const cooldownElapsed =
+            await this.feedbackSubmissionService.isRewardCooldownElapsedForParticipation(
+                participation.id
+            );
 
         await this.feedbackResponseRepository.save(response);
 
         if (
+            !cooldownElapsed ||
             this.feedbackSubmissionService.shouldSuppressTicketGrantForSubmit(event, participation)
         ) {
-            return;
+            return { rewardGranted: false };
         }
 
         const now = new Date();
@@ -86,5 +91,6 @@ export class SubmitFeedbackFacade {
         participation.rewardStatus = EventRewardStatus.GRANTED;
         participation.rewardGrantedAt = now;
         await this.eventParticipationService.save(participation);
+        return { rewardGranted: true };
     }
 }
