@@ -1,9 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { CorrectionStatus } from 'src/modules/portfolio-correction/domain/enums/correction-status.enum';
+import { SourceType } from 'src/modules/portfolio/domain/enums/source-type.enum';
 import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
 import { InternalCorrectionPayload } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
 import { COMPANY_INSIGHT_MAX_LENGTH } from 'src/modules/portfolio-correction/domain/portfolio-correction.entity';
+import { resolveCorrectionPortfolioSource } from 'src/modules/portfolio-correction/common/utils/correction-portfolio-source.util';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -31,6 +33,13 @@ class InternalCorrectionItemResDTO {
 
 export class InternalCorrectionResDTO {
     id: number;
+
+    @ApiProperty({
+        enum: SourceType,
+        description:
+            '첨삭 포트폴리오 출처. NONE→INTERNAL, GENERATING/GENERATED→EXTERNAL. FAILED는 결과 item 기준으로 추론.',
+    })
+    portfolioSource: SourceType;
 
     @ApiProperty({ description: '연관된 사용자 ID' })
     userId: number;
@@ -62,6 +71,7 @@ export class InternalCorrectionResDTO {
         const { correction, portfolioIds, items } = payload;
         const dto = new InternalCorrectionResDTO();
         dto.id = correction.id;
+        dto.portfolioSource = resolveCorrectionPortfolioSource(correction, items);
         dto.userId = correction.user.id;
         dto.portfolioIds = portfolioIds;
         dto.companyName = correction.companyName;

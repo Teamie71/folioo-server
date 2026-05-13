@@ -317,4 +317,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '현재 보상 지급 조건을 충족하지 않았습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.FEEDBACK_FORM_EVENT_MISMATCH]: {
+        message: '요청한 질문지가 해당 이벤트와 일치하지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
 };

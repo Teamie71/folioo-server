@@ -22,6 +22,7 @@ import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { TicketAutomationModule } from './modules/ticket-automation/ticket-automation.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -56,6 +57,7 @@ import { DataSource } from 'typeorm';
         TicketModule,
         PaymentModule,
         EventModule,
+        FeedbackModule,
         InterviewModule,
         InternalModule,
         AdminModule,
