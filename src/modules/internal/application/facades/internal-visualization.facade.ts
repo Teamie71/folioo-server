@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SlidePlan } from 'src/modules/visualization/domain/visualization-job.entity';
 import { VisualizationJobService } from 'src/modules/visualization/application/services/visualization-job.service';
 import { VisualizationSlideService } from 'src/modules/visualization/application/services/visualization-slide.service';
@@ -16,6 +18,12 @@ export class InternalVisualizationFacade {
 
     @Transactional()
     async saveSlidePlan(jobId: string, body: SaveSlidePlanReqDTO): Promise<void> {
+        if (body.totalSlides !== body.slides.length) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, {
+                reason: `totalSlides(${body.totalSlides})와 slides 배열 길이(${body.slides.length})가 일치하지 않습니다.`,
+            });
+        }
+
         this.logger.log(
             `[slide-plan] START jobId=${jobId} idempotencyKey=${body.idempotencyKey} schemaVersion=${body.schemaVersion}`
         );
