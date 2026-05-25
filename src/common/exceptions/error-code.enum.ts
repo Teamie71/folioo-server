@@ -102,4 +102,7 @@ export enum ErrorCode {
 
     //GCS
     GCS_SIGNED_URL_FAILED = 'GCS500',
+
+    //Visualization
+    VISUALIZATION_JOB_NOT_FOUND = 'VISUALIZATION404',
 }

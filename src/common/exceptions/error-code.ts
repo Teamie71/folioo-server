@@ -325,4 +325,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '파일 접근 URL 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
+    [ErrorCode.VISUALIZATION_JOB_NOT_FOUND]: {
+        message: '시각화 작업을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
 };

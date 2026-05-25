@@ -11,19 +11,31 @@ import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-cor
 import { AiClientExceptionFilter } from 'src/common/filters/ai-client-exception.filter';
 import { InternalCorrectionResultFacade } from './application/facades/internal-correction-result.facade';
 import { InternalPdfExtractionResultController } from './presentation/internal-pdf-extraction-result.controller';
+import { InternalVisualizationController } from './presentation/internal-visualization.controller';
+import { InternalVisualizationFacade } from './application/facades/internal-visualization.facade';
+import { VisualizationModule } from '../visualization/visualization.module';
+
 @Module({
-    imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule, ExperienceModule],
+    imports: [
+        InsightModule,
+        PortfolioModule,
+        PortfolioCorrectionModule,
+        ExperienceModule,
+        VisualizationModule,
+    ],
     controllers: [
         InternalController,
         InternalCorrectionController,
         InternalCorrectionResultController,
         InternalPdfExtractionResultController,
+        InternalVisualizationController,
     ],
     providers: [
         InternalApiKeyGuard,
         InternalPortfolioFacade,
         AiClientExceptionFilter,
         InternalCorrectionResultFacade,
+        InternalVisualizationFacade,
     ],
 })
 export class InternalModule {}
