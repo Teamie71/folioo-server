@@ -1,10 +1,10 @@
 import {
-    BeforeInsert,
-    BeforeUpdate,
     Column,
+    CreateDateColumn,
     Entity,
     ManyToOne,
     PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { VisualizationJobStatus } from './enums/visualization-job-status.enum';
 import { PipelineStage } from './enums/pipeline-stage.enum';
@@ -28,10 +28,10 @@ export class VisualizationJob {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @ManyToOne(() => Portfolio)
+    @ManyToOne(() => Portfolio, { nullable: false })
     portfolio: Portfolio;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { nullable: false })
     user: User;
 
     @Column({ length: 50 })
@@ -55,21 +55,9 @@ export class VisualizationJob {
     @Column({ default: 0 })
     regenerationCount: number;
 
-    @Column({ type: 'timestamp', update: false })
+    @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 
-    @Column({ type: 'timestamp' })
+    @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt: Date;
-
-    @BeforeInsert()
-    protected setTimestampsOnInsert(): void {
-        const now = new Date();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @BeforeUpdate()
-    protected setTimestampsOnUpdate(): void {
-        this.updatedAt = new Date();
-    }
 }

@@ -9,8 +9,8 @@ CREATE TABLE visualization_jobs (
     gcs_pptx_key        VARCHAR(500),
     slide_plan          JSONB,
     regeneration_count  INT NOT NULL DEFAULT 0,
-    created_at          TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT now()
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_viz_jobs_user ON visualization_jobs(user_id);
@@ -25,8 +25,8 @@ CREATE TABLE visualization_slides (
     status              VARCHAR(20) NOT NULL DEFAULT 'pending',
     current_fills       JSONB,
     gcs_preview_key     VARCHAR(500),
-    created_at          TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT now(),
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE(job_id, slide_order)
 );
 

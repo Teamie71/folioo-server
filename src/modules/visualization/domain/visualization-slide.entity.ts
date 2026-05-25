@@ -1,11 +1,11 @@
 import {
-    BeforeInsert,
-    BeforeUpdate,
     Column,
+    CreateDateColumn,
     Entity,
     ManyToOne,
     PrimaryGeneratedColumn,
     Unique,
+    UpdateDateColumn,
 } from 'typeorm';
 import { VisualizationSlideStatus } from './enums/visualization-slide-status.enum';
 import { VisualizationJob } from './visualization-job.entity';
@@ -39,7 +39,7 @@ export class VisualizationSlide {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @ManyToOne(() => VisualizationJob, { onDelete: 'CASCADE' })
+    @ManyToOne(() => VisualizationJob, { nullable: false, onDelete: 'CASCADE' })
     job: VisualizationJob;
 
     @Column()
@@ -60,21 +60,9 @@ export class VisualizationSlide {
     @Column({ type: 'varchar', length: 500, nullable: true })
     gcsPreviewKey: string | null;
 
-    @Column({ type: 'timestamp', update: false })
+    @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 
-    @Column({ type: 'timestamp' })
+    @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt: Date;
-
-    @BeforeInsert()
-    protected setTimestampsOnInsert(): void {
-        const now = new Date();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @BeforeUpdate()
-    protected setTimestampsOnUpdate(): void {
-        this.updatedAt = new Date();
-    }
 }
