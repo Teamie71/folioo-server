@@ -23,6 +23,7 @@ import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { TicketAutomationModule } from './modules/ticket-automation/ticket-automation.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { VisualizationModule } from './modules/visualization/visualization.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -58,6 +59,7 @@ import { DataSource } from 'typeorm';
         PaymentModule,
         EventModule,
         FeedbackModule,
+        VisualizationModule,
         InterviewModule,
         InternalModule,
         AdminModule,

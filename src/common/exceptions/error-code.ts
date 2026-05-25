@@ -321,4 +321,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '요청한 질문지가 해당 이벤트와 일치하지 않습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.GCS_SIGNED_URL_FAILED]: {
+        message: '파일 접근 URL 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+    },
 };
