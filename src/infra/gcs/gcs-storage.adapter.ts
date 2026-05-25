@@ -25,10 +25,16 @@ export class GcsStorageAdapter extends StoragePort {
             return;
         }
 
-        this.bucketName = bucketName;
-        this.storage = new Storage({
-            credentials: JSON.parse(credentialsJson) as StorageOptions['credentials'],
-        });
+        try {
+            this.bucketName = bucketName;
+            this.storage = new Storage({
+                credentials: JSON.parse(credentialsJson) as StorageOptions['credentials'],
+            });
+        } catch {
+            this.logger.warn(
+                'GCS_SERVICE_ACCOUNT_KEY가 유효한 JSON 형식이 아닙니다. GCS 기능을 사용할 수 없습니다.'
+            );
+        }
     }
 
     async getSignedUrl(key: string, expiresInSeconds: number): Promise<string> {
