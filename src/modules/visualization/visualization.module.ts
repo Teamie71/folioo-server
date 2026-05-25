@@ -16,6 +16,6 @@ import { VisualizationSlideService } from './application/services/visualization-
         VisualizationJobService,
         VisualizationSlideService,
     ],
-    exports: [VisualizationJobService, VisualizationSlideService],
+    exports: [VisualizationJobService, VisualizationSlideService, GcsStorageModule],
 })
 export class VisualizationModule {}

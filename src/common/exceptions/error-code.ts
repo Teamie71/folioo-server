@@ -329,4 +329,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '시각화 작업을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.VISUALIZATION_SLIDE_NOT_FOUND]: {
+        message: '슬라이드를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
 };

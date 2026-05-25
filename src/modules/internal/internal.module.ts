@@ -13,6 +13,8 @@ import { InternalCorrectionResultFacade } from './application/facades/internal-c
 import { InternalPdfExtractionResultController } from './presentation/internal-pdf-extraction-result.controller';
 import { InternalVisualizationController } from './presentation/internal-visualization.controller';
 import { InternalVisualizationFacade } from './application/facades/internal-visualization.facade';
+import { InternalVisualizationSlideEventController } from './presentation/internal-visualization-slide-event.controller';
+import { InternalVisualizationSlideEventFacade } from './application/facades/internal-visualization-slide-event.facade';
 import { VisualizationModule } from '../visualization/visualization.module';
 
 @Module({
@@ -29,6 +31,7 @@ import { VisualizationModule } from '../visualization/visualization.module';
         InternalCorrectionResultController,
         InternalPdfExtractionResultController,
         InternalVisualizationController,
+        InternalVisualizationSlideEventController,
     ],
     providers: [
         InternalApiKeyGuard,
@@ -36,6 +39,7 @@ import { VisualizationModule } from '../visualization/visualization.module';
         AiClientExceptionFilter,
         InternalCorrectionResultFacade,
         InternalVisualizationFacade,
+        InternalVisualizationSlideEventFacade,
     ],
 })
 export class InternalModule {}
