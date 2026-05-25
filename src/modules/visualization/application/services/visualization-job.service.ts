@@ -6,6 +6,11 @@ import { VisualizationJobStatus } from '../../domain/enums/visualization-job-sta
 import { SlidePlan, VisualizationJob } from '../../domain/visualization-job.entity';
 import { VisualizationJobRepository } from '../../infrastructure/repositories/visualization-job.repository';
 
+export interface JobCompletionPayload {
+    status: VisualizationJobStatus;
+    gcsPptxKey: string | null;
+}
+
 @Injectable()
 export class VisualizationJobService {
     constructor(private readonly vizJobRepo: VisualizationJobRepository) {}
@@ -38,6 +43,18 @@ export class VisualizationJobService {
         await this.vizJobRepo.updateById(id, {
             totalSlides,
             slidePlan,
+        });
+    }
+
+    async updatePipelineStage(id: string, pipelineStage: PipelineStage): Promise<void> {
+        await this.vizJobRepo.updateById(id, { pipelineStage });
+    }
+
+    async finalizeFromPipeline(id: string, payload: JobCompletionPayload): Promise<void> {
+        await this.vizJobRepo.updateById(id, {
+            status: payload.status,
+            pipelineStage: PipelineStage.COMPLETED,
+            gcsPptxKey: payload.gcsPptxKey,
         });
     }
 }

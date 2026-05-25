@@ -43,6 +43,10 @@ export class VisualizationSlideService {
         );
     }
 
+    async findAllByJobId(jobId: string): Promise<VisualizationSlide[]> {
+        return this.vizSlideRepo.findAllByJobId(jobId);
+    }
+
     async hasNonCompletedSlides(jobId: string): Promise<boolean> {
         return this.vizSlideRepo.existsNonCompletedByJobId(jobId);
     }

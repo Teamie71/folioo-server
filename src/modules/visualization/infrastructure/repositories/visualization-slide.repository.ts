@@ -37,6 +37,13 @@ export class VisualizationSlideRepository {
         return count > 0;
     }
 
+    findAllByJobId(jobId: string): Promise<VisualizationSlide[]> {
+        return this.repo.find({
+            where: { job: { id: jobId } },
+            order: { slideOrder: 'ASC' },
+        });
+    }
+
     async bulkInsertIgnoreConflict(rows: SlideInsertRow[]): Promise<void> {
         if (rows.length === 0) return;
         await this.repo

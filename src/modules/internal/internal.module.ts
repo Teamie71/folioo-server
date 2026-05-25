@@ -15,6 +15,8 @@ import { InternalVisualizationController } from './presentation/internal-visuali
 import { InternalVisualizationFacade } from './application/facades/internal-visualization.facade';
 import { InternalVisualizationSlideEventController } from './presentation/internal-visualization-slide-event.controller';
 import { InternalVisualizationSlideEventFacade } from './application/facades/internal-visualization-slide-event.facade';
+import { InternalVisualizationJobEventController } from './presentation/internal-visualization-job-event.controller';
+import { InternalVisualizationJobEventFacade } from './application/facades/internal-visualization-job-event.facade';
 import { VisualizationModule } from '../visualization/visualization.module';
 
 @Module({
@@ -32,6 +34,7 @@ import { VisualizationModule } from '../visualization/visualization.module';
         InternalPdfExtractionResultController,
         InternalVisualizationController,
         InternalVisualizationSlideEventController,
+        InternalVisualizationJobEventController,
     ],
     providers: [
         InternalApiKeyGuard,
@@ -40,6 +43,7 @@ import { VisualizationModule } from '../visualization/visualization.module';
         InternalCorrectionResultFacade,
         InternalVisualizationFacade,
         InternalVisualizationSlideEventFacade,
+        InternalVisualizationJobEventFacade,
     ],
 })
 export class InternalModule {}
