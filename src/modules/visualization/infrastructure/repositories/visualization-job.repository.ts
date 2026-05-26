@@ -14,6 +14,10 @@ export class VisualizationJobRepository {
         return this.repo.findOne({ where: { id } });
     }
 
+    findStatusById(id: string): Promise<Pick<VisualizationJob, 'status'> | null> {
+        return this.repo.findOne({ where: { id }, select: { status: true } });
+    }
+
     async updateById(id: string, data: Partial<VisualizationJob>): Promise<void> {
         await this.repo.update(id, data);
     }

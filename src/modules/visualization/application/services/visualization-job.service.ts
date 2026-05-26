@@ -24,8 +24,8 @@ export class VisualizationJobService {
     }
 
     async isPartialError(id: string): Promise<boolean> {
-        const job = await this.vizJobRepo.findById(id);
-        return job?.status === VisualizationJobStatus.PARTIAL_ERROR;
+        const row = await this.vizJobRepo.findStatusById(id);
+        return row?.status === VisualizationJobStatus.PARTIAL_ERROR;
     }
 
     async decrementRegenerationCount(id: string): Promise<void> {
