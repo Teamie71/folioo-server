@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Get,
     HttpCode,
     HttpStatus,
     Param,
@@ -8,18 +9,69 @@ import {
     Post,
     UseGuards,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
-import { SaveSlidePlanReqDTO } from '../application/dtos/internal-visualization.dto';
+import {
+    InternalVisualizationJobResDTO,
+    InternalVisualizationSlideResDTO,
+    SaveSlidePlanReqDTO,
+} from '../application/dtos/internal-visualization.dto';
 import { InternalVisualizationFacade } from '../application/facades/internal-visualization.facade';
 
 @ApiTags('Internal - Visualizations')
 @Controller('internal/visualizations')
 export class InternalVisualizationController {
     constructor(private readonly internalVisualizationFacade: InternalVisualizationFacade) {}
+
+    @Get(':jobId')
+    @Public()
+    @UseGuards(InternalApiKeyGuard)
+    @ApiHeader({
+        name: 'X-API-Key',
+        required: true,
+        description: 'Internal API key for AI server callbacks',
+    })
+    @ApiOperation({
+        summary: '시각화 잡 컨텍스트 조회 (Internal)',
+        description:
+            'AI 워커가 Phase 2 시작 시 포트폴리오 텍스트 및 잡 메타데이터를 조회합니다. ' +
+            'portfolioText는 포트폴리오의 description·responsibilities·problemSolving·learnings를 결합한 텍스트입니다.',
+    })
+    @ApiResponse({ status: 200, type: InternalVisualizationJobResDTO })
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.VISUALIZATION_JOB_NOT_FOUND)
+    async getJob(
+        @Param('jobId', ParseUUIDPipe) jobId: string
+    ): Promise<InternalVisualizationJobResDTO> {
+        return this.internalVisualizationFacade.getJob(jobId);
+    }
+
+    @Get(':jobId/slides/:slideId')
+    @Public()
+    @UseGuards(InternalApiKeyGuard)
+    @ApiHeader({
+        name: 'X-API-Key',
+        required: true,
+        description: 'Internal API key for AI server callbacks',
+    })
+    @ApiOperation({
+        summary: '시각화 슬라이드 조회 (Internal)',
+        description: 'AI 워커가 특정 슬라이드의 현재 상태 및 fills 정보를 조회합니다.',
+    })
+    @ApiResponse({ status: 200, type: InternalVisualizationSlideResDTO })
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.VISUALIZATION_JOB_NOT_FOUND,
+        ErrorCode.VISUALIZATION_SLIDE_NOT_FOUND
+    )
+    async getSlide(
+        @Param('jobId', ParseUUIDPipe) jobId: string,
+        @Param('slideId', ParseUUIDPipe) slideId: string
+    ): Promise<InternalVisualizationSlideResDTO> {
+        return this.internalVisualizationFacade.getSlide(jobId, slideId);
+    }
 
     @Post(':jobId/slide-plan')
     @Public()

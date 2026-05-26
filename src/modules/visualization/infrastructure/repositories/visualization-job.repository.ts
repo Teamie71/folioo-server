@@ -14,6 +14,10 @@ export class VisualizationJobRepository {
         return this.repo.findOne({ where: { id } });
     }
 
+    findByIdWithRelations(id: string): Promise<VisualizationJob | null> {
+        return this.repo.findOne({ where: { id }, relations: ['portfolio', 'user'] });
+    }
+
     findStatusById(id: string): Promise<Pick<VisualizationJob, 'status'> | null> {
         return this.repo.findOne({ where: { id }, select: { status: true } });
     }

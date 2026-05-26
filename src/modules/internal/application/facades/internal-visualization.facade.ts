@@ -5,7 +5,11 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SlidePlan } from 'src/modules/visualization/domain/visualization-job.entity';
 import { VisualizationJobService } from 'src/modules/visualization/application/services/visualization-job.service';
 import { VisualizationSlideService } from 'src/modules/visualization/application/services/visualization-slide.service';
-import { SaveSlidePlanReqDTO } from '../dtos/internal-visualization.dto';
+import {
+    InternalVisualizationJobResDTO,
+    InternalVisualizationSlideResDTO,
+    SaveSlidePlanReqDTO,
+} from '../dtos/internal-visualization.dto';
 
 @Injectable()
 export class InternalVisualizationFacade {
@@ -44,5 +48,15 @@ export class InternalVisualizationFacade {
         );
 
         // TODO: SSE — visualizations.{jobId} 채널에 slide_plan_ready 이벤트 emit
+    }
+
+    async getJob(jobId: string): Promise<InternalVisualizationJobResDTO> {
+        const job = await this.vizJobService.findByIdWithRelationsOrThrow(jobId);
+        return InternalVisualizationJobResDTO.from(job);
+    }
+
+    async getSlide(jobId: string, slideId: string): Promise<InternalVisualizationSlideResDTO> {
+        const slide = await this.vizSlideService.findByIdAndJobIdOrThrow(slideId, jobId);
+        return InternalVisualizationSlideResDTO.from(slide, jobId);
     }
 }
