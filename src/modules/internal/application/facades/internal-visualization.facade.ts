@@ -28,7 +28,10 @@ export class InternalVisualizationFacade {
             `[slide-plan] START jobId=${jobId} idempotencyKey=${body.idempotencyKey} schemaVersion=${body.schemaVersion}`
         );
 
-        await this.vizJobService.findByIdOrThrow(jobId);
+        const job = await this.vizJobService.findByIdOrThrow(jobId);
+        if (job.templateId !== body.templateId) {
+            throw new BusinessException(ErrorCode.VISUALIZATION_TEMPLATE_ID_MISMATCH);
+        }
         await this.vizJobService.updateSlidePlan(
             jobId,
             body.totalSlides,

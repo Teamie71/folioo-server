@@ -19,13 +19,13 @@ export class SlideItemReqDTO {
 
     @IsString()
     @IsNotEmpty()
-    @MaxLength(100)
+    @MaxLength(50)
     @ApiProperty({ description: '소스 슬라이드 ID', example: 'cover_B' })
     sourceSlideId: string;
 
     @IsString()
     @IsNotEmpty()
-    @MaxLength(100)
+    @MaxLength(50)
     @ApiProperty({ description: '슬라이드 XML 파일명', example: 'slide1.xml' })
     slideFilename: string;
 }

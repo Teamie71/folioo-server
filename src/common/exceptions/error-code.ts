@@ -333,4 +333,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '슬라이드를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
+    [ErrorCode.VISUALIZATION_TEMPLATE_ID_MISMATCH]: {
+        message: '요청한 templateId가 작업에 등록된 templateId와 일치하지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
 };

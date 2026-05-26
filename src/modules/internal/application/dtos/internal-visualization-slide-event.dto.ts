@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     IsBoolean,
+    IsDateString,
     IsEnum,
     IsInt,
     IsNotEmpty,
@@ -81,8 +82,7 @@ export class SlideEventCallbackReqDTO {
     @ApiPropertyOptional({ description: '재시도 가능 여부 (error 이벤트 시 필수)' })
     retryable?: boolean;
 
-    @IsString()
-    @IsNotEmpty()
+    @IsDateString()
     @ApiProperty({ description: '이벤트 발생 시각 (ISO 8601)', example: '2026-05-17T03:42:01Z' })
     occurredAt: string;
 

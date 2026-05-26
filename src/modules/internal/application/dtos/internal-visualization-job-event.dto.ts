@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+    IsDateString,
     IsEnum,
     IsInt,
     IsNotEmpty,
@@ -44,11 +45,12 @@ export class JobEventCallbackReqDTO {
     pipelineStage?: PipelineStage;
 
     @ValidateIf((o: JobEventCallbackReqDTO) => o.event === JobEventType.ALL_COMPLETED)
+    @IsOptional()
     @IsString()
     @IsNotEmpty()
     @MaxLength(500)
     @ApiPropertyOptional({
-        description: 'event=all_completed 시 생성된 PPTX GCS 키',
+        description: 'event=all_completed 시 생성된 PPTX GCS 키 (파이프라인 실패 시 생략 가능)',
         example: 'jobs/uuid/current.pptx',
     })
     gcsPptxKey?: string;
@@ -77,8 +79,7 @@ export class JobEventCallbackReqDTO {
     @ApiProperty({ description: '멱등성 키', example: 'evt-uuid' })
     idempotencyKey: string;
 
-    @IsString()
-    @IsNotEmpty()
+    @IsDateString()
     @ApiProperty({ description: '이벤트 발생 시각 (ISO 8601)', example: '2026-05-25T00:00:00Z' })
     occurredAt: string;
 
