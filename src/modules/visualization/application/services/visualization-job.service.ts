@@ -23,6 +23,14 @@ export class VisualizationJobService {
         return job;
     }
 
+    async findByIdWithRelationsOrThrow(id: string): Promise<VisualizationJob> {
+        const job = await this.vizJobRepo.findByIdWithRelations(id);
+        if (!job) {
+            throw new BusinessException(ErrorCode.VISUALIZATION_JOB_NOT_FOUND);
+        }
+        return job;
+    }
+
     async isPartialError(id: string): Promise<boolean> {
         const row = await this.vizJobRepo.findStatusById(id);
         return row?.status === VisualizationJobStatus.PARTIAL_ERROR;
