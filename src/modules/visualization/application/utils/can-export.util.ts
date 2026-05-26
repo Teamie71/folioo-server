@@ -37,7 +37,7 @@ export function computeCanExport(
 
     const canExport =
         job.status === VisualizationJobStatus.COMPLETED &&
-        job.gcsPptxKey !== null &&
+        !!job.gcsPptxKey &&
         job.totalSlides > 0 &&
         blockingSlides.length === 0;
 
