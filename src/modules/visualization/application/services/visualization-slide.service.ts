@@ -51,14 +51,15 @@ export class VisualizationSlideService {
         return this.vizSlideRepo.existsNonCompletedByJobId(jobId);
     }
 
-    async bulkInsert(jobId: string, slides: SlideInput[]): Promise<VisualizationSlide[]> {
+    async replaceSlides(jobId: string, slides: SlideInput[]): Promise<VisualizationSlide[]> {
+        await this.vizSlideRepo.deleteAllByJobId(jobId);
         const rows: SlideInsertRow[] = slides.map((s) => ({
             job: { id: jobId },
             slideOrder: s.slideOrder,
             sourceSlideId: s.sourceSlideId,
             slideFilename: s.slideFilename,
         }));
-        await this.vizSlideRepo.bulkInsertIgnoreConflict(rows);
+        await this.vizSlideRepo.bulkInsert(rows);
         return this.vizSlideRepo.findAllByJobId(jobId);
     }
 }

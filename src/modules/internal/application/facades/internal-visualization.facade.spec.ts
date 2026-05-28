@@ -68,12 +68,12 @@ describe('InternalVisualizationFacade', () => {
 
     let findByIdOrThrow: jest.Mock;
     let updateSlidePlan: jest.Mock;
-    let bulkInsert: jest.Mock;
+    let replaceSlides: jest.Mock;
 
     beforeEach(() => {
         findByIdOrThrow = jest.fn().mockResolvedValue(makeJob());
         updateSlidePlan = jest.fn();
-        bulkInsert = jest.fn().mockResolvedValue(MOCK_SLIDES);
+        replaceSlides = jest.fn().mockResolvedValue(MOCK_SLIDES);
 
         const vizJobService = {
             findByIdOrThrow,
@@ -81,7 +81,7 @@ describe('InternalVisualizationFacade', () => {
         } as unknown as VisualizationJobService;
 
         const vizSlideService = {
-            bulkInsert,
+            replaceSlides,
         } as unknown as VisualizationSlideService;
 
         facade = new InternalVisualizationFacade(vizJobService, vizSlideService);
@@ -133,12 +133,12 @@ describe('InternalVisualizationFacade', () => {
                 );
             });
 
-            it('bulkInsert를 올바른 인자로 호출한다', async () => {
+            it('replaceSlides를 올바른 인자로 호출한다', async () => {
                 const body = makeBody();
 
                 await facade.saveSlidePlan(JOB_ID, body);
 
-                expect(bulkInsert).toHaveBeenCalledWith(JOB_ID, body.slides);
+                expect(replaceSlides).toHaveBeenCalledWith(JOB_ID, body.slides);
             });
 
             it('SaveSlidePlanResDTO를 반환하며 slides 배열에 id·slideOrder·sourceSlideId·slideFilename이 담긴다', async () => {
@@ -160,13 +160,32 @@ describe('InternalVisualizationFacade', () => {
                 });
             });
 
-            it('중복 콜백이 와도 예외 없이 bulkInsert를 위임한다 (ON CONFLICT DO NOTHING은 레포 레벨 처리)', async () => {
-                const body = makeBody();
+            it('재생성 시 replaceSlides를 다시 호출하여 기존 슬라이드를 교체한다', async () => {
+                const REGEN_UUID_1 = 'cccccccc-0000-0000-0000-000000000001';
+                const regenSlides = [makeSlide(REGEN_UUID_1, 1, 'cover_C', 'slide1.xml')];
+                replaceSlides.mockResolvedValueOnce(MOCK_SLIDES).mockResolvedValueOnce(regenSlides);
 
-                await facade.saveSlidePlan(JOB_ID, body);
-                await facade.saveSlidePlan(JOB_ID, body);
+                await facade.saveSlidePlan(JOB_ID, makeBody());
+                const regenResult = await facade.saveSlidePlan(
+                    JOB_ID,
+                    makeBody({
+                        totalSlides: 1,
+                        slides: [
+                            {
+                                slideOrder: 1,
+                                sourceSlideId: 'cover_C',
+                                slideFilename: 'slide1.xml',
+                            },
+                        ],
+                    })
+                );
 
-                expect(bulkInsert).toHaveBeenCalledTimes(2);
+                expect(replaceSlides).toHaveBeenCalledTimes(2);
+                expect(regenResult.slides).toHaveLength(1);
+                expect(regenResult.slides[0]).toMatchObject({
+                    id: REGEN_UUID_1,
+                    sourceSlideId: 'cover_C',
+                });
             });
         });
     });

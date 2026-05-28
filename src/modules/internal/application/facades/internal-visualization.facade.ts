@@ -42,7 +42,7 @@ export class InternalVisualizationFacade {
             body.totalSlides,
             body.slidePlan as unknown as SlidePlan
         );
-        const slides = await this.vizSlideService.bulkInsert(jobId, body.slides);
+        const slides = await this.vizSlideService.replaceSlides(jobId, body.slides);
 
         this.logger.log(
             `[slide-plan] DONE jobId=${jobId} idempotencyKey=${body.idempotencyKey} totalSlides=${body.totalSlides}`
