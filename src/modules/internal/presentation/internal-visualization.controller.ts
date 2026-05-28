@@ -18,6 +18,7 @@ import {
     InternalVisualizationJobResDTO,
     InternalVisualizationSlideResDTO,
     SaveSlidePlanReqDTO,
+    SaveSlidePlanResDTO,
 } from '../application/dtos/internal-visualization.dto';
 import { InternalVisualizationFacade } from '../application/facades/internal-visualization.facade';
 
@@ -87,15 +88,15 @@ export class InternalVisualizationController {
         description:
             'AI 서버가 슬라이드 플랜 생성 완료 후 호출합니다. ' +
             'visualization_jobs의 total_slides·slide_plan을 갱신하고 ' +
-            'visualization_slides를 일괄 INSERT합니다(중복 콜백 안전). ' +
+            '기존 슬라이드를 삭제한 뒤 새 슬라이드를 일괄 INSERT합니다(재생성 대응). ' +
             '완료 후 `visualizations.{jobId}` 이벤트를 emit합니다.',
     })
+    @ApiResponse({ status: 200, type: SaveSlidePlanResDTO })
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.VISUALIZATION_JOB_NOT_FOUND)
     async saveSlidePlan(
         @Param('jobId', ParseUUIDPipe) jobId: string,
         @Body() body: SaveSlidePlanReqDTO
-    ): Promise<string> {
-        await this.internalVisualizationFacade.saveSlidePlan(jobId, body);
-        return '슬라이드 플랜이 저장되었습니다.';
+    ): Promise<SaveSlidePlanResDTO> {
+        return this.internalVisualizationFacade.saveSlidePlan(jobId, body);
     }
 }

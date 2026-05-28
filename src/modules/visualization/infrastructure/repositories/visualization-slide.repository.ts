@@ -44,14 +44,17 @@ export class VisualizationSlideRepository {
         });
     }
 
-    async bulkInsertIgnoreConflict(rows: SlideInsertRow[]): Promise<void> {
+    async deleteAllByJobId(jobId: string): Promise<void> {
+        await this.repo.delete({ job: { id: jobId } });
+    }
+
+    async bulkInsert(rows: SlideInsertRow[]): Promise<void> {
         if (rows.length === 0) return;
         await this.repo
             .createQueryBuilder()
             .insert()
             .into(VisualizationSlide)
             .values(rows as QueryDeepPartialEntity<VisualizationSlide>[])
-            .orIgnore()
             .execute();
     }
 }

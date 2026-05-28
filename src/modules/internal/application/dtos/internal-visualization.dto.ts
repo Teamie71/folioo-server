@@ -8,8 +8,38 @@ import {
     MaxLength,
     Min,
     ValidateNested,
+    registerDecorator,
+    ValidationArguments,
+    ValidationOptions,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+function IsArrayLengthEqualTo(property: string, validationOptions?: ValidationOptions) {
+    return (object: object, propertyName: string) => {
+        registerDecorator({
+            name: 'isArrayLengthEqualTo',
+            target: object.constructor,
+            propertyName,
+            constraints: [property],
+            options: validationOptions,
+            validator: {
+                validate(value: unknown, args: ValidationArguments): boolean {
+                    const [relatedProp] = args.constraints as string[];
+                    const relatedValue = (args.object as Record<string, unknown>)[relatedProp];
+                    return (
+                        Array.isArray(value) &&
+                        typeof relatedValue === 'number' &&
+                        value.length === relatedValue
+                    );
+                },
+                defaultMessage(args: ValidationArguments): string {
+                    const [relatedProp] = args.constraints as string[];
+                    return `${args.property} 배열 길이는 ${relatedProp}과 일치해야 합니다.`;
+                },
+            },
+        });
+    };
+}
 import {
     VisualizationJob,
     SlidePlan,
@@ -21,6 +51,40 @@ import {
     CurrentFills,
 } from 'src/modules/visualization/domain/visualization-slide.entity';
 import { VisualizationSlideStatus } from 'src/modules/visualization/domain/enums/visualization-slide-status.enum';
+
+export class SaveSlidePlanSlideItemResDTO {
+    @ApiProperty({ description: '슬라이드 UUID' })
+    id: string;
+
+    @ApiProperty({ description: '슬라이드 순서 (1-indexed)' })
+    slideOrder: number;
+
+    @ApiProperty({ description: '소스 슬라이드 ID' })
+    sourceSlideId: string;
+
+    @ApiProperty({ description: '슬라이드 XML 파일명' })
+    slideFilename: string;
+
+    static from(slide: VisualizationSlide): SaveSlidePlanSlideItemResDTO {
+        const dto = new SaveSlidePlanSlideItemResDTO();
+        dto.id = slide.id;
+        dto.slideOrder = slide.slideOrder;
+        dto.sourceSlideId = slide.sourceSlideId;
+        dto.slideFilename = slide.slideFilename;
+        return dto;
+    }
+}
+
+export class SaveSlidePlanResDTO {
+    @ApiProperty({ type: [SaveSlidePlanSlideItemResDTO] })
+    slides: SaveSlidePlanSlideItemResDTO[];
+
+    static from(slides: VisualizationSlide[]): SaveSlidePlanResDTO {
+        const dto = new SaveSlidePlanResDTO();
+        dto.slides = slides.map((s) => SaveSlidePlanSlideItemResDTO.from(s));
+        return dto;
+    }
+}
 
 export class SlideItemReqDTO {
     @IsInt()
@@ -57,6 +121,7 @@ export class SaveSlidePlanReqDTO {
     @ApiProperty({ description: '슬라이드 플랜 JSON (§10.2 slide_plan)' })
     slidePlan: Record<string, unknown>;
 
+    @IsArrayLengthEqualTo('totalSlides')
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => SlideItemReqDTO)
