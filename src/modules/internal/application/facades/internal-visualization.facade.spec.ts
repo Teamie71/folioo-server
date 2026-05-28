@@ -88,15 +88,6 @@ describe('InternalVisualizationFacade', () => {
     });
 
     describe('saveSlidePlan', () => {
-        describe('입력 검증', () => {
-            it('totalSlides와 slides 배열 길이가 다르면 BAD_REQUEST를 던진다', async () => {
-                const body = makeBody({ totalSlides: 3 }); // slides는 2개
-
-                await expect(facade.saveSlidePlan(JOB_ID, body)).rejects.toThrow(BusinessException);
-                expect(findByIdOrThrow).not.toHaveBeenCalled();
-            });
-        });
-
         describe('job 검증', () => {
             it('job이 존재하지 않으면 VISUALIZATION_JOB_NOT_FOUND가 전파된다', async () => {
                 findByIdOrThrow.mockRejectedValue(

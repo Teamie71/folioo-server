@@ -23,12 +23,6 @@ export class InternalVisualizationFacade {
 
     @Transactional()
     async saveSlidePlan(jobId: string, body: SaveSlidePlanReqDTO): Promise<SaveSlidePlanResDTO> {
-        if (body.totalSlides !== body.slides.length) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, {
-                reason: `totalSlides(${body.totalSlides})와 slides 배열 길이(${body.slides.length})가 일치하지 않습니다.`,
-            });
-        }
-
         this.logger.log(
             `[slide-plan] START jobId=${jobId} idempotencyKey=${body.idempotencyKey} schemaVersion=${body.schemaVersion}`
         );

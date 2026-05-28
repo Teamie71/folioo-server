@@ -8,8 +8,38 @@ import {
     MaxLength,
     Min,
     ValidateNested,
+    registerDecorator,
+    ValidationArguments,
+    ValidationOptions,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+function IsArrayLengthEqualTo(property: string, validationOptions?: ValidationOptions) {
+    return (object: object, propertyName: string) => {
+        registerDecorator({
+            name: 'isArrayLengthEqualTo',
+            target: object.constructor,
+            propertyName,
+            constraints: [property],
+            options: validationOptions,
+            validator: {
+                validate(value: unknown, args: ValidationArguments): boolean {
+                    const [relatedProp] = args.constraints as string[];
+                    const relatedValue = (args.object as Record<string, unknown>)[relatedProp];
+                    return (
+                        Array.isArray(value) &&
+                        typeof relatedValue === 'number' &&
+                        value.length === relatedValue
+                    );
+                },
+                defaultMessage(args: ValidationArguments): string {
+                    const [relatedProp] = args.constraints as string[];
+                    return `${args.property} 배열 길이는 ${relatedProp}과 일치해야 합니다.`;
+                },
+            },
+        });
+    };
+}
 import {
     VisualizationJob,
     SlidePlan,
@@ -91,6 +121,7 @@ export class SaveSlidePlanReqDTO {
     @ApiProperty({ description: '슬라이드 플랜 JSON (§10.2 slide_plan)' })
     slidePlan: Record<string, unknown>;
 
+    @IsArrayLengthEqualTo('totalSlides')
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => SlideItemReqDTO)
