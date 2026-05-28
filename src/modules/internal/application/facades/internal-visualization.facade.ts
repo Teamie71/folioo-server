@@ -9,6 +9,7 @@ import {
     InternalVisualizationJobResDTO,
     InternalVisualizationSlideResDTO,
     SaveSlidePlanReqDTO,
+    SaveSlidePlanResDTO,
 } from '../dtos/internal-visualization.dto';
 
 @Injectable()
@@ -21,7 +22,7 @@ export class InternalVisualizationFacade {
     ) {}
 
     @Transactional()
-    async saveSlidePlan(jobId: string, body: SaveSlidePlanReqDTO): Promise<void> {
+    async saveSlidePlan(jobId: string, body: SaveSlidePlanReqDTO): Promise<SaveSlidePlanResDTO> {
         if (body.totalSlides !== body.slides.length) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
                 reason: `totalSlides(${body.totalSlides})와 slides 배열 길이(${body.slides.length})가 일치하지 않습니다.`,
@@ -41,13 +42,15 @@ export class InternalVisualizationFacade {
             body.totalSlides,
             body.slidePlan as unknown as SlidePlan
         );
-        await this.vizSlideService.bulkInsert(jobId, body.slides);
+        const slides = await this.vizSlideService.bulkInsert(jobId, body.slides);
 
         this.logger.log(
             `[slide-plan] DONE jobId=${jobId} idempotencyKey=${body.idempotencyKey} totalSlides=${body.totalSlides}`
         );
 
         // TODO: SSE — visualizations.{jobId} 채널에 slide_plan_ready 이벤트 emit
+
+        return SaveSlidePlanResDTO.from(slides);
     }
 
     async getJob(jobId: string): Promise<InternalVisualizationJobResDTO> {

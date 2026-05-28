@@ -22,6 +22,40 @@ import {
 } from 'src/modules/visualization/domain/visualization-slide.entity';
 import { VisualizationSlideStatus } from 'src/modules/visualization/domain/enums/visualization-slide-status.enum';
 
+export class SaveSlidePlanSlideItemResDTO {
+    @ApiProperty({ description: '슬라이드 UUID' })
+    id: string;
+
+    @ApiProperty({ description: '슬라이드 순서 (1-indexed)' })
+    slideOrder: number;
+
+    @ApiProperty({ description: '소스 슬라이드 ID' })
+    sourceSlideId: string;
+
+    @ApiProperty({ description: '슬라이드 XML 파일명' })
+    slideFilename: string;
+
+    static from(slide: VisualizationSlide): SaveSlidePlanSlideItemResDTO {
+        const dto = new SaveSlidePlanSlideItemResDTO();
+        dto.id = slide.id;
+        dto.slideOrder = slide.slideOrder;
+        dto.sourceSlideId = slide.sourceSlideId;
+        dto.slideFilename = slide.slideFilename;
+        return dto;
+    }
+}
+
+export class SaveSlidePlanResDTO {
+    @ApiProperty({ type: [SaveSlidePlanSlideItemResDTO] })
+    slides: SaveSlidePlanSlideItemResDTO[];
+
+    static from(slides: VisualizationSlide[]): SaveSlidePlanResDTO {
+        const dto = new SaveSlidePlanResDTO();
+        dto.slides = slides.map((s) => SaveSlidePlanSlideItemResDTO.from(s));
+        return dto;
+    }
+}
+
 export class SlideItemReqDTO {
     @IsInt()
     @Min(1)

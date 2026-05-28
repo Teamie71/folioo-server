@@ -51,7 +51,7 @@ export class VisualizationSlideService {
         return this.vizSlideRepo.existsNonCompletedByJobId(jobId);
     }
 
-    async bulkInsert(jobId: string, slides: SlideInput[]): Promise<void> {
+    async bulkInsert(jobId: string, slides: SlideInput[]): Promise<VisualizationSlide[]> {
         const rows: SlideInsertRow[] = slides.map((s) => ({
             job: { id: jobId },
             slideOrder: s.slideOrder,
@@ -59,5 +59,6 @@ export class VisualizationSlideService {
             slideFilename: s.slideFilename,
         }));
         await this.vizSlideRepo.bulkInsertIgnoreConflict(rows);
+        return this.vizSlideRepo.findAllByJobId(jobId);
     }
 }
