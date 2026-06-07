@@ -5,10 +5,19 @@ import { CloudTasksPort, VisualizationEnqueuePayload } from 'src/common/ports/cl
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
+const GRPC_ALREADY_EXISTS = 6;
 const DISPATCH_DEADLINE_SECONDS = 1800;
 const VIZ_SCHEMA_VERSION = 1;
-const HTTP_POST = 4; // google.cloud.tasks.v2.HttpMethod.POST
 const VIZ_GENERATE_PATH = '/tasks/viz/generate';
+
+function isGrpcAlreadyExists(error: unknown): boolean {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: unknown }).code === GRPC_ALREADY_EXISTS
+    );
+}
 
 @Injectable()
 export class GoogleCloudTasksAdapter extends CloudTasksPort {
@@ -98,12 +107,20 @@ export class GoogleCloudTasksAdapter extends CloudTasksPort {
             schemaVersion: VIZ_SCHEMA_VERSION,
         };
 
+        const taskName = this.client.taskPath(
+            this.projectId,
+            this.location,
+            this.vizQueueName,
+            payload.idempotencyKey
+        );
+
         try {
             const [task] = await this.client.createTask({
                 parent: queuePath,
                 task: {
+                    name: taskName,
                     httpRequest: {
-                        httpMethod: HTTP_POST,
+                        httpMethod: 'POST',
                         url: workerUrl,
                         headers: { 'Content-Type': 'application/json' },
                         body: Buffer.from(JSON.stringify(body)).toString('base64'),
@@ -118,6 +135,10 @@ export class GoogleCloudTasksAdapter extends CloudTasksPort {
 
             return task.name ?? '';
         } catch (error: unknown) {
+            // ALREADY_EXISTS (gRPC code 6): 동일 idempotencyKey로 이미 등록된 태스크 → 멱등성 보장
+            if (isGrpcAlreadyExists(error)) {
+                return taskName;
+            }
             const message = error instanceof Error ? error.message : String(error);
             this.logger.error(
                 `Failed to enqueue visualization task for jobId: ${payload.jobId} — ${message}`
