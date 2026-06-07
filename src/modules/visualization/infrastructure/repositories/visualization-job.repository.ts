@@ -26,6 +26,19 @@ export class VisualizationJobRepository {
         await this.repo.update(id, data);
     }
 
+    async insert(data: {
+        portfolioId: number;
+        userId: number;
+        templateId: string;
+    }): Promise<VisualizationJob> {
+        const job = this.repo.create({
+            portfolio: { id: data.portfolioId },
+            user: { id: data.userId },
+            templateId: data.templateId,
+        });
+        return this.repo.save(job);
+    }
+
     async decrementRegenerationCount(id: string): Promise<void> {
         await this.repo
             .createQueryBuilder()

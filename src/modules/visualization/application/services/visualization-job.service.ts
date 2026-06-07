@@ -15,6 +15,14 @@ export interface JobCompletionPayload {
 export class VisualizationJobService {
     constructor(private readonly vizJobRepo: VisualizationJobRepository) {}
 
+    async createJob(
+        portfolioId: number,
+        userId: number,
+        templateId: string
+    ): Promise<VisualizationJob> {
+        return this.vizJobRepo.insert({ portfolioId, userId, templateId });
+    }
+
     async findByIdOrThrow(id: string): Promise<VisualizationJob> {
         const job = await this.vizJobRepo.findById(id);
         if (!job) {
