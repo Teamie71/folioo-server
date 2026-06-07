@@ -68,6 +68,19 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `REDIS_DB`
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
+- `CLOUD_TASKS_SERVICE_ACCOUNT_KEY` (로컬 개발 전용. dev/prod GCE에서는 ADC 사용)
+
+## Cloud Tasks Keys (Visualization)
+
+| Key                                       | Required      | Description                                                                                  |
+| ----------------------------------------- | ------------- | -------------------------------------------------------------------------------------------- |
+| `CLOUD_TASKS_PROJECT_ID`                  | dev/prod 필수 | GCP 프로젝트 ID                                                                              |
+| `CLOUD_TASKS_LOCATION`                    | dev/prod 필수 | Cloud Tasks 리전 (예: `asia-northeast3`)                                                     |
+| `CLOUD_TASKS_VIZ_QUEUE`                   | dev/prod 필수 | 시각화 작업 큐 이름. 큐는 `maxAttempts=2` 로 설정 (1회 재시도)                               |
+| `CLOUD_TASKS_WORKER_BASE_URL`             | dev/prod 필수 | AI 워커 base URL (예: `https://worker.a.run.app`). path는 서비스 코드에서 task 종류별로 부여 |
+| `CLOUD_TASKS_WORKER_OIDC_SERVICE_ACCOUNT` | dev/prod 필수 | OIDC 토큰 발급용 서비스 계정 이메일                                                          |
+| `CLOUD_TASKS_WORKER_OIDC_AUDIENCE`        | dev/prod 필수 | OIDC audience (워커 URL과 동일하게 설정 권장)                                                |
+| `VISUALIZATION_CALLBACK_BASE_URL`         | dev/prod 필수 | AI 워커가 콜백을 보낼 서버 base URL (예: `https://api.folioo.kr`)                            |
 
 ## Environment Routing Rules
 
