@@ -44,6 +44,10 @@ export class VisualizationJobService {
         return row?.status === VisualizationJobStatus.PARTIAL_ERROR;
     }
 
+    async markAsFailed(id: string): Promise<void> {
+        await this.vizJobRepo.updateById(id, { status: VisualizationJobStatus.ERROR });
+    }
+
     async decrementRegenerationCount(id: string): Promise<void> {
         await this.vizJobRepo.decrementRegenerationCount(id);
     }

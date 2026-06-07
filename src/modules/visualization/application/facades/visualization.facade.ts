@@ -21,13 +21,18 @@ export class VisualizationFacade {
 
         const job = await this.vizJobService.createJob(portfolioId, userId, templateId);
 
-        await this.cloudTasksPort.enqueueVisualizationTask({
-            jobId: job.id,
-            portfolioId,
-            userId,
-            templateId,
-            idempotencyKey: `viz-generate-${job.id}`,
-        });
+        try {
+            await this.cloudTasksPort.enqueueVisualizationTask({
+                jobId: job.id,
+                portfolioId,
+                userId,
+                templateId,
+                idempotencyKey: `viz-generate-${job.id}`,
+            });
+        } catch (error) {
+            await this.vizJobService.markAsFailed(job.id);
+            throw error;
+        }
 
         const res = new CreateVisualizationResDTO();
         res.jobId = job.id;
