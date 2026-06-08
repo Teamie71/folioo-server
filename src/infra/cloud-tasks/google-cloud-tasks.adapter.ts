@@ -8,7 +8,7 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 const GRPC_ALREADY_EXISTS = 6;
 const DISPATCH_DEADLINE_SECONDS = 1800;
 const VIZ_SCHEMA_VERSION = 1;
-const VIZ_GENERATE_PATH = '/tasks/viz/generate';
+const VIZ_GENERATE_PATH = '/tasks/visualizations/generate';
 
 function isGrpcAlreadyExists(error: unknown): boolean {
     return (
