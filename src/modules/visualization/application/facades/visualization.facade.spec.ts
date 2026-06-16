@@ -142,4 +142,42 @@ describe('VisualizationFacade', () => {
             expect(result.slides[1].errorMessage).toBe('렌더 실패');
         });
     });
+
+    describe('getExportStatus', () => {
+        it('job 소유권을 검증하고 computeCanExport 결과를 반환한다', async () => {
+            findAllByJobId.mockResolvedValue([
+                makeSlide(1),
+                makeSlide(2, { status: VisualizationSlideStatus.REGENERATING }),
+            ]);
+
+            const result = await facade.getExportStatus(USER_ID, JOB_ID);
+
+            expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
+            expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getSignedUrl).not.toHaveBeenCalled();
+            expect(result).toEqual({
+                canExport: false,
+                blockingSlides: [2],
+                blockingReasons: {
+                    '2': VisualizationSlideStatus.REGENERATING,
+                },
+            });
+        });
+
+        it('job 자체가 내보내기 불가 상태이면 blockingReasons에 job 사유를 포함한다', async () => {
+            findByIdAndUserIdOrThrow.mockResolvedValue(
+                makeJob({ status: VisualizationJobStatus.ERROR, gcsPptxKey: null })
+            );
+            findAllByJobId.mockResolvedValue([makeSlide(1)]);
+
+            const result = await facade.getExportStatus(USER_ID, JOB_ID);
+
+            expect(result.canExport).toBe(false);
+            expect(result.blockingSlides).toEqual([]);
+            expect(result.blockingReasons).toEqual({
+                _job: VisualizationJobStatus.ERROR,
+                _pptx: 'missing_current_pptx',
+            });
+        });
+    });
 });

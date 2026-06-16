@@ -4,6 +4,7 @@ import { StoragePort } from 'src/common/ports/storage.port';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import {
     CreateVisualizationResDTO,
+    VisualizationExportStatusResDTO,
     VisualizationSlideItemResDTO,
     VisualizationSlidesResDTO,
 } from '../dtos/visualization.dto';
@@ -72,5 +73,11 @@ export class VisualizationFacade {
             remainingRegenerations: Math.max(MAX_REGENERATIONS - job.regenerationCount, 0),
             slides: slideItems,
         });
+    }
+
+    async getExportStatus(userId: number, jobId: string): Promise<VisualizationExportStatusResDTO> {
+        const job = await this.vizJobService.findByIdAndUserIdOrThrow(jobId, userId);
+        const slides = await this.vizSlideService.findAllByJobId(jobId);
+        return VisualizationExportStatusResDTO.from(computeCanExport(job, slides));
     }
 }

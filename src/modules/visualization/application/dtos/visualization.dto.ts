@@ -106,3 +106,27 @@ export class VisualizationSlidesResDTO {
         return dto;
     }
 }
+
+export class VisualizationExportStatusResDTO {
+    @ApiProperty({ example: false })
+    canExport: boolean;
+
+    @ApiProperty({ type: [Number], example: [3, 5] })
+    blockingSlides: number[];
+
+    @ApiProperty({
+        example: {
+            '3': 'regenerating',
+            '5': 'error',
+        },
+    })
+    blockingReasons: Record<string, string>;
+
+    static from(exportStatus: CanExportResult): VisualizationExportStatusResDTO {
+        const dto = new VisualizationExportStatusResDTO();
+        dto.canExport = exportStatus.canExport;
+        dto.blockingSlides = exportStatus.blockingSlides;
+        dto.blockingReasons = exportStatus.blockingReasons;
+        return dto;
+    }
+}
