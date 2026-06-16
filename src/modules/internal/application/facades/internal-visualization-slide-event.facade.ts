@@ -75,7 +75,7 @@ export class InternalVisualizationSlideEventFacade {
         const slide = await this.vizSlideService.findByIdAndJobIdOrThrow(slideId, jobId);
 
         if (body.event === SlideEventType.SLIDE_PREVIEW_ERROR) {
-            await this.handlePreviewError(jobId, slideId, slide.status);
+            await this.handlePreviewError(jobId, slideId, slide.status, body.message);
             return null;
         }
 
@@ -83,6 +83,7 @@ export class InternalVisualizationSlideEventFacade {
             status: EVENT_STATUS_MAP[body.event],
             currentFills: body.currentFills,
             gcsPreviewKey: body.gcsPreviewKey,
+            errorMessage: body.event === SlideEventType.SLIDE_CONTENT_ERROR ? body.message : null,
         });
 
         if (COMPLETING_EVENTS.includes(body.event)) {
@@ -101,18 +102,21 @@ export class InternalVisualizationSlideEventFacade {
     private async handlePreviewError(
         jobId: string,
         slideId: string,
-        currentStatus: VisualizationSlideStatus
+        currentStatus: VisualizationSlideStatus,
+        message: string | undefined
     ): Promise<void> {
         if (currentStatus === VisualizationSlideStatus.REGENERATING) {
             // Phase 2: completed로 롤백 + regeneration_count 보상 차감
             await this.vizSlideService.applyEventUpdate(slideId, {
                 status: VisualizationSlideStatus.COMPLETED,
+                errorMessage: null,
             });
             await this.vizJobService.decrementRegenerationCount(jobId);
         } else {
             // Phase 1: error 전이
             await this.vizSlideService.applyEventUpdate(slideId, {
                 status: VisualizationSlideStatus.ERROR,
+                errorMessage: message ?? null,
             });
         }
     }
