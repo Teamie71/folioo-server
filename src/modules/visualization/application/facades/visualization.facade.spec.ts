@@ -1,3 +1,5 @@
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { CloudTasksPort } from 'src/common/ports/cloud-tasks.port';
 import { StoragePort } from 'src/common/ports/storage.port';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
@@ -8,13 +10,14 @@ import { VisualizationJob } from '../../domain/visualization-job.entity';
 import { VisualizationSlide } from '../../domain/visualization-slide.entity';
 import { VisualizationJobService } from '../services/visualization-job.service';
 import { VisualizationSlideService } from '../services/visualization-slide.service';
+import { computeCanExport } from '../utils/can-export.util';
 import { VisualizationFacade } from './visualization.facade';
 
 const USER_ID = 1;
 const JOB_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 
 function makeJob(overrides: Partial<VisualizationJob> = {}): VisualizationJob {
-    return {
+    return Object.assign(new VisualizationJob(), {
         id: JOB_ID,
         status: VisualizationJobStatus.COMPLETED,
         pipelineStage: PipelineStage.COMPLETED,
@@ -23,7 +26,7 @@ function makeJob(overrides: Partial<VisualizationJob> = {}): VisualizationJob {
         slidePlan: null,
         regenerationCount: 2,
         ...overrides,
-    } as VisualizationJob;
+    });
 }
 
 function makeSlide(
@@ -50,6 +53,8 @@ describe('VisualizationFacade', () => {
     let facade: VisualizationFacade;
     let findByIdAndUserIdOrThrow: jest.Mock;
     let findAllByJobId: jest.Mock;
+    let getExportStatus: jest.Mock;
+    let getExportFileKeysOrThrow: jest.Mock;
     let getSignedUrl: jest.Mock;
 
     beforeEach(() => {
@@ -60,11 +65,28 @@ describe('VisualizationFacade', () => {
                 makeSlide(1, { gcsPreviewKey: `jobs/${JOB_ID}/previews/slide-01.jpg` }),
                 makeSlide(2),
             ]);
+        getExportStatus = jest.fn((job: VisualizationJob, slides: VisualizationSlide[]) =>
+            computeCanExport(job, slides)
+        );
+        getExportFileKeysOrThrow = jest.fn(
+            (job: VisualizationJob, slides: VisualizationSlide[]) => {
+                const exportStatus = computeCanExport(job, slides);
+                if (!exportStatus.canExport || !job.gcsPptxKey) {
+                    throw new BusinessException(ErrorCode.VISUALIZATION_EXPORT_BLOCKED, {
+                        blockingSlides: exportStatus.blockingSlides,
+                        blockingReasons: exportStatus.blockingReasons,
+                    });
+                }
+                return { pptxKey: job.gcsPptxKey, pdfKey: job.gcsPdfKey };
+            }
+        );
         getSignedUrl = jest.fn().mockResolvedValue('https://signed-preview-url');
 
         const portfolioService = {} as PortfolioService;
         const vizJobService = {
             findByIdAndUserIdOrThrow,
+            getExportStatus,
+            getExportFileKeysOrThrow,
         } as unknown as VisualizationJobService;
         const vizSlideService = {
             findAllByJobId,
@@ -89,6 +111,10 @@ describe('VisualizationFacade', () => {
 
             expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
             expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getExportStatus).toHaveBeenCalledWith(expect.objectContaining({ id: JOB_ID }), [
+                expect.objectContaining({ slideOrder: 1 }),
+                expect.objectContaining({ slideOrder: 2 }),
+            ]);
             expect(getSignedUrl).toHaveBeenCalledWith(`jobs/${JOB_ID}/previews/slide-01.jpg`, 3600);
             expect(getSignedUrl).toHaveBeenCalledTimes(1);
             expect(result).toMatchObject({
@@ -171,6 +197,10 @@ describe('VisualizationFacade', () => {
 
             expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
             expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getExportStatus).toHaveBeenCalledWith(expect.objectContaining({ id: JOB_ID }), [
+                expect.objectContaining({ slideOrder: 1 }),
+                expect.objectContaining({ slideOrder: 2 }),
+            ]);
             expect(getSignedUrl).not.toHaveBeenCalled();
             expect(result).toEqual({
                 canExport: false,
@@ -195,6 +225,60 @@ describe('VisualizationFacade', () => {
                 _job: VisualizationJobStatus.ERROR,
                 _pptx: 'missing_current_pptx',
             });
+        });
+    });
+
+    describe('export', () => {
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('내보내기 가능 상태이면 PPTX와 PDF signed URL을 반환한다', async () => {
+            jest.useFakeTimers().setSystemTime(new Date('2026-05-25T12:00:00Z'));
+            getSignedUrl.mockImplementation((key: string) => Promise.resolve(`signed:${key}`));
+
+            const result = await facade.export(USER_ID, JOB_ID);
+
+            expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
+            expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getExportFileKeysOrThrow).toHaveBeenCalledWith(
+                expect.objectContaining({ id: JOB_ID }),
+                [
+                    expect.objectContaining({ slideOrder: 1 }),
+                    expect.objectContaining({ slideOrder: 2 }),
+                ]
+            );
+            expect(getSignedUrl).toHaveBeenNthCalledWith(1, `jobs/${JOB_ID}/current.pptx`, 300);
+            expect(getSignedUrl).toHaveBeenNthCalledWith(2, `jobs/${JOB_ID}/current.pdf`, 300);
+            expect(result).toEqual({
+                pptxUrl: `signed:jobs/${JOB_ID}/current.pptx`,
+                pdfUrl: `signed:jobs/${JOB_ID}/current.pdf`,
+                expiresAt: '2026-05-25T12:05:00.000Z',
+            });
+        });
+
+        it('미완성 슬라이드가 있으면 signed URL을 발급하지 않고 차단 에러를 던진다', async () => {
+            findAllByJobId.mockResolvedValue([
+                makeSlide(1),
+                makeSlide(2, { status: VisualizationSlideStatus.REGENERATING }),
+            ]);
+
+            try {
+                await facade.export(USER_ID, JOB_ID);
+                fail('BusinessException should have been thrown');
+            } catch (error) {
+                expect(error).toBeInstanceOf(BusinessException);
+                expect((error as BusinessException).getResponse()).toMatchObject({
+                    errorCode: ErrorCode.VISUALIZATION_EXPORT_BLOCKED,
+                    details: {
+                        blockingSlides: [2],
+                        blockingReasons: {
+                            '2': VisualizationSlideStatus.REGENERATING,
+                        },
+                    },
+                });
+            }
+            expect(getSignedUrl).not.toHaveBeenCalled();
         });
     });
 });

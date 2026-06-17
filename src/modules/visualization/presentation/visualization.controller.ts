@@ -16,6 +16,7 @@ import { VisualizationFacade } from '../application/facades/visualization.facade
 import {
     CreateVisualizationReqDTO,
     CreateVisualizationResDTO,
+    VisualizationExportResDTO,
     VisualizationExportStatusResDTO,
     VisualizationSlidesResDTO,
 } from '../application/dtos/visualization.dto';
@@ -73,5 +74,25 @@ export class VisualizationController {
         @Param('jobId', ParseUUIDPipe) jobId: string
     ): Promise<VisualizationExportStatusResDTO> {
         return this.vizFacade.getExportStatus(userId, jobId);
+    }
+
+    @Post(':jobId/export')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'PPT 시각화 파일 내보내기',
+        description:
+            '완성된 PPTX와 PDF 파일의 signed URL을 발급합니다. 워커 호출이나 큐잉 없이 동기 응답합니다.',
+    })
+    @ApiCommonResponse(VisualizationExportResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.VISUALIZATION_JOB_NOT_FOUND,
+        ErrorCode.VISUALIZATION_EXPORT_BLOCKED
+    )
+    async export(
+        @User('sub') userId: number,
+        @Param('jobId', ParseUUIDPipe) jobId: string
+    ): Promise<VisualizationExportResDTO> {
+        return this.vizFacade.export(userId, jobId);
     }
 }

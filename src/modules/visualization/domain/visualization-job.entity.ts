@@ -60,4 +60,8 @@ export class VisualizationJob {
 
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt: Date;
+
+    get gcsPdfKey(): string {
+        return `jobs/${this.id}/current.pdf`;
+    }
 }
