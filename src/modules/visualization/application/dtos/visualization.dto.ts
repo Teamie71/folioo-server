@@ -130,3 +130,26 @@ export class VisualizationExportStatusResDTO {
         return dto;
     }
 }
+
+export class VisualizationExportResDTO {
+    @ApiProperty({ example: 'https://storage.googleapis.com/folioo/jobs/uuid/current.pptx?...' })
+    pptxUrl: string;
+
+    @ApiProperty({ example: 'https://storage.googleapis.com/folioo/jobs/uuid/current.pdf?...' })
+    pdfUrl: string;
+
+    @ApiProperty({ example: '2026-05-25T12:05:00.000Z' })
+    expiresAt: string;
+
+    static from(data: {
+        pptxUrl: string;
+        pdfUrl: string;
+        expiresAt: string;
+    }): VisualizationExportResDTO {
+        const dto = new VisualizationExportResDTO();
+        dto.pptxUrl = data.pptxUrl;
+        dto.pdfUrl = data.pdfUrl;
+        dto.expiresAt = data.expiresAt;
+        return dto;
+    }
+}

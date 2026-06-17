@@ -1,9 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CloudTasksPort } from 'src/common/ports/cloud-tasks.port';
 import { StoragePort } from 'src/common/ports/storage.port';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import {
     CreateVisualizationResDTO,
+    VisualizationExportResDTO,
     VisualizationExportStatusResDTO,
     VisualizationSlideItemResDTO,
     VisualizationSlidesResDTO,
@@ -13,6 +16,7 @@ import { VisualizationSlideService } from '../services/visualization-slide.servi
 import { computeCanExport } from '../utils/can-export.util';
 
 const PREVIEW_TTL_SECONDS = 60 * 60;
+const EXPORT_TTL_SECONDS = 60 * 5;
 const MAX_REGENERATIONS = 10;
 
 @Injectable()
@@ -87,5 +91,27 @@ export class VisualizationFacade {
         const job = await this.vizJobService.findByIdAndUserIdOrThrow(jobId, userId);
         const slides = await this.vizSlideService.findAllByJobId(jobId);
         return VisualizationExportStatusResDTO.from(computeCanExport(job, slides));
+    }
+
+    async export(userId: number, jobId: string): Promise<VisualizationExportResDTO> {
+        const job = await this.vizJobService.findByIdAndUserIdOrThrow(jobId, userId);
+        const slides = await this.vizSlideService.findAllByJobId(jobId);
+        const exportStatus = computeCanExport(job, slides);
+
+        if (!exportStatus.canExport || !job.gcsPptxKey) {
+            throw new BusinessException(ErrorCode.VISUALIZATION_EXPORT_BLOCKED, {
+                blockingSlides: exportStatus.blockingSlides,
+                blockingReasons: exportStatus.blockingReasons,
+            });
+        }
+
+        const expiresAt = new Date(Date.now() + EXPORT_TTL_SECONDS * 1000).toISOString();
+        const pdfKey = `jobs/${jobId}/current.pdf`;
+        const [pptxUrl, pdfUrl] = await Promise.all([
+            this.storagePort.getSignedUrl(job.gcsPptxKey, EXPORT_TTL_SECONDS),
+            this.storagePort.getSignedUrl(pdfKey, EXPORT_TTL_SECONDS),
+        ]);
+
+        return VisualizationExportResDTO.from({ pptxUrl, pdfUrl, expiresAt });
     }
 }

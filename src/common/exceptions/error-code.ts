@@ -341,4 +341,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '요청한 templateId가 작업에 등록된 templateId와 일치하지 않습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.VISUALIZATION_EXPORT_BLOCKED]: {
+        message: '모든 슬라이드가 완성된 후 내보낼 수 있습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
 };

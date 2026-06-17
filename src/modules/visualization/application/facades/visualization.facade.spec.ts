@@ -1,3 +1,5 @@
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { CloudTasksPort } from 'src/common/ports/cloud-tasks.port';
 import { StoragePort } from 'src/common/ports/storage.port';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
@@ -195,6 +197,53 @@ describe('VisualizationFacade', () => {
                 _job: VisualizationJobStatus.ERROR,
                 _pptx: 'missing_current_pptx',
             });
+        });
+    });
+
+    describe('export', () => {
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('내보내기 가능 상태이면 PPTX와 PDF signed URL을 반환한다', async () => {
+            jest.useFakeTimers().setSystemTime(new Date('2026-05-25T12:00:00Z'));
+            getSignedUrl.mockImplementation((key: string) => Promise.resolve(`signed:${key}`));
+
+            const result = await facade.export(USER_ID, JOB_ID);
+
+            expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
+            expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getSignedUrl).toHaveBeenNthCalledWith(1, `jobs/${JOB_ID}/current.pptx`, 300);
+            expect(getSignedUrl).toHaveBeenNthCalledWith(2, `jobs/${JOB_ID}/current.pdf`, 300);
+            expect(result).toEqual({
+                pptxUrl: `signed:jobs/${JOB_ID}/current.pptx`,
+                pdfUrl: `signed:jobs/${JOB_ID}/current.pdf`,
+                expiresAt: '2026-05-25T12:05:00.000Z',
+            });
+        });
+
+        it('미완성 슬라이드가 있으면 signed URL을 발급하지 않고 차단 에러를 던진다', async () => {
+            findAllByJobId.mockResolvedValue([
+                makeSlide(1),
+                makeSlide(2, { status: VisualizationSlideStatus.REGENERATING }),
+            ]);
+
+            try {
+                await facade.export(USER_ID, JOB_ID);
+                fail('BusinessException should have been thrown');
+            } catch (error) {
+                expect(error).toBeInstanceOf(BusinessException);
+                expect((error as BusinessException).getResponse()).toMatchObject({
+                    errorCode: ErrorCode.VISUALIZATION_EXPORT_BLOCKED,
+                    details: {
+                        blockingSlides: [2],
+                        blockingReasons: {
+                            '2': VisualizationSlideStatus.REGENERATING,
+                        },
+                    },
+                });
+            }
+            expect(getSignedUrl).not.toHaveBeenCalled();
         });
     });
 });
