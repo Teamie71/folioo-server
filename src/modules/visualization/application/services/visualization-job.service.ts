@@ -4,11 +4,18 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PipelineStage } from '../../domain/enums/pipeline-stage.enum';
 import { VisualizationJobStatus } from '../../domain/enums/visualization-job-status.enum';
 import { SlidePlan, VisualizationJob } from '../../domain/visualization-job.entity';
+import { VisualizationSlide } from '../../domain/visualization-slide.entity';
 import { VisualizationJobRepository } from '../../infrastructure/repositories/visualization-job.repository';
+import { CanExportResult, computeCanExport } from '../utils/can-export.util';
 
 export interface JobCompletionPayload {
     status: VisualizationJobStatus;
     gcsPptxKey: string | null;
+}
+
+export interface VisualizationExportFileKeys {
+    pptxKey: string;
+    pdfKey: string;
 }
 
 @Injectable()
@@ -84,5 +91,28 @@ export class VisualizationJobService {
             pipelineStage: PipelineStage.COMPLETED,
             gcsPptxKey: payload.gcsPptxKey,
         });
+    }
+
+    getExportStatus(job: VisualizationJob, slides: VisualizationSlide[]): CanExportResult {
+        return computeCanExport(job, slides);
+    }
+
+    getExportFileKeysOrThrow(
+        job: VisualizationJob,
+        slides: VisualizationSlide[]
+    ): VisualizationExportFileKeys {
+        const exportStatus = this.getExportStatus(job, slides);
+
+        if (!exportStatus.canExport || !job.gcsPptxKey) {
+            throw new BusinessException(ErrorCode.VISUALIZATION_EXPORT_BLOCKED, {
+                blockingSlides: exportStatus.blockingSlides,
+                blockingReasons: exportStatus.blockingReasons,
+            });
+        }
+
+        return {
+            pptxKey: job.gcsPptxKey,
+            pdfKey: job.gcsPdfKey,
+        };
     }
 }

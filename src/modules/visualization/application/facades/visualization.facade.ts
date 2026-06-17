@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CloudTasksPort } from 'src/common/ports/cloud-tasks.port';
 import { StoragePort } from 'src/common/ports/storage.port';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import {
     CreateVisualizationResDTO,
@@ -13,7 +11,6 @@ import {
 } from '../dtos/visualization.dto';
 import { VisualizationJobService } from '../services/visualization-job.service';
 import { VisualizationSlideService } from '../services/visualization-slide.service';
-import { computeCanExport } from '../utils/can-export.util';
 
 const PREVIEW_TTL_SECONDS = 60 * 60;
 const EXPORT_TTL_SECONDS = 60 * 5;
@@ -60,7 +57,7 @@ export class VisualizationFacade {
     async getSlides(userId: number, jobId: string): Promise<VisualizationSlidesResDTO> {
         const job = await this.vizJobService.findByIdAndUserIdOrThrow(jobId, userId);
         const slides = await this.vizSlideService.findAllByJobId(jobId);
-        const exportStatus = computeCanExport(job, slides);
+        const exportStatus = this.vizJobService.getExportStatus(job, slides);
         const slideItems = await Promise.all(
             slides.map(async (slide) => {
                 let previewUrl: string | null = null;
@@ -90,26 +87,20 @@ export class VisualizationFacade {
     async getExportStatus(userId: number, jobId: string): Promise<VisualizationExportStatusResDTO> {
         const job = await this.vizJobService.findByIdAndUserIdOrThrow(jobId, userId);
         const slides = await this.vizSlideService.findAllByJobId(jobId);
-        return VisualizationExportStatusResDTO.from(computeCanExport(job, slides));
+        return VisualizationExportStatusResDTO.from(
+            this.vizJobService.getExportStatus(job, slides)
+        );
     }
 
     async export(userId: number, jobId: string): Promise<VisualizationExportResDTO> {
         const job = await this.vizJobService.findByIdAndUserIdOrThrow(jobId, userId);
         const slides = await this.vizSlideService.findAllByJobId(jobId);
-        const exportStatus = computeCanExport(job, slides);
-
-        if (!exportStatus.canExport || !job.gcsPptxKey) {
-            throw new BusinessException(ErrorCode.VISUALIZATION_EXPORT_BLOCKED, {
-                blockingSlides: exportStatus.blockingSlides,
-                blockingReasons: exportStatus.blockingReasons,
-            });
-        }
+        const exportFileKeys = this.vizJobService.getExportFileKeysOrThrow(job, slides);
 
         const expiresAt = new Date(Date.now() + EXPORT_TTL_SECONDS * 1000).toISOString();
-        const pdfKey = `jobs/${jobId}/current.pdf`;
         const [pptxUrl, pdfUrl] = await Promise.all([
-            this.storagePort.getSignedUrl(job.gcsPptxKey, EXPORT_TTL_SECONDS),
-            this.storagePort.getSignedUrl(pdfKey, EXPORT_TTL_SECONDS),
+            this.storagePort.getSignedUrl(exportFileKeys.pptxKey, EXPORT_TTL_SECONDS),
+            this.storagePort.getSignedUrl(exportFileKeys.pdfKey, EXPORT_TTL_SECONDS),
         ]);
 
         return VisualizationExportResDTO.from({ pptxUrl, pdfUrl, expiresAt });

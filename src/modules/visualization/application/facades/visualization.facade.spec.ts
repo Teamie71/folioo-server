@@ -10,13 +10,14 @@ import { VisualizationJob } from '../../domain/visualization-job.entity';
 import { VisualizationSlide } from '../../domain/visualization-slide.entity';
 import { VisualizationJobService } from '../services/visualization-job.service';
 import { VisualizationSlideService } from '../services/visualization-slide.service';
+import { computeCanExport } from '../utils/can-export.util';
 import { VisualizationFacade } from './visualization.facade';
 
 const USER_ID = 1;
 const JOB_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 
 function makeJob(overrides: Partial<VisualizationJob> = {}): VisualizationJob {
-    return {
+    return Object.assign(new VisualizationJob(), {
         id: JOB_ID,
         status: VisualizationJobStatus.COMPLETED,
         pipelineStage: PipelineStage.COMPLETED,
@@ -25,7 +26,7 @@ function makeJob(overrides: Partial<VisualizationJob> = {}): VisualizationJob {
         slidePlan: null,
         regenerationCount: 2,
         ...overrides,
-    } as VisualizationJob;
+    });
 }
 
 function makeSlide(
@@ -52,6 +53,8 @@ describe('VisualizationFacade', () => {
     let facade: VisualizationFacade;
     let findByIdAndUserIdOrThrow: jest.Mock;
     let findAllByJobId: jest.Mock;
+    let getExportStatus: jest.Mock;
+    let getExportFileKeysOrThrow: jest.Mock;
     let getSignedUrl: jest.Mock;
 
     beforeEach(() => {
@@ -62,11 +65,28 @@ describe('VisualizationFacade', () => {
                 makeSlide(1, { gcsPreviewKey: `jobs/${JOB_ID}/previews/slide-01.jpg` }),
                 makeSlide(2),
             ]);
+        getExportStatus = jest.fn((job: VisualizationJob, slides: VisualizationSlide[]) =>
+            computeCanExport(job, slides)
+        );
+        getExportFileKeysOrThrow = jest.fn(
+            (job: VisualizationJob, slides: VisualizationSlide[]) => {
+                const exportStatus = computeCanExport(job, slides);
+                if (!exportStatus.canExport || !job.gcsPptxKey) {
+                    throw new BusinessException(ErrorCode.VISUALIZATION_EXPORT_BLOCKED, {
+                        blockingSlides: exportStatus.blockingSlides,
+                        blockingReasons: exportStatus.blockingReasons,
+                    });
+                }
+                return { pptxKey: job.gcsPptxKey, pdfKey: job.gcsPdfKey };
+            }
+        );
         getSignedUrl = jest.fn().mockResolvedValue('https://signed-preview-url');
 
         const portfolioService = {} as PortfolioService;
         const vizJobService = {
             findByIdAndUserIdOrThrow,
+            getExportStatus,
+            getExportFileKeysOrThrow,
         } as unknown as VisualizationJobService;
         const vizSlideService = {
             findAllByJobId,
@@ -91,6 +111,10 @@ describe('VisualizationFacade', () => {
 
             expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
             expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getExportStatus).toHaveBeenCalledWith(expect.objectContaining({ id: JOB_ID }), [
+                expect.objectContaining({ slideOrder: 1 }),
+                expect.objectContaining({ slideOrder: 2 }),
+            ]);
             expect(getSignedUrl).toHaveBeenCalledWith(`jobs/${JOB_ID}/previews/slide-01.jpg`, 3600);
             expect(getSignedUrl).toHaveBeenCalledTimes(1);
             expect(result).toMatchObject({
@@ -173,6 +197,10 @@ describe('VisualizationFacade', () => {
 
             expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
             expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getExportStatus).toHaveBeenCalledWith(expect.objectContaining({ id: JOB_ID }), [
+                expect.objectContaining({ slideOrder: 1 }),
+                expect.objectContaining({ slideOrder: 2 }),
+            ]);
             expect(getSignedUrl).not.toHaveBeenCalled();
             expect(result).toEqual({
                 canExport: false,
@@ -213,6 +241,13 @@ describe('VisualizationFacade', () => {
 
             expect(findByIdAndUserIdOrThrow).toHaveBeenCalledWith(JOB_ID, USER_ID);
             expect(findAllByJobId).toHaveBeenCalledWith(JOB_ID);
+            expect(getExportFileKeysOrThrow).toHaveBeenCalledWith(
+                expect.objectContaining({ id: JOB_ID }),
+                [
+                    expect.objectContaining({ slideOrder: 1 }),
+                    expect.objectContaining({ slideOrder: 2 }),
+                ]
+            );
             expect(getSignedUrl).toHaveBeenNthCalledWith(1, `jobs/${JOB_ID}/current.pptx`, 300);
             expect(getSignedUrl).toHaveBeenNthCalledWith(2, `jobs/${JOB_ID}/current.pdf`, 300);
             expect(result).toEqual({
