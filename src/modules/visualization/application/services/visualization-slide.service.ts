@@ -19,6 +19,7 @@ export interface SlideUpdatePayload {
     status: VisualizationSlideStatus;
     currentFills?: Record<string, unknown>;
     gcsPreviewKey?: string;
+    errorMessage?: string | null;
 }
 
 @Injectable()
@@ -37,6 +38,7 @@ export class VisualizationSlideService {
         const update: Record<string, unknown> = { status: payload.status };
         if (payload.currentFills !== undefined) update['currentFills'] = payload.currentFills;
         if (payload.gcsPreviewKey !== undefined) update['gcsPreviewKey'] = payload.gcsPreviewKey;
+        if (payload.errorMessage !== undefined) update['errorMessage'] = payload.errorMessage;
         await this.vizSlideRepo.updateById(
             slideId,
             update as QueryDeepPartialEntity<VisualizationSlide>

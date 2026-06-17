@@ -60,6 +60,9 @@ export class VisualizationSlide {
     @Column({ type: 'varchar', length: 500, nullable: true })
     gcsPreviewKey: string | null;
 
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    errorMessage: string | null;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 

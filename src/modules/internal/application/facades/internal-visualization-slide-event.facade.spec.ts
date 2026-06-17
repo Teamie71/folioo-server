@@ -103,6 +103,7 @@ describe('InternalVisualizationSlideEventFacade', () => {
                 status: VisualizationSlideStatus.GENERATING,
                 currentFills: body.currentFills,
                 gcsPreviewKey: undefined,
+                errorMessage: null,
             });
             expect(getSignedUrl).not.toHaveBeenCalled();
         });
@@ -125,6 +126,26 @@ describe('InternalVisualizationSlideEventFacade', () => {
                 status: VisualizationSlideStatus.ERROR,
                 currentFills: undefined,
                 gcsPreviewKey: undefined,
+                errorMessage: '실패',
+            });
+        });
+
+        it('message가 없으면 errorMessage를 null로 업데이트한다', async () => {
+            findByIdAndJobIdOrThrow.mockResolvedValue(
+                makeSlide(VisualizationSlideStatus.GENERATING)
+            );
+            const body = makeBody({
+                event: SlideEventType.SLIDE_CONTENT_ERROR,
+                retryable: false,
+            });
+
+            await facade.processDbOperations(JOB_ID, SLIDE_ID, body);
+
+            expect(applyEventUpdate).toHaveBeenCalledWith(SLIDE_ID, {
+                status: VisualizationSlideStatus.ERROR,
+                currentFills: undefined,
+                gcsPreviewKey: undefined,
+                errorMessage: null,
             });
         });
     });
@@ -148,6 +169,7 @@ describe('InternalVisualizationSlideEventFacade', () => {
                 status: VisualizationSlideStatus.COMPLETED,
                 currentFills: undefined,
                 gcsPreviewKey: GCS_KEY,
+                errorMessage: null,
             });
             expect(result).toBe(GCS_KEY);
         });
@@ -217,6 +239,7 @@ describe('InternalVisualizationSlideEventFacade', () => {
 
             expect(applyEventUpdate).toHaveBeenCalledWith(SLIDE_ID, {
                 status: VisualizationSlideStatus.ERROR,
+                errorMessage: '렌더 실패',
             });
             expect(decrementRegenerationCount).not.toHaveBeenCalled();
         });
@@ -235,6 +258,7 @@ describe('InternalVisualizationSlideEventFacade', () => {
 
             expect(applyEventUpdate).toHaveBeenCalledWith(SLIDE_ID, {
                 status: VisualizationSlideStatus.COMPLETED,
+                errorMessage: null,
             });
             expect(decrementRegenerationCount).toHaveBeenCalledWith(JOB_ID);
         });
@@ -274,6 +298,7 @@ describe('InternalVisualizationSlideEventFacade', () => {
                 status: VisualizationSlideStatus.COMPLETED,
                 currentFills: undefined,
                 gcsPreviewKey: GCS_KEY,
+                errorMessage: null,
             });
             expect(result).toBe(GCS_KEY);
         });
