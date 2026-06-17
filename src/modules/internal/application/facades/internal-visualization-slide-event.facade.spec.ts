@@ -129,6 +129,25 @@ describe('InternalVisualizationSlideEventFacade', () => {
                 errorMessage: '실패',
             });
         });
+
+        it('message가 없으면 errorMessage를 null로 업데이트한다', async () => {
+            findByIdAndJobIdOrThrow.mockResolvedValue(
+                makeSlide(VisualizationSlideStatus.GENERATING)
+            );
+            const body = makeBody({
+                event: SlideEventType.SLIDE_CONTENT_ERROR,
+                retryable: false,
+            });
+
+            await facade.processDbOperations(JOB_ID, SLIDE_ID, body);
+
+            expect(applyEventUpdate).toHaveBeenCalledWith(SLIDE_ID, {
+                status: VisualizationSlideStatus.ERROR,
+                currentFills: undefined,
+                gcsPreviewKey: undefined,
+                errorMessage: null,
+            });
+        });
     });
 
     describe('slide_preview_ready', () => {

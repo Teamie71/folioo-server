@@ -83,7 +83,8 @@ export class InternalVisualizationSlideEventFacade {
             status: EVENT_STATUS_MAP[body.event],
             currentFills: body.currentFills,
             gcsPreviewKey: body.gcsPreviewKey,
-            errorMessage: body.event === SlideEventType.SLIDE_CONTENT_ERROR ? body.message : null,
+            errorMessage:
+                body.event === SlideEventType.SLIDE_CONTENT_ERROR ? (body.message ?? null) : null,
         });
 
         if (COMPLETING_EVENTS.includes(body.event)) {

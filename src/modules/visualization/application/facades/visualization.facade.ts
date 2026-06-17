@@ -59,9 +59,17 @@ export class VisualizationFacade {
         const exportStatus = computeCanExport(job, slides);
         const slideItems = await Promise.all(
             slides.map(async (slide) => {
-                const previewUrl = slide.gcsPreviewKey
-                    ? await this.storagePort.getSignedUrl(slide.gcsPreviewKey, PREVIEW_TTL_SECONDS)
-                    : null;
+                let previewUrl: string | null = null;
+                if (slide.gcsPreviewKey) {
+                    try {
+                        previewUrl = await this.storagePort.getSignedUrl(
+                            slide.gcsPreviewKey,
+                            PREVIEW_TTL_SECONDS
+                        );
+                    } catch {
+                        previewUrl = null;
+                    }
+                }
                 return VisualizationSlideItemResDTO.from(slide, previewUrl);
             })
         );
@@ -70,7 +78,7 @@ export class VisualizationFacade {
             jobStatus: job.status,
             pipelineStage: job.pipelineStage,
             exportStatus,
-            remainingRegenerations: Math.max(MAX_REGENERATIONS - job.regenerationCount, 0),
+            remainingRegenerations: Math.max(MAX_REGENERATIONS - (job.regenerationCount ?? 0), 0),
             slides: slideItems,
         });
     }

@@ -52,11 +52,7 @@ export class VisualizationController {
             '생성한 PPT 시각화 작업의 현재 job 상태, 슬라이드 상태, 프리뷰 signed URL, 내보내기 가능 여부를 조회합니다.',
     })
     @ApiCommonResponse(VisualizationSlidesResDTO)
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.VISUALIZATION_JOB_NOT_FOUND,
-        ErrorCode.GCS_SIGNED_URL_FAILED
-    )
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.VISUALIZATION_JOB_NOT_FOUND)
     async getSlides(
         @User('sub') userId: number,
         @Param('jobId', ParseUUIDPipe) jobId: string

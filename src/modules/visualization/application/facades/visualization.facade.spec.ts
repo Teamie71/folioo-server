@@ -141,6 +141,23 @@ describe('VisualizationFacade', () => {
             });
             expect(result.slides[1].errorMessage).toBe('렌더 실패');
         });
+
+        it('일부 preview signed URL 발급에 실패해도 슬라이드 목록을 반환한다', async () => {
+            getSignedUrl.mockRejectedValue(new Error('signed URL failed'));
+
+            const result = await facade.getSlides(USER_ID, JOB_ID);
+
+            expect(result.slides[0].previewUrl).toBeNull();
+            expect(result.slides[1].previewUrl).toBeNull();
+        });
+
+        it('regenerationCount가 없으면 0으로 간주해 remainingRegenerations를 계산한다', async () => {
+            findByIdAndUserIdOrThrow.mockResolvedValue(makeJob({ regenerationCount: undefined }));
+
+            const result = await facade.getSlides(USER_ID, JOB_ID);
+
+            expect(result.remainingRegenerations).toBe(10);
+        });
     });
 
     describe('getExportStatus', () => {
