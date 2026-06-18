@@ -127,7 +127,7 @@ export class InterviewFacade {
         }
 
         const sessionState = await this.interviewService.getSessionState(experience.sessionId);
-        if (!sessionState.allComplete) {
+        if (!sessionState.allComplete && sessionState.turnNumber < 18) {
             throw new BusinessException(ErrorCode.INTERVIEW_NOT_COMPLETED);
         }
 
