@@ -1,4 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+jest.mock('typeorm-transactional', () => ({
+    Transactional: () => (_target: object, _key: string, descriptor: PropertyDescriptor) =>
+        descriptor,
+    initializeTransactionalContext: jest.fn(),
+}));
+
+import { ExperienceStatus } from 'src/modules/experience/domain/enums/experience-status.enum';
+import { PortfolioStatus } from 'src/modules/portfolio/domain/enums/portfolio-status.enum';
 import { ExperienceService } from 'src/modules/experience/application/services/experience.service';
 import { InsightService } from 'src/modules/insight/application/services/insight.service';
 import { AiRelayConnection } from 'src/common/ports/ai-relay.port';
@@ -22,38 +30,52 @@ class InterviewServiceStub {
     readonly getSessionState = jest.fn<Promise<InterviewSessionStateResDTO>, [string]>();
 
     readonly extendSessionStream = jest.fn<Promise<AiRelayConnection>, [string]>();
+
+    readonly validateReadyForGeneration = jest.fn<Promise<void>, [string]>();
+
+    readonly delegatePortfolioGeneration = jest.fn<Promise<void>, [number, string, string]>();
 }
 
 class ExperienceServiceStub {
     readonly findByIdOrThrow = jest.fn<
-        Promise<{ id: number; name: string; sessionId?: string | null }>,
+        Promise<{ id: number; name: string; sessionId?: string | null; status?: ExperienceStatus }>,
         [number, number]
     >();
     readonly saveInterviewSessionId = jest.fn<Promise<void>, [number, number, string]>();
+    readonly transitionToGenerate = jest.fn<
+        Promise<{ id: number; name: string; sessionId: string | null; status: ExperienceStatus }>,
+        [unknown]
+    >();
+    readonly transitionToGenerateFailed = jest.fn<Promise<void>, [number]>();
 }
 
 class InsightServiceStub {
     readonly findByIdAndUserOrThrow = jest.fn<Promise<{ id: number }>, [number, number]>();
 }
 
-class PortfolioServiceStub {}
+class PortfolioServiceStub {
+    readonly savePortfolio = jest.fn<Promise<{ id: number; status: PortfolioStatus }>, [unknown]>();
+    readonly removeGeneratingPortfolio = jest.fn<Promise<void>, [number]>();
+}
 
 describe('InterviewFacade', () => {
     let interviewFacade: InterviewFacade;
     let interviewServiceStub: InterviewServiceStub;
     let experienceServiceStub: ExperienceServiceStub;
     let insightServiceStub: InsightServiceStub;
+    let portfolioServiceStub: PortfolioServiceStub;
 
     beforeEach(() => {
         interviewServiceStub = new InterviewServiceStub();
         experienceServiceStub = new ExperienceServiceStub();
         insightServiceStub = new InsightServiceStub();
+        portfolioServiceStub = new PortfolioServiceStub();
 
         interviewFacade = new InterviewFacade(
             interviewServiceStub as unknown as InterviewService,
             experienceServiceStub as unknown as ExperienceService,
             insightServiceStub as unknown as InsightService,
-            new PortfolioServiceStub() as unknown as PortfolioService
+            portfolioServiceStub as unknown as PortfolioService
         );
     });
 
@@ -308,6 +330,56 @@ describe('InterviewFacade', () => {
         );
         expect(interviewServiceStub.getSessionState).not.toHaveBeenCalled();
         expect(interviewServiceStub.extendSessionStream).not.toHaveBeenCalled();
+    });
+
+    describe('generatePortfolio', () => {
+        it('proceeds with generation when allComplete is false but turnNumber is 18', async () => {
+            const experience = {
+                id: 30,
+                name: '테스트 경험',
+                sessionId: 'session_generate_ok',
+                status: ExperienceStatus.ON_CHAT,
+            };
+            experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+            interviewServiceStub.validateReadyForGeneration.mockResolvedValue();
+            experienceServiceStub.transitionToGenerate.mockResolvedValue({
+                ...experience,
+                status: ExperienceStatus.GENERATE,
+            });
+            portfolioServiceStub.savePortfolio.mockResolvedValue({
+                id: 99,
+                status: PortfolioStatus.GENERATING,
+            });
+            interviewServiceStub.delegatePortfolioGeneration.mockResolvedValue();
+
+            const result = await interviewFacade.generatePortfolio(30, 42);
+
+            expect(interviewServiceStub.validateReadyForGeneration).toHaveBeenCalledWith(
+                'session_generate_ok'
+            );
+            expect(result.portfolioId).toBe(99);
+        });
+
+        it('throws INTERVIEW_NOT_COMPLETED when allComplete is false and turnNumber is 17', async () => {
+            const experience = {
+                id: 31,
+                name: '테스트 경험',
+                sessionId: 'session_not_ready',
+            };
+            experienceServiceStub.findByIdOrThrow.mockResolvedValue(experience);
+            interviewServiceStub.validateReadyForGeneration.mockRejectedValue(
+                new BusinessException(ErrorCode.INTERVIEW_NOT_COMPLETED)
+            );
+
+            await expect(interviewFacade.generatePortfolio(31, 42)).rejects.toMatchObject(
+                expect.objectContaining({
+                    response: expect.objectContaining({
+                        errorCode: ErrorCode.INTERVIEW_NOT_COMPLETED,
+                    }),
+                })
+            );
+            expect(portfolioServiceStub.savePortfolio).not.toHaveBeenCalled();
+        });
     });
 
     it('throws INTERVIEW_EXTEND_NOT_ALLOWED when interview is not completed', async () => {

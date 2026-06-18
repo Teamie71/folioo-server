@@ -1,4 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayConnection, AiRelayPort } from 'src/common/ports/ai-relay.port';
 import { InterviewChatUploadFile } from '../../presentation/services/interview-chat-stream-request-parser.service';
 import {
@@ -8,6 +10,8 @@ import {
 
 const CREATE_SESSION_STREAM_PATH = '/api/v1/interview/sessions/stream';
 const SESSION_BASE_PATH = '/api/v1/interview/sessions';
+
+export const MIN_PORTFOLIO_TURN = 18;
 
 const sessionPath = (sessionId: string, suffix: string): string =>
     `${SESSION_BASE_PATH}/${encodeURIComponent(sessionId)}${suffix}`;
@@ -69,6 +73,13 @@ export class InterviewService {
         });
 
         return InterviewSessionStateResDTO.fromAiPayload(response.data);
+    }
+
+    async validateReadyForGeneration(sessionId: string): Promise<void> {
+        const sessionState = await this.getSessionState(sessionId);
+        if (!sessionState.allComplete && sessionState.turnNumber < MIN_PORTFOLIO_TURN) {
+            throw new BusinessException(ErrorCode.INTERVIEW_NOT_COMPLETED);
+        }
     }
 
     async delegatePortfolioGeneration(

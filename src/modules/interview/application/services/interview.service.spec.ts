@@ -6,6 +6,7 @@ import {
     AiRelayPort,
     AiRelayRequest,
 } from 'src/common/ports/ai-relay.port';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { InterviewSessionStateResDTO } from '../dtos/interview.dto';
 import { InterviewService } from './interview.service';
 
@@ -206,6 +207,62 @@ describe('InterviewService', () => {
         expect(aiRelayPortStub.openPostStreamMock).toHaveBeenCalledWith({
             path: '/api/v1/interview/sessions/session%201%2F2/extend/stream',
             body: {},
+        });
+    });
+
+    describe('validateReadyForGeneration', () => {
+        function makeStatePayload(allComplete: boolean, turnNumber: number) {
+            return {
+                messages: [],
+                experience_name: '경험',
+                current_stage: 1,
+                all_complete: allComplete,
+                turn_number: turnNumber,
+                insight_turn_history: [],
+            };
+        }
+
+        it('resolves when allComplete is false and turnNumber is 18', async () => {
+            aiRelayPortStub.getJsonMock.mockResolvedValue({
+                data: makeStatePayload(false, 18),
+                status: 200,
+                headers: {},
+            });
+
+            await expect(
+                interviewService.validateReadyForGeneration('session_abc')
+            ).resolves.toBeUndefined();
+        });
+
+        it('throws INTERVIEW_NOT_COMPLETED when allComplete is false and turnNumber is 17', async () => {
+            aiRelayPortStub.getJsonMock.mockResolvedValue({
+                data: makeStatePayload(false, 17),
+                status: 200,
+                headers: {},
+            });
+
+            await expect(
+                interviewService.validateReadyForGeneration('session_abc')
+            ).rejects.toMatchObject(
+                expect.objectContaining({
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    response: expect.objectContaining({
+                        errorCode: ErrorCode.INTERVIEW_NOT_COMPLETED,
+                    }),
+                })
+            );
+        });
+
+        it('resolves when allComplete is true regardless of turnNumber', async () => {
+            aiRelayPortStub.getJsonMock.mockResolvedValue({
+                data: makeStatePayload(true, 5),
+                status: 200,
+                headers: {},
+            });
+
+            await expect(
+                interviewService.validateReadyForGeneration('session_abc')
+            ).resolves.toBeUndefined();
         });
     });
 });

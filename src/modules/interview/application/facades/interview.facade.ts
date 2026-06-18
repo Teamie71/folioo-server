@@ -126,10 +126,7 @@ export class InterviewFacade {
             throw new BusinessException(ErrorCode.EXPERIENCE_SESSION_NOT_READY, { experienceId });
         }
 
-        const sessionState = await this.interviewService.getSessionState(experience.sessionId);
-        if (!sessionState.allComplete && sessionState.turnNumber < 18) {
-            throw new BusinessException(ErrorCode.INTERVIEW_NOT_COMPLETED);
-        }
+        await this.interviewService.validateReadyForGeneration(experience.sessionId);
 
         const result = await this.executePortfolioGeneration(experience, userId);
 
