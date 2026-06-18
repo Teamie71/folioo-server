@@ -166,7 +166,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.INTERVIEW_NOT_COMPLETED]: {
         message:
-            '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변한 후 포트폴리오를 생성할 수 있습니다.',
+            '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변하거나 18턴 이상 진행한 후 포트폴리오를 생성할 수 있습니다.',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
     [ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED]: {
