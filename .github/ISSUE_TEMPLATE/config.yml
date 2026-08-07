@@ -1,4 +1,4 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
   - name: 문서 참고
     url: https://github.com/Teamie71/folioo-server/tree/dev/docs
