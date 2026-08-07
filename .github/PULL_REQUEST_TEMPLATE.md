@@ -20,9 +20,9 @@ TYPE: Feat, Fix, Refactor, Chore, Docs, Test, Style
 
 ## 관련 이슈
 
-관련 이슈가 있다면 연결해주세요 (없으면 생략):
+관련 이슈가 있다면 연결해주세요 (없으면 이 섹션을 삭제하세요):
 
-- Closes #
+<!-- - Closes #123 -->
 
 ## 참고 사항
 
