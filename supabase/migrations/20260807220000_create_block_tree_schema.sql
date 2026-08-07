@@ -26,15 +26,16 @@ CREATE TABLE block_kind (
     placeholder TEXT NOT NULL
 );
 
+-- is_deletable 예외는 '미분류' 뿐이다 (SECTION_*은 편집만 불가하고 삭제는 가능).
 INSERT INTO block_kind (kind, is_text_editable, is_deletable, fixed_level, placeholder) VALUES
     ('GROUP_UNCATEGORIZED',     false, false, 1,    '내용을 입력해 주세요'),
     ('GROUP',                   true,  true,  1,    '내용을 입력해 주세요'),
     ('EXPERIENCE',              true,  true,  2,    '내용을 입력해 주세요'),
-    ('SECTION_DETAIL',          false, false, 3,    '내용을 입력해 주세요'),
-    ('SECTION_ACHIEVEMENT',     false, false, 3,    '내용을 입력해 주세요'),
-    ('SECTION_TASK',            false, false, 3,    '내용을 입력해 주세요'),
-    ('SECTION_PROBLEM_SOLVING', false, false, 3,    '내용을 입력해 주세요'),
-    ('SECTION_LEARNING',        false, false, 3,    '내용을 입력해 주세요'),
+    ('SECTION_DETAIL',          false, true,  3,    '내용을 입력해 주세요'),
+    ('SECTION_ACHIEVEMENT',     false, true,  3,    '내용을 입력해 주세요'),
+    ('SECTION_TASK',            false, true,  3,    '내용을 입력해 주세요'),
+    ('SECTION_PROBLEM_SOLVING', false, true,  3,    '내용을 입력해 주세요'),
+    ('SECTION_LEARNING',        false, true,  3,    '내용을 입력해 주세요'),
     ('CONTENT',                 true,  true,  NULL, '내용을 입력해 주세요');
 
 -- ============================================================
