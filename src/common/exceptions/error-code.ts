@@ -345,4 +345,24 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '모든 슬라이드가 완성된 후 내보낼 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.BLOCK_NOT_FOUND]: {
+        message: '블록을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.BLOCK_PARENT_NOT_FOUND]: {
+        message: '부모 블록을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.BLOCK_NOT_DELETABLE]: {
+        message: '삭제할 수 없는 블록입니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
+    [ErrorCode.BLOCK_NOT_EDITABLE]: {
+        message: '수정할 수 없는 블록입니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
+    [ErrorCode.BLOCK_INVALID_PLACEMENT]: {
+        message: '해당 위치에 생성할 수 없는 블록 종류입니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
 };
