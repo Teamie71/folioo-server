@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Min, MaxLength } from 'class-validator';
 import { Block, BLOCK_CONTENT_MAX_LENGTH } from '../../domain/block.entity';
 import { BlockKind } from '../../domain/enums/block-kind.enum';
 import { ExperienceMeta } from '../../domain/experience-meta.entity';
@@ -35,6 +35,23 @@ export class UpdateBlockContentReqDTO {
     @MaxLength(BLOCK_CONTENT_MAX_LENGTH)
     @ApiProperty({ required: false, nullable: true, maxLength: BLOCK_CONTENT_MAX_LENGTH })
     content?: string | null;
+}
+
+export class MoveBlockReqDTO {
+    @IsOptional()
+    @IsString()
+    @ApiProperty({
+        required: false,
+        nullable: true,
+        description:
+            '새 부모 블록 id. 생략하면 같은 부모 내에서 순서만 변경한다. 1~2단계 블록은 위계(부모)를 변경할 수 없다.',
+    })
+    parentId?: string | null;
+
+    @IsInt()
+    @Min(0)
+    @ApiProperty({ example: 0, minimum: 0, description: '새 부모(또는 기존 부모) 내에서의 순서' })
+    position: number;
 }
 
 export class ExperienceMetaResDTO {

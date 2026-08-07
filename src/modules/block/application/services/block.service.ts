@@ -108,6 +108,68 @@ export class BlockService {
         await this.blockRepository.deleteById(blockId);
     }
 
+    async moveBlock(
+        blockId: string,
+        userId: number,
+        targetParentId: string | null | undefined,
+        targetPosition: number
+    ): Promise<Block> {
+        const block = await this.findByIdOrThrow(blockId, userId);
+        const allBlocks = await this.blockRepository.findAllByUserId(userId);
+        const blockById = new Map(allBlocks.map((b) => [b.id, b]));
+
+        const isReparenting = targetParentId !== undefined && targetParentId !== block.parentId;
+
+        if (!isReparenting) {
+            const siblings = allBlocks.filter(
+                (b) => b.parentId === block.parentId && b.id !== block.id
+            );
+            this.insertAtPosition(siblings, block, targetPosition);
+            await this.blockRepository.saveAll([block, ...siblings]);
+            return block;
+        }
+
+        // 1~2단계(그룹/활동)는 순서만 바꿀 수 있고, 다른 블록의 하위로 위계를 바꿀 수 없다.
+        if (block.level <= 2) {
+            throw new BusinessException(ErrorCode.BLOCK_LEVEL_LOCKED);
+        }
+
+        const newParent = targetParentId ? (blockById.get(targetParentId) ?? null) : null;
+        if (targetParentId && (!newParent || newParent.userId !== userId)) {
+            throw new BusinessException(ErrorCode.BLOCK_PARENT_NOT_FOUND);
+        }
+        this.assertValidPlacement(block.kind, newParent);
+
+        const newLevel = newParent ? newParent.level + 1 : 1;
+        const levelDelta = newLevel - block.level;
+        const descendants = this.collectDescendants(block.id, allBlocks);
+        const deepestDescendantLevel = descendants.reduce(
+            (max, descendant) => Math.max(max, descendant.level),
+            block.level
+        );
+        if (deepestDescendantLevel + levelDelta > BLOCK_MAX_LEVEL) {
+            throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
+        }
+
+        const oldSiblings = allBlocks.filter(
+            (b) => b.parentId === block.parentId && b.id !== block.id
+        );
+        const newSiblings = allBlocks.filter((b) => b.parentId === targetParentId);
+
+        block.parent = newParent;
+        block.parentId = targetParentId ?? null;
+        block.level = newLevel;
+        for (const descendant of descendants) {
+            descendant.level += levelDelta;
+        }
+
+        this.reindexPositions(oldSiblings);
+        this.insertAtPosition(newSiblings, block, targetPosition);
+
+        await this.blockRepository.saveAll([block, ...descendants, ...oldSiblings, ...newSiblings]);
+        return block;
+    }
+
     private async detachChildrenToRoot(groupBlock: Block, userId: number): Promise<void> {
         const children = await this.blockRepository.findAllByParentId(groupBlock.id);
         if (children.length === 0) {
@@ -122,6 +184,42 @@ export class BlockService {
             child.position = rootChildrenCount + index;
         });
         await this.blockRepository.saveAll(children);
+    }
+
+    private collectDescendants(blockId: string, allBlocks: Block[]): Block[] {
+        const childrenByParentId = new Map<string, Block[]>();
+        for (const block of allBlocks) {
+            if (!block.parentId) continue;
+            const siblings = childrenByParentId.get(block.parentId) ?? [];
+            siblings.push(block);
+            childrenByParentId.set(block.parentId, siblings);
+        }
+
+        const result: Block[] = [];
+        const stack = [...(childrenByParentId.get(blockId) ?? [])];
+        while (stack.length > 0) {
+            const current = stack.pop();
+            if (!current) continue;
+            result.push(current);
+            stack.push(...(childrenByParentId.get(current.id) ?? []));
+        }
+        return result;
+    }
+
+    private insertAtPosition(siblings: Block[], moving: Block, targetPosition: number): void {
+        const sorted = [...siblings].sort((a, b) => a.position - b.position);
+        const clampedPosition = Math.max(0, Math.min(targetPosition, sorted.length));
+        sorted.splice(clampedPosition, 0, moving);
+        sorted.forEach((block, index) => {
+            block.position = index;
+        });
+    }
+
+    private reindexPositions(siblings: Block[]): void {
+        const sorted = [...siblings].sort((a, b) => a.position - b.position);
+        sorted.forEach((block, index) => {
+            block.position = index;
+        });
     }
 
     private async provisionExperienceScaffold(experienceBlock: Block): Promise<void> {

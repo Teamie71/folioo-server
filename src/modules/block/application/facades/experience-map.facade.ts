@@ -7,6 +7,7 @@ import {
     BlockResDTO,
     CreateBlockReqDTO,
     ExperienceMapResDTO,
+    MoveBlockReqDTO,
     UpdateBlockContentReqDTO,
 } from '../dtos/block.dto';
 import { BlockKind } from '../../domain/enums/block-kind.enum';
@@ -63,5 +64,18 @@ export class ExperienceMapFacade {
         const experienceMap = await this.experienceMapService.getOrCreate(userId);
         await this.blockService.deleteBlock(blockId, userId);
         await this.experienceMapService.bumpVersion(experienceMap);
+    }
+
+    @Transactional()
+    async moveBlock(userId: number, blockId: string, body: MoveBlockReqDTO): Promise<BlockResDTO> {
+        const experienceMap = await this.experienceMapService.getOrCreate(userId);
+        const block = await this.blockService.moveBlock(
+            blockId,
+            userId,
+            body.parentId,
+            body.position
+        );
+        await this.experienceMapService.bumpVersion(experienceMap);
+        return BlockResDTO.fromEntity(block);
     }
 }

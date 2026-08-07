@@ -369,4 +369,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '허용된 글자 수를 초과했습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.BLOCK_LEVEL_LOCKED]: {
+        message: '해당 블록은 다른 블록의 하위로 이동할 수 없습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
 };

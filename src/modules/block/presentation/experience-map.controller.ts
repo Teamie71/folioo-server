@@ -12,6 +12,7 @@ import {
     BlockResDTO,
     CreateBlockReqDTO,
     ExperienceMapResDTO,
+    MoveBlockReqDTO,
     UpdateBlockContentReqDTO,
 } from '../application/dtos/block.dto';
 
@@ -91,5 +92,27 @@ export class ExperienceMapController {
     ): Promise<string> {
         await this.experienceMapFacade.deleteBlock(userId, blockId);
         return '블록이 성공적으로 삭제되었습니다.';
+    }
+
+    @Patch('blocks/:blockId/position')
+    @ApiOperation({
+        summary: '블록 순서/위치 변경 (드래그 앤 드롭)',
+        description:
+            '블록의 형제 내 순서를 바꾸거나(parentId 생략), 다른 부모로 이동합니다. 1~2단계(그룹/활동)는 위계를 바꿀 수 없고 순서만 변경할 수 있습니다. 3~5단계는 3~5단계 내에서만 위계를 바꿀 수 있으며, 하위 블록도 함께 이동하고 이동 후 최대 5단계를 넘을 수 없습니다.',
+    })
+    @ApiCommonResponse(BlockResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.BLOCK_NOT_FOUND,
+        ErrorCode.BLOCK_PARENT_NOT_FOUND,
+        ErrorCode.BLOCK_LEVEL_LOCKED,
+        ErrorCode.BLOCK_INVALID_PLACEMENT
+    )
+    async moveBlock(
+        @User('sub') userId: number,
+        @Param('blockId') blockId: string,
+        @Body() body: MoveBlockReqDTO
+    ): Promise<BlockResDTO> {
+        return this.experienceMapFacade.moveBlock(userId, blockId, body);
     }
 }
