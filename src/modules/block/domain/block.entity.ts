@@ -13,6 +13,7 @@ import { User } from '../../user/domain/user.entity';
 import { BlockKind } from './enums/block-kind.enum';
 
 export const BLOCK_CONTENT_MAX_LENGTH = 500;
+export const BLOCK_NAME_MAX_LENGTH = 20;
 export const BLOCK_MAX_LEVEL = 5;
 
 @Entity('block')

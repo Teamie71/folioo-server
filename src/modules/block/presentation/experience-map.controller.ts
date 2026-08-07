@@ -42,7 +42,8 @@ export class ExperienceMapController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BLOCK_PARENT_NOT_FOUND,
-        ErrorCode.BLOCK_INVALID_PLACEMENT
+        ErrorCode.BLOCK_INVALID_PLACEMENT,
+        ErrorCode.BLOCK_CONTENT_TOO_LONG
     )
     async createBlock(
         @User('sub') userId: number,
@@ -61,7 +62,8 @@ export class ExperienceMapController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BLOCK_NOT_FOUND,
-        ErrorCode.BLOCK_NOT_EDITABLE
+        ErrorCode.BLOCK_NOT_EDITABLE,
+        ErrorCode.BLOCK_CONTENT_TOO_LONG
     )
     async updateBlockContent(
         @User('sub') userId: number,
@@ -75,7 +77,7 @@ export class ExperienceMapController {
     @ApiOperation({
         summary: '블록 삭제',
         description:
-            '블록과 하위 블록을 모두 삭제합니다. 삭제 불가능한 종류(미분류, SECTION 등)의 블록은 삭제할 수 없습니다.',
+            '블록을 삭제합니다. 1단계(그룹) 블록은 하위 활동을 미분류로 옮긴 뒤 단독으로 삭제되고, 그 외 블록은 하위 블록과 함께 삭제됩니다. 삭제 불가능한 블록(미분류)은 삭제할 수 없습니다.',
     })
     @ApiCommonMessageResponse('블록이 성공적으로 삭제되었습니다.')
     @ApiCommonErrorResponse(

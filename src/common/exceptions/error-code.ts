@@ -365,4 +365,8 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당 위치에 생성할 수 없는 블록 종류입니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.BLOCK_CONTENT_TOO_LONG]: {
+        message: '허용된 글자 수를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
 };

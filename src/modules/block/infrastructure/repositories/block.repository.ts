@@ -36,6 +36,13 @@ export class BlockRepository {
         });
     }
 
+    async findAllByParentId(parentId: string): Promise<Block[]> {
+        return this.blockRepository.find({
+            where: { parentId },
+            order: { position: 'ASC' },
+        });
+    }
+
     async countChildren(parentId: string | null): Promise<number> {
         return this.blockRepository.count({ where: { parentId: parentId ?? IsNull() } });
     }

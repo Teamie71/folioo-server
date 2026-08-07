@@ -4,10 +4,17 @@ import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { BlockRepository } from '../../infrastructure/repositories/block.repository';
 import { BlockKindRepository } from '../../infrastructure/repositories/block-kind.repository';
 import { ExperienceMetaRepository } from '../../infrastructure/repositories/experience-meta.repository';
-import { Block, BLOCK_MAX_LEVEL } from '../../domain/block.entity';
+import {
+    Block,
+    BLOCK_CONTENT_MAX_LENGTH,
+    BLOCK_MAX_LEVEL,
+    BLOCK_NAME_MAX_LENGTH,
+} from '../../domain/block.entity';
 import { BlockKindEntity } from '../../domain/block-kind.entity';
 import { ExperienceMeta } from '../../domain/experience-meta.entity';
 import { BlockKind, EXPERIENCE_SECTION_KINDS } from '../../domain/enums/block-kind.enum';
+
+const NAME_LEVEL_KINDS: readonly BlockKind[] = [BlockKind.GROUP, BlockKind.EXPERIENCE];
 
 @Injectable()
 export class BlockService {
@@ -55,6 +62,7 @@ export class BlockService {
     ): Promise<Block> {
         const parent = parentId ? await this.findByIdOrThrow(parentId, userId) : null;
         this.assertValidPlacement(kind, parent);
+        this.assertContentLength(kind, content);
 
         const block = new Block();
         block.userId = userId;
@@ -80,6 +88,7 @@ export class BlockService {
         if (!blockKind.isTextEditable) {
             throw new BusinessException(ErrorCode.BLOCK_NOT_EDITABLE);
         }
+        this.assertContentLength(block.kind, content);
         block.content = content;
         return this.blockRepository.save(block);
     }
@@ -90,7 +99,29 @@ export class BlockService {
         if (!blockKind.isDeletable) {
             throw new BusinessException(ErrorCode.BLOCK_NOT_DELETABLE);
         }
+
+        // 1단계 블록은 정책상 하위 블록을 함께 삭제하지 않고, 미분류로 옮긴 뒤 단독으로 삭제된다.
+        if (block.level === 1) {
+            await this.detachChildrenToRoot(block, userId);
+        }
+
         await this.blockRepository.deleteById(blockId);
+    }
+
+    private async detachChildrenToRoot(groupBlock: Block, userId: number): Promise<void> {
+        const children = await this.blockRepository.findAllByParentId(groupBlock.id);
+        if (children.length === 0) {
+            return;
+        }
+
+        const root = await this.getOrCreateRootBlock(userId);
+        const rootChildrenCount = await this.blockRepository.countChildren(root.id);
+        children.forEach((child, index) => {
+            child.parent = root;
+            child.parentId = root.id;
+            child.position = rootChildrenCount + index;
+        });
+        await this.blockRepository.saveAll(children);
     }
 
     private async provisionExperienceScaffold(experienceBlock: Block): Promise<void> {
@@ -141,6 +172,16 @@ export class BlockService {
         }
 
         throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
+    }
+
+    private assertContentLength(kind: BlockKind, content: string | null): void {
+        if (!content) return;
+        const maxLength = NAME_LEVEL_KINDS.includes(kind)
+            ? BLOCK_NAME_MAX_LENGTH
+            : BLOCK_CONTENT_MAX_LENGTH;
+        if (content.length > maxLength) {
+            throw new BusinessException(ErrorCode.BLOCK_CONTENT_TOO_LONG, { maxLength });
+        }
     }
 
     private async getBlockKindOrThrow(kind: BlockKind): Promise<BlockKindEntity> {
