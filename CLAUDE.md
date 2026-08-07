@@ -208,30 +208,27 @@ node scripts/smoke-dev-api.mjs --internal --mutate
 
 - `docs/API.md`에 API 구현 상태(IMPLEMENTED/NOT_IMPLEMENTED)와 수동/자동 테스트 방법을 기록합니다.
 
-## Git 워크플로우 (필수)
+## Git 워크플로우
 
-> 이슈 생성, 브랜치 생성, 커밋, PR 생성 시 **반드시** 아래 규칙을 따라야 합니다.
+> 브랜치/커밋/PR 생성 시 아래 규칙을 따릅니다. 이슈는 선택 사항입니다.
 > 상세 내용: `docs/development/GIT_CONVENTIONS.md`
 
-### 이슈 생성
+### 이슈 생성 (백로그)
 
-**반드시 `.github/ISSUE_TEMPLATE/`의 템플릿을 사용합니다.**
+이슈 생성은 선택 사항입니다. 간단한 작업은 이슈 없이 바로 브랜치/커밋을 생성해도 되며,
+추적이 필요한 작업만 `.github/ISSUE_TEMPLATE/backlog.md` 템플릿으로 가볍게 기록합니다.
 
-- 제목 형식: `[TYPE] 설명` (예: `[Feat] 포트폴리오 CRUD API 구현`, `[Task] 코드 스타일 가이드 업데이트`)
-- 템플릿 선택 기준:
-    - 기능 개발 → `feature-template.md`
-    - 일반 작업 → `task.md`
-    - 버그 → `bug_report.md`
-- **모든 섹션을 빠짐없이 작성** (해당 없는 항목은 N/A로 표기)
+- 제목: 무엇을 할지 한 줄로 알 수 있게 자유롭게 작성 (`[TYPE]` 접두사 불필요)
+- 본문: 설명 + 참고 사항(선택) 정도면 충분
 
 ### 브랜치 생성
 
 ```
-<type>/<간단한_설명>-#<issue_number>
+<type>/<description>
 ```
 
-- 예: `feat/portfolio-crud-#15`, `docs/api-spec-#12`
-- **Issue 번호 없이 브랜치 생성 금지**
+- 예: `feat/portfolio-crud`, `docs/api-spec`
+- 이슈 번호는 선택 사항 (있는 경우 `<type>/<description>-#<issue_number>` 형태로 첨부 가능)
 
 ### 커밋 메시지
 
@@ -241,29 +238,24 @@ node scripts/smoke-dev-api.mjs --internal --mutate
 
 - 예: `feat: 포트폴리오 생성 API 구현 (#15)`
 - 타입: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `rename`, `remove`
-- **Issue 번호 필수 포함**
+- 이슈 번호는 선택 사항 — 관련 이슈가 있는 경우에만 `(#<issue_number>)` 포함
 
 ### PR 생성
 
-**반드시 `.github/PULL_REQUEST_TEMPLATE.md`의 모든 섹션을 작성합니다.**
+`.github/PULL_REQUEST_TEMPLATE.md`는 변경 사항을 문서화하는 용도이며, 체크리스트성 게이트가 아닙니다.
 
-- 제목 형식: `TYPE: 설명 (#이슈번호)` (예: `Feat: 포트폴리오 CRUD API 구현 (#15)`)
-- **필수 섹션** (하나라도 빠지면 안 됨):
-    - Summary
-    - Changes
-    - Type of Change
-    - Target Environment (`Dev` 또는 `Prod`)
-    - Related Issues (`Closes #이슈번호`)
-    - Testing
-    - Checklist
-    - Screenshots (해당 없으면 `N/A`)
-    - Additional Notes (해당 없으면 `N/A`)
+- 제목 형식: `TYPE: 설명 (#이슈번호, 선택)` (예: `Feat: 포트폴리오 CRUD API 구현`)
+- 기본 섹션:
+    - 요약 (무엇을, 왜)
+    - 변경 사항
+    - 배포 대상 (`Dev` 또는 `Prod`)
+    - 관련 이슈 (있으면 연결, 없으면 생략)
+    - 참고 사항 (테스트 방법, 스크린샷 등 필요한 경우에만)
 
 ## 주의사항
 
 1. **any 타입 사용 금지**
 2. **console.log 대신 Logger 사용**
-3. **Issue 번호 없이 브랜치/커밋 생성 금지**
 
 **절대로 커밋 메시지에 다음을 포함하지 마세요:**
 
