@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -11,6 +11,7 @@ import { ExperienceMapFacade } from '../application/facades/experience-map.facad
 import {
     BlockResDTO,
     CreateBlockReqDTO,
+    DeleteBlockQueryDTO,
     ExperienceMapResDTO,
     MoveBlockReqDTO,
     UpdateBlockContentReqDTO,
@@ -47,14 +48,19 @@ export class ExperienceMapController {
             group: {
                 summary: 'GROUP 생성 (루트)',
                 description: 'parentId를 생략해야 합니다.',
-                value: { kind: 'GROUP', content: '2026' },
+                value: { kind: 'GROUP', content: '2026', expectedMapVersion: '1' },
             },
             experience: {
                 summary: 'EXPERIENCE 생성',
                 description:
                     'parentId는 미분류(GROUP_UNCATEGORIZED) 또는 본인 소유 GROUP의 id여야 합니다. ' +
                     '성공 시 SECTION 5종이 함께 생성됩니다.',
-                value: { kind: 'EXPERIENCE', parentId: '12', content: '새로운 활동 1' },
+                value: {
+                    kind: 'EXPERIENCE',
+                    parentId: '12',
+                    content: '새로운 활동 1',
+                    expectedMapVersion: '1',
+                },
             },
             content: {
                 summary: 'CONTENT 생성 (SECTION 하위)',
@@ -63,6 +69,7 @@ export class ExperienceMapController {
                     kind: 'CONTENT',
                     parentId: '34',
                     content: '전공 서적 거래 편의성 개선 프로젝트',
+                    expectedMapVersion: '1',
                 },
             },
         },
@@ -90,7 +97,8 @@ export class ExperienceMapController {
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BLOCK_PARENT_NOT_FOUND,
         ErrorCode.BLOCK_INVALID_PLACEMENT,
-        ErrorCode.BLOCK_CONTENT_TOO_LONG
+        ErrorCode.BLOCK_CONTENT_TOO_LONG,
+        ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT
     )
     async createBlock(
         @User('sub') userId: number,
@@ -110,7 +118,8 @@ export class ExperienceMapController {
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BLOCK_NOT_FOUND,
         ErrorCode.BLOCK_NOT_EDITABLE,
-        ErrorCode.BLOCK_CONTENT_TOO_LONG
+        ErrorCode.BLOCK_CONTENT_TOO_LONG,
+        ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT
     )
     async updateBlockContent(
         @User('sub') userId: number,
@@ -130,13 +139,15 @@ export class ExperienceMapController {
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BLOCK_NOT_FOUND,
-        ErrorCode.BLOCK_NOT_DELETABLE
+        ErrorCode.BLOCK_NOT_DELETABLE,
+        ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT
     )
     async deleteBlock(
         @User('sub') userId: number,
-        @Param('blockId') blockId: string
+        @Param('blockId') blockId: string,
+        @Query() query: DeleteBlockQueryDTO
     ): Promise<string> {
-        await this.experienceMapFacade.deleteBlock(userId, blockId);
+        await this.experienceMapFacade.deleteBlock(userId, blockId, query.expectedMapVersion);
         return '블록이 성공적으로 삭제되었습니다.';
     }
 
@@ -152,7 +163,8 @@ export class ExperienceMapController {
         ErrorCode.BLOCK_NOT_FOUND,
         ErrorCode.BLOCK_PARENT_NOT_FOUND,
         ErrorCode.BLOCK_LEVEL_LOCKED,
-        ErrorCode.BLOCK_INVALID_PLACEMENT
+        ErrorCode.BLOCK_INVALID_PLACEMENT,
+        ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT
     )
     async moveBlock(
         @User('sub') userId: number,

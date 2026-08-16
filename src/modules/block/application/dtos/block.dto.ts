@@ -28,6 +28,15 @@ export class CreateBlockReqDTO {
     @MaxLength(BLOCK_CONTENT_MAX_LENGTH)
     @ApiProperty({ required: false, nullable: true, maxLength: BLOCK_CONTENT_MAX_LENGTH })
     content?: string | null;
+
+    @IsString()
+    @ApiProperty({
+        type: 'string',
+        example: '1',
+        description:
+            '요청 전 GET /experience-map으로 읽은 mapVersion. 그 사이 다른 요청이 먼저 반영돼 현재 값과 다르면 409로 거부된다.',
+    })
+    expectedMapVersion: string;
 }
 
 export class UpdateBlockContentReqDTO {
@@ -36,6 +45,26 @@ export class UpdateBlockContentReqDTO {
     @MaxLength(BLOCK_CONTENT_MAX_LENGTH)
     @ApiProperty({ required: false, nullable: true, maxLength: BLOCK_CONTENT_MAX_LENGTH })
     content?: string | null;
+
+    @IsString()
+    @ApiProperty({
+        type: 'string',
+        example: '1',
+        description:
+            '요청 전 GET /experience-map으로 읽은 mapVersion. 그 사이 다른 요청이 먼저 반영돼 현재 값과 다르면 409로 거부된다.',
+    })
+    expectedMapVersion: string;
+}
+
+export class DeleteBlockQueryDTO {
+    @IsString()
+    @ApiProperty({
+        type: 'string',
+        example: '1',
+        description:
+            '요청 전 GET /experience-map으로 읽은 mapVersion. 그 사이 다른 요청이 먼저 반영돼 현재 값과 다르면 409로 거부된다.',
+    })
+    expectedMapVersion: string;
 }
 
 export class MoveBlockReqDTO {
@@ -55,6 +84,15 @@ export class MoveBlockReqDTO {
     @Min(0)
     @ApiProperty({ example: 0, minimum: 0, description: '새 부모(또는 기존 부모) 내에서의 순서' })
     position: number;
+
+    @IsString()
+    @ApiProperty({
+        type: 'string',
+        example: '1',
+        description:
+            '요청 전 GET /experience-map으로 읽은 mapVersion. 그 사이 다른 요청이 먼저 반영돼 현재 값과 다르면 409로 거부된다.',
+    })
+    expectedMapVersion: string;
 }
 
 export class ExperienceMetaResDTO {

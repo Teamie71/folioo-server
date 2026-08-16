@@ -37,6 +37,7 @@ export class ExperienceMapFacade {
     async createBlock(userId: number, body: CreateBlockReqDTO): Promise<BlockResDTO> {
         await this.blockService.getOrCreateRootBlock(userId);
         const experienceMap = await this.experienceMapService.getOrCreate(userId);
+        this.experienceMapService.assertVersion(experienceMap, body.expectedMapVersion);
         const block = await this.blockService.createBlock(
             userId,
             body.kind,
@@ -54,14 +55,16 @@ export class ExperienceMapFacade {
         body: UpdateBlockContentReqDTO
     ): Promise<BlockResDTO> {
         const experienceMap = await this.experienceMapService.getOrCreate(userId);
+        this.experienceMapService.assertVersion(experienceMap, body.expectedMapVersion);
         const block = await this.blockService.updateContent(blockId, userId, body.content ?? null);
         await this.experienceMapService.bumpVersion(experienceMap);
         return BlockResDTO.fromEntity(block);
     }
 
     @Transactional()
-    async deleteBlock(userId: number, blockId: string): Promise<void> {
+    async deleteBlock(userId: number, blockId: string, expectedMapVersion: string): Promise<void> {
         const experienceMap = await this.experienceMapService.getOrCreate(userId);
+        this.experienceMapService.assertVersion(experienceMap, expectedMapVersion);
         await this.blockService.deleteBlock(blockId, userId);
         await this.experienceMapService.bumpVersion(experienceMap);
     }
@@ -69,6 +72,7 @@ export class ExperienceMapFacade {
     @Transactional()
     async moveBlock(userId: number, blockId: string, body: MoveBlockReqDTO): Promise<BlockResDTO> {
         const experienceMap = await this.experienceMapService.getOrCreate(userId);
+        this.experienceMapService.assertVersion(experienceMap, body.expectedMapVersion);
         const block = await this.blockService.moveBlock(
             blockId,
             userId,
