@@ -58,23 +58,27 @@ CREATE TABLE block (
 CREATE INDEX idx_block_user_id ON block(user_id);
 CREATE INDEX idx_block_parent_id ON block(parent_id);
 
--- level 정합성(루트=1, 그 외는 부모 level+1) 검증 + updated_at 자동 갱신
+-- level 정합성(루트=1, 그 외는 부모 level+1) 및 parent 소유자 일치 검증 + updated_at 자동 갱신
 -- (AI 커밋 엔진이 raw SQL로 트리를 갱신해도 항상 최신화되도록 DB 트리거로 보장)
 CREATE OR REPLACE FUNCTION block_before_write() RETURNS TRIGGER AS $$
 DECLARE
     parent_level SMALLINT;
+    parent_user_id INT;
 BEGIN
     IF NEW.parent_id IS NULL THEN
         IF NEW.level <> 1 THEN
             RAISE EXCEPTION 'root block (parent_id IS NULL) must have level = 1, got %', NEW.level;
         END IF;
     ELSE
-        SELECT level INTO parent_level FROM block WHERE id = NEW.parent_id;
+        SELECT level, user_id INTO parent_level, parent_user_id FROM block WHERE id = NEW.parent_id;
         IF parent_level IS NULL THEN
             RAISE EXCEPTION 'parent block % not found', NEW.parent_id;
         END IF;
         IF NEW.level <> parent_level + 1 THEN
             RAISE EXCEPTION 'block level must be parent level + 1 (parent level=%, given=%)', parent_level, NEW.level;
+        END IF;
+        IF parent_user_id <> NEW.user_id THEN
+            RAISE EXCEPTION 'parent block % belongs to a different user (parent user_id=%, given=%)', NEW.parent_id, parent_user_id, NEW.user_id;
         END IF;
     END IF;
 
