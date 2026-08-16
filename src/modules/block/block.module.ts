@@ -8,6 +8,15 @@ import { ExperienceMap } from './domain/experience-map.entity';
 import { AiExperienceSession } from './domain/ai-experience-session.entity';
 import { AiExperienceRequest } from './domain/ai-experience-request.entity';
 import { AiCommitLog } from './domain/ai-commit-log.entity';
+import { BlockRepository } from './infrastructure/repositories/block.repository';
+import { BlockKindRepository } from './infrastructure/repositories/block-kind.repository';
+import { ExperienceMetaRepository } from './infrastructure/repositories/experience-meta.repository';
+import { ExperienceMapRepository } from './infrastructure/repositories/experience-map.repository';
+import { BlockService } from './application/services/block.service';
+import { ExperienceMapService } from './application/services/experience-map.service';
+import { ExperienceMetaService } from './application/services/experience-meta.service';
+import { ExperienceMapFacade } from './application/facades/experience-map.facade';
+import { ExperienceMapController } from './presentation/experience-map.controller';
 
 @Module({
     imports: [
@@ -21,6 +30,17 @@ import { AiCommitLog } from './domain/ai-commit-log.entity';
             AiExperienceRequest,
             AiCommitLog,
         ]),
+    ],
+    controllers: [ExperienceMapController],
+    providers: [
+        BlockRepository,
+        BlockKindRepository,
+        ExperienceMetaRepository,
+        ExperienceMapRepository,
+        BlockService,
+        ExperienceMapService,
+        ExperienceMetaService,
+        ExperienceMapFacade,
     ],
 })
 export class BlockModule {}

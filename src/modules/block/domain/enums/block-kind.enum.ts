@@ -9,3 +9,12 @@ export enum BlockKind {
     SECTION_LEARNING = 'SECTION_LEARNING',
     CONTENT = 'CONTENT',
 }
+
+// EXPERIENCE 블록 생성 시 함께 자동 생성되는 고정 섹션들
+export const EXPERIENCE_SECTION_KINDS: readonly BlockKind[] = [
+    BlockKind.SECTION_DETAIL,
+    BlockKind.SECTION_ACHIEVEMENT,
+    BlockKind.SECTION_TASK,
+    BlockKind.SECTION_PROBLEM_SOLVING,
+    BlockKind.SECTION_LEARNING,
+];
