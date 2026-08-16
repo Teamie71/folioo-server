@@ -24,6 +24,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { TicketAutomationModule } from './modules/ticket-automation/ticket-automation.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { VisualizationModule } from './modules/visualization/visualization.module';
+import { BlockModule } from './modules/block/block.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -60,6 +61,7 @@ import { DataSource } from 'typeorm';
         EventModule,
         FeedbackModule,
         VisualizationModule,
+        BlockModule,
         InterviewModule,
         InternalModule,
         AdminModule,

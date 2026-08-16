@@ -1,37 +1,49 @@
 # Folioo ERD
 
 > 포트폴리오 관리 플랫폼 데이터베이스 설계서
-> v2.8.0 | 2026-03-23
+> v2.9.0 | 2026-08-07
 
 ---
 
 ## 테이블 목록
 
-| 도메인                   | 테이블                           | 설명                      |
-| ------------------------ | -------------------------------- | ------------------------- |
-| **user**                 | `users`                          | 사용자 정보               |
-|                          | `social_user`                    | 소셜 로그인 정보          |
-|                          | `user_agreement`                 | 약관 동의                 |
-|                          | `term`                           | 약관 정의                 |
-|                          | `withdrawn_user`                 | 탈퇴 사용자 이력          |
-| **experience**           | `experience`                     | 경험 정리                 |
-|                          | `experience_source`              | 경험 정리 파일 (OCR 추출) |
-| **portfolio**            | `portfolio`                      | 포트폴리오                |
-| **portfolio-correction** | `portfolio_correction`           | 포트폴리오 첨삭           |
-|                          | `correction_portfolio_selection` | 첨삭-포트폴리오 선택 매핑 |
-|                          | `correction_item`                | 첨삭 항목                 |
-|                          | `correction_rag_data`            | RAG 데이터 (기업 분석용)  |
-| **insight**              | `insight`                        | 인사이트                  |
-|                          | `insight_activity`               | 인사이트-활동 매핑        |
-|                          | `activity`                       | 활동                      |
-| **ticket**               | `ticket_product`                 | 이용권 상품 (구매용)      |
-|                          | `ticket`                         | 이용권 (보유/사용 추적)   |
-|                          | `ticket_grant`                   | 이용권 지급 ledger        |
-|                          | `ticket_grant_notice`            | 이용권 지급 안내 ledger   |
-| **payment**              | `payment`                        | PayApp 결제 건            |
-| **event**                | `event`                          | 이벤트 정의               |
-|                          | `event_participation`            | 이벤트 참여/진행도        |
-|                          | `event_feedback_submission`      | 이벤트 피드백 제출 이력   |
+| 도메인                   | 테이블                           | 설명                                 |
+| ------------------------ | -------------------------------- | ------------------------------------ |
+| **user**                 | `users`                          | 사용자 정보                          |
+|                          | `social_user`                    | 소셜 로그인 정보                     |
+|                          | `user_agreement`                 | 약관 동의                            |
+|                          | `term`                           | 약관 정의                            |
+|                          | `withdrawn_user`                 | 탈퇴 사용자 이력                     |
+| **experience**           | `experience`                     | 경험 정리                            |
+|                          | `experience_source`              | 경험 정리 파일 (OCR 추출)            |
+| **portfolio**            | `portfolio`                      | 포트폴리오                           |
+| **portfolio-correction** | `portfolio_correction`           | 포트폴리오 첨삭                      |
+|                          | `correction_portfolio_selection` | 첨삭-포트폴리오 선택 매핑            |
+|                          | `correction_item`                | 첨삭 항목                            |
+|                          | `correction_rag_data`            | RAG 데이터 (기업 분석용)             |
+| **insight**              | `insight`                        | 인사이트                             |
+|                          | `insight_activity`               | 인사이트-활동 매핑                   |
+|                          | `activity`                       | 활동                                 |
+| **ticket**               | `ticket_product`                 | 이용권 상품 (구매용)                 |
+|                          | `ticket`                         | 이용권 (보유/사용 추적)              |
+|                          | `ticket_grant`                   | 이용권 지급 ledger                   |
+|                          | `ticket_grant_notice`            | 이용권 지급 안내 ledger              |
+| **payment**              | `payment`                        | PayApp 결제 건                       |
+| **event**                | `event`                          | 이벤트 정의                          |
+|                          | `event_participation`            | 이벤트 참여/진행도                   |
+|                          | `event_feedback_submission`      | 이벤트 피드백 제출 이력              |
+| **block** (경험 정리 v3) | `block_kind`                     | 블록 종류 정의 (메타)                |
+|                          | `block`                          | 사용자 블록 트리 (1~5단계)           |
+|                          | `experience_meta`                | EXPERIENCE 블록 메타데이터           |
+|                          | `review`                         | 블록 첨삭 대상 마킹                  |
+|                          | `experience_map`                 | 사용자별 트리 버전 (낙관적 잠금)     |
+|                          | `ai_experience_session`          | 사용자별 AI 세션 (1:1)               |
+|                          | `ai_experience_request`          | AI 요청 이력 (멱등/재시도/커밋 상태) |
+|                          | `ai_commit_log`                  | AI 커밋 롤백용 스냅샷 (최신 1건)     |
+
+> **Note**: `block` 계열 스키마는 경험 정리 v3 개편(구조화 트리)을 위해 신설되었습니다.
+> 기존 `experience`/`portfolio` 스키마는 삭제하지 않고 그대로 유지하며, `experience_meta.experience_id`로
+> 기존 `experience` 레코드를 참조(EXTERNAL 원본 보관)할 수 있습니다.
 
 ---
 
@@ -69,7 +81,24 @@ users
    ├── 1:N ─ event_participation ─── N:1 ─ event (이벤트 정의)
    │
    └── 1:N ─ event_feedback_submission ─── N:1 ─ event (외부 피드백 이력)
+
+users
+   ├── 1:N ─ block (소유 트리, parent_id 자기참조로 1~5단계 구성)
+   │            └── N:1 ─ block_kind (종류 정의: GROUP_UNCATEGORIZED/GROUP/EXPERIENCE/SECTION_*/CONTENT)
+   │
+   ├── block(level=2, kind=EXPERIENCE) ─ 1:1 ─ experience_meta ─── N:1 ─ experience (nullable, EXTERNAL 원본)
+   │
+   ├── block(level=2, kind=EXPERIENCE) ─ 1:N ─ review (첨삭 대상 마킹)
+   │
+   ├── 1:1 ─ experience_map (트리 버전, 낙관적 잠금)
+   │
+   ├── 1:1 ─ ai_experience_session ─── 1:N ─ ai_experience_request (세션 요청 이력)
+   │
+   └── 1:1 ─ ai_commit_log (최신 커밋 1건, 롤백용)
 ```
+
+> **Note**: `experience_meta`, `review`는 `(block_id, block_kind)` 복합 FK로 `block(id, kind)`를 참조하며,
+> `block_kind`를 `EXPERIENCE`로 고정하는 CHECK 제약으로 EXPERIENCE 블록에만 연결되도록 강제합니다.
 
 ---
 
@@ -102,6 +131,20 @@ PortfolioCorrectionStatus: 'DONE' |
 
 // PDF 추출
 PdfExtractionStatus: 'PENDING' | 'EXTRACTING' | 'DONE' | 'FAILED';
+
+// 블록 (경험 정리 v3)
+BlockKind: 'GROUP_UNCATEGORIZED' |
+    'GROUP' |
+    'EXPERIENCE' |
+    'SECTION_DETAIL' | // 상세정보
+    'SECTION_ACHIEVEMENT' | // 주요성과
+    'SECTION_TASK' | // 담당업무
+    'SECTION_PROBLEM_SOLVING' | // 문제해결
+    'SECTION_LEARNING' | // 배운 점
+    'CONTENT';
+
+// AI 경험 정리 요청 (varchar 컬럼, DB enum 아님 — 앱 레벨에서만 검증)
+AiExperienceRequestStatus: 'running' | 'completed' | 'failed';
 
 // 인사이트
 InsightCategory: '대인관계' | '문제해결' | '학습' | '레퍼런스' | '기타';
@@ -425,46 +468,158 @@ PayType: 'CARD' |
 
 > **Note**: `event_id + external_submission_id` 복합 unique로 외부 폼 제출건을 멱등 처리합니다. 정책상 보상 지급 이후에도 피드백 추가 제출은 허용합니다.
 
+### block_kind (블록 종류 정의)
+
+| 컬럼             | 타입            | 설명                                               |
+| ---------------- | --------------- | -------------------------------------------------- |
+| kind             | ENUM (PK)       | 블록 종류                                          |
+| is_text_editable | boolean         | 사용자가 content를 직접 수정 가능한지 여부         |
+| is_deletable     | boolean         | 사용자가 삭제 가능한지 여부                        |
+| fixed_level      | smallint (null) | 고정 위계 (1~5). CONTENT는 4~5단계를 오가므로 null |
+| placeholder      | text            | 폴백 플레이스홀더 — `내용을 입력해 주세요`         |
+
+> **Note**: `block_kind_enum` 값 9종: `GROUP_UNCATEGORIZED`, `GROUP`, `EXPERIENCE`,
+> `SECTION_DETAIL`(상세정보), `SECTION_ACHIEVEMENT`(주요성과), `SECTION_TASK`(담당업무),
+> `SECTION_PROBLEM_SOLVING`(문제해결), `SECTION_LEARNING`(배운 점), `CONTENT`.
+> 레코드는 마이그레이션에서 9종 모두 시드됩니다.
+
+### block (사용자 블록 트리)
+
+| 컬럼        | 타입               | 설명                                                  |
+| ----------- | ------------------ | ----------------------------------------------------- |
+| id          | bigserial (PK)     | 블록 PK                                               |
+| user_id     | integer            | FK → users.id, CASCADE                                |
+| parent_id   | bigint (null)      | FK → block.id (자기참조), CASCADE, level 1은 null     |
+| level       | smallint           | 1~5 CHECK. 자식 = 부모 + 1 (트리거로 강제)            |
+| kind        | ENUM               | FK → block_kind.kind                                  |
+| position    | integer            | 형제 내 순서 (UNIQUE 걸지 않음 — 재정렬 중 중복 허용) |
+| content     | varchar(500, null) | 블록 내용. 빈 슬롯은 null                             |
+| placeholder | text (null)        | 슬롯별 안내 문구. AI가 신규 슬롯 생성 시 메인이 부여  |
+| created_at  | timestamptz        |                                                       |
+| updated_at  | timestamptz        | DB 트리거(`set_block_updated_at`)로 자동 갱신         |
+
+> **Note**: `UNIQUE(id, kind)` 복합 유니크로 `experience_meta`/`review`의 `(block_id, block_kind)` 복합 FK 대상이 됩니다.
+> `enforce_block_level` 트리거가 INSERT/UPDATE 시 `level = 부모.level + 1`(루트는 1)을 강제합니다.
+
+### experience_meta (EXPERIENCE 블록 메타데이터)
+
+| 컬럼              | 타입           | 설명                                                    |
+| ----------------- | -------------- | ------------------------------------------------------- |
+| block_id          | bigint (PK)    | FK → block.id, 2단계 EXPERIENCE 블록                    |
+| block_kind        | ENUM           | 복합FK용, `EXPERIENCE` 고정 CHECK                       |
+| contribution_rate | int (null)     | 기여도                                                  |
+| source_type       | ENUM           | `portfolio_source_type_enum` 재사용 (INTERNAL/EXTERNAL) |
+| status            | ENUM           | `portfolio_status_enum` 재사용                          |
+| experience_id     | int (null, UK) | FK → experience.id, EXTERNAL 원본 보관용                |
+
+### review (블록 첨삭 대상 마킹)
+
+| 컬럼       | 타입           | 설명                              |
+| ---------- | -------------- | --------------------------------- |
+| id         | bigserial (PK) | 첨삭 PK                           |
+| block_id   | bigint         | 첨삭 대상 = EXPERIENCE 블록       |
+| block_kind | ENUM           | 복합FK용, `EXPERIENCE` 고정 CHECK |
+| created_at | timestamptz    |                                   |
+
+### experience_map (사용자별 트리 버전)
+
+| 컬럼        | 타입         | 설명                              |
+| ----------- | ------------ | --------------------------------- |
+| user_id     | integer (PK) | FK → users.id, CASCADE            |
+| map_version | bigint       | 낙관적 잠금 — 메인 커밋 시에만 +1 |
+| updated_at  | timestamptz  |                                   |
+
+### ai_experience_session (사용자별 AI 세션)
+
+| 컬럼       | 타입         | 설명                   |
+| ---------- | ------------ | ---------------------- |
+| user_id    | integer (PK) | FK → users.id, CASCADE |
+| session_id | uuid (UK)    | LangGraph thread_id    |
+| active_gap | jsonb (null) | 직전 턴 gap 제안       |
+| created_at | timestamptz  |                        |
+| updated_at | timestamptz  |                        |
+
+> **Note**: `UNIQUE(user_id, session_id)`가 `ai_experience_request`의 복합 FK 대상입니다.
+
+### ai_experience_request (AI 요청 이력)
+
+| 컬럼              | 타입               | 설명                                            |
+| ----------------- | ------------------ | ----------------------------------------------- |
+| user_id           | integer (PK)       | 복합 PK                                         |
+| request_id        | uuid (PK)          | 메인이 티켓과 함께 발급                         |
+| session_id        | uuid               | FK → ai_experience_session(user_id, session_id) |
+| request_hash      | char(64)           | 멱등성 판정                                     |
+| status            | varchar(20)        | `running` / `completed` / `failed`              |
+| failed_node       | varchar(100, null) | 실패 노드                                       |
+| retryable         | boolean            | 재시도 버튼 노출 여부                           |
+| retry_expires_at  | timestamptz (null) | 30분                                            |
+| lease_expires_at  | timestamptz (null) | 5분, 만료 시 커밋 여부 확인                     |
+| base_map_version  | bigint (null)      | 커밋 요청 시 기준                               |
+| committed_version | bigint (null)      | 커밋 결과                                       |
+| input_meta        | jsonb (null)       |                                                 |
+| result            | jsonb (null)       | 커밋 API 응답 저장                              |
+| suggestion        | jsonb (null)       |                                                 |
+| error             | jsonb (null)       |                                                 |
+| created_at        | timestamptz        |                                                 |
+| updated_at        | timestamptz        |                                                 |
+
+### ai_commit_log (커밋 롤백용 스냅샷)
+
+| 컬럼              | 타입         | 설명                                           |
+| ----------------- | ------------ | ---------------------------------------------- |
+| user_id           | integer (PK) | FK → users.id, CASCADE, 사용자별 최신 1건      |
+| request_id        | uuid         | 커밋한 요청                                    |
+| previous_version  | bigint       | 되돌릴 목표 버전                               |
+| committed_version | bigint       | 현재 map_version과 대조                        |
+| created_block_ids | bigint[]     | 롤백 시 자식부터 삭제                          |
+| updated_blocks    | jsonb (null) | 이전 content 복원용                            |
+| created_at        | timestamptz  | 24시간 TTL (배치로 정리, DB 네이티브 TTL 아님) |
+
 ---
 
 ## 인덱스 설계
 
 > PostgreSQL은 FK에 자동 인덱스를 생성하지 않음. 아래 FK 컬럼에 `@Index()` 필요.
 
-| 테이블                           | 인덱스 대상 컬럼                                                               | 비고                |
-| -------------------------------- | ------------------------------------------------------------------------------ | ------------------- |
-| `social_user`                    | `user_id`                                                                      |                     |
-| `user_agreement`                 | `user_id`                                                                      |                     |
-| `experience`                     | `user_id`                                                                      |                     |
-| `experience_source`              | `experience_id`                                                                |                     |
-| `portfolio`                      | `user_id`, `experience_id`                                                     |                     |
-| `portfolio_correction`           | `user_id`                                                                      |                     |
-| `correction_portfolio_selection` | `portfolio_correction_id`, `portfolio_id`, `portfolio_correction_id+is_active` | 선택 조회 최적화    |
-| `correction_item`                | `portfolio_correction_id`, `portfolio_id`                                      |                     |
-| `insight`                        | `user_id`                                                                      |                     |
-| `insight_activity`               | `insight_id`, `activity_id`                                                    |                     |
-| `activity`                       | `user_id`                                                                      |                     |
-| `ticket`                         | `user_id`, `payment_id`, `event_participation_id`, `ticket_grant_id`           |                     |
-| `ticket_grant`                   | `user_id`, `source_type+source_ref_id`, `actor_type+actor_id`                  | 지급 ledger 조회    |
-| `ticket_grant_notice`            | `ticket_grant_id`, `user_id+status`, `status='PENDING'` partial index          | 엔트리 notice 조회  |
-| `payment`                        | `user_id`, `ticket_product_id`                                                 |                     |
-| `event_participation`            | `user_id`, `event_id` — **UNIQUE 복합키**                                      | 중복 참여 방지      |
-| `event_feedback_submission`      | `event_id`, `user_id`, `phone_num`, `event_id+external_submission_id`(UNIQUE)  | 외부 제출 이력/멱등 |
+| 테이블                           | 인덱스 대상 컬럼                                                               | 비고                    |
+| -------------------------------- | ------------------------------------------------------------------------------ | ----------------------- |
+| `social_user`                    | `user_id`                                                                      |                         |
+| `user_agreement`                 | `user_id`                                                                      |                         |
+| `experience`                     | `user_id`                                                                      |                         |
+| `experience_source`              | `experience_id`                                                                |                         |
+| `portfolio`                      | `user_id`, `experience_id`                                                     |                         |
+| `portfolio_correction`           | `user_id`                                                                      |                         |
+| `correction_portfolio_selection` | `portfolio_correction_id`, `portfolio_id`, `portfolio_correction_id+is_active` | 선택 조회 최적화        |
+| `correction_item`                | `portfolio_correction_id`, `portfolio_id`                                      |                         |
+| `insight`                        | `user_id`                                                                      |                         |
+| `insight_activity`               | `insight_id`, `activity_id`                                                    |                         |
+| `activity`                       | `user_id`                                                                      |                         |
+| `ticket`                         | `user_id`, `payment_id`, `event_participation_id`, `ticket_grant_id`           |                         |
+| `ticket_grant`                   | `user_id`, `source_type+source_ref_id`, `actor_type+actor_id`                  | 지급 ledger 조회        |
+| `ticket_grant_notice`            | `ticket_grant_id`, `user_id+status`, `status='PENDING'` partial index          | 엔트리 notice 조회      |
+| `payment`                        | `user_id`, `ticket_product_id`                                                 |                         |
+| `event_participation`            | `user_id`, `event_id` — **UNIQUE 복합키**                                      | 중복 참여 방지          |
+| `event_feedback_submission`      | `event_id`, `user_id`, `phone_num`, `event_id+external_submission_id`(UNIQUE)  | 외부 제출 이력/멱등     |
+| `block`                          | `user_id`, `parent_id`, `id+kind`(UNIQUE)                                      | 트리 순회, 복합 FK 대상 |
+| `review`                         | `block_id`                                                                     |                         |
+| `ai_experience_session`          | `user_id+session_id`(UNIQUE)                                                   | 복합 FK 대상            |
+| `ai_experience_request`          | `user_id+session_id`, `user_id+request_hash`                                   | 세션 조회, 멱등성 판정  |
 
 ---
 
 ## 변경 이력
 
-| 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                    |
-| ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| 2.8.0 | 2026-03-23 | 문서 현행화 — `correction_rag_data`, `term`, `withdrawn_user` 테이블 추가, `ExperienceStatus.GENERATE_FAILED`/`CorrectionStatus.FAILED                                                                                                                                                       | RAG_FAILED`/`PdfExtractionStatus` enum 반영, 버전 헤더 동기화 |
-| 2.7.0 | 2026-03-08 | 이용권 지급/노출 분리 구조 반영 — `ticket_grant`, `ticket_grant_notice` 추가, `ticket.ticket_grant_id` 연결, `TicketSource.ADMIN` 반영, 기존 이벤트/결제/운영 지급 흐름과의 공존 구조 문서화                                                                                                 |
-| 2.6.0 | 2026-03-03 | 포트폴리오 첨삭 선택 매핑 테이블(`correction_portfolio_selection`) 추가 및 관련 인덱스 설계 반영                                                                                                                                                                                             |
-| 2.5.0 | 2026-02-25 | 이벤트 하이브리드 스키마 보강 — `event.ui_config`, `event.ops_config`, `event_participation.reward_status/granted_by/grant_reason` 추가, `event_feedback_submission` 신규(외부 피드백 이력/멱등 처리), 운영 수동 지급 시나리오 반영                                                          |
-| 2.4.0 | 2026-02-09 | 이벤트 도메인 설계 보완 — `event_participation` UNIQUE(user_id, event_id) 추가, jsonb 타입 안전성 가이드 추가, 동시성 처리 가이드 추가                                                                                                                                                       |
-| 2.3.0 | 2026-02-07 | Insight-Activity N:M 관계 재설계 — `insight_activity` 매핑 테이블 추가, `insight.activity_id` 제거. 인사이트는 pgvector 기반으로 관리.                                                                                                                                                       |
-| 2.2.0 | 2026-02-04 | 설계 리뷰 전건 해결 — `user` → `users`(예약어 회피), snake_case 통일, `user_agreement` FK 정리, `portfolio_correction`에 `user_id` 추가, `login_id` bigint→varchar, FK 인덱스 설계 추가. 설계 리뷰 섹션 제거(전건 해결)                                                                      |
-| 2.1.0 | 2026-02-04 | 크레딧 → 이용권(ticket) 시스템 전면 재설계 — `ticket_product`, `ticket`, `payment`(PayApp 연동), `event`, `event_participation` 신규. `pg_product`, `service_product`, `service_purchase`, `credit_transaction` 삭제. `portfolio.experience_id` nullable 확정. 설계 리뷰 16건 반영 현황 추가 |
-| 2.0.0 | 2026-02-03 | 기획 변경에 따른 ERD 전면 개편 — SocialUser 분리, chat 제거, UserAgreement·Event 추가, User/Experience/Payment/creditTransaction 구조 변경                                                                                                                                                   |
-| 1.1.0 | 2026-01-28 | user.img_url 컬럼 제거 (프로필 이미지 기능 미사용)                                                                                                                                                                                                                                           |
-| 1.0.0 | 2026-01-16 | 최초 작성 (ERD 이미지 기반)                                                                                                                                                                                                                                                                  |
+| 버전  | 날짜       | 변경 내용                                                                                                                                                                                                                                                                                                                                                             |
+| ----- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 2.9.0 | 2026-08-07 | 경험 정리 v3 개편 — 블록 트리 스키마 신설. `block_kind`, `block`(자기참조 트리, 1~5단계), `experience_meta`(EXPERIENCE 블록 메타, portfolio enum 재사용), `review`(첨삭 대상 마킹), `experience_map`(낙관적 잠금), `ai_experience_session`/`ai_experience_request`/`ai_commit_log`(AI 에이전트 세션·요청·커밋 롤백) 추가. 기존 `experience`/`portfolio` 스키마는 유지 |
+| 2.8.0 | 2026-03-23 | 문서 현행화 — `correction_rag_data`, `term`, `withdrawn_user` 테이블 추가, `ExperienceStatus.GENERATE_FAILED`/`CorrectionStatus.FAILED                                                                                                                                                                                                                                | RAG_FAILED`/`PdfExtractionStatus` enum 반영, 버전 헤더 동기화 |
+| 2.7.0 | 2026-03-08 | 이용권 지급/노출 분리 구조 반영 — `ticket_grant`, `ticket_grant_notice` 추가, `ticket.ticket_grant_id` 연결, `TicketSource.ADMIN` 반영, 기존 이벤트/결제/운영 지급 흐름과의 공존 구조 문서화                                                                                                                                                                          |
+| 2.6.0 | 2026-03-03 | 포트폴리오 첨삭 선택 매핑 테이블(`correction_portfolio_selection`) 추가 및 관련 인덱스 설계 반영                                                                                                                                                                                                                                                                      |
+| 2.5.0 | 2026-02-25 | 이벤트 하이브리드 스키마 보강 — `event.ui_config`, `event.ops_config`, `event_participation.reward_status/granted_by/grant_reason` 추가, `event_feedback_submission` 신규(외부 피드백 이력/멱등 처리), 운영 수동 지급 시나리오 반영                                                                                                                                   |
+| 2.4.0 | 2026-02-09 | 이벤트 도메인 설계 보완 — `event_participation` UNIQUE(user_id, event_id) 추가, jsonb 타입 안전성 가이드 추가, 동시성 처리 가이드 추가                                                                                                                                                                                                                                |
+| 2.3.0 | 2026-02-07 | Insight-Activity N:M 관계 재설계 — `insight_activity` 매핑 테이블 추가, `insight.activity_id` 제거. 인사이트는 pgvector 기반으로 관리.                                                                                                                                                                                                                                |
+| 2.2.0 | 2026-02-04 | 설계 리뷰 전건 해결 — `user` → `users`(예약어 회피), snake_case 통일, `user_agreement` FK 정리, `portfolio_correction`에 `user_id` 추가, `login_id` bigint→varchar, FK 인덱스 설계 추가. 설계 리뷰 섹션 제거(전건 해결)                                                                                                                                               |
+| 2.1.0 | 2026-02-04 | 크레딧 → 이용권(ticket) 시스템 전면 재설계 — `ticket_product`, `ticket`, `payment`(PayApp 연동), `event`, `event_participation` 신규. `pg_product`, `service_product`, `service_purchase`, `credit_transaction` 삭제. `portfolio.experience_id` nullable 확정. 설계 리뷰 16건 반영 현황 추가                                                                          |
+| 2.0.0 | 2026-02-03 | 기획 변경에 따른 ERD 전면 개편 — SocialUser 분리, chat 제거, UserAgreement·Event 추가, User/Experience/Payment/creditTransaction 구조 변경                                                                                                                                                                                                                            |
+| 1.1.0 | 2026-01-28 | user.img_url 컬럼 제거 (프로필 이미지 기능 미사용)                                                                                                                                                                                                                                                                                                                    |
+| 1.0.0 | 2026-01-16 | 최초 작성 (ERD 이미지 기반)                                                                                                                                                                                                                                                                                                                                           |
