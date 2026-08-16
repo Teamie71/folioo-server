@@ -15,10 +15,11 @@ export class CreateBlockReqDTO {
     @IsOptional()
     @IsString()
     @ApiProperty({
+        type: 'string',
         required: false,
         nullable: true,
-        example: null,
-        description: '부모 블록 id (루트 GROUP 생성 시 생략)',
+        example: '12',
+        description: '부모 블록 id (bigint라 문자열로 주고받는다). 루트 GROUP 생성 시 생략',
     })
     parentId?: string | null;
 
@@ -41,10 +42,12 @@ export class MoveBlockReqDTO {
     @IsOptional()
     @IsString()
     @ApiProperty({
+        type: 'string',
         required: false,
         nullable: true,
+        example: '12',
         description:
-            '새 부모 블록 id. 생략하면 같은 부모 내에서 순서만 변경한다. 1~2단계 블록은 위계(부모)를 변경할 수 없다.',
+            '새 부모 블록 id (bigint라 문자열로 주고받는다). 생략하면 같은 부모 내에서 순서만 변경한다. 1~2단계 블록은 위계(부모)를 변경할 수 없다.',
     })
     parentId?: string | null;
 
@@ -78,8 +81,21 @@ export class ExperienceMetaResDTO {
 }
 
 export class BlockResDTO {
+    @ApiProperty({
+        type: 'string',
+        example: '12',
+        description: 'bigint라 JS number 정밀도(2^53) 초과를 피하기 위해 문자열로 반환한다.',
+    })
     id: string;
+
+    @ApiProperty({
+        type: 'string',
+        nullable: true,
+        example: '12',
+        description: 'bigint라 문자열로 반환한다. 1단계(루트) 블록은 null.',
+    })
     parentId: string | null;
+
     level: number;
     @ApiProperty({ enum: BlockKind })
     kind: BlockKind;
@@ -111,7 +127,11 @@ export class BlockResDTO {
 }
 
 export class ExperienceMapResDTO {
-    @ApiProperty({ description: '낙관적 잠금 버전 (bigint, 문자열로 반환)' })
+    @ApiProperty({
+        type: 'string',
+        example: '1',
+        description: '낙관적 잠금 버전 (bigint라 문자열로 반환)',
+    })
     mapVersion: string;
     @ApiProperty({ type: () => [BlockResDTO] })
     roots: BlockResDTO[];
