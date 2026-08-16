@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
     ApiCommonMessageResponse,
@@ -37,9 +37,55 @@ export class ExperienceMapController {
     @ApiOperation({
         summary: '블록 생성',
         description:
-            'GROUP(루트), EXPERIENCE(GROUP/미분류 하위), CONTENT(SECTION 또는 CONTENT 하위)만 직접 생성할 수 있습니다. EXPERIENCE 생성 시 5개 고정 SECTION과 메타데이터가 함께 생성됩니다.',
+            'GROUP(루트), EXPERIENCE(GROUP/미분류 하위), CONTENT(SECTION 또는 CONTENT 하위)만 직접 생성할 수 있습니다. ' +
+            'EXPERIENCE 생성 시 SECTION 5종(상세정보/주요성과/담당업무/문제해결/배운 점)과 experience_meta가 같은 트랜잭션에서 함께 생성됩니다. ' +
+            '단, 응답의 children은 생성 직후엔 항상 빈 배열이라 자동 생성된 SECTION을 보려면 GET /experience-map을 다시 호출해야 합니다.',
     })
-    @ApiCommonResponse(BlockResDTO)
+    @ApiBody({
+        type: CreateBlockReqDTO,
+        examples: {
+            group: {
+                summary: 'GROUP 생성 (루트)',
+                description: 'parentId를 생략해야 합니다.',
+                value: { kind: 'GROUP', content: '2026' },
+            },
+            experience: {
+                summary: 'EXPERIENCE 생성',
+                description:
+                    'parentId는 미분류(GROUP_UNCATEGORIZED) 또는 본인 소유 GROUP의 id여야 합니다. ' +
+                    '성공 시 SECTION 5종이 함께 생성됩니다.',
+                value: { kind: 'EXPERIENCE', parentId: '12', content: '새로운 활동 1' },
+            },
+            content: {
+                summary: 'CONTENT 생성 (SECTION 하위)',
+                description: 'parentId는 SECTION_* 블록 또는 4단계 CONTENT 블록의 id여야 합니다.',
+                value: {
+                    kind: 'CONTENT',
+                    parentId: '34',
+                    content: '전공 서적 거래 편의성 개선 프로젝트',
+                },
+            },
+        },
+    })
+    @ApiCommonResponse(BlockResDTO, {
+        exampleResults: {
+            experience: {
+                summary: 'EXPERIENCE 생성 응답',
+                result: {
+                    id: '15',
+                    parentId: '12',
+                    level: 2,
+                    kind: 'EXPERIENCE',
+                    position: 0,
+                    content: '새로운 활동 1',
+                    placeholder: null,
+                    createdAt: '2026-08-16T14:49:34.935Z',
+                    updatedAt: '2026-08-16T14:49:34.935Z',
+                    children: [],
+                },
+            },
+        },
+    })
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BLOCK_PARENT_NOT_FOUND,
