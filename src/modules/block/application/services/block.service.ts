@@ -54,13 +54,21 @@ export class BlockService {
         return block;
     }
 
+    private async findParentOrThrow(parentId: string, userId: number): Promise<Block> {
+        const parent = await this.blockRepository.findByIdAndUserId(parentId, userId);
+        if (!parent) {
+            throw new BusinessException(ErrorCode.BLOCK_PARENT_NOT_FOUND);
+        }
+        return parent;
+    }
+
     async createBlock(
         userId: number,
         kind: BlockKind,
         parentId: string | null,
         content: string | null
     ): Promise<Block> {
-        const parent = parentId ? await this.findByIdOrThrow(parentId, userId) : null;
+        const parent = parentId ? await this.findParentOrThrow(parentId, userId) : null;
         this.assertValidPlacement(kind, parent);
         this.assertContentLength(kind, content);
 
