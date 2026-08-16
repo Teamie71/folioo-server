@@ -70,7 +70,7 @@ export class BlockService {
         block.parentId = parentId;
         block.level = parent ? parent.level + 1 : 1;
         block.kind = kind;
-        block.position = await this.blockRepository.countChildren(parentId);
+        block.position = await this.blockRepository.countChildren(userId, parentId);
         block.content = content;
         block.placeholder = null;
         const savedBlock = await this.blockRepository.save(block);
@@ -177,7 +177,7 @@ export class BlockService {
         }
 
         const root = await this.getOrCreateRootBlock(userId);
-        const rootChildrenCount = await this.blockRepository.countChildren(root.id);
+        const rootChildrenCount = await this.blockRepository.countChildren(userId, root.id);
         children.forEach((child, index) => {
             child.parent = root;
             child.parentId = root.id;

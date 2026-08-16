@@ -43,8 +43,8 @@ export class BlockRepository {
         });
     }
 
-    async countChildren(parentId: string | null): Promise<number> {
-        return this.blockRepository.count({ where: { parentId: parentId ?? IsNull() } });
+    async countChildren(userId: number, parentId: string | null): Promise<number> {
+        return this.blockRepository.count({ where: { userId, parentId: parentId ?? IsNull() } });
     }
 
     async deleteById(id: string): Promise<void> {
