@@ -13,6 +13,12 @@ import {
 import { BlockKindEntity } from '../../domain/block-kind.entity';
 import { ExperienceMeta } from '../../domain/experience-meta.entity';
 import { BlockKind, EXPERIENCE_SECTION_KINDS } from '../../domain/enums/block-kind.enum';
+import { BLOCK_KIND_TO_SECTION_KIND, SectionKind } from '../../domain/enums/section-kind.enum';
+import {
+    getAnchorSlot,
+    getCategorySlotsForSection,
+    getDefaultSubTemplate,
+} from '../../domain/templates/template-catalog';
 
 const NAME_LEVEL_KINDS: readonly BlockKind[] = [BlockKind.GROUP, BlockKind.EXPERIENCE];
 
@@ -80,7 +86,7 @@ export class BlockService {
         block.kind = kind;
         block.position = await this.blockRepository.countChildren(userId, parentId);
         block.content = content;
-        block.placeholder = null;
+        block.placeholder = this.resolveDefaultPlaceholder(kind, parent);
         const savedBlock = await this.blockRepository.save(block);
 
         if (kind === BlockKind.EXPERIENCE) {
@@ -243,12 +249,78 @@ export class BlockService {
             section.placeholder = null;
             return section;
         });
-        await this.blockRepository.saveAll(sections);
+        const savedSections = await this.blockRepository.saveAll(sections);
 
         const experienceMeta = new ExperienceMeta();
         experienceMeta.blockId = experienceBlock.id;
         experienceMeta.blockKind = BlockKind.EXPERIENCE;
         await this.experienceMetaRepository.save(experienceMeta);
+
+        await this.provisionDefaultContentSlots(savedSections);
+    }
+
+    // 문서 "1. 기본 제공 데이터" — 섹션별 level4 카테고리 슬롯 10개 + TASK/PROBLEM_SOLVING
+    // 앵커 하위 기본(BASIC) 템플릿 level5 슬롯 8개, 총 18개를 빈 content + 지정 placeholder로 생성한다.
+    private async provisionDefaultContentSlots(sections: Block[]): Promise<void> {
+        const level4Blocks: Block[] = [];
+        const anchorBlockBySection = new Map<SectionKind, Block>();
+
+        for (const section of sections) {
+            const sectionKind = BLOCK_KIND_TO_SECTION_KIND.get(section.kind);
+            if (!sectionKind) continue;
+
+            getCategorySlotsForSection(sectionKind).forEach((slot, index) => {
+                const block = new Block();
+                block.userId = section.userId;
+                block.parent = section;
+                block.parentId = section.id;
+                block.level = section.level + 1;
+                block.kind = BlockKind.CONTENT;
+                block.position = index;
+                block.content = null;
+                block.placeholder = slot.placeholder;
+                level4Blocks.push(block);
+                if (slot.isAnchor) {
+                    anchorBlockBySection.set(sectionKind, block);
+                }
+            });
+        }
+        await this.blockRepository.saveAll(level4Blocks);
+
+        const level5Blocks: Block[] = [];
+        for (const [sectionKind, anchorBlock] of anchorBlockBySection) {
+            const defaultTemplate = getDefaultSubTemplate(sectionKind);
+            if (!defaultTemplate) continue;
+
+            defaultTemplate.slots.forEach((slot, index) => {
+                const block = new Block();
+                block.userId = anchorBlock.userId;
+                block.parent = anchorBlock;
+                block.parentId = anchorBlock.id;
+                block.level = anchorBlock.level + 1;
+                block.kind = BlockKind.CONTENT;
+                block.position = index;
+                block.content = null;
+                block.placeholder = slot.placeholder;
+                level5Blocks.push(block);
+            });
+        }
+        if (level5Blocks.length > 0) {
+            await this.blockRepository.saveAll(level5Blocks);
+        }
+    }
+
+    // 문서 "0. 기본 placeholder" — 담당업무/문제해결 섹션 아래 새로 생성되는 4단계 블록은
+    // 앵커 슬롯의 placeholder를 그대로 쓰고, 그 외에는 block_kind의 기본 placeholder로 폴백한다.
+    private resolveDefaultPlaceholder(kind: BlockKind, parent: Block | null): string | null {
+        if (kind !== BlockKind.CONTENT || !parent) {
+            return null;
+        }
+        const sectionKind = BLOCK_KIND_TO_SECTION_KIND.get(parent.kind);
+        if (!sectionKind) {
+            return null;
+        }
+        return getAnchorSlot(sectionKind)?.placeholder ?? null;
     }
 
     private assertValidPlacement(kind: BlockKind, parent: Block | null): void {
