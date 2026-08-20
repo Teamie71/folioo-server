@@ -12,6 +12,14 @@ export class ExperienceMapService {
         return this.experienceMapRepository.findByUserId(userId);
     }
 
+    async findForUpdateOrThrow(userId: number): Promise<ExperienceMap> {
+        const experienceMap = await this.experienceMapRepository.findByUserIdForUpdate(userId);
+        if (!experienceMap) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_MAP_NOT_INITIALIZED);
+        }
+        return experienceMap;
+    }
+
     async getOrCreate(userId: number): Promise<ExperienceMap> {
         const existing = await this.experienceMapRepository.findByUserId(userId);
         if (existing) {
