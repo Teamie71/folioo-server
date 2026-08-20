@@ -17,6 +17,8 @@ import { ExperienceMapService } from './application/services/experience-map.serv
 import { ExperienceMetaService } from './application/services/experience-meta.service';
 import { ExperienceMapFacade } from './application/facades/experience-map.facade';
 import { ExperienceMapController } from './presentation/experience-map.controller';
+import { TemplateCatalogService } from './application/services/template-catalog.service';
+import { TemplateController } from './presentation/template.controller';
 
 @Module({
     imports: [
@@ -31,7 +33,7 @@ import { ExperienceMapController } from './presentation/experience-map.controlle
             AiCommitLog,
         ]),
     ],
-    controllers: [ExperienceMapController],
+    controllers: [ExperienceMapController, TemplateController],
     providers: [
         BlockRepository,
         BlockKindRepository,
@@ -41,6 +43,7 @@ import { ExperienceMapController } from './presentation/experience-map.controlle
         ExperienceMapService,
         ExperienceMetaService,
         ExperienceMapFacade,
+        TemplateCatalogService,
     ],
 })
 export class BlockModule {}
