@@ -10,6 +10,14 @@ export enum SectionKind {
     LEARNING = 'LEARNING',
 }
 
+export const SECTION_KIND_LABEL: Readonly<Record<SectionKind, string>> = {
+    [SectionKind.DETAIL]: '상세정보',
+    [SectionKind.ACHIEVEMENT]: '주요성과',
+    [SectionKind.TASK]: '담당업무',
+    [SectionKind.PROBLEM_SOLVING]: '문제해결',
+    [SectionKind.LEARNING]: '배운 점',
+};
+
 export const SECTION_KIND_TO_BLOCK_KIND: Readonly<Record<SectionKind, BlockKind>> = {
     [SectionKind.DETAIL]: BlockKind.SECTION_DETAIL,
     [SectionKind.ACHIEVEMENT]: BlockKind.SECTION_ACHIEVEMENT,

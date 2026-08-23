@@ -1,5 +1,9 @@
 import { SectionKind } from '../enums/section-kind.enum';
 
+// AI 서버는 이 값을 기동 시 캐시하고 1시간 TTL로 재사용한다.
+// 슬롯 문구(placeholder/example)를 바꿀 때마다 반드시 갱신할 것.
+export const TEMPLATE_CATALOG_VERSION = '2026-08-20';
+
 export interface CategorySlot {
     slotId: string;
     sectionKind: SectionKind;
