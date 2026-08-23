@@ -14,9 +14,11 @@ import { BlockKindRepository } from './infrastructure/repositories/block-kind.re
 import { ExperienceMetaRepository } from './infrastructure/repositories/experience-meta.repository';
 import { ExperienceMapRepository } from './infrastructure/repositories/experience-map.repository';
 import { AiCommitRequestRepository } from './infrastructure/repositories/ai-commit-request.repository';
+import { AiCommitLogRepository } from './infrastructure/repositories/ai-commit-log.repository';
 import { BlockService } from './application/services/block.service';
 import { ExperienceMapService } from './application/services/experience-map.service';
 import { ExperienceMetaService } from './application/services/experience-meta.service';
+import { AiCommitLogService } from './application/services/ai-commit-log.service';
 import { ExperienceMapFacade } from './application/facades/experience-map.facade';
 import { ExperienceMapController } from './presentation/experience-map.controller';
 import { TemplateCatalogService } from './application/services/template-catalog.service';
@@ -43,9 +45,11 @@ import { TemplateController } from './presentation/template.controller';
         ExperienceMetaRepository,
         ExperienceMapRepository,
         AiCommitRequestRepository,
+        AiCommitLogRepository,
         BlockService,
         ExperienceMapService,
         ExperienceMetaService,
+        AiCommitLogService,
         ExperienceMapFacade,
         TemplateCatalogService,
     ],

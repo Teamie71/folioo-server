@@ -3,6 +3,7 @@ import { Transactional } from 'typeorm-transactional';
 import { BlockService } from '../services/block.service';
 import { ExperienceMapService } from '../services/experience-map.service';
 import { ExperienceMetaService } from '../services/experience-meta.service';
+import { AiCommitLogService } from '../services/ai-commit-log.service';
 import {
     BlockResDTO,
     CreateBlockReqDTO,
@@ -17,7 +18,8 @@ export class ExperienceMapFacade {
     constructor(
         private readonly blockService: BlockService,
         private readonly experienceMapService: ExperienceMapService,
-        private readonly experienceMetaService: ExperienceMetaService
+        private readonly experienceMetaService: ExperienceMetaService,
+        private readonly aiCommitLogService: AiCommitLogService
     ) {}
 
     @Transactional()
@@ -45,6 +47,7 @@ export class ExperienceMapFacade {
             body.content ?? null
         );
         await this.experienceMapService.bumpVersion(experienceMap);
+        await this.aiCommitLogService.discardByUserId(userId);
         return BlockResDTO.fromEntity(block);
     }
 
@@ -58,6 +61,7 @@ export class ExperienceMapFacade {
         this.experienceMapService.assertVersion(experienceMap, body.expectedMapVersion);
         const block = await this.blockService.updateContent(blockId, userId, body.content ?? null);
         await this.experienceMapService.bumpVersion(experienceMap);
+        await this.aiCommitLogService.discardByUserId(userId);
         return BlockResDTO.fromEntity(block);
     }
 
@@ -67,6 +71,7 @@ export class ExperienceMapFacade {
         this.experienceMapService.assertVersion(experienceMap, expectedMapVersion);
         await this.blockService.deleteBlock(blockId, userId);
         await this.experienceMapService.bumpVersion(experienceMap);
+        await this.aiCommitLogService.discardByUserId(userId);
     }
 
     @Transactional()
@@ -80,6 +85,7 @@ export class ExperienceMapFacade {
             body.position
         );
         await this.experienceMapService.bumpVersion(experienceMap);
+        await this.aiCommitLogService.discardByUserId(userId);
         return BlockResDTO.fromEntity(block);
     }
 }
