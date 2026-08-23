@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm'
 
 @Entity('ai_commit_request')
 @Index(['createdAt'])
+@Index(['requestId'])
 export class AiCommitRequest {
     @PrimaryColumn({ name: 'user_id' })
     userId: number;

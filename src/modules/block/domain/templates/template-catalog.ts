@@ -401,3 +401,20 @@ export function getSubTemplate(sectionKind: SectionKind, templateId: string): Su
 export function getDefaultSubTemplate(sectionKind: SectionKind): SubTemplate | null {
     return getSubTemplate(sectionKind, DEFAULT_SUB_TEMPLATE_ID);
 }
+
+// AI 커밋 API가 slot_id -> placeholder를 부여할 때 쓴다. 카탈로그에 없으면 null(= unknown_slot_id).
+export function findSlotPlaceholder(slotId: string): string | null {
+    const categorySlot = CATEGORY_SLOTS.find((slot) => slot.slotId === slotId);
+    if (categorySlot) {
+        return categorySlot.placeholder;
+    }
+
+    for (const subTemplate of SUB_TEMPLATES) {
+        const slot = subTemplate.slots.find((s) => s.slotId === slotId);
+        if (slot) {
+            return slot.placeholder;
+        }
+    }
+
+    return null;
+}

@@ -23,6 +23,7 @@ import { BlockService } from './application/services/block.service';
 import { ExperienceMapService } from './application/services/experience-map.service';
 import { ExperienceMetaService } from './application/services/experience-meta.service';
 import { AiCommitLogService } from './application/services/ai-commit-log.service';
+import { BlockCommitService } from './application/services/block-commit.service';
 import { AiExperienceSessionService } from './application/services/ai-experience-session.service';
 import { ExperienceMapTicketService } from './application/services/experience-map-ticket.service';
 import { AiExperienceSessionRepository } from './infrastructure/repositories/ai-experience-session.repository';
@@ -80,6 +81,7 @@ import { TemplateController } from './presentation/template.controller';
         ExperienceMapService,
         ExperienceMetaService,
         AiCommitLogService,
+        BlockCommitService,
         AiExperienceSessionService,
         ExperienceMapTicketService,
         ExperienceMapFacade,

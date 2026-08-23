@@ -1,12 +1,17 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
-import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
-import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
+import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import { TemplateCatalogService } from '../application/services/template-catalog.service';
 import { InternalTemplateCatalogResDTO } from '../application/dtos/internal-template.dto';
+import { ExperienceMapFacade } from '../application/facades/experience-map.facade';
+import {
+    CommitReqDTO,
+    CommitResDTO,
+    CommitStatusResDTO,
+} from '../application/dtos/experience-map-commit.dto';
 
 // 경로는 docs/development/INTERNAL_API_PATTERN.md의 `/internal/*` 규칙을 따르지 않고
 // AI 서버와 고정된 계약 경로(`/api/v1/experience-map/*`)를 그대로 쓴다.
@@ -14,12 +19,14 @@ import { InternalTemplateCatalogResDTO } from '../application/dtos/internal-temp
 @ApiTags('ExperienceMap - Internal (AI)')
 @Controller('api/v1/experience-map')
 export class ExperienceMapInternalController {
-    constructor(private readonly templateCatalogService: TemplateCatalogService) {}
+    constructor(
+        private readonly templateCatalogService: TemplateCatalogService,
+        private readonly experienceMapFacade: ExperienceMapFacade
+    ) {}
 
     @Get('templates')
     @Public()
     @UseGuards(InternalApiKeyGuard)
-    @SkipTransform()
     @ApiHeader({
         name: 'X-API-Key',
         required: true,
@@ -32,9 +39,58 @@ export class ExperienceMapInternalController {
             'unknown_slot_id(422) 응답을 받으면 즉시 재조회한다. ' +
             '문구가 바뀌면 version이 갱신된다.',
     })
-    @ApiResponse({ status: 200, type: InternalTemplateCatalogResDTO })
+    @ApiCommonResponse(InternalTemplateCatalogResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     getTemplates(): InternalTemplateCatalogResDTO {
         return this.templateCatalogService.getInternalCatalog();
+    }
+
+    @Post('commit')
+    @Public()
+    @UseGuards(InternalApiKeyGuard)
+    @ApiHeader({
+        name: 'X-API-Key',
+        required: true,
+        description: 'AI 서버 콜백용 내부 API 키 (MAIN_BACKEND_API_KEY)',
+    })
+    @ApiOperation({
+        summary: '경험 맵 커밋 (AI 서버용)',
+        description:
+            '경험 맵 쓰기는 이 API 하나로 모인다. (user_id, request_id) 기준으로 멱등하며, ' +
+            '이미 커밋된 요청은 재실행하지 않고 저장된 결과를 그대로 반환한다. ' +
+            'base_map_version이 현재 값과 다르면 409(map_version_conflict)로 거부한다.',
+    })
+    @ApiCommonResponse(CommitResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.UNAUTHORIZED,
+        ErrorCode.EXPERIENCE_MAP_NOT_INITIALIZED,
+        ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT,
+        ErrorCode.EXPERIENCE_MAP_REQUEST_ID_REUSED,
+        ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY,
+        ErrorCode.EXPERIENCE_MAP_INVALID_TARGET,
+        ErrorCode.EXPERIENCE_MAP_UNKNOWN_SLOT_ID
+    )
+    async commit(@Body() body: CommitReqDTO): Promise<CommitResDTO> {
+        return this.experienceMapFacade.commit(body);
+    }
+
+    @Get('commit/:requestId')
+    @Public()
+    @UseGuards(InternalApiKeyGuard)
+    @ApiHeader({
+        name: 'X-API-Key',
+        required: true,
+        description: 'AI 서버 콜백용 내부 API 키 (MAIN_BACKEND_API_KEY)',
+    })
+    @ApiOperation({
+        summary: '커밋 결과 조회 (AI 서버 크래시 복구용)',
+        description:
+            'AI 서버가 커밋 응답을 받기 전에 죽었을 때 실제로 커밋됐는지 확인한다. ' +
+            'committed=false면 재커밋할 수 있다는 뜻이다.',
+    })
+    @ApiCommonResponse(CommitStatusResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getCommitStatus(@Param('requestId') requestId: string): Promise<CommitStatusResDTO> {
+        return this.experienceMapFacade.getCommitStatus(requestId);
     }
 }
