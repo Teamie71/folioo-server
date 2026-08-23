@@ -8,6 +8,10 @@ import { ExperienceMap } from '../../domain/experience-map.entity';
 export class ExperienceMapService {
     constructor(private readonly experienceMapRepository: ExperienceMapRepository) {}
 
+    async tryFind(userId: number): Promise<ExperienceMap | null> {
+        return this.experienceMapRepository.findByUserId(userId);
+    }
+
     async getOrCreate(userId: number): Promise<ExperienceMap> {
         const existing = await this.experienceMapRepository.findByUserId(userId);
         if (existing) {
