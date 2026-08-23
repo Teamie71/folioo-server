@@ -30,6 +30,7 @@ import { ExperienceMapFacade } from './application/facades/experience-map.facade
 import { ExperienceMapTicketFacade } from './application/facades/experience-map-ticket.facade';
 import { ExperienceMapController } from './presentation/experience-map.controller';
 import { ExperienceMapAiController } from './presentation/experience-map-ai.controller';
+import { ExperienceMapInternalController } from './presentation/experience-map-internal.controller';
 import { TemplateCatalogService } from './application/services/template-catalog.service';
 import { TemplateController } from './presentation/template.controller';
 
@@ -61,7 +62,12 @@ import { TemplateController } from './presentation/template.controller';
             inject: [ConfigService],
         }),
     ],
-    controllers: [ExperienceMapController, ExperienceMapAiController, TemplateController],
+    controllers: [
+        ExperienceMapController,
+        ExperienceMapAiController,
+        ExperienceMapInternalController,
+        TemplateController,
+    ],
     providers: [
         BlockRepository,
         BlockKindRepository,
