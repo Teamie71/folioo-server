@@ -52,6 +52,8 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `AI_BASE_URL`
 - `AI_SERVICE_API_KEY`
 - `MAIN_BACKEND_API_KEY`
+- `EXPMAP_TICKET_SECRET` (경험 정리 맵 티켓 서명 키. `AI_SERVICE_API_KEY`/`MAIN_BACKEND_API_KEY`와 별도 로테이션)
+- `EXPMAP_TICKET_TTL_SECONDS` (선택, 기본 300)
 - `SWAGGER_USER`
 - `SWAGGER_PASSWORD`
 - `OPENROUTER_API_KEY`

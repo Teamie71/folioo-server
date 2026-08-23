@@ -220,7 +220,9 @@ export class BlockService {
         return result;
     }
 
-    private insertAtPosition(siblings: Block[], moving: Block, targetPosition: number): void {
+    // AI 커밋 API도 같은 형제 재배치 규칙을 써야 하므로(문서: "기존 에디터 드래그 정렬과
+    // 동일한 로직을 쓸 것") 이 두 메서드는 public으로 둔다.
+    insertAtPosition(siblings: Block[], moving: Block, targetPosition: number): void {
         const sorted = [...siblings].sort((a, b) => a.position - b.position);
         const clampedPosition = Math.max(0, Math.min(targetPosition, sorted.length));
         sorted.splice(clampedPosition, 0, moving);
@@ -229,7 +231,7 @@ export class BlockService {
         });
     }
 
-    private reindexPositions(siblings: Block[]): void {
+    reindexPositions(siblings: Block[]): void {
         const sorted = [...siblings].sort((a, b) => a.position - b.position);
         sorted.forEach((block, index) => {
             block.position = index;
