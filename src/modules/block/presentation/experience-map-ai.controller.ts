@@ -1,7 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
-import { ApiCommonErrorResponse } from 'src/common/decorators/swagger.decorator';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { User } from 'src/common/decorators/user.decorator';
 import { ExperienceMapTicketFacade } from '../application/facades/experience-map-ticket.facade';
@@ -16,7 +15,6 @@ export class ExperienceMapAiController {
     constructor(private readonly experienceMapTicketFacade: ExperienceMapTicketFacade) {}
 
     @Post('ticket')
-    @SkipTransform()
     @ApiOperation({
         summary: 'AI 경험 정리 세션 티켓 발급',
         description:
@@ -25,7 +23,7 @@ export class ExperienceMapAiController {
             'AI 세션이 없으면 AI 서버 POST /sessions를 호출해 생성합니다. ' +
             'request_id를 body로 전달하면 새로 만들지 않고 그대로 재사용합니다(재시도 턴 유지).',
     })
-    @ApiResponse({ status: 200, type: IssueTicketResDTO })
+    @ApiCommonResponse(IssueTicketResDTO)
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async issueTicket(
         @User('sub') userId: number,
