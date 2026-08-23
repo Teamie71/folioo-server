@@ -18,6 +18,7 @@ import {
     UpdateBlockContentReqDTO,
 } from '../dtos/block.dto';
 import { CommitReqDTO, CommitResDTO, CommitStatusResDTO } from '../dtos/experience-map-commit.dto';
+import { RevertResDTO } from '../dtos/experience-map-revert.dto';
 import { BlockKind } from '../../domain/enums/block-kind.enum';
 
 @Injectable()
@@ -150,6 +151,31 @@ export class ExperienceMapFacade {
         await this.aiCommitRequestRepository.save(ledgerEntry);
 
         return result;
+    }
+
+    @Transactional()
+    async revert(userId: number, requestId: string): Promise<RevertResDTO> {
+        const experienceMap = await this.experienceMapService.findForUpdateOrThrow(userId);
+        const log = await this.aiCommitLogService.findRevertibleOrThrow(userId, requestId);
+
+        if (experienceMap.mapVersion !== log.committedVersion) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT, {
+                currentMapVersion: experienceMap.mapVersion,
+            });
+        }
+
+        await this.blockService.deleteByIds(log.createdBlockIds);
+        if (log.updatedBlocks) {
+            await this.blockService.restoreContent(
+                userId,
+                log.updatedBlocks as Record<string, string | null>
+            );
+        }
+
+        const updatedMap = await this.experienceMapService.bumpVersion(experienceMap);
+        await this.aiCommitLogService.discardByUserId(userId);
+
+        return RevertResDTO.of(Number(updatedMap.mapVersion), requestId);
     }
 
     async getCommitStatus(requestId: string): Promise<CommitStatusResDTO> {
