@@ -377,4 +377,28 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '다른 곳에서 먼저 수정되었습니다. 최신 상태를 다시 불러와 주세요.',
         statusCode: HttpStatus.CONFLICT,
     },
+    [ErrorCode.EXPERIENCE_MAP_NOT_INITIALIZED]: {
+        message: '경험 정리 맵이 아직 생성되지 않았습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.EXPERIENCE_MAP_REQUEST_ID_REUSED]: {
+        message: '이미 사용된 요청 ID이며 내용이 일치하지 않습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_MAP_REVERT_EXPIRED]: {
+        message: '되돌릴 수 없는 요청입니다. 최신 기록이 아니거나 유효 시간이 지났습니다.',
+        statusCode: HttpStatus.GONE,
+    },
+    [ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY]: {
+        message: '해당 레벨에서는 허용되지 않는 작업입니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.EXPERIENCE_MAP_INVALID_TARGET]: {
+        message: '대상 블록의 소유권 또는 수정 가능 여부가 유효하지 않습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.EXPERIENCE_MAP_UNKNOWN_SLOT_ID]: {
+        message: '템플릿 카탈로그에 존재하지 않는 slotId입니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
 };
