@@ -7,10 +7,6 @@ import { EventRewardStatus } from '../../domain/enums/event-reward-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventParticipation } from '../../domain/entities/event-participation.entity';
-import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
-import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
-import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
-import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
 
 const UNIQUE_VIOLATION_CODE = '23505';
 
@@ -18,8 +14,7 @@ const UNIQUE_VIOLATION_CODE = '23505';
 export class EventRewardLifecycleFacade {
     constructor(
         private readonly eventService: EventService,
-        private readonly eventParticipationService: EventParticipationService,
-        private readonly ticketGrantFacade: TicketGrantFacade
+        private readonly eventParticipationService: EventParticipationService
     ) {}
 
     @Transactional()
@@ -43,21 +38,6 @@ export class EventRewardLifecycleFacade {
         participation.rewardGrantedAt = now;
 
         const savedParticipation = await this.eventParticipationService.save(participation);
-        await this.ticketGrantFacade.issueGrantAndTickets({
-            userId,
-            rewards: event.rewardConfig,
-            grantSourceType: TicketGrantSourceType.EVENT,
-            issueContext: {
-                source: TicketSource.EVENT,
-                eventParticipationId: savedParticipation.id,
-            },
-            actorType: TicketGrantActorType.SYSTEM,
-            actorId: 'self-claim',
-            sourceRefId: savedParticipation.id,
-            reasonCode: 'event_self_claim',
-            reasonText: '챌린지 보상 직접 수령',
-            grantedAt: now,
-        });
 
         const dto = new ClaimEventRewardResDTO();
         dto.eventCode = event.code;
@@ -80,35 +60,6 @@ export class EventRewardLifecycleFacade {
             return;
         }
         const now = new Date();
-        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(
-            activeSignupEvent.rewardConfig
-        );
-
-        await this.ticketGrantFacade.issueGrantAndTickets({
-            userId,
-            rewards: activeSignupEvent.rewardConfig,
-            grantSourceType: TicketGrantSourceType.SIGNUP,
-            issueContext: {
-                source: TicketSource.EVENT,
-                eventParticipationId: participation.id,
-            },
-            actorType: TicketGrantActorType.SYSTEM,
-            actorId: 'signup-reward',
-            sourceRefId: participation.id,
-            reasonCode: 'signup_reward',
-            reasonText: activeSignupEvent.title,
-            expiredAt: activeSignupEvent.endDate,
-            grantedAt: now,
-            notice: this.ticketGrantFacade.createDefaultNotice({
-                title: '환영합니다!',
-                rewardSummary,
-                displayReason: activeSignupEvent.title,
-                ctaText: activeSignupEvent.ctaText,
-                ctaLink: activeSignupEvent.ctaLink ?? null,
-                rewards: activeSignupEvent.rewardConfig,
-                expiresAt: activeSignupEvent.endDate,
-            }),
-        });
         participation.rewardStatus = EventRewardStatus.GRANTED;
         participation.rewardGrantedAt = now;
         await this.eventParticipationService.save(participation);
