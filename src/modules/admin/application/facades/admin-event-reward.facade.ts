@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { UserService } from 'src/modules/user/application/services/user.service';
-import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
-import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import {
     AdminGrantRewardReqDTO,
     AdminGrantRewardResDTO,
@@ -17,14 +15,7 @@ import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { EventService } from 'src/modules/event/application/services/event.service';
 import { EventParticipationService } from 'src/modules/event/application/services/event-participation.service';
-import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
-import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
-import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
-import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
-import { AdminTicketGrantListResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
 import { EventRewardLifecycleFacade } from 'src/modules/event/application/facades/event-reward-lifecycle.facade';
-import type { RewardConfigItem } from 'src/modules/event/domain/entities/event.entity';
-import { Event } from 'src/modules/event/domain/entities/event.entity';
 
 @Injectable()
 export class AdminEventRewardFacade {
@@ -32,17 +23,13 @@ export class AdminEventRewardFacade {
         private readonly userService: UserService,
         private readonly eventService: EventService,
         private readonly eventParticipationService: EventParticipationService,
-        private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade,
-        private readonly ticketService: TicketService,
-        private readonly ticketGrantFacade: TicketGrantFacade
+        private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade
     ) {}
 
     async searchUsers(keyword?: string): Promise<AdminUserSearchResDTO> {
         const projections = await this.userService.searchUsers(keyword);
-        const balanceMap = await this.ticketService.getBalanceBatch();
 
         const users: AdminUserItemResDTO[] = projections.map((p) => {
-            const balance = balanceMap.get(p.userId) ?? { experience: 0, correction: 0 };
             const item = new AdminUserItemResDTO();
             item.userId = p.userId;
             item.name = p.name;
@@ -50,8 +37,6 @@ export class AdminEventRewardFacade {
             item.isActive = p.isActive;
             item.email = p.email;
             item.loginType = p.loginType;
-            item.experienceTickets = balance.experience;
-            item.correctionTickets = balance.correction;
             return item;
         });
 
@@ -102,10 +87,6 @@ export class AdminEventRewardFacade {
         return dto;
     }
 
-    async getTicketGrants(): Promise<AdminTicketGrantListResDTO> {
-        return this.ticketGrantFacade.getAdminTicketGrants();
-    }
-
     @Transactional()
     private async grantFeedbackRewardByUserId(
         eventCode: string,
@@ -143,89 +124,10 @@ export class AdminEventRewardFacade {
         participation.rewardGrantedAt = now;
         const savedParticipation = await this.eventParticipationService.save(participation);
 
-        const rewards = this.resolveRewards(event, params.customRewards);
-        const notice = this.buildNoticeFromEvent(event, rewards);
-
-        await this.ticketGrantFacade.issueGrantAndTickets({
-            userId: user.id,
-            rewards,
-            grantSourceType: TicketGrantSourceType.EVENT,
-            issueContext: {
-                source: TicketSource.EVENT,
-                eventParticipationId: savedParticipation.id,
-            },
-            actorType: TicketGrantActorType.ADMIN,
-            actorId: params.reviewedBy ?? 'admin-ui',
-            sourceRefId: savedParticipation.id,
-            reasonCode: 'event_feedback_reward',
-            reasonText: params.reviewNote ?? null,
-            notice,
-            grantedAt: now,
-        });
-
         return {
             userId: user.id,
             rewardStatus: savedParticipation.rewardStatus,
             rewardGrantedAt: now,
         };
-    }
-
-    private resolveRewards(event: Event, customRewards?: RewardConfigItem[]): RewardConfigItem[] {
-        if (event.opsConfig?.allowMultipleRewards === true && customRewards?.length) {
-            return customRewards;
-        }
-        return event.rewardConfig;
-    }
-
-    private buildNoticeFromEvent(
-        event: Event,
-        rewards: RewardConfigItem[]
-    ): {
-        title: string;
-        body: string;
-        ctaText: string | null;
-        ctaLink: string | null;
-        payload: Record<string, unknown>;
-    } {
-        const rewardSummary = this.ticketGrantFacade.formatRewardSummary(rewards);
-
-        return {
-            title: '보상이 지급되었어요',
-            body: rewardSummary,
-            ctaText: event.ctaText ?? this.resolveCtaText(rewards),
-            ctaLink: event.ctaLink ?? this.resolveCtaLink(rewards),
-            payload: {
-                displayReason: event.title,
-                rewards,
-            },
-        };
-    }
-
-    private resolveCtaText(rewards: RewardConfigItem[]): string {
-        const hasExperience = rewards.some(
-            (r) => r.type === TicketType.EXPERIENCE && r.quantity > 0
-        );
-        const hasCorrection = rewards.some(
-            (r) => r.type === TicketType.PORTFOLIO_CORRECTION && r.quantity > 0
-        );
-
-        if (!hasExperience && hasCorrection) {
-            return '첨삭 의뢰하기';
-        }
-        return '경험 정리하기';
-    }
-
-    private resolveCtaLink(rewards: RewardConfigItem[]): string {
-        const hasExperience = rewards.some(
-            (r) => r.type === TicketType.EXPERIENCE && r.quantity > 0
-        );
-        const hasCorrection = rewards.some(
-            (r) => r.type === TicketType.PORTFOLIO_CORRECTION && r.quantity > 0
-        );
-
-        if (!hasExperience && hasCorrection) {
-            return '/correction';
-        }
-        return '/experience';
     }
 }

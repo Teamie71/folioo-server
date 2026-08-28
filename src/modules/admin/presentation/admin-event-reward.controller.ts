@@ -14,7 +14,6 @@ import {
     AdminUserSearchResDTO,
 } from '../application/dtos/admin-event-reward.dto';
 import { AdminEventRewardFacade } from '../application/facades/admin-event-reward.facade';
-import { AdminTicketGrantListResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -77,13 +76,5 @@ export class AdminEventRewardController {
         @Body() body: AdminGrantRewardReqDTO
     ): Promise<AdminGrantRewardResDTO> {
         return this.adminEventRewardFacade.grantReward(eventCode, body);
-    }
-
-    @Get('api/ticket-grants')
-    @ApiOperation({ summary: '이용권 지급/안내 이력 조회 (Admin)' })
-    @ApiCommonResponse(AdminTicketGrantListResDTO)
-    @ApiCommonErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR)
-    async getTicketGrants(): Promise<AdminTicketGrantListResDTO> {
-        return this.adminEventRewardFacade.getTicketGrants();
     }
 }
