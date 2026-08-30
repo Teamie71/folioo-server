@@ -5,7 +5,7 @@
 >
 > **예상 소요: ~40분** (Cloud SQL 없음, Supabase/Upstash는 외부 서비스)
 >
-> **마지막 실행**: -
+> **마지막 실행**: 2026-08-31 (folioo-488916 → project-70c92536-0c79-44bb-ba0)
 
 ---
 
@@ -73,7 +73,7 @@ gcloud auth application-default login      # Terraform용 ADC
 ```
 새 프로젝트 ID: _______________
 새 계정 이메일: _______________
-구 프로젝트 ID: folioo-488916  (현재)
+구 프로젝트 ID: project-70c92536-0c79-44bb-ba0  (현재)
 구 계정 이메일: _______________
 ```
 
@@ -87,7 +87,7 @@ gcloud auth application-default login      # Terraform용 ADC
 # ── 사용자 입력 ──
 NEW_PROJECT="<새 프로젝트 ID>"
 NEW_ACCOUNT="<새 계정 이메일>"
-OLD_PROJECT="folioo-488916"
+OLD_PROJECT="project-70c92536-0c79-44bb-ba0"
 OLD_ACCOUNT="<구 계정 이메일>"
 
 # ── 자동 파생 (변경 금지) ──
@@ -527,7 +527,7 @@ grep -rl "${OLD_PROJECT}" \
 ### 8-4. 이 런북 업데이트
 
 ```
-마지막 실행: <오늘 날짜> (folioo-488916 → ${NEW_PROJECT})
+마지막 실행: <오늘 날짜> (project-70c92536-0c79-44bb-ba0 → ${NEW_PROJECT})
 ```
 
 ### 8-5. 커밋 + PR
@@ -693,6 +693,7 @@ gcloud config set project ${NEW_PROJECT}
 
 ## 마이그레이션 히스토리
 
-| 날짜 | 구 프로젝트 | 신규 프로젝트   | NAT Egress IP           | 비고      |
-| ---- | ----------- | --------------- | ----------------------- | --------- |
-| -    | -           | `folioo-488916` | (terraform output 참조) | 최초 구축 |
+| 날짜         | 구 프로젝트     | 신규 프로젝트                    | NAT Egress IP           | 비고        |
+| ------------ | --------------- | -------------------------------- | ----------------------- | ----------- |
+| -            | -               | `folioo-488916`                  | (terraform output 참조) | 최초 구축   |
+| `2026-08-31` | `folioo-488916` | `project-70c92536-0c79-44bb-ba0` | (terraform output 참조) | 서비스 이관 |
