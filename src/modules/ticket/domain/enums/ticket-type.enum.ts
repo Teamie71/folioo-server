@@ -1,4 +1,0 @@
-export enum TicketType {
-    EXPERIENCE = 'EXPERIENCE',
-    PORTFOLIO_CORRECTION = 'PORTFOLIO_CORRECTION',
-}
