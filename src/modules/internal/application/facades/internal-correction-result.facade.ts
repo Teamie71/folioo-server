@@ -1,17 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
-import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
-import type { ExternalPortfolioUpdateInput } from 'src/modules/portfolio/application/services/external-portfolio.service';
 import { CorrectionItemService } from 'src/modules/portfolio-correction/application/services/correction-item.service';
-import { CorrectionPortfolioSelectionService } from 'src/modules/portfolio-correction/application/services/correction-portfolio-selection.service';
+import { CorrectionMaterialService } from 'src/modules/portfolio-correction/application/services/correction-material.service';
 import { PortfolioCorrectionService } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
 import { PdfExtractionStatus } from 'src/modules/portfolio-correction/domain/enums/pdf-extraction-status.enum';
 import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
 import {
-    Portfolio,
-    PORTFOLIO_BLOCK_FIELD_MAX_LENGTH,
-    PORTFOLIO_NAME_MAX_LENGTH,
-} from 'src/modules/portfolio/domain/portfolio.entity';
+    CorrectionMaterial,
+    CorrectionMaterialInput,
+    CORRECTION_MATERIAL_FIELD_MAX_LENGTH,
+    CORRECTION_MATERIAL_NAME_MAX_LENGTH,
+} from 'src/modules/portfolio-correction/domain/correction-material.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
@@ -26,8 +25,7 @@ export class InternalCorrectionResultFacade {
 
     constructor(
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
-        private readonly externalPortfolioService: ExternalPortfolioService,
-        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
+        private readonly correctionMaterialService: CorrectionMaterialService,
         private readonly correctionItemService: CorrectionItemService
     ) {}
 
@@ -67,19 +65,15 @@ export class InternalCorrectionResultFacade {
             throw new BusinessException(ErrorCode.CORRECTION_PDF_EXTRACTION_EMPTY_ACTIVITIES);
         }
 
-        const createdPortfolios: Portfolio[] =
-            await this.externalPortfolioService.createExternalPortfolios(
-                correction.user.id,
+        const createdMaterials: CorrectionMaterial[] =
+            await this.correctionMaterialService.replaceMaterialsForCorrection(
+                correctionId,
                 body.activities.map((activity) => this.mapActivity(activity))
             );
 
-        await this.correctionPortfolioSelectionService.activateSelections(
-            correction,
-            createdPortfolios
-        );
         await this.correctionItemService.deleteByCorrectionId(correctionId);
-        const correctionItems: CorrectionItem[] = createdPortfolios.map((portfolio) =>
-            CorrectionItem.create(portfolio, correction)
+        const correctionItems: CorrectionItem[] = createdMaterials.map((material) =>
+            CorrectionItem.create(material, correction)
         );
         await this.correctionItemService.saveAll(correctionItems);
         await this.portfolioCorrectionService.updatePdfExtractionStatus(
@@ -88,16 +82,16 @@ export class InternalCorrectionResultFacade {
         );
     }
 
-    private mapActivity(activity: PdfExtractionActivityReqDTO): ExternalPortfolioUpdateInput {
+    private mapActivity(activity: PdfExtractionActivityReqDTO): CorrectionMaterialInput {
         return {
-            name: this.truncate(activity.activityName, PORTFOLIO_NAME_MAX_LENGTH),
+            name: this.truncate(activity.activityName, CORRECTION_MATERIAL_NAME_MAX_LENGTH),
             description: this.truncate(
                 this.joinLines(activity.detail),
-                PORTFOLIO_BLOCK_FIELD_MAX_LENGTH
+                CORRECTION_MATERIAL_FIELD_MAX_LENGTH
             ),
             responsibilities: this.truncate(
                 this.joinLines(activity.responsibility),
-                PORTFOLIO_BLOCK_FIELD_MAX_LENGTH
+                CORRECTION_MATERIAL_FIELD_MAX_LENGTH
             ),
             problemSolving: this.truncate(
                 activity.problemSolving
@@ -106,11 +100,11 @@ export class InternalCorrectionResultFacade {
                             `#${item.no}\n상황: ${item.situation}\n전략: ${item.strategy}\n이유: ${item.reason}`
                     )
                     .join('\n\n'),
-                PORTFOLIO_BLOCK_FIELD_MAX_LENGTH
+                CORRECTION_MATERIAL_FIELD_MAX_LENGTH
             ),
             learnings: this.truncate(
                 this.joinLines(activity.learning),
-                PORTFOLIO_BLOCK_FIELD_MAX_LENGTH
+                CORRECTION_MATERIAL_FIELD_MAX_LENGTH
             ),
         };
     }

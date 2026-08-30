@@ -12,7 +12,6 @@ interface PortfolioContent {
     learnings: string;
 }
 
-export const MAX_EXTERNAL_PORTFOLIO_BLOCKS = 5;
 export const PORTFOLIO_NAME_MAX_LENGTH = 20;
 export const PORTFOLIO_BLOCK_FIELD_MAX_LENGTH = 1000;
 

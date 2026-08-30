@@ -3,9 +3,9 @@ import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { CorrectionStatus } from 'src/modules/portfolio-correction/domain/enums/correction-status.enum';
 import { SourceType } from 'src/modules/portfolio/domain/enums/source-type.enum';
 import { CorrectionItem } from 'src/modules/portfolio-correction/domain/correction-item.entity';
+import { CorrectionMaterial } from 'src/modules/portfolio-correction/domain/correction-material.entity';
 import { InternalCorrectionPayload } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
 import { COMPANY_INSIGHT_MAX_LENGTH } from 'src/modules/portfolio-correction/domain/portfolio-correction.entity';
-import { resolveCorrectionPortfolioSource } from 'src/modules/portfolio-correction/common/utils/correction-portfolio-source.util';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -22,7 +22,7 @@ class InternalCorrectionItemResDTO {
 
     static from(item: CorrectionItem): InternalCorrectionItemResDTO {
         const dto = new InternalCorrectionItemResDTO();
-        dto.portfolioId = item.portfolio.id;
+        dto.portfolioId = item.correctionMaterial.id;
         dto.description = (item.description as JsonObject) ?? null;
         dto.responsibilities = (item.responsibilities as JsonObject) ?? null;
         dto.problemSolving = (item.problemSolving as JsonObject) ?? null;
@@ -37,7 +37,7 @@ export class InternalCorrectionResDTO {
     @ApiProperty({
         enum: SourceType,
         description:
-            '첨삭 포트폴리오 출처. NONE→INTERNAL, GENERATING/GENERATED→EXTERNAL. FAILED는 결과 item 기준으로 추론.',
+            '첨삭 재료 출처. internal portfolio 선택 경로가 제거되어 항상 EXTERNAL로 고정됩니다.',
     })
     portfolioSource: SourceType;
 
@@ -71,7 +71,7 @@ export class InternalCorrectionResDTO {
         const { correction, portfolioIds, items } = payload;
         const dto = new InternalCorrectionResDTO();
         dto.id = correction.id;
-        dto.portfolioSource = resolveCorrectionPortfolioSource(correction, items);
+        dto.portfolioSource = SourceType.EXTERNAL;
         dto.userId = correction.user.id;
         dto.portfolioIds = portfolioIds;
         dto.companyName = correction.companyName;
@@ -82,6 +82,37 @@ export class InternalCorrectionResDTO {
         dto.status = correction.status;
         dto.result =
             items.length > 0 ? items.map((item) => InternalCorrectionItemResDTO.from(item)) : null;
+        return dto;
+    }
+}
+
+export class InternalCorrectionMaterialResDTO {
+    @ApiProperty({ description: '재료(첨삭 대상) ID' })
+    portfolioId: number;
+
+    @ApiProperty({ description: '재료 이름' })
+    name: string;
+
+    @ApiProperty({ description: '상세정보 원문' })
+    description: string;
+
+    @ApiProperty({ description: '담당업무 원문' })
+    responsibilities: string;
+
+    @ApiProperty({ description: '문제해결/성과 원문' })
+    problemSolving: string;
+
+    @ApiProperty({ description: '배운 점 원문' })
+    learnings: string;
+
+    static from(material: CorrectionMaterial): InternalCorrectionMaterialResDTO {
+        const dto = new InternalCorrectionMaterialResDTO();
+        dto.portfolioId = material.id;
+        dto.name = material.name;
+        dto.description = material.description;
+        dto.responsibilities = material.responsibilities;
+        dto.problemSolving = material.problemSolving;
+        dto.learnings = material.learnings;
         return dto;
     }
 }
