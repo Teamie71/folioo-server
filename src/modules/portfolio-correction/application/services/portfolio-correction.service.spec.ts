@@ -4,6 +4,7 @@ import { PortfolioCorrectionFacade } from '../facades/portfolio-correction.facad
 import { PortfolioCorrectionService } from './portfolio-correction.service';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItem } from '../../domain/correction-item.entity';
+import { CorrectionMaterial } from '../../domain/correction-material.entity';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import {
@@ -38,7 +39,7 @@ const createCorrection = (overrides: CorrectionOverrides = {}): PortfolioCorrect
 
 const createCorrectionItem = (portfolioId: number): CorrectionItem => {
     const item = new CorrectionItem();
-    item.portfolio = { id: portfolioId } as CorrectionItem['portfolio'];
+    item.correctionMaterial = { id: portfolioId } as CorrectionItem['correctionMaterial'];
     item.description = null as unknown as Record<string, unknown>;
     item.responsibilities = null as unknown as Record<string, unknown>;
     item.problemSolving = null as unknown as Record<string, unknown>;
@@ -82,10 +83,8 @@ describe('PortfolioCorrectionService', () => {
         saveAll: ReturnType<typeof jest.fn<Promise<CorrectionItem[]>, [CorrectionItem[]]>>;
     };
     let service: PortfolioCorrectionService;
-    let correctionPortfolioSelectionService: {
-        findActivePortfolioIdsByCorrectionId: ReturnType<
-            typeof jest.fn<Promise<number[]>, [number]>
-        >;
+    let correctionMaterialService: {
+        findByCorrectionId: ReturnType<typeof jest.fn<Promise<CorrectionMaterial[]>, [number]>>;
     };
 
     beforeEach(() => {
@@ -100,14 +99,14 @@ describe('PortfolioCorrectionService', () => {
             findByCorrectionId: jest.fn<Promise<CorrectionItem[]>, [number]>(),
             saveAll: jest.fn<Promise<CorrectionItem[]>, [CorrectionItem[]]>(),
         };
-        correctionPortfolioSelectionService = {
-            findActivePortfolioIdsByCorrectionId: jest.fn<Promise<number[]>, [number]>(),
+        correctionMaterialService = {
+            findByCorrectionId: jest.fn<Promise<CorrectionMaterial[]>, [number]>(),
         };
 
         service = new PortfolioCorrectionService(
             repository as unknown as never,
             correctionItemService as unknown as never,
-            correctionPortfolioSelectionService as unknown as never
+            correctionMaterialService as unknown as never
         );
     });
 
@@ -224,8 +223,9 @@ describe('PortfolioCorrectionService', () => {
 
     it('returns correction detail payload with selected portfolios and items', async () => {
         repository.findByIdWithUser.mockResolvedValue(createCorrection({ id: 1 }));
-        correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId.mockResolvedValue([
-            10, 11,
+        correctionMaterialService.findByCorrectionId.mockResolvedValue([
+            { id: 10 } as CorrectionMaterial,
+            { id: 11 } as CorrectionMaterial,
         ]);
         const internalItem = createCorrectionItem(10);
         const externalItem = createCorrectionItem(11);
@@ -276,7 +276,6 @@ describe('PortfolioCorrectionFacade', () => {
 
         facade = new PortfolioCorrectionFacade(
             portfolioCorrectionService as unknown as never,
-            {} as never,
             {} as never,
             {} as never,
             aiRelayPort
