@@ -30,7 +30,6 @@
 | Event                | Core       | 이벤트/챌린지 관리, 보상 수령           |
 | User                 | Generic    | 사용자 관리                             |
 | Auth                 | Generic    | 인증 (Kakao/Google/Naver OAuth)         |
-| Ticket               | Generic    | 이용권 관리 (발급, 차감, 만료)          |
 | Payment              | Generic    | 결제 (PayApp 연동, 웹훅, 취소)          |
 | Admin                | Supporting | 관리자 대시보드                         |
 | Internal             | Supporting | AI 서버 연동 내부 API                   |
