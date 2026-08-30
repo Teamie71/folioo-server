@@ -1,11 +1,17 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
-import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
+import {
+    ApiCommonErrorResponse,
+    ApiCommonResponse,
+    ApiCommonResponseArray,
+} from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PortfolioCorrectionService } from 'src/modules/portfolio-correction/application/services/portfolio-correction.service';
+import { CorrectionMaterialService } from 'src/modules/portfolio-correction/application/services/correction-material.service';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import {
+    InternalCorrectionMaterialResDTO,
     InternalCorrectionResDTO,
     UpdateCompanyInsightInternalReqDTO,
     UpdateCorrectionStatusReqDTO,
@@ -14,7 +20,10 @@ import {
 @ApiTags('Internal - Corrections')
 @Controller('corrections')
 export class InternalCorrectionController {
-    constructor(private readonly portfolioCorrectionService: PortfolioCorrectionService) {}
+    constructor(
+        private readonly portfolioCorrectionService: PortfolioCorrectionService,
+        private readonly correctionMaterialService: CorrectionMaterialService
+    ) {}
 
     @Get(':correctionId')
     @Public()
@@ -37,6 +46,28 @@ export class InternalCorrectionController {
         const payload =
             await this.portfolioCorrectionService.getInternalCorrectionDetail(correctionId);
         return InternalCorrectionResDTO.from(payload);
+    }
+
+    @Get(':correctionId/materials')
+    @Public()
+    @UseGuards(InternalApiKeyGuard)
+    @ApiHeader({
+        name: 'X-API-Key',
+        required: true,
+        description: 'Internal API key for AI server callbacks',
+    })
+    @ApiOperation({
+        summary: '첨삭 재료 원문 조회 (Internal)',
+        description: 'AI 서버가 첨삭 생성 시 재료(external portfolio 블록) 원문을 조회합니다.',
+    })
+    @ApiCommonResponseArray(InternalCorrectionMaterialResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.CORRECTION_NOT_FOUND)
+    async getCorrectionMaterials(
+        @Param('correctionId', ParseIntPipe) correctionId: number
+    ): Promise<InternalCorrectionMaterialResDTO[]> {
+        await this.portfolioCorrectionService.findByIdWithUser(correctionId);
+        const materials = await this.correctionMaterialService.findByCorrectionId(correctionId);
+        return materials.map((material) => InternalCorrectionMaterialResDTO.from(material));
     }
 
     @Patch(':correctionId/status')

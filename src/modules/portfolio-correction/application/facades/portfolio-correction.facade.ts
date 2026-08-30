@@ -1,20 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
-import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
-import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayPort } from 'src/common/ports/ai-relay.port';
-import {
-    CorrectionSelectionResDTO,
-    CreateCorrectionReqDTO,
-} from '../dtos/portfolio-correction.dto';
+import { CreateCorrectionReqDTO } from '../dtos/portfolio-correction.dto';
 import { CorrectionItemResDTO } from '../dtos/correction-result.dto';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionItemService } from '../services/correction-item.service';
-import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
+import { CorrectionMaterialService } from '../services/correction-material.service';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
-import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
+import { CorrectionMaterial } from '../../domain/correction-material.entity';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 
 @Injectable()
@@ -24,8 +19,7 @@ export class PortfolioCorrectionFacade {
     constructor(
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
         private readonly correctionItemService: CorrectionItemService,
-        private readonly portfolioService: PortfolioService,
-        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
+        private readonly correctionMaterialService: CorrectionMaterialService,
         private readonly aiRelayPort: AiRelayPort
     ) {}
 
@@ -45,47 +39,20 @@ export class PortfolioCorrectionFacade {
     }
 
     @Transactional()
-    async selectPortfolios(
-        correctionId: number,
-        userId: number,
-        portfolioIds: number[]
-    ): Promise<CorrectionSelectionResDTO[]> {
-        const { correction, portfolios } = await this.resolveSelectionTargets(
-            correctionId,
-            userId,
-            portfolioIds
-        );
-
-        const selections = await this.correctionPortfolioSelectionService.activateSelections(
-            correction,
-            portfolios
-        );
-
-        return selections.map((selection) => CorrectionSelectionResDTO.from(selection));
-    }
-
-    @Transactional()
     async selectAndGenerate(correctionId: number, userId: number): Promise<CorrectionItemResDTO[]> {
         const correction = await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(
             correctionId,
             userId
         );
-        const activePortfolioIds =
-            await this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
-                correctionId
-            );
+        const materials = await this.correctionMaterialService.findByCorrectionId(correctionId);
 
-        if (activePortfolioIds.length === 0) {
+        if (materials.length === 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
-                reason: 'At least one portfolio must be selected before generation.',
+                reason: 'At least one correction material must exist before generation.',
             });
         }
 
-        const portfolios = await this.portfolioService.findByIdsAndUserIdOrThrow(
-            activePortfolioIds,
-            userId
-        );
-        const items = await this.replaceCorrectionItems(correctionId, correction, portfolios);
+        const items = await this.replaceCorrectionItems(correctionId, correction, materials);
         await this.portfolioCorrectionService.transitionToGenerating(correctionId);
 
         void this.delegateCorrectionGeneration(correctionId);
@@ -149,37 +116,16 @@ export class PortfolioCorrectionFacade {
         }
     }
 
-    private async resolveSelectionTargets(
-        correctionId: number,
-        userId: number,
-        portfolioIds: number[]
-    ): Promise<{ correction: PortfolioCorrection; portfolios: Portfolio[] }> {
-        const correction = await this.portfolioCorrectionService.findByIdAndUserIdOrThrow(
-            correctionId,
-            userId
-        );
-
-        const uniqueIds = [...new Set(portfolioIds)];
-
-        if (uniqueIds.length > MAX_EXTERNAL_PORTFOLIO_BLOCKS) {
-            throw new BusinessException(ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED);
-        }
-
-        const portfolios = await this.portfolioService.findByIdsAndUserIdOrThrow(uniqueIds, userId);
-
-        return { correction, portfolios };
-    }
-
     private async replaceCorrectionItems(
         correctionId: number,
         correction: PortfolioCorrection,
-        portfolios: Portfolio[]
+        materials: CorrectionMaterial[]
     ): Promise<CorrectionItemResDTO[]> {
         await this.correctionItemService.deleteByCorrectionId(correctionId);
 
         const items = await Promise.all(
-            portfolios.map((portfolio) =>
-                this.correctionItemService.createCorrectionItem(portfolio, correction)
+            materials.map((material) =>
+                this.correctionItemService.createCorrectionItem(material, correction)
             )
         );
 

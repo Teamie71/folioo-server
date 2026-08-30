@@ -15,7 +15,7 @@ import {
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItemService } from './correction-item.service';
-import { CorrectionPortfolioSelectionService } from './correction-portfolio-selection.service';
+import { CorrectionMaterialService } from './correction-material.service';
 import { UpdateCorrectionTitleReqDTO } from '../dtos/portfolio-correction.dto';
 import { CorrectionItem } from '../../domain/correction-item.entity';
 import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
@@ -31,7 +31,7 @@ export class PortfolioCorrectionService {
     constructor(
         private readonly portfolioCorrectionRepository: PortfolioCorrectionRepository,
         private readonly correctionItemService: CorrectionItemService,
-        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService
+        private readonly correctionMaterialService: CorrectionMaterialService
     ) {}
 
     async getCorrections(userId: number, keyword?: string): Promise<CorrectionResDTO[]> {
@@ -196,13 +196,11 @@ export class PortfolioCorrectionService {
         correctionId: number
     ): Promise<InternalCorrectionPayload> {
         const correction = await this.findByIdWithUser(correctionId);
-        const [portfolioIds, items] = await Promise.all([
-            this.correctionPortfolioSelectionService.findActivePortfolioIdsByCorrectionId(
-                correctionId
-            ),
+        const [materials, items] = await Promise.all([
+            this.correctionMaterialService.findByCorrectionId(correctionId),
             this.correctionItemService.findByCorrectionId(correctionId),
         ]);
-        return { correction, portfolioIds, items };
+        return { correction, portfolioIds: materials.map((material) => material.id), items };
     }
 
     async getInternalCorrectionDetail(correctionId: number): Promise<InternalCorrectionPayload> {
@@ -278,7 +276,7 @@ export class PortfolioCorrectionService {
 
         const targetPortfolioIds = expectedPortfolioIds
             ? [...new Set(expectedPortfolioIds)]
-            : existingItems.map((item) => item.portfolio.id);
+            : existingItems.map((item) => item.correctionMaterial.id);
 
         if (targetPortfolioIds.length === 0) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, {
@@ -286,7 +284,7 @@ export class PortfolioCorrectionService {
             });
         }
 
-        const itemMap = new Map(existingItems.map((item) => [item.portfolio.id, item]));
+        const itemMap = new Map(existingItems.map((item) => [item.correctionMaterial.id, item]));
         const providedIds = new Set<number>();
 
         for (const targetPortfolioId of targetPortfolioIds) {
@@ -342,6 +340,7 @@ export class PortfolioCorrectionService {
     async deleteCorrection(correctionId: number, userId: number): Promise<void> {
         await this.findByIdAndUserIdOrThrow(correctionId, userId);
         await this.correctionItemService.deleteByCorrectionId(correctionId);
+        await this.correctionMaterialService.deleteByCorrectionId(correctionId);
 
         const affected = await this.portfolioCorrectionRepository.deleteById(correctionId);
         if (affected === 0) {

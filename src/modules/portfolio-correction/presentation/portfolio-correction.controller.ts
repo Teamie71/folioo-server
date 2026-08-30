@@ -19,12 +19,10 @@ import {
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    CorrectionSelectionResDTO,
     CorrectionResDTO,
     CorrectionStatusResDTO,
     CreateCorrectionResDTO,
     CreateCorrectionReqDTO,
-    MapCorrectionWithPortfoliosReqDTO,
     UpdateCorrectionTitleReqDTO,
 } from '../application/dtos/portfolio-correction.dto';
 import { PortfolioCorrectionFacade } from '../application/facades/portfolio-correction.facade';
@@ -152,43 +150,17 @@ export class PortfolioCorrectionController {
         return this.portfolioCorrectionService.updateCompanyInsight(correctionId, userId, body);
     }
 
-    @Post(':correctionId/select')
-    @ApiOperation({
-        summary: '포트폴리오 선택',
-        description: '첨삭을 진행할 포트폴리오를 선택하고 매핑 테이블에서 활성화합니다.',
-    })
-    @ApiCommonResponseArray(CorrectionSelectionResDTO)
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.CORRECTION_NOT_FOUND,
-        ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED,
-        ErrorCode.PORTFOLIO_NOT_FOUND
-    )
-    async mapCorrectionWithPortfolios(
-        @User('sub') userId: number,
-        @Param('correctionId', ParseIntPipe) correctionId: number,
-        @Body() body: MapCorrectionWithPortfoliosReqDTO
-    ): Promise<CorrectionSelectionResDTO[]> {
-        return this.portfolioCorrectionFacade.selectPortfolios(
-            correctionId,
-            userId,
-            body.portfolioIds
-        );
-    }
-
     @Post(':correctionId/generate')
     @ApiOperation({
         summary: 'AI 첨삭 생성',
         description:
-            '요청 본문 없이 활성화된 포트폴리오 매핑을 기준으로 AI 첨삭 생성 준비를 수행합니다.',
+            '요청 본문 없이 이 첨삭에 등록된 재료(external portfolio 블록) 기준으로 AI 첨삭 생성 준비를 수행합니다.',
     })
     @ApiCommonResponseArray(CorrectionItemResDTO)
     @ApiCommonErrorResponse(
         ErrorCode.UNAUTHORIZED,
         ErrorCode.BAD_REQUEST,
-        ErrorCode.CORRECTION_NOT_FOUND,
-        ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED,
-        ErrorCode.PORTFOLIO_NOT_FOUND
+        ErrorCode.CORRECTION_NOT_FOUND
     )
     async createCorrectionByAI(
         @User('sub') userId: number,
