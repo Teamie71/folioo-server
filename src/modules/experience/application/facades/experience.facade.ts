@@ -9,16 +9,12 @@ import {
 import { JobCategory } from '../../domain/enums/job-category.enum';
 import { ExperienceStatus } from '../../domain/enums/experience-status.enum';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
-import { CorrectionPortfolioSelectionService } from 'src/modules/portfolio-correction/application/services/correction-portfolio-selection.service';
-import { BusinessException } from 'src/common/exceptions/business.exception';
-import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class ExperienceFacade {
     constructor(
         private readonly experienceService: ExperienceService,
-        private readonly portfolioService: PortfolioService,
-        private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService
+        private readonly portfolioService: PortfolioService
     ) {}
 
     @Transactional()
@@ -66,16 +62,6 @@ export class ExperienceFacade {
     @Transactional()
     async deleteExperience(experienceId: number, userId: number): Promise<void> {
         await this.experienceService.findByIdOrThrow(experienceId, userId);
-
-        const portfolio = await this.portfolioService.findByExperienceId(experienceId);
-        if (portfolio) {
-            const hasCorrections =
-                await this.correctionPortfolioSelectionService.existsByPortfolioId(portfolio.id);
-            if (hasCorrections) {
-                throw new BusinessException(ErrorCode.EXPERIENCE_HAS_CORRECTIONS);
-            }
-        }
-
         await this.experienceService.deleteExperience(experienceId);
     }
 }

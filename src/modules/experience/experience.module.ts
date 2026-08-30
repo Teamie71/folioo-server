@@ -6,10 +6,9 @@ import { ExperienceRepository } from './infrastructure/repositories/experience.r
 import { ExperienceService } from './application/services/experience.service';
 import { ExperienceFacade } from './application/facades/experience.facade';
 import { PortfolioModule } from '../portfolio/portfolio.module';
-import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-correction.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Experience]), PortfolioModule, PortfolioCorrectionModule],
+    imports: [TypeOrmModule.forFeature([Experience]), PortfolioModule],
     controllers: [ExperienceController],
     providers: [ExperienceRepository, ExperienceService, ExperienceFacade],
     exports: [ExperienceService],

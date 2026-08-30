@@ -95,15 +95,10 @@ export class ExperienceController {
     @Delete(':experienceId')
     @ApiOperation({
         summary: '경험 정리 삭제',
-        description:
-            '경험 정리를 삭제합니다. 연결된 포트폴리오가 있으면 함께 삭제됩니다. 연결된 첨삭이 존재하는 경우 삭제할 수 없습니다.',
+        description: '경험 정리를 삭제합니다. 연결된 포트폴리오가 있으면 함께 삭제됩니다.',
     })
     @ApiCommonMessageResponse('경험 정리가 성공적으로 삭제되었습니다.')
-    @ApiCommonErrorResponse(
-        ErrorCode.UNAUTHORIZED,
-        ErrorCode.EXPERIENCE_NOT_FOUND,
-        ErrorCode.EXPERIENCE_HAS_CORRECTIONS
-    )
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.EXPERIENCE_NOT_FOUND)
     async deleteExperience(
         @User('sub') userId: number,
         @Param('experienceId', ParseIntPipe) experienceId: number
