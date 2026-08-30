@@ -70,7 +70,7 @@ export class CreateCorrectionReqDTO {
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
-    @MaxLength(700)
+    @MaxLength(1000)
     jobDescription?: string;
 
     @IsEnum(JobDescriptionType)

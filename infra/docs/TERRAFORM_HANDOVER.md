@@ -32,7 +32,7 @@
                      └──────────────────────────────────────────────────┘
                                           │
                      ┌────────────────────────────────────────────┐
-                     │              GCP (folioo-488916)            │
+                     │              GCP (project-70c92536-0c79-44bb-ba0)            │
                      │                                            │
                      │  VPC: folioo-vpc (10.30.0.0/24)            │
                      │  ├─ folioo-dev-server  (10.30.0.10)        │
@@ -134,7 +134,7 @@ brew install gh
 ```bash
 # GCP 로그인 및 프로젝트 설정
 gcloud auth login
-gcloud config set project folioo-488916
+gcloud config set project project-70c92536-0c79-44bb-ba0
 gcloud auth application-default login
 ```
 
@@ -144,7 +144,7 @@ gcloud auth application-default login
 cd infra
 
 # GCS에서 tfvars 다운로드
-export TF_STATE_BUCKET="folioo-488916-tfstate"
+export TF_STATE_BUCKET="project-70c92536-0c79-44bb-ba0-tfstate"
 gcloud storage cp "gs://${TF_STATE_BUCKET}/terraform.tfvars" terraform.tfvars
 
 # 초기화 (state backend 연결)
@@ -258,7 +258,7 @@ GitHub Actions가 GCP에 **정적 키 없이** 인증할 수 있도록 합니다
 
 ```
 GitHub Actions → OIDC Token → WIF Pool (folioo-pool) → Provider (github-provider)
-     → Service Account (github-actions@folioo-488916.iam.gserviceaccount.com)
+     → Service Account (github-actions@project-70c92536-0c79-44bb-ba0.iam.gserviceaccount.com)
 ```
 
 **attribute_condition**: `assertion.repository == 'Teamie71/folioo-server'`로 특정 리포지토리에서만 인증 가능합니다.
@@ -279,7 +279,7 @@ GitHub Actions → OIDC Token → WIF Pool (folioo-pool) → Provider (github-pr
 ### 5.5 Artifact Registry — `artifact-registry.tf`
 
 ```
-asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server
+asia-northeast3-docker.pkg.dev/project-70c92536-0c79-44bb-ba0/folioo-docker/folioo-server
 ```
 
 - `prevent_destroy = true` — 실수로 삭제 방지 (lifecycle)
@@ -323,10 +323,10 @@ asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server
 
 | Secret                 | 값                                                                                                   | 사용처                   |
 | ---------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------ |
-| `GCP_PROJECT_ID`       | `folioo-488916`                                                                                      | 모든 워크플로우          |
-| `TF_STATE_BUCKET`      | `folioo-488916-tfstate`                                                                              | terraform.yml, deploy-\* |
-| `WIF_PROVIDER`         | `projects/798390960348/locations/global/workloadIdentityPools/folioo-pool/providers/github-provider` | 모든 워크플로우          |
-| `WIF_SERVICE_ACCOUNT`  | `github-actions@folioo-488916.iam.gserviceaccount.com`                                               | 모든 워크플로우          |
+| `GCP_PROJECT_ID`       | `project-70c92536-0c79-44bb-ba0`                                                                     | 모든 워크플로우          |
+| `TF_STATE_BUCKET`      | `project-70c92536-0c79-44bb-ba0-tfstate`                                                             | terraform.yml, deploy-\* |
+| `WIF_PROVIDER`         | `projects/815945968046/locations/global/workloadIdentityPools/folioo-pool/providers/github-provider` | 모든 워크플로우          |
+| `WIF_SERVICE_ACCOUNT`  | `github-actions@project-70c92536-0c79-44bb-ba0.iam.gserviceaccount.com`                              | 모든 워크플로우          |
 | `SUPABASE_DEV_DB_URL`  | Supabase dev DB 연결 문자열 (port 5432)                                                              | deploy-dev.yml           |
 | `SUPABASE_PROD_DB_URL` | Supabase prod DB 연결 문자열 (port 5432)                                                             | deploy.yml               |
 
@@ -338,12 +338,12 @@ asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server
 
 ```bash
 # 확인
-gcloud storage cat gs://folioo-488916-tfstate/terraform.tfvars
+gcloud storage cat gs://project-70c92536-0c79-44bb-ba0-tfstate/terraform.tfvars
 
 # 수정이 필요한 경우
-gcloud storage cp gs://folioo-488916-tfstate/terraform.tfvars /tmp/terraform.tfvars
+gcloud storage cp gs://project-70c92536-0c79-44bb-ba0-tfstate/terraform.tfvars /tmp/terraform.tfvars
 # 편집 후
-gcloud storage cp /tmp/terraform.tfvars gs://folioo-488916-tfstate/terraform.tfvars
+gcloud storage cp /tmp/terraform.tfvars gs://project-70c92536-0c79-44bb-ba0-tfstate/terraform.tfvars
 rm /tmp/terraform.tfvars
 ```
 
@@ -405,13 +405,13 @@ Blue/Green 두 슬롯이 **동일한 Traefik 라우터 이름**을 사용하므�
 ```bash
 # 현재 시크릿 내용 확인
 gcloud secrets versions access latest \
-  --project=folioo-488916 \
+  --project=project-70c92536-0c79-44bb-ba0 \
   --secret=folioo-dev-config | jq .
 
 # 새 버전 업로드 (기존 버전은 자동 비활성화)
 echo '{"KEY":"value", ...}' | \
   gcloud secrets versions add folioo-dev-config \
-  --project=folioo-488916 \
+  --project=project-70c92536-0c79-44bb-ba0 \
   --data-file=-
 ```
 
@@ -432,22 +432,22 @@ GitHub Actions > 해당 워크플로우 > Re-run all jobs
 ```bash
 # 1. Secret Manager에서 JSON 가져오기
 gcloud secrets versions access latest \
-  --project=folioo-488916 \
+  --project=project-70c92536-0c79-44bb-ba0 \
   --secret=folioo-dev-config \
   | jq -r 'to_entries[] | "\(.key)=\(.value)"' > /tmp/.env.dev
 
 # 2. VM에 전송
 gcloud compute scp /tmp/.env.dev folioo-dev-server:~/.env.dev \
-  --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap --quiet
+  --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap --quiet
 
 # 3. VM에서 파일 이동 및 권한 설정
 gcloud compute ssh folioo-dev-server \
-  --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap --quiet \
+  --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap --quiet \
   --command='sudo mv ~/.env.dev /home/folioo/.env.dev && sudo chmod 600 /home/folioo/.env.dev'
 
 # 4. 앱 컨테이너 재시작
 gcloud compute ssh folioo-dev-server \
-  --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap --quiet \
+  --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap --quiet \
   --command='
     cd /home/folioo
     DC="sudo -E docker compose --env-file .env.dev -f docker-compose.infra.yml -f docker-compose.dev.yml"
@@ -490,11 +490,11 @@ rm /tmp/.env.dev
 ```bash
 # Dev VM
 gcloud compute ssh folioo-dev-server \
-  --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap
+  --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap
 
 # Prod VM
 gcloud compute ssh folioo-prod-server \
-  --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap
+  --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap
 ```
 
 ### 9.2 컨테이너 상태 확인
@@ -518,13 +518,13 @@ curl -sf https://prod-api.folioo.ai.kr/health
 
 ```bash
 # 1. GCS에서 tfvars 다운로드
-gcloud storage cp gs://folioo-488916-tfstate/terraform.tfvars /tmp/terraform.tfvars
+gcloud storage cp gs://project-70c92536-0c79-44bb-ba0-tfstate/terraform.tfvars /tmp/terraform.tfvars
 
 # 2. 편집 (예: machine_type 변경)
 vi /tmp/terraform.tfvars
 
 # 3. GCS에 업로드
-gcloud storage cp /tmp/terraform.tfvars gs://folioo-488916-tfstate/terraform.tfvars
+gcloud storage cp /tmp/terraform.tfvars gs://project-70c92536-0c79-44bb-ba0-tfstate/terraform.tfvars
 rm /tmp/terraform.tfvars
 
 # 4. infra/ 디렉토리의 .tf 파일을 변경하고 PR을 생성하거나,
@@ -552,11 +552,11 @@ terraform output -raw prod_tunnel_token
 
     ```bash
     # 현재 값 가져오기
-    gcloud secrets versions access latest --secret=folioo-dev-config --project=folioo-488916 > /tmp/config.json
+    gcloud secrets versions access latest --secret=folioo-dev-config --project=project-70c92536-0c79-44bb-ba0 > /tmp/config.json
 
     # 키 추가 (jq 사용)
     jq '. + {"NEW_KEY": "new-value"}' /tmp/config.json | \
-      gcloud secrets versions add folioo-dev-config --project=folioo-488916 --data-file=-
+      gcloud secrets versions add folioo-dev-config --project=project-70c92536-0c79-44bb-ba0 --data-file=-
 
     rm /tmp/config.json
     ```
@@ -584,7 +584,7 @@ CD 워크플로우에서 `supabase db push` 단계가 실패하면:
 ### 10.1 "Backend initialization required"
 
 ```bash
-terraform init -backend-config="bucket=folioo-488916-tfstate"
+terraform init -backend-config="bucket=project-70c92536-0c79-44bb-ba0-tfstate"
 ```
 
 ### 10.2 "Error acquiring the state lock"
@@ -607,14 +607,14 @@ terraform force-unlock <LOCK_ID>
     gcloud iam workload-identity-pools providers describe github-provider \
       --workload-identity-pool=folioo-pool \
       --location=global \
-      --project=folioo-488916
+      --project=project-70c92536-0c79-44bb-ba0
     ```
 
 ### 10.4 배포 후 Health Check 실패
 
 ```bash
 # VM에 접속
-gcloud compute ssh folioo-dev-server --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap
+gcloud compute ssh folioo-dev-server --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap
 
 # 컨테이너 로그 확인
 sudo docker logs --tail 100 folioo-dev-blue-1  # 또는 green
@@ -634,7 +634,7 @@ Cloud NAT 상태 확인:
 gcloud compute routers nats describe folioo-nat \
   --router=folioo-router \
   --region=asia-northeast3 \
-  --project=folioo-488916
+  --project=project-70c92536-0c79-44bb-ba0
 ```
 
 ### 10.6 Artifact Registry 인증 실패 (VM)
@@ -695,28 +695,28 @@ curl -sf 'http://metadata.google.internal/computeMetadata/v1/instance/service-ac
 
 ```
 # GCP 프로젝트
-Project ID:     folioo-488916
-Project Number: 798390960348
+Project ID:     project-70c92536-0c79-44bb-ba0
+Project Number: 815945968046
 Region/Zone:    asia-northeast3 / asia-northeast3-a
 
 # TF State
-Bucket: gs://folioo-488916-tfstate
+Bucket: gs://project-70c92536-0c79-44bb-ba0-tfstate
 
 # VM 접속
-gcloud compute ssh folioo-dev-server  --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap
-gcloud compute ssh folioo-prod-server --zone=asia-northeast3-a --project=folioo-488916 --tunnel-through-iap
+gcloud compute ssh folioo-dev-server  --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap
+gcloud compute ssh folioo-prod-server --zone=asia-northeast3-a --project=project-70c92536-0c79-44bb-ba0 --tunnel-through-iap
 
 # 헬스체크
 curl -sf https://dev-api.folioo.ai.kr/health
 curl -sf https://prod-api.folioo.ai.kr/health
 
 # Secret Manager
-gcloud secrets versions access latest --secret=folioo-dev-config  --project=folioo-488916 | jq .
-gcloud secrets versions access latest --secret=folioo-prod-config --project=folioo-488916 | jq .
+gcloud secrets versions access latest --secret=folioo-dev-config  --project=project-70c92536-0c79-44bb-ba0 | jq .
+gcloud secrets versions access latest --secret=folioo-prod-config --project=project-70c92536-0c79-44bb-ba0 | jq .
 
 # Terraform
 cd infra
-terraform init -backend-config="bucket=folioo-488916-tfstate"
+terraform init -backend-config="bucket=project-70c92536-0c79-44bb-ba0-tfstate"
 terraform plan -var-file=terraform.tfvars
 terraform apply -var-file=terraform.tfvars
 ```

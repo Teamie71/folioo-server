@@ -16,7 +16,7 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 - **Package Manager**: pnpm
 - **Language**: TypeScript (Strict Mode)
 - **배포**: GCE Blue-Green (docker-compose.infra.yml + dev/prod overlay)
-- **이미지 레지스트리**: GCP Artifact Registry (`asia-northeast3-docker.pkg.dev/folioo-488916/folioo-docker/folioo-server`)
+- **이미지 레지스트리**: GCP Artifact Registry (`asia-northeast3-docker.pkg.dev/project-70c92536-0c79-44bb-ba0/folioo-docker/folioo-server`)
 
 ## 문서 경로
 
