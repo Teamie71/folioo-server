@@ -19,9 +19,9 @@ import {
     getCategorySlotsForSection,
     getDefaultSubTemplate,
 } from '../../domain/templates/template-catalog';
+import { isUniqueViolation } from '../utils/typeorm-error.util';
 
 const NAME_LEVEL_KINDS: readonly BlockKind[] = [BlockKind.GROUP, BlockKind.EXPERIENCE];
-const UNIQUE_VIOLATION_CODE = '23505';
 
 @Injectable()
 export class BlockService {
@@ -117,7 +117,7 @@ export class BlockService {
         try {
             savedBlock = await this.blockRepository.save(block);
         } catch (error) {
-            if (isSectionKind && this.isUniqueViolation(error)) {
+            if (isSectionKind && isUniqueViolation(error)) {
                 throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
             }
             throw error;
@@ -225,7 +225,7 @@ export class BlockService {
                 ...newSiblings,
             ]);
         } catch (error) {
-            if (EXPERIENCE_SECTION_KINDS.includes(block.kind) && this.isUniqueViolation(error)) {
+            if (EXPERIENCE_SECTION_KINDS.includes(block.kind) && isUniqueViolation(error)) {
                 throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
             }
             throw error;
@@ -436,20 +436,5 @@ export class BlockService {
             throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
         }
         return blockKind;
-    }
-
-    // assertNoDuplicateSection의 사전 조회만으로는 동시 요청 경쟁 조건을 막지 못해서,
-    // DB의 partial unique index(idx_block_unique_section_per_parent) 위반을 최종 방어선으로 잡는다.
-    private isUniqueViolation(error: unknown): boolean {
-        if (typeof error !== 'object' || error === null || !('driverError' in error)) {
-            return false;
-        }
-
-        const driverError = (error as { driverError?: unknown }).driverError;
-        if (typeof driverError !== 'object' || driverError === null || !('code' in driverError)) {
-            return false;
-        }
-
-        return typeof driverError.code === 'string' && driverError.code === UNIQUE_VIOLATION_CODE;
     }
 }
