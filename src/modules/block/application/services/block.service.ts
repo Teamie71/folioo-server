@@ -21,6 +21,7 @@ import {
 } from '../../domain/templates/template-catalog';
 
 const NAME_LEVEL_KINDS: readonly BlockKind[] = [BlockKind.GROUP, BlockKind.EXPERIENCE];
+const UNIQUE_VIOLATION_CODE = '23505';
 
 @Injectable()
 export class BlockService {
@@ -111,7 +112,16 @@ export class BlockService {
         block.position = await this.blockRepository.countChildren(userId, parentId);
         block.content = normalizedContent;
         block.placeholder = this.resolveDefaultPlaceholder(kind, parent);
-        const savedBlock = await this.blockRepository.save(block);
+
+        let savedBlock: Block;
+        try {
+            savedBlock = await this.blockRepository.save(block);
+        } catch (error) {
+            if (isSectionKind && this.isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
 
         if (kind === BlockKind.EXPERIENCE) {
             await this.provisionExperienceScaffold(savedBlock);
@@ -207,7 +217,19 @@ export class BlockService {
         this.reindexPositions(oldSiblings);
         this.insertAtPosition(newSiblings, block, targetPosition);
 
-        await this.blockRepository.saveAll([block, ...descendants, ...oldSiblings, ...newSiblings]);
+        try {
+            await this.blockRepository.saveAll([
+                block,
+                ...descendants,
+                ...oldSiblings,
+                ...newSiblings,
+            ]);
+        } catch (error) {
+            if (EXPERIENCE_SECTION_KINDS.includes(block.kind) && this.isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
         return block;
     }
 
@@ -414,5 +436,20 @@ export class BlockService {
             throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
         }
         return blockKind;
+    }
+
+    // assertNoDuplicateSection의 사전 조회만으로는 동시 요청 경쟁 조건을 막지 못해서,
+    // DB의 partial unique index(idx_block_unique_section_per_parent) 위반을 최종 방어선으로 잡는다.
+    private isUniqueViolation(error: unknown): boolean {
+        if (typeof error !== 'object' || error === null || !('driverError' in error)) {
+            return false;
+        }
+
+        const driverError = (error as { driverError?: unknown }).driverError;
+        if (typeof driverError !== 'object' || driverError === null || !('code' in driverError)) {
+            return false;
+        }
+
+        return typeof driverError.code === 'string' && driverError.code === UNIQUE_VIOLATION_CODE;
     }
 }
