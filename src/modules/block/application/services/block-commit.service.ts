@@ -130,13 +130,14 @@ export class BlockCommitService {
 
         // 위의 형제 목록 기반 중복 체크(resolveAddLevelAndKind)는 같은 요청 안의
         // in-memory 스냅샷만 보므로, 동시 요청 경쟁 조건은 DB의
-        // idx_block_unique_section_per_parent 위반(23505)을 잡아 동일한 하이어라키 에러로 변환한다.
+        // idx_block_unique_section_per_parent 위반(23505)을 잡아 createBlock/moveBlock과
+        // 동일하게 BLOCK_SECTION_ALREADY_EXISTS로 변환한다(원인이 같으면 에러코드도 같아야 한다).
         let savedBlock: Block;
         try {
             savedBlock = await this.blockRepository.save(block);
         } catch (error) {
             if (isSectionKind && isUniqueViolation(error)) {
-                throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY);
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
             }
             throw error;
         }
@@ -204,7 +205,7 @@ export class BlockCommitService {
             const kind = SECTION_KIND_TO_BLOCK_KIND[item.section_kind];
             const siblings = this.getSiblings(parent.id, blockById);
             if (siblings.some((sibling) => sibling.kind === kind)) {
-                throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY);
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
             }
             return { level, kind };
         }

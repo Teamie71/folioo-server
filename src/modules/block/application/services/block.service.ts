@@ -300,7 +300,15 @@ export class BlockService {
             section.placeholder = null;
             return section;
         });
-        const savedSections = await this.blockRepository.saveAll(sections);
+        let savedSections: Block[];
+        try {
+            savedSections = await this.blockRepository.saveAll(sections);
+        } catch (error) {
+            if (isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
 
         const experienceMeta = new ExperienceMeta();
         experienceMeta.blockId = experienceBlock.id;
