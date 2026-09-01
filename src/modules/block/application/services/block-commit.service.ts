@@ -12,6 +12,7 @@ import { findSlotPlaceholder } from '../../domain/templates/template-catalog';
 import { BlockService } from './block.service';
 import { BlockKindRepository } from '../../infrastructure/repositories/block-kind.repository';
 import { BlockRepository } from '../../infrastructure/repositories/block.repository';
+import { isUniqueViolation } from '../utils/typeorm-error.util';
 import {
     CommitAppliedItemResDTO,
     CommitItemAction,
@@ -109,6 +110,7 @@ export class BlockCommitService {
         const { level, kind } = this.resolveAddLevelAndKind(parent, item, blockById);
         this.assertContentValid(item.content);
         const placeholder = this.resolvePlaceholder(item.slot_id);
+        const isSectionKind = EXPERIENCE_SECTION_KINDS.includes(kind);
 
         const siblings = this.getSiblings(parent.id, blockById);
         const block = new Block();
@@ -117,7 +119,7 @@ export class BlockCommitService {
         block.parentId = parent.id;
         block.level = level;
         block.kind = kind;
-        block.content = item.content ?? null;
+        block.content = isSectionKind ? null : (item.content ?? null);
         block.placeholder = placeholder;
 
         const targetPosition = this.resolveTargetPosition(siblings, item.after_id);
@@ -126,7 +128,19 @@ export class BlockCommitService {
             dirtyBlocks.add(sibling);
         }
 
-        const savedBlock = await this.blockRepository.save(block);
+        // 위의 형제 목록 기반 중복 체크(resolveAddLevelAndKind)는 같은 요청 안의
+        // in-memory 스냅샷만 보므로, 동시 요청 경쟁 조건은 DB의
+        // idx_block_unique_section_per_parent 위반(23505)을 잡아 createBlock/moveBlock과
+        // 동일하게 BLOCK_SECTION_ALREADY_EXISTS로 변환한다(원인이 같으면 에러코드도 같아야 한다).
+        let savedBlock: Block;
+        try {
+            savedBlock = await this.blockRepository.save(block);
+        } catch (error) {
+            if (isSectionKind && isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
         blockById.set(savedBlock.id, savedBlock);
         blockByItemId.set(item.item_id, savedBlock);
         return savedBlock;
@@ -191,7 +205,7 @@ export class BlockCommitService {
             const kind = SECTION_KIND_TO_BLOCK_KIND[item.section_kind];
             const siblings = this.getSiblings(parent.id, blockById);
             if (siblings.some((sibling) => sibling.kind === kind)) {
-                throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY);
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
             }
             return { level, kind };
         }
