@@ -373,6 +373,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당 블록은 다른 블록의 하위로 이동할 수 없습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.BLOCK_SECTION_ALREADY_EXISTS]: {
+        message: '이미 존재하는 카테고리입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT]: {
         message: '다른 곳에서 먼저 수정되었습니다. 최신 상태를 다시 불러와 주세요.',
         statusCode: HttpStatus.CONFLICT,

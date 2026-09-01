@@ -47,6 +47,11 @@ export class BlockRepository {
         return this.blockRepository.count({ where: { userId, parentId: parentId ?? IsNull() } });
     }
 
+    async existsByParentIdAndKind(parentId: string, kind: BlockKind): Promise<boolean> {
+        const count = await this.blockRepository.count({ where: { parentId, kind } });
+        return count > 0;
+    }
+
     async deleteById(id: string): Promise<void> {
         await this.blockRepository.delete(id);
     }
