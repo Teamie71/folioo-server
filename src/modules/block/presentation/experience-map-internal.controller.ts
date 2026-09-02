@@ -68,7 +68,8 @@ export class ExperienceMapInternalController {
         ErrorCode.EXPERIENCE_MAP_REQUEST_ID_REUSED,
         ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY,
         ErrorCode.EXPERIENCE_MAP_INVALID_TARGET,
-        ErrorCode.EXPERIENCE_MAP_UNKNOWN_SLOT_ID
+        ErrorCode.EXPERIENCE_MAP_UNKNOWN_SLOT_ID,
+        ErrorCode.BLOCK_SECTION_ALREADY_EXISTS
     )
     async commit(@Body() body: CommitReqDTO): Promise<CommitResDTO> {
         return this.experienceMapFacade.commit(body);

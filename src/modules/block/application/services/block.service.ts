@@ -19,6 +19,7 @@ import {
     getCategorySlotsForSection,
     getDefaultSubTemplate,
 } from '../../domain/templates/template-catalog';
+import { isUniqueViolation } from '../utils/typeorm-error.util';
 
 const NAME_LEVEL_KINDS: readonly BlockKind[] = [BlockKind.GROUP, BlockKind.EXPERIENCE];
 
@@ -95,7 +96,12 @@ export class BlockService {
     ): Promise<Block> {
         const parent = parentId ? await this.findParentOrThrow(parentId, userId) : null;
         this.assertValidPlacement(kind, parent);
-        this.assertContentLength(kind, content);
+        const isSectionKind = EXPERIENCE_SECTION_KINDS.includes(kind);
+        if (isSectionKind && parent) {
+            await this.assertNoDuplicateSection(parent.id, kind);
+        }
+        const normalizedContent = isSectionKind ? null : content;
+        this.assertContentLength(kind, normalizedContent);
 
         const block = new Block();
         block.userId = userId;
@@ -104,9 +110,18 @@ export class BlockService {
         block.level = parent ? parent.level + 1 : 1;
         block.kind = kind;
         block.position = await this.blockRepository.countChildren(userId, parentId);
-        block.content = content;
+        block.content = normalizedContent;
         block.placeholder = this.resolveDefaultPlaceholder(kind, parent);
-        const savedBlock = await this.blockRepository.save(block);
+
+        let savedBlock: Block;
+        try {
+            savedBlock = await this.blockRepository.save(block);
+        } catch (error) {
+            if (isSectionKind && isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
 
         if (kind === BlockKind.EXPERIENCE) {
             await this.provisionExperienceScaffold(savedBlock);
@@ -172,6 +187,9 @@ export class BlockService {
             throw new BusinessException(ErrorCode.BLOCK_PARENT_NOT_FOUND);
         }
         this.assertValidPlacement(block.kind, newParent);
+        if (EXPERIENCE_SECTION_KINDS.includes(block.kind) && newParent) {
+            await this.assertNoDuplicateSection(newParent.id, block.kind);
+        }
 
         const newLevel = newParent ? newParent.level + 1 : 1;
         const levelDelta = newLevel - block.level;
@@ -199,7 +217,19 @@ export class BlockService {
         this.reindexPositions(oldSiblings);
         this.insertAtPosition(newSiblings, block, targetPosition);
 
-        await this.blockRepository.saveAll([block, ...descendants, ...oldSiblings, ...newSiblings]);
+        try {
+            await this.blockRepository.saveAll([
+                block,
+                ...descendants,
+                ...oldSiblings,
+                ...newSiblings,
+            ]);
+        } catch (error) {
+            if (EXPERIENCE_SECTION_KINDS.includes(block.kind) && isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
         return block;
     }
 
@@ -270,7 +300,15 @@ export class BlockService {
             section.placeholder = null;
             return section;
         });
-        const savedSections = await this.blockRepository.saveAll(sections);
+        let savedSections: Block[];
+        try {
+            savedSections = await this.blockRepository.saveAll(sections);
+        } catch (error) {
+            if (isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
 
         const experienceMeta = new ExperienceMeta();
         experienceMeta.blockId = experienceBlock.id;
@@ -362,15 +400,32 @@ export class BlockService {
 
         if (kind === BlockKind.CONTENT) {
             const isSectionParent = parent && EXPERIENCE_SECTION_KINDS.includes(parent.kind);
+            const isExperienceParent = parent && parent.kind === BlockKind.EXPERIENCE;
             const isNestableContentParent =
                 parent && parent.kind === BlockKind.CONTENT && parent.level < BLOCK_MAX_LEVEL;
-            if (!isSectionParent && !isNestableContentParent) {
+            if (!isSectionParent && !isExperienceParent && !isNestableContentParent) {
+                throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
+            }
+            return;
+        }
+
+        if (EXPERIENCE_SECTION_KINDS.includes(kind)) {
+            if (!parent || parent.kind !== BlockKind.EXPERIENCE) {
                 throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
             }
             return;
         }
 
         throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
+    }
+
+    // 기본 카테고리(SECTION_*)는 삭제 가능하지만, 삭제 후 같은 종류를 다시 만들 수 있어야
+    // 한 활동에 같은 카테고리가 중복 생성되지 않도록 막는다.
+    private async assertNoDuplicateSection(parentId: string, kind: BlockKind): Promise<void> {
+        const exists = await this.blockRepository.existsByParentIdAndKind(parentId, kind);
+        if (exists) {
+            throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+        }
     }
 
     private assertContentLength(kind: BlockKind, content: string | null): void {

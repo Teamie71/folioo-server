@@ -19,7 +19,7 @@ export class PortfolioCorrection extends BaseEntity {
     @Column({ length: 20 })
     positionName: string;
 
-    @Column({ length: 700 })
+    @Column({ length: 1000 })
     jobDescription: string;
 
     @Column({
