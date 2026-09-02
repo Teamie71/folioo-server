@@ -15,8 +15,6 @@ export interface ValueComparisonLogEntry {
     chosen: ValueKind;
 }
 
-export const RESULT_VALIDITY_DAYS = 3;
-
 @Entity('job_search_sessions')
 export class JobSearchSession {
     @PrimaryGeneratedColumn('uuid')

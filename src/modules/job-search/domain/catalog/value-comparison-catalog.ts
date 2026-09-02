@@ -81,19 +81,11 @@ const CATALOG: readonly ValueComparisonCard[] = [
     },
 ];
 
-const CATALOG_BY_KEY = new Map<string, ValueComparisonCard>(
-    CATALOG.map((card) => [pairKey(card.left, card.right), card])
-);
-
-function pairKey(a: ValueKind, b: ValueKind): string {
-    return `${a}:${b}`;
-}
-
 // a, b 순서와 무관하게 VALUE_DISPLAY_PRECEDENCE 기준으로 정렬된 카드를 돌려준다.
 export function getComparisonCard(a: ValueKind, b: ValueKind): ValueComparisonCard {
     const [left, right] =
         VALUE_DISPLAY_PRECEDENCE.indexOf(a) < VALUE_DISPLAY_PRECEDENCE.indexOf(b) ? [a, b] : [b, a];
-    const card = CATALOG_BY_KEY.get(pairKey(left, right));
+    const card = CATALOG.find((c) => c.left === left && c.right === right);
     if (!card) {
         throw new Error(`No comparison card found for pair: ${a}, ${b}`);
     }
