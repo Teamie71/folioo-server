@@ -20,7 +20,7 @@ export class JobSearchSession {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ name: 'user_id', nullable: true })
+    @Column({ type: 'int', name: 'user_id', nullable: true })
     userId: number | null;
 
     @Column({ type: 'varchar', length: 20, default: JobSearchStatus.VALUES_IN_PROGRESS })
