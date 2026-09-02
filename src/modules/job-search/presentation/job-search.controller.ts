@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
@@ -9,7 +9,7 @@ import {
     ValueBalanceAnswerReqDTO,
     ValueBalanceQuestionResDTO,
 } from '../application/dtos/value-balance.dto';
-import { JobSearchStatusResDTO } from '../application/dtos/job-search.dto';
+import { JobSearchResultResDTO, JobSearchStatusResDTO } from '../application/dtos/job-search.dto';
 
 @ApiTags('JobSearch')
 @Controller('job-search')
@@ -60,5 +60,23 @@ export class JobSearchController {
             body.chosen!
         );
         return ValueBalanceQuestionResDTO.from(progress);
+    }
+
+    @Get('results/:token')
+    @Public()
+    @ApiOperation({
+        summary: '직무 찾기 결과 조회',
+        description:
+            '결과 요청 시점부터 3일간 조회 가능합니다. 로그인 여부와 무관하게 토큰만 있으면 누구나 조회할 수 있어 공유 링크로 사용됩니다.',
+    })
+    @ApiCommonResponse(JobSearchResultResDTO)
+    @ApiCommonErrorResponse(
+        ErrorCode.JOB_SEARCH_NOT_FOUND,
+        ErrorCode.JOB_SEARCH_RESULT_NOT_READY,
+        ErrorCode.JOB_SEARCH_RESULT_EXPIRED
+    )
+    async getResult(@Param('token') token: string): Promise<JobSearchResultResDTO> {
+        const session = await this.jobSearchSessionService.getResultOrThrow(token);
+        return JobSearchResultResDTO.from(session);
     }
 }

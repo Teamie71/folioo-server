@@ -21,6 +21,8 @@ const createSession = (overrides: Partial<JobSearchSession> = {}): JobSearchSess
     session.id = overrides.id ?? 'session-1';
     session.status = overrides.status ?? session.status;
     session.valuesAnswerLog = overrides.valuesAnswerLog ?? session.valuesAnswerLog;
+    session.result = overrides.result ?? null;
+    session.resultExpiresAt = overrides.resultExpiresAt ?? null;
     return session;
 };
 
@@ -169,6 +171,43 @@ describe('JobSearchSessionService', () => {
             repository.findLatestReadyByUserId.mockResolvedValue(null);
 
             await expect(service.getStatusForUser(7)).resolves.toBeNull();
+        });
+    });
+
+    describe('getResultOrThrow', () => {
+        it('throws JOB_SEARCH_NOT_FOUND when the token does not exist', async () => {
+            repository.findById.mockResolvedValue(null);
+
+            await expect(service.getResultOrThrow('missing')).rejects.toThrow(BusinessException);
+        });
+
+        it('throws JOB_SEARCH_RESULT_NOT_READY when the result has not been computed yet', async () => {
+            const session = createSession({ status: JobSearchStatus.VALUES_DONE, result: null });
+            repository.findById.mockResolvedValue(session);
+
+            await expect(service.getResultOrThrow(session.id)).rejects.toThrow(BusinessException);
+        });
+
+        it('throws JOB_SEARCH_RESULT_EXPIRED when past the expiry window', async () => {
+            const session = createSession({
+                status: JobSearchStatus.RESULT_READY,
+                result: { some: 'result' },
+                resultExpiresAt: new Date(Date.now() - 1000),
+            });
+            repository.findById.mockResolvedValue(session);
+
+            await expect(service.getResultOrThrow(session.id)).rejects.toThrow(BusinessException);
+        });
+
+        it('returns the session when the result is ready and not expired', async () => {
+            const session = createSession({
+                status: JobSearchStatus.RESULT_READY,
+                result: { some: 'result' },
+                resultExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
+            });
+            repository.findById.mockResolvedValue(session);
+
+            await expect(service.getResultOrThrow(session.id)).resolves.toBe(session);
         });
     });
 });

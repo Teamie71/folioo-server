@@ -91,6 +91,17 @@ export class JobSearchSessionService {
         return this.jobSearchSessionRepository.findLatestReadyByUserId(userId);
     }
 
+    async getResultOrThrow(token: string): Promise<JobSearchSession> {
+        const session = await this.findByIdOrThrow(token);
+        if (session.status !== JobSearchStatus.RESULT_READY || !session.result) {
+            throw new BusinessException(ErrorCode.JOB_SEARCH_RESULT_NOT_READY);
+        }
+        if (session.resultExpiresAt && session.resultExpiresAt.getTime() < Date.now()) {
+            throw new BusinessException(ErrorCode.JOB_SEARCH_RESULT_EXPIRED);
+        }
+        return session;
+    }
+
     private async findByIdOrThrow(token: string): Promise<JobSearchSession> {
         const session = await this.jobSearchSessionRepository.findById(token);
         if (!session) {

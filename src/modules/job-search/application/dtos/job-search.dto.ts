@@ -19,3 +19,18 @@ export class JobSearchStatusResDTO {
         return dto;
     }
 }
+
+export class JobSearchResultResDTO {
+    @ApiProperty({ description: '직무 찾기 결과 (내용은 결과 산출 로직에 따라 결정)' })
+    result: Record<string, unknown>;
+
+    @ApiProperty({ description: '결과 조회 가능 마감 시각(ISO 8601)' })
+    expiresAt: string | null;
+
+    static from(session: JobSearchSession): JobSearchResultResDTO {
+        const dto = new JobSearchResultResDTO();
+        dto.result = session.result ?? {};
+        dto.expiresAt = session.resultExpiresAt?.toISOString() ?? null;
+        return dto;
+    }
+}
