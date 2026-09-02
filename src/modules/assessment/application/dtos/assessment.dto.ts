@@ -1,0 +1,156 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+    ArrayMaxSize,
+    ArrayMinSize,
+    IsArray,
+    IsEnum,
+    IsInt,
+    IsOptional,
+    Max,
+    Min,
+    ValidateNested,
+} from 'class-validator';
+import { ValueKind } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { AssessmentResult } from '../../domain/assessment-result.entity';
+import { MajorField } from '../../domain/enums/major-field.enum';
+import { SCALE_MAX, SCALE_MIN } from '../../constants/scoring.constant';
+import { TRAIT_ANSWER_COUNT } from '../../constants/traits.constant';
+import { ScoredCompanyType, ScoredJob } from '../../domain/types';
+
+export class TraitAnswerReqDTO {
+    @IsInt()
+    @Min(1)
+    @Max(TRAIT_ANSWER_COUNT)
+    @ApiProperty({ description: '문항 번호 (1~15)' })
+    questionNo: number;
+
+    @IsInt()
+    @Min(SCALE_MIN)
+    @Max(SCALE_MAX)
+    @ApiProperty({ description: `응답 값 (${SCALE_MIN}~${SCALE_MAX})` })
+    value: number;
+}
+
+export class CreateAssessmentReqDTO {
+    @IsArray()
+    @ArrayMinSize(TRAIT_ANSWER_COUNT)
+    @ArrayMaxSize(TRAIT_ANSWER_COUNT)
+    @ValidateNested({ each: true })
+    @Type(() => TraitAnswerReqDTO)
+    @ApiProperty({ type: [TraitAnswerReqDTO], description: '성향 문항 15개에 대한 응답' })
+    traitAnswers: TraitAnswerReqDTO[];
+
+    @IsArray()
+    @ArrayMinSize(5)
+    @ArrayMaxSize(5)
+    @IsEnum(ValueKind, { each: true })
+    @ApiProperty({
+        type: [String],
+        enum: ValueKind,
+        description: '가치관 밸런스게임으로 확정된 1위~5위 순위',
+    })
+    valueRanking: ValueKind[];
+
+    @IsOptional()
+    @IsEnum(MajorField)
+    @ApiProperty({
+        enum: MajorField,
+        nullable: true,
+        description: '전공 계열. 전공 무관이면 null',
+    })
+    majorField: MajorField | null;
+}
+
+class ScoredJobResDTO {
+    @ApiProperty()
+    code: string;
+
+    @ApiProperty({ nullable: true })
+    name: string | null;
+
+    @ApiProperty({ nullable: true })
+    matchRate: number | null;
+
+    @ApiProperty({ nullable: true })
+    summary: string | null;
+
+    @ApiProperty({ type: [String], nullable: true })
+    coreSkills: string[] | null;
+
+    @ApiProperty({ type: [String], nullable: true })
+    recommendedActivities: string[] | null;
+
+    static from(job: ScoredJob, locked: boolean): ScoredJobResDTO {
+        const dto = new ScoredJobResDTO();
+        dto.code = job.code;
+        dto.name = locked ? null : job.name;
+        dto.matchRate = locked ? null : job.matchRate;
+        dto.summary = locked ? null : job.summary;
+        dto.coreSkills = locked ? null : job.coreSkills;
+        dto.recommendedActivities = locked ? null : job.recommendedActivities;
+        return dto;
+    }
+}
+
+class ScoredCompanyTypeResDTO {
+    @ApiProperty()
+    code: string;
+
+    @ApiProperty()
+    name: string;
+
+    @ApiProperty()
+    matchRate: number;
+
+    @ApiProperty()
+    description: string;
+
+    @ApiProperty({ nullable: true })
+    tip: string | null;
+
+    static from(companyType: ScoredCompanyType): ScoredCompanyTypeResDTO {
+        const dto = new ScoredCompanyTypeResDTO();
+        dto.code = companyType.code;
+        dto.name = companyType.name;
+        dto.matchRate = companyType.matchRate;
+        dto.description = companyType.description;
+        dto.tip = companyType.tip;
+        return dto;
+    }
+}
+
+export class AssessmentResultResDTO {
+    @ApiProperty()
+    uuid: string;
+
+    @ApiProperty({ description: '최고점 가치관×성향 조합에 대한 헤드라인 문구' })
+    headline: string;
+
+    @ApiProperty({ description: '비로그인 상태로 조회해 상세 결과가 마스킹되었는지 여부' })
+    locked: boolean;
+
+    @ApiProperty({ type: [ScoredJobResDTO] })
+    topJobs: ScoredJobResDTO[];
+
+    @ApiProperty({ type: ScoredCompanyTypeResDTO, nullable: true })
+    companyType: ScoredCompanyTypeResDTO | null;
+
+    @ApiProperty({ nullable: true, description: '계정에 등록(claim)된 시각' })
+    claimedAt: string | null;
+
+    @ApiProperty()
+    createdAt: string;
+
+    static from(result: AssessmentResult, locked: boolean): AssessmentResultResDTO {
+        const dto = new AssessmentResultResDTO();
+        dto.uuid = result.uuid;
+        dto.headline = result.headline;
+        dto.locked = locked;
+        dto.topJobs = result.topJobs.map((job) => ScoredJobResDTO.from(job, locked));
+        dto.companyType = locked ? null : ScoredCompanyTypeResDTO.from(result.companyType);
+        dto.claimedAt = result.claimedAt?.toISOString() ?? null;
+        dto.createdAt = result.createdAt.toISOString();
+        return dto;
+    }
+}

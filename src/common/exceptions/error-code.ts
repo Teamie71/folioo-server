@@ -413,4 +413,20 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당 질문의 두 선택지 중 하나가 아닙니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.ASSESSMENT_NOT_FOUND]: {
+        message: '해당 직무·기업형태 추천 분석 결과를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.ASSESSMENT_ALREADY_CLAIMED]: {
+        message: '이미 다른 계정에 등록된 결과입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.ASSESSMENT_INVALID_INPUT]: {
+        message: '응답 데이터가 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.ASSESSMENT_RULESET_NOT_READY]: {
+        message: '아직 배점 데이터가 준비되지 않았습니다.',
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+    },
 };

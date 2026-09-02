@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '../auth/auth.module';
 import { RulesetVersion } from './domain/ruleset-version.entity';
 import { Job } from './domain/job.entity';
 import { CompanyType } from './domain/company-type.entity';
@@ -11,11 +12,16 @@ import { CompanyTypeRepository } from './infrastructure/repositories/company-typ
 import { HeadlineRepository } from './infrastructure/repositories/headline.repository';
 import { AssessmentResultRepository } from './infrastructure/repositories/assessment-result.repository';
 import { RulesetValidatorService } from './application/services/ruleset-validator.service';
+import { AssessmentService } from './application/services/assessment.service';
+import { OptionalAuthGuard } from './infrastructure/guards/optional-auth.guard';
+import { AssessmentController } from './presentation/assessment.controller';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([RulesetVersion, Job, CompanyType, Headline, AssessmentResult]),
+        AuthModule,
     ],
+    controllers: [AssessmentController],
     providers: [
         RulesetVersionRepository,
         JobRepository,
@@ -23,6 +29,8 @@ import { RulesetValidatorService } from './application/services/ruleset-validato
         HeadlineRepository,
         AssessmentResultRepository,
         RulesetValidatorService,
+        AssessmentService,
+        OptionalAuthGuard,
     ],
 })
 export class AssessmentModule {}
