@@ -80,7 +80,9 @@ async function main(): Promise<void> {
     const companyTypes = readJson<CompanyTypeSeedRow[]>(
         path.join(rootDir, 'seeds', profile, 'company-types.json')
     );
-    const headlines = readJson<HeadlineSeedRow[]>(path.join(rootDir, 'seeds', 'headlines.json'));
+    const headlines = readJson<HeadlineSeedRow[]>(
+        path.join(rootDir, 'seeds', profile, 'headlines.json')
+    );
 
     initializeTransactionalContext();
     const app = await NestFactory.createApplicationContext(AppModule, {
