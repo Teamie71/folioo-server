@@ -3,11 +3,9 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { PaymentStatus } from '../enums/payment-status.enum';
 import { PayType } from '../enums/pay-type.enum';
 import { User } from '../../../user/domain/user.entity';
-import { TicketProduct } from '../../../ticket/domain/entities/ticket-product.entity';
 
 @Entity('payment')
 @Index(['userId'])
-@Index(['ticketProductId'])
 export class Payment extends BaseEntity {
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
@@ -15,13 +13,6 @@ export class Payment extends BaseEntity {
 
     @Column({ name: 'user_id' })
     userId: number;
-
-    @ManyToOne(() => TicketProduct, { onDelete: 'RESTRICT' })
-    @JoinColumn({ name: 'ticket_product_id' })
-    ticketProduct: TicketProduct;
-
-    @Column({ name: 'ticket_product_id' })
-    ticketProductId: number;
 
     @Column({ unique: true })
     mulNo: number;

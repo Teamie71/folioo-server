@@ -1,15 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Headers,
-    Param,
-    Patch,
-    Post,
-    Query,
-    Req,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Patch, Post, Req } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
@@ -26,14 +15,8 @@ import { AgreeTermsReqDTO, AgreeTermsResDTO } from '../application/dtos/agree-te
 import { User } from 'src/common/decorators/user.decorator';
 import { AllowPending } from 'src/common/decorators/allow-pending.decorator';
 import { UserService } from '../application/services/user.service';
-import { TicketBalanceResDTO } from 'src/modules/ticket/application/dtos/ticket-balance.dto';
-import { TicketExpiringResDTO } from 'src/modules/ticket/application/dtos/ticket-expiring.dto';
-import { TicketHistoryResDTO } from 'src/modules/ticket/application/dtos/ticket-history.dto';
-import { TicketGrantNoticeResDTO } from 'src/modules/ticket/application/dtos/ticket-grant-notice.dto';
-import { TicketExpiringQueryReqDTO } from 'src/modules/ticket/application/dtos/ticket-expiring-query.dto';
 import { extractAccessTokenFromAuthorization } from 'src/modules/auth/infrastructure/utils/access-token.util';
 import type { Request } from 'express';
-import { UserTicketFacade } from '../application/facades/user-ticket.facade';
 import { UserAuthFacade } from '../application/facades/user-auth.facade';
 
 @ApiTags('User')
@@ -41,7 +24,6 @@ import { UserAuthFacade } from '../application/facades/user-auth.facade';
 export class UserController {
     constructor(
         private readonly userService: UserService,
-        private readonly userTicketFacade: UserTicketFacade,
         private readonly userAuthFacade: UserAuthFacade
     ) {}
 
@@ -92,121 +74,12 @@ export class UserController {
         @User('sub') userId: number,
         @Body() body: AgreeTermsReqDTO
     ): Promise<AgreeTermsResDTO> {
-        return await this.userTicketFacade.onBoarding(
+        return await this.userAuthFacade.onBoarding(
             userId,
             body.isServiceAgreed,
             body.isPrivacyAgreed,
             body.isMarketingAgreed
         );
-    }
-
-    @Get('me/tickets')
-    @ApiOperation({
-        summary: '잔여 이용권 조회',
-        description: '사용자의 잔여 이용권 수량을 경험 정리, 포트폴리오 첨삭 유형별로 조회합니다.',
-    })
-    @ApiCommonResponse(TicketBalanceResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async getTicketBalance(@User('sub') userId: number): Promise<TicketBalanceResDTO> {
-        return this.userTicketFacade.getBalance(userId);
-    }
-
-    @Get('me/tickets/expiring')
-    @ApiOperation({
-        summary: '만료 예정 이용권 조회',
-        description:
-            '지정한 기간(days) 내 만료 예정인 이용권 수량과 가장 빨리 만료되는 일자를 유형별로 조회합니다.',
-    })
-    @ApiCommonResponse(TicketExpiringResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async getExpiringTickets(
-        @User('sub') userId: number,
-        @Query() query: TicketExpiringQueryReqDTO
-    ): Promise<TicketExpiringResDTO> {
-        return this.userTicketFacade.getExpiring(userId, query.days);
-    }
-
-    @Get('me/tickets/history')
-    @ApiOperation({
-        summary: '이용권 거래 내역 조회',
-        description: '사용자의 이용권 발급/사용/만료 내역을 최신순으로 조회합니다.',
-    })
-    @ApiCommonResponse(TicketHistoryResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async getTicketHistory(@User('sub') userId: number): Promise<TicketHistoryResDTO> {
-        return this.userTicketFacade.getHistory(userId);
-    }
-
-    @Get('me/ticket-grant-notices/next')
-    @ApiOperation({
-        summary: '다음 보상 안내 조회',
-        description:
-            '로그인 사용자의 다음 PENDING 보상 안내 1건을 최신순으로 조회합니다. 없으면 null을 반환합니다.',
-    })
-    @ApiCommonResponse(TicketGrantNoticeResDTO, {
-        exampleResults: {
-            success: {
-                summary: '다음 보상 안내가 있는 경우',
-                result: {
-                    id: 101,
-                    ticketGrantId: 55,
-                    status: 'PENDING',
-                    title: '보상이 지급되었어요',
-                    body: '경험 정리 1회권',
-                    ctaText: '보러가기',
-                    ctaLink: '/tickets',
-                    payload: {
-                        displayReason: '서비스 이용 불편에 대한 보상',
-                        displayPeriod: '6개월 간',
-                        rewards: [
-                            {
-                                type: 'EXPERIENCE',
-                                quantity: 1,
-                            },
-                        ],
-                    },
-                    createdAt: '2026-03-08T00:00:00.000Z',
-                },
-            },
-            empty: {
-                summary: '다음 보상 안내가 없는 경우',
-                result: null,
-            },
-        },
-    })
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async getNextTicketGrantNotice(
-        @User('sub') userId: number
-    ): Promise<TicketGrantNoticeResDTO | null> {
-        return this.userTicketFacade.getNextGrantNotice(userId);
-    }
-
-    @Patch('me/ticket-grant-notices/:noticeId/shown')
-    @ApiOperation({
-        summary: '보상 안내 shown 처리',
-        description: '사용자가 보상 안내를 실제 확인한 시점을 shown 상태로 기록합니다.',
-    })
-    @ApiCommonResponse(TicketGrantNoticeResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND)
-    async markTicketGrantNoticeShown(
-        @User('sub') userId: number,
-        @Param('noticeId') noticeId: string
-    ): Promise<TicketGrantNoticeResDTO> {
-        return this.userTicketFacade.markGrantNoticeShown(userId, Number(noticeId));
-    }
-
-    @Patch('me/ticket-grant-notices/:noticeId/dismiss')
-    @ApiOperation({
-        summary: '보상 안내 dismiss 처리',
-        description: '사용자가 보상 안내 모달을 닫았음을 기록합니다.',
-    })
-    @ApiCommonResponse(TicketGrantNoticeResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND)
-    async markTicketGrantNoticeDismissed(
-        @User('sub') userId: number,
-        @Param('noticeId') noticeId: string
-    ): Promise<TicketGrantNoticeResDTO> {
-        return this.userTicketFacade.markGrantNoticeDismissed(userId, Number(noticeId));
     }
 
     @Patch('me')

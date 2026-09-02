@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
-import { TicketService } from 'src/modules/ticket/application/services/ticket.service';
 import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import { BusinessException } from 'src/common/exceptions/business.exception';
@@ -13,7 +12,6 @@ import {
 import { CorrectionItemResDTO } from '../dtos/correction-result.dto';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
 import { CorrectionItemService } from '../services/correction-item.service';
-import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
@@ -25,7 +23,6 @@ export class PortfolioCorrectionFacade {
 
     constructor(
         private readonly portfolioCorrectionService: PortfolioCorrectionService,
-        private readonly ticketService: TicketService,
         private readonly correctionItemService: CorrectionItemService,
         private readonly portfolioService: PortfolioService,
         private readonly correctionPortfolioSelectionService: CorrectionPortfolioSelectionService,
@@ -34,7 +31,6 @@ export class PortfolioCorrectionFacade {
 
     @Transactional()
     async requestCorrection(userId: number, body: CreateCorrectionReqDTO): Promise<number> {
-        await this.ticketService.consumeTicket(userId, TicketType.PORTFOLIO_CORRECTION);
         await this.portfolioCorrectionService.validateCreation(userId);
         const correction = await this.portfolioCorrectionService.createCorrection(
             userId,

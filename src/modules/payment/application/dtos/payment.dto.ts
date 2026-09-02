@@ -4,13 +4,6 @@ import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-valid
 import { PaymentStatus } from '../../domain/enums/payment-status.enum';
 import { Payment } from '../../domain/entities/payment.entity';
 
-export class CreatePaymentReqDTO {
-    @Type(() => Number)
-    @IsInt()
-    @IsPositive()
-    ticketProductId: number;
-}
-
 export class PayAppWebhookReqDTO {
     @Type(() => Number)
     @IsInt()
@@ -72,7 +65,6 @@ export class PayAppWebhookReqDTO {
 
 export class PaymentResDTO {
     id: number;
-    ticketProductId: number;
     @ApiProperty({ enum: PaymentStatus, example: PaymentStatus.REQUESTED })
     status: PaymentStatus;
     amount: number;
@@ -82,7 +74,6 @@ export class PaymentResDTO {
     static from(payment: Payment): PaymentResDTO {
         const dto = new PaymentResDTO();
         dto.id = payment.id;
-        dto.ticketProductId = payment.ticketProductId;
         dto.status = payment.status;
         dto.amount = payment.amount;
         dto.payUrl = payment.payUrl ?? null;

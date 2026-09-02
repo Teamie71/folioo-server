@@ -27,10 +27,6 @@ export class PaymentRepository {
         return this.paymentRepository.exists({ where: { id } });
     }
 
-    async existsByMulNo(mulNo: number): Promise<boolean> {
-        return this.paymentRepository.exists({ where: { mulNo } });
-    }
-
     async findByMulNo(mulNo: number): Promise<Payment | null> {
         return this.paymentRepository.findOne({ where: { mulNo } });
     }
