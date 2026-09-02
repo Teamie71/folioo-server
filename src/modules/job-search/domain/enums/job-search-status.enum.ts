@@ -1,0 +1,5 @@
+export enum JobSearchStatus {
+    VALUES_IN_PROGRESS = 'VALUES_IN_PROGRESS',
+    VALUES_DONE = 'VALUES_DONE',
+    RESULT_READY = 'RESULT_READY',
+}
