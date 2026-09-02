@@ -23,6 +23,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { VisualizationModule } from './modules/visualization/visualization.module';
 import { BlockModule } from './modules/block/block.module';
+import { JobSearchModule } from './modules/job-search/job-search.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -59,6 +60,7 @@ import { DataSource } from 'typeorm';
         FeedbackModule,
         VisualizationModule,
         BlockModule,
+        JobSearchModule,
         InterviewModule,
         InternalModule,
         AdminModule,
