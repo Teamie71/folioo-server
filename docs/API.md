@@ -11,7 +11,6 @@ Notes:
 
 - In non-local environments, Swagger UI is mounted at `/api` and protected by Basic Auth.
 - Most API endpoints are protected by a global JWT guard and require `Authorization: Bearer <accessToken>`.
-- Some endpoints consume tickets (ticket/payment required). Expect `402` when tickets are insufficient.
 
 ## Environments
 
@@ -138,7 +137,7 @@ Each endpoint result is classified into one of:
 | `validation_error` | 400            | Payload rejected by DTO validation      |
 | `not_found`        | 404            | Resource not found                      |
 | `auth_required`    | 401            | Authentication missing or invalid       |
-| `payment_required` | 402            | Insufficient tickets                    |
+| `payment_required` | 402            | Payment required                        |
 | `server_error`     | 500+ (not 501) | Unexpected server error                 |
 | `skipped`          | _(n/a)_        | Skipped by rule (env, multipart, OAuth) |
 | `network_error`    | _(n/a)_        | Timeout or connection failure           |
@@ -148,7 +147,6 @@ Each endpoint result is classified into one of:
 Some endpoints are auto-skipped when prerequisite data is unavailable:
 
 - `POST /auth/refresh` - always skipped (needs httpOnly `refreshToken` cookie, not Bearer)
-- `POST /payments` - skipped when no ticket products are seeded in the environment
 - `GET /auth/kakao`, `GET /auth/google`, `GET /auth/naver`(및 callback 경로) - skipped (OAuth redirect, not meaningful as API call)
 - Multipart endpoints - skipped unless `--file` is provided
 
@@ -170,7 +168,7 @@ The report includes:
 
 Legend:
 
-- IMPLEMENTED: endpoint has real logic (may still fail due to missing data or tickets)
+- IMPLEMENTED: endpoint has real logic (may still fail due to missing data)
 - NOT_IMPLEMENTED: throws `BusinessException(ErrorCode.NOT_IMPLEMENTED)` -> typically `501`
 - EMPTY: controller exists but no routes
 
@@ -217,12 +215,6 @@ Legend:
 
 - GET `/users/me` -> IMPLEMENTED
 - POST `/users/me/terms` -> IMPLEMENTED (온보딩 약관 동의, `@AllowPending()`)
-- GET `/users/me/tickets` -> IMPLEMENTED
-- GET `/users/me/tickets/expiring` -> IMPLEMENTED
-- GET `/users/me/tickets/history` -> IMPLEMENTED (이용권 사용 이력)
-- GET `/users/me/ticket-grant-notices/next` -> IMPLEMENTED (다음 PENDING 보상 안내 1건 조회, 없으면 null)
-- PATCH `/users/me/ticket-grant-notices/{noticeId}/shown` -> IMPLEMENTED (보상 안내 shown 처리)
-- PATCH `/users/me/ticket-grant-notices/{noticeId}/dismiss` -> IMPLEMENTED (보상 안내 dismiss 처리)
 - PATCH `/users/me` -> IMPLEMENTED
 - PATCH `/users/me/marketing-consent` -> IMPLEMENTED
 - DELETE `/users/me` -> IMPLEMENTED (soft delete + social unlink policy)
@@ -230,7 +222,7 @@ Legend:
 
 ### Experience
 
-- POST `/experiences` -> IMPLEMENTED (consumes tickets, can return `TICKET402`)
+- POST `/experiences` -> IMPLEMENTED
 - GET `/experiences` -> IMPLEMENTED
 - GET `/experiences/{experienceId}` -> IMPLEMENTED
 - PATCH `/experiences/{experienceId}` -> IMPLEMENTED
@@ -253,7 +245,7 @@ Legend:
 ### Portfolio-Correction
 
 - GET `/portfolio-corrections` -> IMPLEMENTED
-- POST `/portfolio-corrections` -> IMPLEMENTED (`title` required, consumes tickets, can return `TICKET402`)
+- POST `/portfolio-corrections` -> IMPLEMENTED (`title` required)
 - GET `/portfolio-corrections/{correctionId}/status` -> IMPLEMENTED
 - GET `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED (응답: `CorrectionResultResDTO`, `status: CorrectionStatus` 포함)
@@ -283,13 +275,9 @@ Legend:
 - POST `/insights/tags` -> IMPLEMENTED
 - DELETE `/insights/tags/{tagId}` -> IMPLEMENTED
 
-### Ticket
-
-- GET `/ticket-products` -> IMPLEMENTED (Public)
-
 ### Payment
 
-- POST `/payments` -> IMPLEMENTED (requires valid ticketProductId)
+- POST `/payments` -> REMOVED (이용권 판매 로직 제거, 결제 재설계 예정)
 - GET `/payments/{paymentId}` -> IMPLEMENTED
 - POST `/payments/webhook` -> IMPLEMENTED (Public)
 - POST `/payments/{paymentId}/cancel` -> IMPLEMENTED (REQUESTED 상태에서도 취소 허용)
@@ -306,5 +294,4 @@ Legend:
 - GET `/admin/dashboard` -> IMPLEMENTED (React SPA 대시보드 페이지)
 - GET `/admin/api/users/search` -> IMPLEMENTED (사용자 검색, 이름/이메일)
 - GET `/admin/api/events/manual-reward-options` -> IMPLEMENTED (수동 보상 이벤트 목록, ?userId로 보상 수령 여부 포함)
-- POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급, CS 커스텀 이용권 포함)
-- GET `/admin/api/ticket-grants` -> IMPLEMENTED (이용권 지급 ledger + notice 상태 조회)
+- POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급, CS 커스텀 보상 포함)
