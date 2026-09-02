@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
     IsArray,
-    IsEnum,
     IsInt,
     IsOptional,
     IsString,
@@ -12,7 +11,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
-import { TicketType } from 'src/modules/ticket/domain/enums/ticket-type.enum';
 import { RewardConfigItem } from 'src/modules/event/domain/entities/event.entity';
 
 /* ──────────────────── User Search ──────────────────── */
@@ -42,12 +40,6 @@ export class AdminUserItemResDTO {
 
     @ApiProperty({ example: true })
     isActive: boolean;
-
-    @ApiProperty({ example: 2, description: '잔여 경험 정리 이용권 수량' })
-    experienceTickets: number;
-
-    @ApiProperty({ example: 1, description: '잔여 포트폴리오 첨삭 이용권 수량' })
-    correctionTickets: number;
 }
 
 export class AdminUserSearchResDTO {
@@ -102,9 +94,9 @@ export class AdminManualRewardEventListResDTO {
 /* ──────────────── Custom Reward Item ──────────────── */
 
 export class CustomRewardItemDTO {
-    @ApiProperty({ enum: TicketType, description: '이용권 종류' })
-    @IsEnum(TicketType)
-    type: TicketType;
+    @ApiProperty({ description: '보상 종류' })
+    @IsString()
+    type: string;
 
     @ApiProperty({ description: '수량 (1~10)', example: 1 })
     @IsInt()

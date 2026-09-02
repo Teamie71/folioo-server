@@ -162,7 +162,7 @@ Result Classification:
   validation_error       400 - payload rejected by DTO validation
   not_found              404 - resource not found
   auth_required          401 - authentication missing/invalid
-  payment_required       402 - ticket/payment required
+  payment_required       402 - payment required
   server_error           500/502/503 etc.
   skipped                endpoint skipped (env-dependent or multipart)
   network_error          timeout or connection failure
@@ -321,11 +321,6 @@ function classify(status, _errorCode, networkError) {
  * Returns { skip: boolean, reason: string | null }
  */
 function envSkipCheck(method, rawPath, ctx) {
-    // POST /payments - requires a valid ticketProductId from preflight.
-    if (method === 'POST' && rawPath === '/payments' && ctx.ticketProductId == null) {
-        return { skip: true, reason: 'env:no-ticket-products' };
-    }
-
     // POST /auth/refresh - needs httpOnly refreshToken cookie, not an access token.
     if (method === 'POST' && rawPath === '/auth/refresh') {
         return { skip: true, reason: 'env:requires-refresh-cookie' };
@@ -402,30 +397,11 @@ async function fetchJson(url, opts, timeoutMs) {
 // ---------------------------------------------------------------------------
 async function preflightContext(base, token, timeoutMs) {
     const ctx = {
-        ticketProductId: null,
         correctionId: null,
         experienceId: null,
         paymentId: null,
         pathParamValues: {},
     };
-
-    // Ticket product id
-    try {
-        const r = await fetchJson(
-            `${base}/ticket-products`,
-            {
-                method: 'GET',
-                headers: { accept: 'application/json' },
-            },
-            timeoutMs
-        );
-        const list = r.json?.result;
-        if (Array.isArray(list) && list.length && typeof list[0]?.id === 'number') {
-            ctx.ticketProductId = list[0].id;
-        }
-    } catch (e) {
-        console.error('[smoke][preflight] failed to get ticket product ID:', e);
-    }
 
     // Existing corrections
     try {
@@ -486,9 +462,6 @@ function payloadOverrides(method, rawPath, ctx) {
             jobDescriptionType: 'TEXT',
             jobDescription: 'smoke test job description',
         };
-    }
-    if (method === 'POST' && rawPath === '/payments') {
-        return { ticketProductId: ctx.ticketProductId ?? 1 };
     }
     if (method === 'PATCH' && rawPath === '/users/me') {
         return { name: 'smoke-user' };
@@ -957,7 +930,6 @@ async function main() {
             exclude: args.exclude,
         },
         context: {
-            ticketProductId: ctx.ticketProductId,
             correctionId: ctx.correctionId,
             experienceId: ctx.experienceId,
             paymentId: ctx.paymentId,

@@ -8,7 +8,6 @@ import {
     ParseIntPipe,
     Post,
     Req,
-    Body,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
@@ -18,11 +17,7 @@ import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { PaymentFacade } from '../application/facades/payment.facade';
 import { PaymentService } from '../application/services/payment.service';
-import {
-    CreatePaymentReqDTO,
-    PayAppWebhookReqDTO,
-    PaymentResDTO,
-} from '../application/dtos/payment.dto';
+import { PayAppWebhookReqDTO, PaymentResDTO } from '../application/dtos/payment.dto';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import type { Request } from 'express';
@@ -36,21 +31,6 @@ export class PaymentController {
         private readonly paymentFacade: PaymentFacade,
         private readonly paymentService: PaymentService
     ) {}
-
-    @Post()
-    @ApiOperation({
-        summary: '결제 요청 생성',
-        description: '티켓 상품 ID를 전달하면 결제 요청을 생성하고 REQUESTED 상태로 저장합니다.',
-    })
-    @ApiCommonResponse(PaymentResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.TICKET_PRODUCT_NOT_FOUND)
-    async createPayment(
-        @User('sub') userId: number,
-        @Body() body: CreatePaymentReqDTO
-    ): Promise<PaymentResDTO> {
-        const payment = await this.paymentFacade.createPayment(userId, body.ticketProductId);
-        return PaymentResDTO.from(payment);
-    }
 
     @Get(':paymentId')
     @ApiOperation({

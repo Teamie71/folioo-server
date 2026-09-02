@@ -19,7 +19,6 @@ import { PdfExtractService } from './application/services/pdf-extract.service';
 import { ExternalPortfolioFacade } from './application/facades/external-portfolio.facade';
 import { PortfolioModule } from '../portfolio/portfolio.module';
 import { PortfolioCorrectionFacade } from './application/facades/portfolio-correction.facade';
-import { TicketModule } from '../ticket/ticket.module';
 import { ExternalPortfolioExtractRequestParserService } from './presentation/services/external-portfolio-extract-request-parser.service';
 
 @Module({
@@ -31,7 +30,6 @@ import { ExternalPortfolioExtractRequestParserService } from './presentation/ser
             CorrectionRagData,
         ]),
         PortfolioModule,
-        TicketModule,
         AiRelayModule,
     ],
     controllers: [PortfolioCorrectionController, ExternalPortfolioController],

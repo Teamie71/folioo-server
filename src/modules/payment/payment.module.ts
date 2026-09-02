@@ -5,11 +5,10 @@ import { PaymentRepository } from './infrastructure/repositories/payment.reposit
 import { PaymentFacade } from './application/facades/payment.facade';
 import { PaymentService } from './application/services/payment.service';
 import { PaymentController } from './presentation/payment.controller';
-import { TicketModule } from '../ticket/ticket.module';
 import { PayAppClient } from './infrastructure/clients/payapp.client';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Payment]), TicketModule],
+    imports: [TypeOrmModule.forFeature([Payment])],
     controllers: [PaymentController],
     providers: [PaymentRepository, PayAppClient, PaymentService, PaymentFacade],
     exports: [PaymentService],

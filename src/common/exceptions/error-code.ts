@@ -249,22 +249,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: 'AI 첨삭 생성 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
-    [ErrorCode.TICKET_NOT_FOUND]: {
-        message: '해당하는 티켓을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.TICKET_PRODUCT_NOT_FOUND]: {
-        message: '해당하는 티켓 상품을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.INSUFFICIENT_TICKETS]: {
-        message: '티켓이 부족합니다.',
-        statusCode: HttpStatus.PAYMENT_REQUIRED,
-    },
-    [ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND]: {
-        message: '해당하는 보상 안내를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
     [ErrorCode.PAYMENT_NOT_FOUND]: {
         message: '해당하는 결제를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,

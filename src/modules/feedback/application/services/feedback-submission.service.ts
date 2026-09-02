@@ -19,9 +19,9 @@ export class FeedbackSubmissionService {
     }
 
     /**
-     * opsConfig.allowMultipleRewards가 명시적으로 false일 때, 이미 보상을 받은 참여면 추가 티켓 지급을 하지 않는다.
+     * opsConfig.allowMultipleRewards가 명시적으로 false일 때, 이미 보상을 받은 참여면 추가 보상을 지급하지 않는다.
      */
-    shouldSuppressTicketGrantForSubmit(event: Event, participation: EventParticipation): boolean {
+    shouldSuppressRepeatReward(event: Event, participation: EventParticipation): boolean {
         if (event.opsConfig?.allowMultipleRewards !== false) {
             return false;
         }

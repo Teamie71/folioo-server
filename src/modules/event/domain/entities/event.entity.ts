@@ -1,9 +1,8 @@
 import { BaseEntity } from '../../../../common/entities/base.entity';
 import { Column, Entity } from 'typeorm';
-import { TicketType } from '../../../ticket/domain/enums/ticket-type.enum';
 
 export interface RewardConfigItem {
-    type: TicketType;
+    type: string;
     quantity: number;
 }
 

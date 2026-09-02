@@ -6,10 +6,6 @@ import { EventRewardLifecycleFacade } from 'src/modules/event/application/facade
 import { EventParticipationService } from 'src/modules/event/application/services/event-participation.service';
 import { EventService } from 'src/modules/event/application/services/event.service';
 import { EventRewardStatus } from 'src/modules/event/domain/enums/event-reward-status.enum';
-import { TicketGrantFacade } from 'src/modules/ticket/application/facades/ticket-grant.facade';
-import { TicketGrantActorType } from 'src/modules/ticket/domain/enums/ticket-grant-actor-type.enum';
-import { TicketGrantSourceType } from 'src/modules/ticket/domain/enums/ticket-grant-source-type.enum';
-import { TicketSource } from 'src/modules/ticket/domain/enums/ticket-source.enum';
 import { FeedbackResponse } from '../../domain/entities/feedback-response.entity';
 import { SubmitFeedbackResponseReqDTO } from '../dtos/submit-feedback-response.req.dto';
 import { SubmitFeedbackResponseResDTO } from '../dtos/submit-feedback-response.res.dto';
@@ -25,8 +21,7 @@ export class SubmitFeedbackFacade {
         private readonly eventParticipationService: EventParticipationService,
         private readonly feedbackSubmissionService: FeedbackSubmissionService,
         private readonly feedbackFormRepository: FeedbackFormRepository,
-        private readonly feedbackResponseRepository: FeedbackResponseRepository,
-        private readonly ticketGrantFacade: TicketGrantFacade
+        private readonly feedbackResponseRepository: FeedbackResponseRepository
     ) {}
 
     @Transactional()
@@ -68,27 +63,12 @@ export class SubmitFeedbackFacade {
 
         if (
             !cooldownElapsed ||
-            this.feedbackSubmissionService.shouldSuppressTicketGrantForSubmit(event, participation)
+            this.feedbackSubmissionService.shouldSuppressRepeatReward(event, participation)
         ) {
             return SubmitFeedbackResponseResDTO.of(false);
         }
 
         const now = new Date();
-        await this.ticketGrantFacade.issueGrantAndTickets({
-            userId,
-            rewards: event.rewardConfig,
-            grantSourceType: TicketGrantSourceType.EVENT,
-            issueContext: {
-                source: TicketSource.EVENT,
-                eventParticipationId: participation.id,
-            },
-            actorType: TicketGrantActorType.SYSTEM,
-            actorId: 'feedback-submit',
-            sourceRefId: participation.id,
-            reasonCode: 'event_feedback_submit',
-            reasonText: '이벤트 피드백 제출 보상',
-            grantedAt: now,
-        });
         participation.rewardStatus = EventRewardStatus.GRANTED;
         participation.rewardGrantedAt = now;
         await this.eventParticipationService.save(participation);

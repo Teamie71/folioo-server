@@ -70,7 +70,6 @@ src/
     ├── portfolio-correction/    # 포트폴리오 첨삭 (Core)
     ├── insight/                 # 인사이트 (Core)
     ├── event/                   # 이벤트/챌린지 (Core)
-    ├── ticket/                  # 이용권 관리 (Generic)
     ├── payment/                 # 결제 (Generic, PayApp 연동)
     ├── admin/                   # 관리자 대시보드 (Supporting)
     └── internal/                # AI 서버 연동 내부 API (Supporting)
