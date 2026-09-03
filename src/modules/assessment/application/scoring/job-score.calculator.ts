@@ -1,6 +1,7 @@
 import { TraitVector, ScoredJob } from '../../domain/types';
 import { ALL_TRAIT_KINDS } from '../../domain/enums/trait-kind.enum';
 import { TRAIT_MATCH_COEFFICIENT, MAJOR_BONUS_SCORE } from '../../constants/scoring.constant';
+import { sortByScoreDesc } from './score-sort.util';
 
 export interface JobScoringInput {
     code: string;
@@ -12,7 +13,6 @@ export interface JobScoringInput {
 }
 
 // 순수 함수: 최종점수 = cosineSimilarity(성향) × 0.8 + 전공가산(0.2 or 0).
-// 동점 시 최종점수 DESC, 직무코드 ASC로 결정론적 정렬한다(문서 3-5 잠정 tie-break).
 export function scoreJobs(
     jobs: readonly JobScoringInput[],
     userTraitVector: TraitVector,
@@ -26,14 +26,13 @@ export function scoreJobs(
         return { job, finalScore };
     });
 
-    scored.sort((a, b) => {
-        if (b.finalScore !== a.finalScore) {
-            return b.finalScore - a.finalScore;
-        }
-        return a.job.code.localeCompare(b.job.code);
-    });
+    const sorted = sortByScoreDesc(
+        scored,
+        (s) => s.finalScore,
+        (s) => s.job.code
+    );
 
-    return scored.slice(0, topN).map(({ job, finalScore }) => ({
+    return sorted.slice(0, topN).map(({ job, finalScore }) => ({
         code: job.code,
         name: job.name,
         matchRate: Math.round(finalScore * 100),
