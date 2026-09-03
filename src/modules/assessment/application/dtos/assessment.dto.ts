@@ -135,6 +135,13 @@ export class AssessmentResultResDTO {
     locked: boolean;
 
     @ApiProperty({
+        enum: MajorField,
+        nullable: true,
+        description: '생성 시 선택한 전공 계열. 전공 무관이면 null',
+    })
+    majorField: MajorField | null;
+
+    @ApiProperty({
         nullable: true,
         enum: TraitKind,
         description: '특성별 성향 점수 (레이더 차트용). 비로그인 조회 시 null',
@@ -173,6 +180,7 @@ export class AssessmentResultResDTO {
         dto.uuid = result.uuid;
         dto.headline = result.headline;
         dto.locked = locked;
+        dto.majorField = result.inputSnapshot.majorField as MajorField | null;
         dto.traitVector = locked ? null : result.traitVector;
         dto.valueRanking = result.valueRanking;
         dto.topJobs = result.topJobs.map((job) => ScoredJobResDTO.from(job, locked));
