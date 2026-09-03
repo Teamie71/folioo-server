@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { JobSearchSessionRepository } from '../../infrastructure/repositories/job-search-session.repository';
-import { JobSearchSession } from '../../domain/job-search-session.entity';
-import { JobSearchStatus } from '../../domain/enums/job-search-status.enum';
+import { ValueBalanceSessionRepository } from '../../infrastructure/repositories/value-balance-session.repository';
+import { ValueBalanceSession } from '../../domain/value-balance-session.entity';
+import { ValueBalanceStatus } from '../../domain/enums/value-balance-status.enum';
 import { ALL_VALUE_KINDS, ValueKind } from '../../domain/enums/value-kind.enum';
 import { NextComparison, computeWeights, replay } from '../../domain/value-balance-algorithm';
 
@@ -16,14 +16,14 @@ export interface ValueBalanceProgress {
 }
 
 @Injectable()
-export class JobSearchSessionService {
-    constructor(private readonly jobSearchSessionRepository: JobSearchSessionRepository) {}
+export class ValueBalanceSessionService {
+    constructor(private readonly valueBalanceSessionRepository: ValueBalanceSessionRepository) {}
 
     async startValueBalance(userId: number | null): Promise<ValueBalanceProgress> {
         const insertionOrder = shuffle(ALL_VALUE_KINDS);
-        const session = JobSearchSession.create(userId, insertionOrder);
+        const session = ValueBalanceSession.create(userId, insertionOrder);
         const state = replay(insertionOrder, []);
-        const saved = await this.jobSearchSessionRepository.save(session);
+        const saved = await this.valueBalanceSessionRepository.save(session);
 
         return {
             token: saved.id,
@@ -40,11 +40,11 @@ export class JobSearchSessionService {
         chosen: ValueKind
     ): Promise<ValueBalanceProgress> {
         const session = await this.findByIdOrThrow(token);
-        if (session.status !== JobSearchStatus.VALUES_IN_PROGRESS) {
-            throw new BusinessException(ErrorCode.JOB_SEARCH_VALUES_ALREADY_COMPLETED);
+        if (session.status !== ValueBalanceStatus.VALUES_IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.ASSESSMENT_VALUE_BALANCE_ALREADY_COMPLETED);
         }
         if (sequence < 0 || sequence > session.valuesAnswerLog.length) {
-            throw new BusinessException(ErrorCode.JOB_SEARCH_INVALID_SEQUENCE);
+            throw new BusinessException(ErrorCode.ASSESSMENT_VALUE_BALANCE_INVALID_SEQUENCE);
         }
 
         // sequence가 기존 로그 길이보다 작으면 "이전 응답 수정" — 그 지점 이후 로그는 폐기하고
@@ -52,12 +52,12 @@ export class JobSearchSessionService {
         const truncatedLog = session.valuesAnswerLog.slice(0, sequence);
         const stateBeforeAnswer = replay(session.valuesInsertionOrder, truncatedLog);
         if (stateBeforeAnswer.isComplete || !stateBeforeAnswer.next) {
-            throw new BusinessException(ErrorCode.JOB_SEARCH_INVALID_SEQUENCE);
+            throw new BusinessException(ErrorCode.ASSESSMENT_VALUE_BALANCE_INVALID_SEQUENCE);
         }
 
         const { left, right } = stateBeforeAnswer.next;
         if (chosen !== left && chosen !== right) {
-            throw new BusinessException(ErrorCode.JOB_SEARCH_INVALID_ANSWER);
+            throw new BusinessException(ErrorCode.ASSESSMENT_VALUE_BALANCE_INVALID_ANSWER);
         }
 
         const newLog = [...truncatedLog, { sequence, left, right, chosen }];
@@ -66,7 +66,7 @@ export class JobSearchSessionService {
         if (newState.isComplete) {
             const weights = computeWeights(newState.sorted);
             session.completeValues(newState.sorted, weights);
-            await this.jobSearchSessionRepository.save(session);
+            await this.valueBalanceSessionRepository.save(session);
             return {
                 token: session.id,
                 isComplete: true,
@@ -77,7 +77,7 @@ export class JobSearchSessionService {
         }
 
         session.valuesAnswerLog = newLog;
-        await this.jobSearchSessionRepository.save(session);
+        await this.valueBalanceSessionRepository.save(session);
         return {
             token: session.id,
             isComplete: false,
@@ -87,25 +87,10 @@ export class JobSearchSessionService {
         };
     }
 
-    async getStatusForUser(userId: number): Promise<JobSearchSession | null> {
-        return this.jobSearchSessionRepository.findLatestReadyByUserId(userId);
-    }
-
-    async getResultOrThrow(token: string): Promise<JobSearchSession> {
-        const session = await this.findByIdOrThrow(token);
-        if (session.status !== JobSearchStatus.RESULT_READY || !session.result) {
-            throw new BusinessException(ErrorCode.JOB_SEARCH_RESULT_NOT_READY);
-        }
-        if (session.resultExpiresAt && session.resultExpiresAt.getTime() < Date.now()) {
-            throw new BusinessException(ErrorCode.JOB_SEARCH_RESULT_EXPIRED);
-        }
-        return session;
-    }
-
-    private async findByIdOrThrow(token: string): Promise<JobSearchSession> {
-        const session = await this.jobSearchSessionRepository.findById(token);
+    private async findByIdOrThrow(token: string): Promise<ValueBalanceSession> {
+        const session = await this.valueBalanceSessionRepository.findById(token);
         if (!session) {
-            throw new BusinessException(ErrorCode.JOB_SEARCH_NOT_FOUND);
+            throw new BusinessException(ErrorCode.ASSESSMENT_VALUE_BALANCE_NOT_FOUND);
         }
         return session;
     }

@@ -1,4 +1,4 @@
-import { ALL_VALUE_KINDS } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ALL_VALUE_KINDS } from '../../domain/enums/value-kind.enum';
 import { ValueVector, ScoredCompanyType } from '../../domain/types';
 
 export interface CompanyTypeScoringInput {

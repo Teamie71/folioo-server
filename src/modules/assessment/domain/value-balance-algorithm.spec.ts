@@ -1,6 +1,6 @@
 import { ValueKind } from './enums/value-kind.enum';
 import { computeWeights, replay } from './value-balance-algorithm';
-import { ValueComparisonLogEntry } from './job-search-session.entity';
+import { ValueComparisonLogEntry } from './value-balance-session.entity';
 
 const { REWARD, STABILITY, NAME_VALUE, GROWTH, WORK_LIFE_BALANCE } = ValueKind;
 

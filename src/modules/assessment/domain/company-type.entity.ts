@@ -1,5 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { ValueKind } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ValueKind } from './enums/value-kind.enum';
 import { ValueVector } from './types';
 
 @Entity('company_types')

@@ -1,4 +1,4 @@
-import { ValueKind } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ValueKind } from '../../domain/enums/value-kind.enum';
 import { ValueVector } from '../../domain/types';
 import { CompanyTypeScoringInput, scoreCompanyTypes } from './company-type.calculator';
 import { ROC_WEIGHTS } from '../../constants/scoring.constant';

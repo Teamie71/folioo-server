@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { ValueKind } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ValueKind } from '../../domain/enums/value-kind.enum';
 import { RulesetVersionRepository } from '../../infrastructure/repositories/ruleset-version.repository';
 import { JobRepository } from '../../infrastructure/repositories/job.repository';
 import { CompanyTypeRepository } from '../../infrastructure/repositories/company-type.repository';
@@ -128,5 +128,9 @@ export class AssessmentService {
         }
         result.claim(userId);
         return this.assessmentResultRepository.save(result);
+    }
+
+    async getStatusForUser(userId: number): Promise<AssessmentResult | null> {
+        return this.assessmentResultRepository.findLatestByUserId(userId);
     }
 }

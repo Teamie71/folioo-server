@@ -1,4 +1,4 @@
-import { ValueKind } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ValueKind } from '../../domain/enums/value-kind.enum';
 import { TraitVector } from '../../domain/types';
 import { ALL_TRAIT_KINDS, TraitKind } from '../../domain/enums/trait-kind.enum';
 

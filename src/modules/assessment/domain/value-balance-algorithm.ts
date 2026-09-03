@@ -1,5 +1,5 @@
 import { ValueKind } from './enums/value-kind.enum';
-import { ValueComparisonLogEntry } from './job-search-session.entity';
+import { ValueComparisonLogEntry } from './value-balance-session.entity';
 
 export interface NextComparison {
     sequence: number;

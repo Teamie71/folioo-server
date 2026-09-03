@@ -17,4 +17,8 @@ export class AssessmentResultRepository {
     findByUuid(uuid: string): Promise<AssessmentResult | null> {
         return this.repo.findOne({ where: { uuid } });
     }
+
+    findLatestByUserId(userId: number): Promise<AssessmentResult | null> {
+        return this.repo.findOne({ where: { userId }, order: { createdAt: 'DESC' } });
+    }
 }

@@ -11,7 +11,7 @@ import {
     Min,
     ValidateNested,
 } from 'class-validator';
-import { ValueKind } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ValueKind } from '../../domain/enums/value-kind.enum';
 import { AssessmentResult } from '../../domain/assessment-result.entity';
 import { MajorField } from '../../domain/enums/major-field.enum';
 import { SCALE_MAX, SCALE_MIN } from '../../constants/scoring.constant';
@@ -151,6 +151,21 @@ export class AssessmentResultResDTO {
         dto.companyType = locked ? null : ScoredCompanyTypeResDTO.from(result.companyType);
         dto.claimedAt = result.claimedAt?.toISOString() ?? null;
         dto.createdAt = result.createdAt.toISOString();
+        return dto;
+    }
+}
+
+export class AssessmentStatusResDTO {
+    @ApiProperty({ description: '이 계정으로 완료(생성 또는 claim)한 분석 결과가 있는지 여부' })
+    hasCompleted: boolean;
+
+    @ApiProperty({ nullable: true, description: '가장 최근 결과의 uuid(조회/공유용). 없으면 null' })
+    uuid: string | null;
+
+    static from(result: AssessmentResult | null): AssessmentStatusResDTO {
+        const dto = new AssessmentStatusResDTO();
+        dto.hasCompleted = result !== null;
+        dto.uuid = result?.uuid ?? null;
         return dto;
     }
 }

@@ -3,7 +3,7 @@ import { RulesetVersionRepository } from '../../infrastructure/repositories/rule
 import { JobRepository } from '../../infrastructure/repositories/job.repository';
 import { HeadlineRepository } from '../../infrastructure/repositories/headline.repository';
 import { MAJOR_FIELD_CONFIG } from '../../constants/major-fields.constant';
-import { ALL_VALUE_KINDS } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ALL_VALUE_KINDS } from '../../domain/enums/value-kind.enum';
 import { ALL_TRAIT_KINDS } from '../../domain/enums/trait-kind.enum';
 
 // 부팅 시 코드 상수(전공 매핑)에 적힌 직무 코드가 실제로 DB에 존재하는지 검증한다.

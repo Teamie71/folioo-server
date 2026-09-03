@@ -1,38 +1,40 @@
 import { BusinessException } from 'src/common/exceptions/business.exception';
-import { JobSearchSessionService } from './job-search-session.service';
-import { JobSearchSessionRepository } from '../../infrastructure/repositories/job-search-session.repository';
-import { JobSearchSession, ValueComparisonLogEntry } from '../../domain/job-search-session.entity';
-import { JobSearchStatus } from '../../domain/enums/job-search-status.enum';
+import { ValueBalanceSessionService } from './value-balance-session.service';
+import { ValueBalanceSessionRepository } from '../../infrastructure/repositories/value-balance-session.repository';
+import {
+    ValueBalanceSession,
+    ValueComparisonLogEntry,
+} from '../../domain/value-balance-session.entity';
+import { ValueBalanceStatus } from '../../domain/enums/value-balance-status.enum';
 import { ValueKind } from '../../domain/enums/value-kind.enum';
 
 const { REWARD, STABILITY, NAME_VALUE, GROWTH, WORK_LIFE_BALANCE } = ValueKind;
 
-class JobSearchSessionRepositoryStub {
-    readonly save = jest.fn<Promise<JobSearchSession>, [JobSearchSession]>();
-    readonly findById = jest.fn<Promise<JobSearchSession | null>, [string]>();
-    readonly findLatestReadyByUserId = jest.fn<Promise<JobSearchSession | null>, [number]>();
+class ValueBalanceSessionRepositoryStub {
+    readonly save = jest.fn<Promise<ValueBalanceSession>, [ValueBalanceSession]>();
+    readonly findById = jest.fn<Promise<ValueBalanceSession | null>, [string]>();
 }
 
-const createSession = (overrides: Partial<JobSearchSession> = {}): JobSearchSession => {
-    const session = JobSearchSession.create(
+const createSession = (overrides: Partial<ValueBalanceSession> = {}): ValueBalanceSession => {
+    const session = ValueBalanceSession.create(
         overrides.userId ?? null,
         overrides.valuesInsertionOrder ?? [REWARD, STABILITY, NAME_VALUE, GROWTH, WORK_LIFE_BALANCE]
     );
     session.id = overrides.id ?? 'session-1';
     session.status = overrides.status ?? session.status;
     session.valuesAnswerLog = overrides.valuesAnswerLog ?? session.valuesAnswerLog;
-    session.result = overrides.result ?? null;
-    session.resultExpiresAt = overrides.resultExpiresAt ?? null;
     return session;
 };
 
-describe('JobSearchSessionService', () => {
-    let service: JobSearchSessionService;
-    let repository: JobSearchSessionRepositoryStub;
+describe('ValueBalanceSessionService', () => {
+    let service: ValueBalanceSessionService;
+    let repository: ValueBalanceSessionRepositoryStub;
 
     beforeEach(() => {
-        repository = new JobSearchSessionRepositoryStub();
-        service = new JobSearchSessionService(repository as unknown as JobSearchSessionRepository);
+        repository = new ValueBalanceSessionRepositoryStub();
+        service = new ValueBalanceSessionService(
+            repository as unknown as ValueBalanceSessionRepository
+        );
     });
 
     describe('startValueBalance', () => {
@@ -72,7 +74,7 @@ describe('JobSearchSessionService', () => {
         });
 
         it('rejects answering when the values-balance game is already completed', async () => {
-            const session = createSession({ status: JobSearchStatus.VALUES_DONE });
+            const session = createSession({ status: ValueBalanceStatus.VALUES_DONE });
             repository.findById.mockResolvedValue(session);
 
             await expect(service.answerValueBalance(session.id, 0, REWARD)).rejects.toThrow(
@@ -153,61 +155,8 @@ describe('JobSearchSessionService', () => {
             expect(progress.isComplete).toBe(true);
             expect(progress.ranking).toEqual([STABILITY, REWARD]);
             expect(progress.weights).toEqual({ [STABILITY]: 2 / 3, [REWARD]: 1 / 3 });
-            expect(session.status).toBe(JobSearchStatus.VALUES_DONE);
+            expect(session.status).toBe(ValueBalanceStatus.VALUES_DONE);
             expect(session.valuesCompletedAt).not.toBeNull();
-        });
-    });
-
-    describe('getStatusForUser', () => {
-        it('delegates to the repository lookup by userId', async () => {
-            const session = createSession({ status: JobSearchStatus.RESULT_READY });
-            repository.findLatestReadyByUserId.mockResolvedValue(session);
-
-            await expect(service.getStatusForUser(7)).resolves.toBe(session);
-            expect(repository.findLatestReadyByUserId).toHaveBeenCalledWith(7);
-        });
-
-        it('returns null when the user has no completed session', async () => {
-            repository.findLatestReadyByUserId.mockResolvedValue(null);
-
-            await expect(service.getStatusForUser(7)).resolves.toBeNull();
-        });
-    });
-
-    describe('getResultOrThrow', () => {
-        it('throws JOB_SEARCH_NOT_FOUND when the token does not exist', async () => {
-            repository.findById.mockResolvedValue(null);
-
-            await expect(service.getResultOrThrow('missing')).rejects.toThrow(BusinessException);
-        });
-
-        it('throws JOB_SEARCH_RESULT_NOT_READY when the result has not been computed yet', async () => {
-            const session = createSession({ status: JobSearchStatus.VALUES_DONE, result: null });
-            repository.findById.mockResolvedValue(session);
-
-            await expect(service.getResultOrThrow(session.id)).rejects.toThrow(BusinessException);
-        });
-
-        it('throws JOB_SEARCH_RESULT_EXPIRED when past the expiry window', async () => {
-            const session = createSession({
-                status: JobSearchStatus.RESULT_READY,
-                result: { some: 'result' },
-                resultExpiresAt: new Date(Date.now() - 1000),
-            });
-            repository.findById.mockResolvedValue(session);
-
-            await expect(service.getResultOrThrow(session.id)).rejects.toThrow(BusinessException);
-        });
-
-        it('returns the session when the result is ready and not expired', async () => {
-            const session = createSession({
-                status: JobSearchStatus.RESULT_READY,
-                result: { some: 'result' },
-                resultExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
-            });
-            repository.findById.mockResolvedValue(session);
-
-            await expect(service.getResultOrThrow(session.id)).resolves.toBe(session);
         });
     });
 });

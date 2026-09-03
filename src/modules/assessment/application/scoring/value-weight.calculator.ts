@@ -1,4 +1,4 @@
-import { ValueKind, ALL_VALUE_KINDS } from 'src/modules/job-search/domain/enums/value-kind.enum';
+import { ValueKind, ALL_VALUE_KINDS } from '../../domain/enums/value-kind.enum';
 import { ValueVector } from '../../domain/types';
 import { ROC_WEIGHTS } from '../../constants/scoring.constant';
 

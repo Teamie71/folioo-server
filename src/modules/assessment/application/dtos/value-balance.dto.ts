@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsOptional, IsUUID, Min, ValidateIf } from 'class-validator';
 import { ValueKind, VALUE_KIND_LABEL } from '../../domain/enums/value-kind.enum';
 import { getComparisonCard } from '../../domain/catalog/value-comparison-catalog';
-import { ValueBalanceProgress } from '../services/job-search-session.service';
+import { ValueBalanceProgress } from '../services/value-balance-session.service';
 
 export class ValueBalanceAnswerReqDTO {
     @IsOptional()
