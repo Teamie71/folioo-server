@@ -8,15 +8,11 @@ export interface JobPoolResolution {
     bonusJobCodes: ReadonlySet<string>;
 }
 
-// 순수 함수: 3-4 표 그대로. majorField가 null(전공 무관)이면 전체 풀, 가산 없음.
+// 순수 함수: 3-4 표 그대로. majorField가 null(전공 무관)이거나 NEUTRAL이면 전체 풀, 가산 없음.
 export function resolveJobPool(majorField: MajorField | null): JobPoolResolution {
-    if (majorField === null) {
-        return { isRestricted: false, restrictedJobCodes: [], bonusJobCodes: new Set() };
-    }
+    const config = majorField === null ? null : MAJOR_FIELD_CONFIG[majorField];
 
-    const config = MAJOR_FIELD_CONFIG[majorField];
-
-    if (config.type === MajorFieldType.RESTRICTED) {
+    if (config?.type === MajorFieldType.RESTRICTED) {
         return {
             isRestricted: true,
             restrictedJobCodes: config.targetJobCodes,
@@ -24,7 +20,7 @@ export function resolveJobPool(majorField: MajorField | null): JobPoolResolution
         };
     }
 
-    if (config.type === MajorFieldType.BONUS) {
+    if (config?.type === MajorFieldType.BONUS) {
         return {
             isRestricted: false,
             restrictedJobCodes: [],
@@ -32,6 +28,6 @@ export function resolveJobPool(majorField: MajorField | null): JobPoolResolution
         };
     }
 
-    // NEUTRAL
+    // null 또는 NEUTRAL
     return { isRestricted: false, restrictedJobCodes: [], bonusJobCodes: new Set() };
 }

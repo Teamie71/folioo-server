@@ -36,18 +36,18 @@ export class RulesetValidatorService implements OnModuleInit {
         const jobs = await this.jobRepository.findAllActiveByRulesetVersionId(rulesetVersionId);
         const existingCodes = new Set(jobs.map((job) => job.code));
 
-        const missing: string[] = [];
+        const missing = new Set<string>();
         for (const config of Object.values(MAJOR_FIELD_CONFIG)) {
             for (const code of config.targetJobCodes) {
                 if (!existingCodes.has(code)) {
-                    missing.push(code);
+                    missing.add(code);
                 }
             }
         }
 
-        if (missing.length > 0) {
+        if (missing.size > 0) {
             throw new Error(
-                `[RulesetValidator] MAJOR_FIELD_CONFIG references job codes missing from jobs table (ruleset ${rulesetVersionId}): ${[...new Set(missing)].join(', ')}`
+                `[RulesetValidator] MAJOR_FIELD_CONFIG references job codes missing from jobs table (ruleset ${rulesetVersionId}): ${[...missing].join(', ')}`
             );
         }
     }
