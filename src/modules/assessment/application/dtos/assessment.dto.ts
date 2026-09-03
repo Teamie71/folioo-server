@@ -14,9 +14,10 @@ import {
 import { ValueKind } from '../../domain/enums/value-kind.enum';
 import { AssessmentResult } from '../../domain/assessment-result.entity';
 import { MajorField } from '../../domain/enums/major-field.enum';
+import { TraitKind } from '../../domain/enums/trait-kind.enum';
 import { SCALE_MAX, SCALE_MIN } from '../../constants/scoring.constant';
 import { TRAIT_ANSWER_COUNT } from '../../constants/traits.constant';
-import { ScoredCompanyType, ScoredJob } from '../../domain/types';
+import { ScoredCompanyType, ScoredJob, TraitVector } from '../../domain/types';
 
 export class TraitAnswerReqDTO {
     @IsInt()
@@ -132,6 +133,21 @@ export class AssessmentResultResDTO {
     @ApiProperty({ description: '비로그인 상태로 조회해 상세 결과가 마스킹되었는지 여부' })
     locked: boolean;
 
+    @ApiProperty({
+        nullable: true,
+        enum: TraitKind,
+        description: '특성별 성향 점수 (레이더 차트용). 비로그인 조회 시 null',
+        example: {
+            INVESTIGATIVE: 4.5,
+            SOCIAL: 5.0,
+            ENTERPRISING: 4.0,
+            CONVENTIONAL: 2.0,
+            REALISTIC: 4.0,
+            ARTISTIC: 5.0,
+        },
+    })
+    traitVector: TraitVector | null;
+
     @ApiProperty({ type: [ScoredJobResDTO] })
     topJobs: ScoredJobResDTO[];
 
@@ -149,6 +165,7 @@ export class AssessmentResultResDTO {
         dto.uuid = result.uuid;
         dto.headline = result.headline;
         dto.locked = locked;
+        dto.traitVector = locked ? null : result.traitVector;
         dto.topJobs = result.topJobs.map((job) => ScoredJobResDTO.from(job, locked));
         dto.companyType = locked ? null : ScoredCompanyTypeResDTO.from(result.companyType);
         dto.claimedAt = result.claimedAt?.toISOString() ?? null;
