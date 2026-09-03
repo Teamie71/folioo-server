@@ -20,6 +20,10 @@ export class RulesetVersion {
     @Column({ type: 'real', name: 'major_bonus_score' })
     majorBonusScore: number;
 
+    // 순위 1위~5위 가중치(합계 1). ROC(Rank Order Centroid) 가중치.
+    @Column({ type: 'jsonb', name: 'roc_weights' })
+    rocWeights: number[];
+
     @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 }

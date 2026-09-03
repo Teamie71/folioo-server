@@ -12,6 +12,7 @@ CREATE TABLE ruleset_versions (
 
     trait_match_coefficient REAL NOT NULL,
     major_bonus_score REAL NOT NULL,
+    roc_weights JSONB NOT NULL,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

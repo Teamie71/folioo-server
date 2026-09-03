@@ -1,9 +1,9 @@
 import { ValueKind } from '../../domain/enums/value-kind.enum';
 import { ValueVector } from '../../domain/types';
 import { CompanyTypeScoringInput, scoreCompanyTypes } from './company-type.calculator';
-import { ROC_WEIGHTS } from '../../constants/scoring.constant';
 
 const { WORK_LIFE_BALANCE, REWARD, STABILITY, NAME_VALUE, GROWTH } = ValueKind;
+const ROC_WEIGHTS = [137 / 300, 77 / 300, 47 / 300, 27 / 300, 12 / 300];
 
 const zeroValues = (): ValueVector => ({
     [WORK_LIFE_BALANCE]: 0,

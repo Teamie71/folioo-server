@@ -69,6 +69,7 @@ interface MajorFieldConfigSeedRow {
 interface ScoringPolicySeed {
     traitMatchCoefficient: number;
     majorBonusScore: number;
+    rocWeights: number[];
     majorFieldConfigs: MajorFieldConfigSeedRow[];
 }
 
@@ -120,6 +121,7 @@ async function main(): Promise<void> {
                 note: `seeded via --profile=${profile}`,
                 traitMatchCoefficient: scoringPolicy.traitMatchCoefficient,
                 majorBonusScore: scoringPolicy.majorBonusScore,
+                rocWeights: scoringPolicy.rocWeights,
             })
         );
 

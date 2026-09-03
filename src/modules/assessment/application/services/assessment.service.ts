@@ -47,7 +47,7 @@ export class AssessmentService {
         let valueWeights: ValueVector;
         try {
             traitVector = calculateTraitVector(input.traitAnswers);
-            valueWeights = calculateValueWeights(input.valueRanking);
+            valueWeights = calculateValueWeights(input.valueRanking, ruleset.rocWeights);
         } catch (error) {
             throw new BusinessException(
                 ErrorCode.ASSESSMENT_INVALID_INPUT,
