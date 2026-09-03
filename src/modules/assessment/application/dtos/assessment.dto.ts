@@ -28,7 +28,9 @@ export class TraitAnswerReqDTO {
     @IsInt()
     @Min(SCALE_MIN)
     @Max(SCALE_MAX)
-    @ApiProperty({ description: `응답 값 (${SCALE_MIN}~${SCALE_MAX})` })
+    @ApiProperty({
+        description: `응답 값 (${SCALE_MIN}~${SCALE_MAX}). "그렇다"=${SCALE_MAX}(해당 특성이 강함), "그렇지 않다"=${SCALE_MIN}`,
+    })
     value: number;
 }
 
