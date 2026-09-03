@@ -7,6 +7,7 @@ import { JobRepository } from '../../infrastructure/repositories/job.repository'
 import { CompanyTypeRepository } from '../../infrastructure/repositories/company-type.repository';
 import { HeadlineRepository } from '../../infrastructure/repositories/headline.repository';
 import { AssessmentResultRepository } from '../../infrastructure/repositories/assessment-result.repository';
+import { MajorFieldConfigRepository } from '../../infrastructure/repositories/major-field-config.repository';
 import { AssessmentResult } from '../../domain/assessment-result.entity';
 import { MajorField } from '../../domain/enums/major-field.enum';
 import { TraitAnswer, TraitVector, ValueVector } from '../../domain/types';
@@ -32,7 +33,8 @@ export class AssessmentService {
         private readonly jobRepository: JobRepository,
         private readonly companyTypeRepository: CompanyTypeRepository,
         private readonly headlineRepository: HeadlineRepository,
-        private readonly assessmentResultRepository: AssessmentResultRepository
+        private readonly assessmentResultRepository: AssessmentResultRepository,
+        private readonly majorFieldConfigRepository: MajorFieldConfigRepository
     ) {}
 
     async createAssessment(input: CreateAssessmentInput): Promise<AssessmentResult> {
@@ -53,7 +55,16 @@ export class AssessmentService {
             );
         }
 
-        const jobPool = resolveJobPool(input.majorField);
+        const majorFieldConfigs = await this.majorFieldConfigRepository.findAllByRulesetVersionId(
+            ruleset.id
+        );
+        const majorFieldConfigMap = new Map(
+            majorFieldConfigs.map((config) => [
+                config.majorField,
+                { type: config.type, targetJobCodes: config.targetJobCodes },
+            ])
+        );
+        const jobPool = resolveJobPool(input.majorField, majorFieldConfigMap);
         const jobs = jobPool.isRestricted
             ? await this.jobRepository.findAllActiveByCodesAndRulesetVersionId(
                   jobPool.restrictedJobCodes,
@@ -72,7 +83,9 @@ export class AssessmentService {
             })),
             traitVector,
             jobPool.bonusJobCodes,
-            TOP_JOBS_COUNT
+            TOP_JOBS_COUNT,
+            ruleset.traitMatchCoefficient,
+            ruleset.majorBonusScore
         );
 
         const companyTypes = await this.companyTypeRepository.findAllActiveByRulesetVersionId(

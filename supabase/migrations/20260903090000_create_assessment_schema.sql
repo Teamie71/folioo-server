@@ -9,6 +9,10 @@ CREATE TABLE ruleset_versions (
     version VARCHAR(20) NOT NULL UNIQUE,
     note TEXT NULL,
     activated_at TIMESTAMPTZ NULL,
+
+    trait_match_coefficient REAL NOT NULL,
+    major_bonus_score REAL NOT NULL,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -54,6 +58,17 @@ CREATE TABLE company_types (
     ruleset_version_id BIGINT NOT NULL REFERENCES ruleset_versions(id),
 
     CONSTRAINT company_types_code_version_uq UNIQUE (code, ruleset_version_id)
+);
+
+CREATE TABLE major_field_configs (
+    id BIGSERIAL PRIMARY KEY,
+    major_field VARCHAR(30) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    target_job_codes JSONB NOT NULL,
+
+    ruleset_version_id BIGINT NOT NULL REFERENCES ruleset_versions(id),
+
+    CONSTRAINT major_field_configs_field_version_uq UNIQUE (major_field, ruleset_version_id)
 );
 
 CREATE TABLE headlines (

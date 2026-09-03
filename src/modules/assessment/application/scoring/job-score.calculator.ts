@@ -1,6 +1,5 @@
 import { TraitVector, ScoredJob } from '../../domain/types';
 import { ALL_TRAIT_KINDS } from '../../domain/enums/trait-kind.enum';
-import { TRAIT_MATCH_COEFFICIENT, MAJOR_BONUS_SCORE } from '../../constants/scoring.constant';
 import { sortByScoreDesc } from './score-sort.util';
 
 export interface JobScoringInput {
@@ -12,17 +11,20 @@ export interface JobScoringInput {
     recommendedActivities: string[];
 }
 
-// 순수 함수: 최종점수 = cosineSimilarity(성향) × 0.8 + 전공가산(0.2 or 0).
+// 순수 함수: 최종점수 = cosineSimilarity(성향) × traitMatchCoefficient + 전공가산(majorBonusScore or 0).
+// 두 계수는 룰셋(ruleset_versions)에서 조회한 값을 호출부가 넘긴다.
 export function scoreJobs(
     jobs: readonly JobScoringInput[],
     userTraitVector: TraitVector,
     bonusJobCodes: ReadonlySet<string>,
-    topN: number
+    topN: number,
+    traitMatchCoefficient: number,
+    majorBonusScore: number
 ): ScoredJob[] {
     const scored = jobs.map((job) => {
         const matchRatio = cosineSimilarity(userTraitVector, job.traits);
-        const bonus = bonusJobCodes.has(job.code) ? MAJOR_BONUS_SCORE : 0;
-        const finalScore = matchRatio * TRAIT_MATCH_COEFFICIENT + bonus;
+        const bonus = bonusJobCodes.has(job.code) ? majorBonusScore : 0;
+        const finalScore = matchRatio * traitMatchCoefficient + bonus;
         return { job, finalScore };
     });
 

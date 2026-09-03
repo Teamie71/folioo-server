@@ -30,7 +30,7 @@ describe('scoreJobs', () => {
         const user = vector({ [TraitKind.INVESTIGATIVE]: 4, [TraitKind.SOCIAL]: 2 });
         const jobs = [job('A', vector({ [TraitKind.INVESTIGATIVE]: 4, [TraitKind.SOCIAL]: 2 }))];
 
-        const result = scoreJobs(jobs, user, new Set(), 3);
+        const result = scoreJobs(jobs, user, new Set(), 3, 0.8, 0.2);
 
         // cosine similarity 1.0 * 0.8 계수 = 0.8 -> 80%
         expect(result[0].matchRate).toBe(80);
@@ -40,7 +40,7 @@ describe('scoreJobs', () => {
         const user = vector({ [TraitKind.INVESTIGATIVE]: 4, [TraitKind.SOCIAL]: 2 });
         const jobs = [job('A', vector({ [TraitKind.INVESTIGATIVE]: 4, [TraitKind.SOCIAL]: 2 }))];
 
-        const result = scoreJobs(jobs, user, new Set(['A']), 3);
+        const result = scoreJobs(jobs, user, new Set(['A']), 3, 0.8, 0.2);
 
         // 0.8(성향매칭) + 0.2(가산) = 1.0 -> 100%
         expect(result[0].matchRate).toBe(100);
@@ -48,11 +48,11 @@ describe('scoreJobs', () => {
 
     it('does not divide by zero when either vector is the zero vector', () => {
         const jobs = [job('A', zeroVector())];
-        expect(() => scoreJobs(jobs, zeroVector(), new Set(), 3)).not.toThrow();
-        expect(scoreJobs(jobs, zeroVector(), new Set(), 3)[0].matchRate).toBe(0);
+        expect(() => scoreJobs(jobs, zeroVector(), new Set(), 3, 0.8, 0.2)).not.toThrow();
+        expect(scoreJobs(jobs, zeroVector(), new Set(), 3, 0.8, 0.2)[0].matchRate).toBe(0);
 
         const nonZeroUser = vector({ [TraitKind.INVESTIGATIVE]: 4 });
-        expect(scoreJobs(jobs, nonZeroUser, new Set(), 3)[0].matchRate).toBe(0);
+        expect(scoreJobs(jobs, nonZeroUser, new Set(), 3, 0.8, 0.2)[0].matchRate).toBe(0);
     });
 
     it('returns only the top N by score, descending', () => {
@@ -63,7 +63,7 @@ describe('scoreJobs', () => {
             job('MID', vector({ [TraitKind.INVESTIGATIVE]: 3, [TraitKind.SOCIAL]: 3 })),
         ];
 
-        const result = scoreJobs(jobs, user, new Set(), 2);
+        const result = scoreJobs(jobs, user, new Set(), 2, 0.8, 0.2);
 
         expect(result).toHaveLength(2);
         expect(result[0].code).toBe('HIGH');
@@ -79,7 +79,7 @@ describe('scoreJobs', () => {
         ];
 
         for (let i = 0; i < 100; i++) {
-            const result = scoreJobs(jobs, user, new Set(), 3);
+            const result = scoreJobs(jobs, user, new Set(), 3, 0.8, 0.2);
             expect(result.map((r) => r.code)).toEqual(['ALPHA', 'MIKE', 'ZEBRA']);
         }
     });

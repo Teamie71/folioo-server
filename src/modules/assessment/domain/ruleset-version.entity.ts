@@ -14,6 +14,12 @@ export class RulesetVersion {
     @Column({ type: 'timestamptz', name: 'activated_at', nullable: true })
     activatedAt: Date | null;
 
+    @Column({ type: 'real', name: 'trait_match_coefficient' })
+    traitMatchCoefficient: number;
+
+    @Column({ type: 'real', name: 'major_bonus_score' })
+    majorBonusScore: number;
+
     @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 }

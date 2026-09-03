@@ -18,6 +18,11 @@ import { RulesetVersion } from '../src/modules/assessment/domain/ruleset-version
 import { Job } from '../src/modules/assessment/domain/job.entity';
 import { CompanyType } from '../src/modules/assessment/domain/company-type.entity';
 import { Headline } from '../src/modules/assessment/domain/headline.entity';
+import { MajorFieldConfig } from '../src/modules/assessment/domain/major-field-config.entity';
+import {
+    MajorField,
+    MajorFieldType,
+} from '../src/modules/assessment/domain/enums/major-field.enum';
 
 const SEED_RULESET_VERSION = 'v1';
 const DEFAULT_SUMMARY = '직무 소개 문구가 아직 준비되지 않았습니다.';
@@ -55,6 +60,18 @@ interface HeadlineSeedRow {
     text: string;
 }
 
+interface MajorFieldConfigSeedRow {
+    majorField: MajorField;
+    type: MajorFieldType;
+    targetJobCodes: string[];
+}
+
+interface ScoringPolicySeed {
+    traitMatchCoefficient: number;
+    majorBonusScore: number;
+    majorFieldConfigs: MajorFieldConfigSeedRow[];
+}
+
 function parseProfile(): 'sample' | 'production' {
     const arg = process.argv.find((a) => a.startsWith('--profile='));
     const value = arg ? arg.split('=')[1] : 'sample';
@@ -83,6 +100,9 @@ async function main(): Promise<void> {
     const headlines = readJson<HeadlineSeedRow[]>(
         path.join(rootDir, 'seeds', profile, 'headlines.json')
     );
+    const scoringPolicy = readJson<ScoringPolicySeed>(
+        path.join(rootDir, 'seeds', profile, 'scoring-policy.json')
+    );
 
     initializeTransactionalContext();
     const app = await NestFactory.createApplicationContext(AppModule, {
@@ -93,14 +113,15 @@ async function main(): Promise<void> {
     try {
         const rulesetRepo = dataSource.getRepository(RulesetVersion);
         let ruleset = await rulesetRepo.findOne({ where: { version: SEED_RULESET_VERSION } });
-        if (!ruleset) {
-            ruleset = await rulesetRepo.save(
-                rulesetRepo.create({
-                    version: SEED_RULESET_VERSION,
-                    note: `seeded via --profile=${profile}`,
-                })
-            );
-        }
+        ruleset = await rulesetRepo.save(
+            rulesetRepo.create({
+                ...ruleset,
+                version: SEED_RULESET_VERSION,
+                note: `seeded via --profile=${profile}`,
+                traitMatchCoefficient: scoringPolicy.traitMatchCoefficient,
+                majorBonusScore: scoringPolicy.majorBonusScore,
+            })
+        );
 
         const jobRepo = dataSource.getRepository(Job);
         await jobRepo.upsert(
@@ -128,9 +149,19 @@ async function main(): Promise<void> {
         const headlineRepo = dataSource.getRepository(Headline);
         await headlineRepo.upsert(headlines, ['topValue', 'topTrait']);
 
+        const majorFieldConfigRepo = dataSource.getRepository(MajorFieldConfig);
+        await majorFieldConfigRepo.upsert(
+            scoringPolicy.majorFieldConfigs.map((config) => ({
+                ...config,
+                rulesetVersionId: ruleset.id,
+            })),
+            ['majorField', 'rulesetVersionId']
+        );
+
         console.log(
             `Seeded profile=${profile} (ruleset ${ruleset.version}): ` +
-                `${jobs.length} jobs, ${companyTypes.length} company types, ${headlines.length} headlines`
+                `${jobs.length} jobs, ${companyTypes.length} company types, ${headlines.length} headlines, ` +
+                `${scoringPolicy.majorFieldConfigs.length} major field configs`
         );
     } finally {
         await app.close();

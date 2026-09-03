@@ -9,9 +9,6 @@ export const SCALE_MAX = 6;
 // 확정되면 이 배열만 교체하면 된다(순위 1위부터 5위 순서).
 export const ROC_WEIGHTS: readonly number[] = [137 / 300, 77 / 300, 47 / 300, 27 / 300, 12 / 300];
 
-// 최종점수 = 성향매칭(코사인 유사도) × TRAIT_MATCH_COEFFICIENT + 전공가산
-export const TRAIT_MATCH_COEFFICIENT = 0.8;
-export const MAJOR_BONUS_SCORE = 0.2;
-
+// 성향매칭 계수/전공가산은 ruleset_versions.trait_match_coefficient/major_bonus_score로 이동.
 export const TOP_JOBS_COUNT = 3;
 export const TOP_COMPANY_TYPES_COUNT = 1;

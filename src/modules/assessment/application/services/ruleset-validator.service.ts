@@ -2,13 +2,14 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RulesetVersionRepository } from '../../infrastructure/repositories/ruleset-version.repository';
 import { JobRepository } from '../../infrastructure/repositories/job.repository';
 import { HeadlineRepository } from '../../infrastructure/repositories/headline.repository';
-import { MAJOR_FIELD_CONFIG } from '../../constants/major-fields.constant';
+import { MajorFieldConfigRepository } from '../../infrastructure/repositories/major-field-config.repository';
+import { ALL_MAJOR_FIELDS } from '../../domain/enums/major-field.enum';
 import { ALL_VALUE_KINDS } from '../../domain/enums/value-kind.enum';
 import { ALL_TRAIT_KINDS } from '../../domain/enums/trait-kind.enum';
 
-// 부팅 시 코드 상수(전공 매핑)에 적힌 직무 코드가 실제로 DB에 존재하는지 검증한다.
-// 오타로 인한 조용한 누락을 막기 위함(3-3). 아직 한 번도 seed하지 않은 빈 DB에서는
-// 검사 자체를 건너뛴다 — 최초 개발 환경 부팅까지 막을 이유는 없다.
+// 부팅 시 DB에 든 룰셋 데이터의 정합성을 검증한다. 오타/누락으로 인한 조용한 실패를
+// 막기 위함(3-3, 4-5). 아직 한 번도 seed하지 않은 빈 DB에서는 검사 자체를 건너뛴다 —
+// 최초 개발 환경 부팅까지 막을 이유는 없다.
 @Injectable()
 export class RulesetValidatorService implements OnModuleInit {
     private readonly logger = new Logger(RulesetValidatorService.name);
@@ -16,7 +17,8 @@ export class RulesetValidatorService implements OnModuleInit {
     constructor(
         private readonly rulesetVersionRepository: RulesetVersionRepository,
         private readonly jobRepository: JobRepository,
-        private readonly headlineRepository: HeadlineRepository
+        private readonly headlineRepository: HeadlineRepository,
+        private readonly majorFieldConfigRepository: MajorFieldConfigRepository
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -28,26 +30,36 @@ export class RulesetValidatorService implements OnModuleInit {
             return;
         }
 
-        await this.validateMajorFieldJobCodes(latestRuleset.id);
+        await this.validateMajorFieldConfigs(latestRuleset.id);
         await this.validateHeadlineCoverage();
     }
 
-    private async validateMajorFieldJobCodes(rulesetVersionId: number): Promise<void> {
-        const jobs = await this.jobRepository.findAllActiveByRulesetVersionId(rulesetVersionId);
+    private async validateMajorFieldConfigs(rulesetVersionId: number): Promise<void> {
+        const [jobs, configs] = await Promise.all([
+            this.jobRepository.findAllActiveByRulesetVersionId(rulesetVersionId),
+            this.majorFieldConfigRepository.findAllByRulesetVersionId(rulesetVersionId),
+        ]);
         const existingCodes = new Set(jobs.map((job) => job.code));
 
-        const missing = new Set<string>();
-        for (const config of Object.values(MAJOR_FIELD_CONFIG)) {
+        const configuredFields = new Set(configs.map((config) => config.majorField));
+        const missingFields = ALL_MAJOR_FIELDS.filter((field) => !configuredFields.has(field));
+        if (missingFields.length > 0) {
+            throw new Error(
+                `[RulesetValidator] major_field_configs is missing rows for (ruleset ${rulesetVersionId}): ${missingFields.join(', ')}`
+            );
+        }
+
+        const missingJobCodes = new Set<string>();
+        for (const config of configs) {
             for (const code of config.targetJobCodes) {
                 if (!existingCodes.has(code)) {
-                    missing.add(code);
+                    missingJobCodes.add(code);
                 }
             }
         }
-
-        if (missing.size > 0) {
+        if (missingJobCodes.size > 0) {
             throw new Error(
-                `[RulesetValidator] MAJOR_FIELD_CONFIG references job codes missing from jobs table (ruleset ${rulesetVersionId}): ${[...missing].join(', ')}`
+                `[RulesetValidator] major_field_configs references job codes missing from jobs table (ruleset ${rulesetVersionId}): ${[...missingJobCodes].join(', ')}`
             );
         }
     }
