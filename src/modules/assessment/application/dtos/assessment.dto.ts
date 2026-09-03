@@ -72,8 +72,8 @@ class ScoredJobResDTO {
     @ApiProperty({ nullable: true })
     name: string | null;
 
-    @ApiProperty({ nullable: true })
-    matchRate: number | null;
+    @ApiProperty({ description: '적합도(%). locked 여부와 무관하게 항상 내려감' })
+    matchRate: number;
 
     @ApiProperty({ nullable: true })
     summary: string | null;
@@ -84,11 +84,12 @@ class ScoredJobResDTO {
     @ApiProperty({ type: [String], nullable: true })
     recommendedActivities: string[] | null;
 
+    // locked여도 matchRate(적합도 태그)는 그대로 보여준다 — 이름/상세 내용만 블러 대상.
     static from(job: ScoredJob, locked: boolean): ScoredJobResDTO {
         const dto = new ScoredJobResDTO();
         dto.code = job.code;
         dto.name = locked ? null : job.name;
-        dto.matchRate = locked ? null : job.matchRate;
+        dto.matchRate = job.matchRate;
         dto.summary = locked ? null : job.summary;
         dto.coreSkills = locked ? null : job.coreSkills;
         dto.recommendedActivities = locked ? null : job.recommendedActivities;
@@ -148,6 +149,13 @@ export class AssessmentResultResDTO {
     })
     traitVector: TraitVector | null;
 
+    @ApiProperty({
+        type: [String],
+        enum: ValueKind,
+        description: '선호 근무 조건(가치관 밸런스게임 결과) 1위~5위 순위',
+    })
+    valueRanking: ValueKind[];
+
     @ApiProperty({ type: [ScoredJobResDTO] })
     topJobs: ScoredJobResDTO[];
 
@@ -166,6 +174,7 @@ export class AssessmentResultResDTO {
         dto.headline = result.headline;
         dto.locked = locked;
         dto.traitVector = locked ? null : result.traitVector;
+        dto.valueRanking = result.valueRanking;
         dto.topJobs = result.topJobs.map((job) => ScoredJobResDTO.from(job, locked));
         dto.companyType = locked ? null : ScoredCompanyTypeResDTO.from(result.companyType);
         dto.claimedAt = result.claimedAt?.toISOString() ?? null;
