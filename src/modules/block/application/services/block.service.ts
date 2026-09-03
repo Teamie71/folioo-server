@@ -177,8 +177,8 @@ export class BlockService {
             return block;
         }
 
-        // 1~2단계(그룹/활동)는 순서만 바꿀 수 있고, 다른 블록의 하위로 위계를 바꿀 수 없다.
-        if (block.level <= 2) {
+        // 1단계(그룹)는 항상 루트라 순서만 바꿀 수 있다. 2단계(활동)는 다른 그룹으로 이동할 수 있다.
+        if (block.level <= 1) {
             throw new BusinessException(ErrorCode.BLOCK_LEVEL_LOCKED);
         }
 

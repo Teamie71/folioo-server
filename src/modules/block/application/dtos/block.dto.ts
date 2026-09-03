@@ -76,7 +76,8 @@ export class MoveBlockReqDTO {
         nullable: true,
         example: '12',
         description:
-            '새 부모 블록 id (bigint라 문자열로 주고받는다). 생략하면 같은 부모 내에서 순서만 변경한다. 1~2단계 블록은 위계(부모)를 변경할 수 없다.',
+            '새 부모 블록 id (bigint라 문자열로 주고받는다). 생략하면 같은 부모 내에서 순서만 변경한다. ' +
+            '1단계(그룹) 블록은 위계(부모)를 변경할 수 없다. 2단계(활동) 블록은 다른 그룹으로 이동할 수 있다.',
     })
     parentId?: string | null;
 
