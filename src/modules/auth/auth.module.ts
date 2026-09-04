@@ -57,6 +57,6 @@ import { NaverAuthGuard } from './infrastructure/guards/naver-auth.guard';
         JwtRefreshGuard,
         JwtRefreshStrategy,
     ],
-    exports: [JwtAuthGuard, LogoutUsecase],
+    exports: [JwtAuthGuard, LogoutUsecase, JwtModule],
 })
 export class AuthModule {}

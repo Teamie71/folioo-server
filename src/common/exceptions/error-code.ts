@@ -389,27 +389,35 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '템플릿 카탈로그에 존재하지 않는 slotId입니다.',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
-    [ErrorCode.JOB_SEARCH_NOT_FOUND]: {
-        message: '해당 직무 찾기 세션을 찾을 수 없습니다.',
+    [ErrorCode.ASSESSMENT_NOT_FOUND]: {
+        message: '해당 직무·기업형태 추천 분석 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
-    [ErrorCode.JOB_SEARCH_RESULT_NOT_READY]: {
-        message: '아직 결과가 준비되지 않았습니다.',
+    [ErrorCode.ASSESSMENT_ALREADY_CLAIMED]: {
+        message: '이미 다른 계정에 등록된 결과입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.ASSESSMENT_INVALID_INPUT]: {
+        message: '응답 데이터가 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.ASSESSMENT_RULESET_NOT_READY]: {
+        message: '아직 배점 데이터가 준비되지 않았습니다.',
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+    },
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_NOT_FOUND]: {
+        message: '해당 가치관 밸런스게임 세션을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
-    [ErrorCode.JOB_SEARCH_RESULT_EXPIRED]: {
-        message: '결과 조회 가능 기간(3일)이 지났습니다.',
-        statusCode: HttpStatus.GONE,
-    },
-    [ErrorCode.JOB_SEARCH_VALUES_ALREADY_COMPLETED]: {
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_ALREADY_COMPLETED]: {
         message: '이미 완료된 가치관 밸런스게임은 응답을 수정할 수 없습니다.',
         statusCode: HttpStatus.CONFLICT,
     },
-    [ErrorCode.JOB_SEARCH_INVALID_SEQUENCE]: {
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_INVALID_SEQUENCE]: {
         message: '아직 도달하지 않은 질문에는 응답할 수 없습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
-    [ErrorCode.JOB_SEARCH_INVALID_ANSWER]: {
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_INVALID_ANSWER]: {
         message: '해당 질문의 두 선택지 중 하나가 아닙니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
