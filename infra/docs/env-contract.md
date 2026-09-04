@@ -25,16 +25,11 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 
 - `APP_PROFILE`
 - `SUPABASE_DB_URL` (dev/prod 필수 — 앱 런타임 DB 연결)
-- `CACHE_DRIVER` (`upstash` for dev/prod)
-- `UPSTASH_REDIS_REST_URL` (dev/prod 필수)
-- `UPSTASH_REDIS_REST_TOKEN` (dev/prod 필수)
 - `DB_HOST` (local fallback only)
 - `DB_PORT` (local fallback only)
 - `DB_USERNAME` (local fallback only)
 - `DB_PASSWORD` (local fallback only)
 - `DB_SCHEMA` (local fallback only)
-- `REDIS_HOST` (ioredis fallback)
-- `REDIS_PORT` (ioredis fallback)
 - `JWT_SECRET_TOKEN`
 - `JWT_REFRESH_TOKEN`
 - `OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY` (dev/prod 필수)
@@ -61,15 +56,10 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 ## Optional Keys
 
 - `SENTRY_DSN`
-- `CACHE_DRIVER`
 - `SUPABASE_DB_URL`
 - `PAYAPP_USER_ID`
 - `PAYAPP_LINK_KEY`
 - `PAYAPP_LINK_VALUE`
-- `REDIS_PASSWORD`
-- `REDIS_DB`
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
 - `CLOUD_TASKS_SERVICE_ACCOUNT_KEY` (로컬 개발 전용. dev/prod GCE에서는 ADC 사용)
 
 ## Cloud Tasks Keys (Visualization)
@@ -86,11 +76,6 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 
 ## Environment Routing Rules
 
-- local (`.env`): `CACHE_DRIVER=ioredis`, local docker Redis by `REDIS_HOST=localhost`.
-- dev/prod (`.env.dev`, `.env.prod`): Redis는 `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` 경로를 우선 사용한다.
-- dev/prod에서 `CACHE_DRIVER`를 생략해도 Upstash REST 키가 모두 있으면 자동으로 `upstash`로 라우팅된다.
-- local 프로필은 Upstash를 강제하지 않으며 기본값은 ioredis다.
-- dev/prod에서 ioredis 경로를 사용할 경우 `REDIS_HOST=localhost` / `127.0.0.1`는 잘못된 값으로 간주한다.
 - Supabase is external and fixed. Only connection values change per env; provider and ownership do not change.
 
 ## Input Values You Must Provide
@@ -117,11 +102,6 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `DB_PASSWORD`
 - `DB_SCHEMA`
 
-### Upstash (dev/prod each)
-
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
-
 ## Secret JSON Examples
 
 ### folioo-dev-config
@@ -130,11 +110,6 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 {
     "APP_PROFILE": "dev",
     "SUPABASE_DB_URL": "postgresql://user:password@host:5432/postgres",
-    "CACHE_DRIVER": "upstash",
-    "UPSTASH_REDIS_REST_URL": "https://dev-redis.upstash.io",
-    "UPSTASH_REDIS_REST_TOKEN": "dev-token",
-    "REDIS_HOST": "redis-fallback.internal",
-    "REDIS_PORT": "6379",
     "KAKAO_CLIENT_ID": "kakao-client-id",
     "KAKAO_CLIENT_SECRET": "kakao-client-secret",
     "GOOGLE_CLIENT_ID": "google-client-id",
@@ -156,11 +131,6 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 {
     "APP_PROFILE": "prod",
     "SUPABASE_DB_URL": "postgresql://user:password@host:5432/postgres",
-    "CACHE_DRIVER": "upstash",
-    "UPSTASH_REDIS_REST_URL": "https://prod-redis.upstash.io",
-    "UPSTASH_REDIS_REST_TOKEN": "prod-token",
-    "REDIS_HOST": "redis-fallback.internal",
-    "REDIS_PORT": "6379",
     "KAKAO_CLIENT_ID": "kakao-client-id",
     "KAKAO_CLIENT_SECRET": "kakao-client-secret",
     "GOOGLE_CLIENT_ID": "google-client-id",

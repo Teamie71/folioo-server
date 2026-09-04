@@ -62,9 +62,9 @@ After changing secrets, trigger deployment so each server rewrites `/home/folioo
 
 ### Profile policy
 
-- `local`: Docker Postgres + Docker Redis (`CACHE_DRIVER=ioredis`)
-- `dev`: Upstash Redis (`CACHE_DRIVER=upstash`) + `SUPABASE_DB_URL` (required)
-- `prod`: Upstash Redis (`CACHE_DRIVER=upstash`) + `SUPABASE_DB_URL` (required)
+- `local`: Docker Postgres
+- `dev`: `SUPABASE_DB_URL` (required)
+- `prod`: `SUPABASE_DB_URL` (required)
 
 ### Internal API keys (AI integration)
 

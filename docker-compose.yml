@@ -42,25 +42,6 @@ services:
             - folioo-network
 
     # ========================================
-    # Redis (로컬 개발용)
-    # ========================================
-    redis:
-        image: redis:8-alpine
-        container_name: folioo-redis
-        restart: unless-stopped
-        ports:
-            - '6379:6379'
-        volumes:
-            - redis-data:/data
-        healthcheck:
-            test: ['CMD', 'redis-cli', 'ping']
-            interval: 10s
-            timeout: 5s
-            retries: 5
-        networks:
-            - folioo-network
-
-    # ========================================
     # NestJS Backend (로컬 전체 실행용)
     # ========================================
     backend:
@@ -72,8 +53,6 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
-            redis:
-                condition: service_healthy
         ports:
             - '3000:3000'
         environment:
@@ -83,7 +62,6 @@ services:
             DB_USERNAME: postgres
             DB_PASSWORD: postgres
             DB_SCHEMA: folioo
-            REDIS_HOST: redis
         networks:
             - folioo-network
         profiles:
@@ -91,7 +69,6 @@ services:
 
 volumes:
     postgres-data:
-    redis-data:
 
 networks:
     folioo-network:

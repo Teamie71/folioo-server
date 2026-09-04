@@ -13,7 +13,7 @@ export class TimeUtil {
 
     /**
      * 입력값을 초(sec) 단위의 숫자로 변환합니다. (소수점 버림)
-     * 사용처: Redis TTL, JWT exp claim 등
+     * 사용처: 토큰 만료 TTL 계산, JWT exp claim 등
      * 예: '1m' -> 60
      */
     static toSec(value: string | number): number {
