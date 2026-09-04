@@ -58,12 +58,7 @@ export class AssessmentService {
         const majorFieldConfigs = await this.majorFieldConfigRepository.findAllByRulesetVersionId(
             ruleset.id
         );
-        const majorFieldConfigMap = new Map(
-            majorFieldConfigs.map((config) => [
-                config.majorField,
-                { type: config.type, targetJobCodes: config.targetJobCodes },
-            ])
-        );
+        const majorFieldConfigMap = new Map(majorFieldConfigs.map((c) => [c.majorField, c]));
         const jobPool = resolveJobPool(input.majorField, majorFieldConfigMap);
         const jobs = jobPool.isRestricted
             ? await this.jobRepository.findAllActiveByCodesAndRulesetVersionId(
