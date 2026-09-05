@@ -18,22 +18,20 @@ Region baseline: GCP `asia-northeast3`
 | Registry      | Artifact Registry   |   1 |        3 |   10 | Image storage + pull operations                             |
 | Network       | GCP egress          |   0 |        8 |   35 | Varies by traffic and cache hit                             |
 | Tunnel/CDN    | Cloudflare Tunnel   |   0 |        0 |    0 | Free tier baseline                                          |
-| Cache         | Upstash Redis       |   0 |       10 |   30 | Plan and command volume dependent                           |
 | Database      | Supabase (external) |   0 |       25 |   75 | Free tier → Pro plan; storage and API call volume dependent |
 | Observability | Cloud Logging, etc. |   0 |        5 |   20 | Log ingestion/retention dependent                           |
 
 ### Total
 
 - Low: ~31
-- Expected: ~86
-- High: ~255
+- Expected: ~76
+- High: ~225
 
 ### Cost Drivers
 
 - Compute instance sizing/count
 - Egress volume (especially cache misses)
 - DB storage/backup growth
-- Upstash command/data growth
 
 ### Review cadence
 

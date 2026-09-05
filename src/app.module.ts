@@ -17,7 +17,6 @@ import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfo
 import { PaymentModule } from './modules/payment/payment.module';
 import { EventModule } from './modules/event/event.module';
 import { InterviewModule } from './modules/interview/interview.module';
-import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
@@ -48,7 +47,6 @@ import { DataSource } from 'typeorm';
             },
         }),
         ScheduleModule.forRoot(),
-        RedisModule,
         AuthModule,
         UserModule,
         InsightModule,

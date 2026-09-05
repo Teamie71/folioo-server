@@ -687,7 +687,6 @@ curl -sf 'http://metadata.google.internal/computeMetadata/v1/instance/service-ac
 | Docker Compose (Dev)  | `docker-compose.dev.yml`                                    |
 | Docker Compose (Prod) | `docker-compose.prod.yml`                                   |
 | 비용 추정             | `docs/infrastructure/COST_ESTIMATE.md`                      |
-| Redis/Cache 가이드    | `docs/infrastructure/REDIS.md`                              |
 
 ---
 
