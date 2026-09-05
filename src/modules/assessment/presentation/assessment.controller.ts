@@ -84,7 +84,7 @@ export class AssessmentController {
             valueRanking: body.valueRanking,
             majorField: body.majorField ?? null,
         });
-        return AssessmentResultResDTO.from(result, false);
+        return AssessmentResultResDTO.from(result);
     }
 
     @Get('status')
@@ -103,21 +103,16 @@ export class AssessmentController {
 
     @Get(':uuid')
     @Public()
-    @UseGuards(OptionalAuthGuard)
     @ApiOperation({
         summary: '직무·기업형태 추천 분석 결과 조회',
         description:
-            'uuid만 있으면 로그인 여부와 무관하게 누구나 조회할 수 있어 공유 링크로 사용됩니다. ' +
-            '비로그인 상태로 조회하면 직무 상세/기업형태 정보가 마스킹되고 locked=true가 내려갑니다.',
+            'uuid만 있으면 로그인 여부와 무관하게 누구나 전체 내용을 조회할 수 있어 공유 링크로 사용됩니다.',
     })
     @ApiCommonResponse(AssessmentResultResDTO)
     @ApiCommonErrorResponse(ErrorCode.ASSESSMENT_NOT_FOUND)
-    async getResult(
-        @Param('uuid') uuid: string,
-        @User('sub') userId: number | undefined
-    ): Promise<AssessmentResultResDTO> {
+    async getResult(@Param('uuid') uuid: string): Promise<AssessmentResultResDTO> {
         const result = await this.assessmentService.getResultOrThrow(uuid);
-        return AssessmentResultResDTO.from(result, userId === undefined);
+        return AssessmentResultResDTO.from(result);
     }
 
     @Post(':uuid/claim')
@@ -137,6 +132,6 @@ export class AssessmentController {
         @User('sub') userId: number
     ): Promise<AssessmentResultResDTO> {
         const result = await this.assessmentService.claim(uuid, userId);
-        return AssessmentResultResDTO.from(result, false);
+        return AssessmentResultResDTO.from(result);
     }
 }
