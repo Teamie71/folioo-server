@@ -17,7 +17,7 @@ import { MajorField } from '../../domain/enums/major-field.enum';
 import { TraitKind } from '../../domain/enums/trait-kind.enum';
 import { SCALE_MAX, SCALE_MIN } from '../../constants/scoring.constant';
 import { TRAIT_ANSWER_COUNT } from '../../constants/traits.constant';
-import { ScoredCompanyType, ScoredJob, TraitVector } from '../../domain/types';
+import type { ScoredCompanyType, ScoredJob, TraitVector } from '../../domain/types';
 
 export class TraitAnswerReqDTO {
     @IsInt()
@@ -69,30 +69,29 @@ class ScoredJobResDTO {
     @ApiProperty()
     code: string;
 
-    @ApiProperty({ nullable: true })
-    name: string | null;
+    @ApiProperty()
+    name: string;
 
-    @ApiProperty({ description: '적합도(%). locked 여부와 무관하게 항상 내려감' })
+    @ApiProperty({ description: '적합도(%)' })
     matchRate: number;
 
-    @ApiProperty({ nullable: true })
-    summary: string | null;
+    @ApiProperty()
+    summary: string;
 
-    @ApiProperty({ type: [String], nullable: true })
-    coreSkills: string[] | null;
+    @ApiProperty({ type: [String] })
+    coreSkills: string[];
 
-    @ApiProperty({ type: [String], nullable: true })
-    recommendedActivities: string[] | null;
+    @ApiProperty({ type: [String] })
+    recommendedActivities: string[];
 
-    // locked여도 matchRate(적합도 태그)는 그대로 보여준다 — 이름/상세 내용만 블러 대상.
-    static from(job: ScoredJob, locked: boolean): ScoredJobResDTO {
+    static from(job: ScoredJob): ScoredJobResDTO {
         const dto = new ScoredJobResDTO();
         dto.code = job.code;
-        dto.name = locked ? null : job.name;
+        dto.name = job.name;
         dto.matchRate = job.matchRate;
-        dto.summary = locked ? null : job.summary;
-        dto.coreSkills = locked ? null : job.coreSkills;
-        dto.recommendedActivities = locked ? null : job.recommendedActivities;
+        dto.summary = job.summary;
+        dto.coreSkills = job.coreSkills;
+        dto.recommendedActivities = job.recommendedActivities;
         return dto;
     }
 }
@@ -131,9 +130,6 @@ export class AssessmentResultResDTO {
     @ApiProperty({ description: '최고점 가치관×성향 조합에 대한 헤드라인 문구' })
     headline: string;
 
-    @ApiProperty({ description: '비로그인 상태로 조회해 상세 결과가 마스킹되었는지 여부' })
-    locked: boolean;
-
     @ApiProperty({
         enum: MajorField,
         nullable: true,
@@ -142,9 +138,8 @@ export class AssessmentResultResDTO {
     majorField: MajorField | null;
 
     @ApiProperty({
-        nullable: true,
         enum: TraitKind,
-        description: '특성별 성향 점수 (레이더 차트용). 비로그인 조회 시 null',
+        description: '특성별 성향 점수 (레이더 차트용)',
         example: {
             INVESTIGATIVE: 4.5,
             SOCIAL: 5.0,
@@ -154,7 +149,7 @@ export class AssessmentResultResDTO {
             ARTISTIC: 5.0,
         },
     })
-    traitVector: TraitVector | null;
+    traitVector: TraitVector;
 
     @ApiProperty({
         type: [String],
@@ -166,8 +161,8 @@ export class AssessmentResultResDTO {
     @ApiProperty({ type: [ScoredJobResDTO] })
     topJobs: ScoredJobResDTO[];
 
-    @ApiProperty({ type: ScoredCompanyTypeResDTO, nullable: true })
-    companyType: ScoredCompanyTypeResDTO | null;
+    @ApiProperty({ type: ScoredCompanyTypeResDTO })
+    companyType: ScoredCompanyTypeResDTO;
 
     @ApiProperty({ nullable: true, description: '계정에 등록(claim)된 시각' })
     claimedAt: string | null;
@@ -175,16 +170,17 @@ export class AssessmentResultResDTO {
     @ApiProperty()
     createdAt: string;
 
-    static from(result: AssessmentResult, locked: boolean): AssessmentResultResDTO {
+    // uuid만 있으면 로그인 여부와 무관하게 항상 전체 내용을 내려준다(공유 링크 = 누구나 열람).
+    // AssessmentResult 자체가 생성 시점 값을 그대로 복사해둔 스냅샷이라 별도 공유용 스냅샷은 필요 없다.
+    static from(result: AssessmentResult): AssessmentResultResDTO {
         const dto = new AssessmentResultResDTO();
         dto.uuid = result.uuid;
         dto.headline = result.headline;
-        dto.locked = locked;
         dto.majorField = result.inputSnapshot.majorField as MajorField | null;
-        dto.traitVector = locked ? null : result.traitVector;
+        dto.traitVector = result.traitVector;
         dto.valueRanking = result.valueRanking;
-        dto.topJobs = result.topJobs.map((job) => ScoredJobResDTO.from(job, locked));
-        dto.companyType = locked ? null : ScoredCompanyTypeResDTO.from(result.companyType);
+        dto.topJobs = result.topJobs.map((job) => ScoredJobResDTO.from(job));
+        dto.companyType = ScoredCompanyTypeResDTO.from(result.companyType);
         dto.claimedAt = result.claimedAt?.toISOString() ?? null;
         dto.createdAt = result.createdAt.toISOString();
         return dto;
