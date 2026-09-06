@@ -46,9 +46,8 @@
 | **Event**                | Core       | 이벤트/챌린지 관리, 참여 추적, 보상 수령              |
 | **User**                 | Generic    | 사용자 도메인 (추후 userAuth-userProfile 분리 가능)   |
 | **Auth**                 | Generic    | 인증 (passport - kakao/google/naver)                  |
-| **Ticket**               | Generic    | 이용권 관리 (발급, 차감, 만료 추적)                   |
 | **Payment**              | Generic    | 결제 (PayApp 연동, 웹훅 처리, 취소)                   |
-| **Admin**                | Supporting | 관리자 대시보드 (이용권 수동 지급, 사용자 검색)       |
+| **Admin**                | Supporting | 관리자 대시보드 (이벤트 보상 수동 지급, 사용자 검색)  |
 | **Internal**             | Supporting | AI 서버 연동 내부 API (X-API-Key 인증, 콜백 수신)     |
 | **Embedding**            | Infra      | 벡터 임베딩 인프라 (pgvector, 코사인 유사도 검색)     |
 

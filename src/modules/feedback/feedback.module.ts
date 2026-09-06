@@ -10,14 +10,9 @@ import { FeedbackResponseRepository } from './infrastructure/repositories/feedba
 import { FeedbackFormController } from './presentation/feedback-form.controller';
 import { FeedbackResponseController } from './presentation/feedback-response.controller';
 import { EventModule } from '../event/event.module';
-import { TicketModule } from '../ticket/ticket.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([FeedbackForm, FeedbackResponse]),
-        EventModule,
-        TicketModule,
-    ],
+    imports: [TypeOrmModule.forFeature([FeedbackForm, FeedbackResponse]), EventModule],
     controllers: [FeedbackFormController, FeedbackResponseController],
     providers: [
         FeedbackFormRepository,

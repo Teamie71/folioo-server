@@ -14,15 +14,14 @@ import { InsightModule } from './modules/insight/insight.module';
 import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
-import { TicketModule } from './modules/ticket/ticket.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { EventModule } from './modules/event/event.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
-import { TicketAutomationModule } from './modules/ticket-automation/ticket-automation.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { BlockModule } from './modules/block/block.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -54,14 +53,13 @@ import { DataSource } from 'typeorm';
         ExperienceModule,
         PortfolioModule,
         PortfolioCorrectionModule,
-        TicketModule,
         PaymentModule,
         EventModule,
         FeedbackModule,
+        BlockModule,
         InterviewModule,
         InternalModule,
         AdminModule,
-        TicketAutomationModule,
     ],
     providers: [
         {

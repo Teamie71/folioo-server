@@ -249,22 +249,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: 'AI 첨삭 생성 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,
     },
-    [ErrorCode.TICKET_NOT_FOUND]: {
-        message: '해당하는 티켓을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.TICKET_PRODUCT_NOT_FOUND]: {
-        message: '해당하는 티켓 상품을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.INSUFFICIENT_TICKETS]: {
-        message: '티켓이 부족합니다.',
-        statusCode: HttpStatus.PAYMENT_REQUIRED,
-    },
-    [ErrorCode.TICKET_GRANT_NOTICE_NOT_FOUND]: {
-        message: '해당하는 보상 안내를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
     [ErrorCode.PAYMENT_NOT_FOUND]: {
         message: '해당하는 결제를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -320,5 +304,65 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.FEEDBACK_FORM_EVENT_MISMATCH]: {
         message: '요청한 질문지가 해당 이벤트와 일치하지 않습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.BLOCK_NOT_FOUND]: {
+        message: '블록을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.BLOCK_PARENT_NOT_FOUND]: {
+        message: '부모 블록을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.BLOCK_NOT_DELETABLE]: {
+        message: '삭제할 수 없는 블록입니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
+    [ErrorCode.BLOCK_NOT_EDITABLE]: {
+        message: '수정할 수 없는 블록입니다.',
+        statusCode: HttpStatus.FORBIDDEN,
+    },
+    [ErrorCode.BLOCK_INVALID_PLACEMENT]: {
+        message: '해당 위치에 생성할 수 없는 블록 종류입니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.BLOCK_CONTENT_TOO_LONG]: {
+        message: '허용된 글자 수를 초과했습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.BLOCK_LEVEL_LOCKED]: {
+        message: '해당 블록은 다른 블록의 하위로 이동할 수 없습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.BLOCK_SECTION_ALREADY_EXISTS]: {
+        message: '이미 존재하는 카테고리입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT]: {
+        message: '다른 곳에서 먼저 수정되었습니다. 최신 상태를 다시 불러와 주세요.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_MAP_NOT_INITIALIZED]: {
+        message: '경험 정리 맵이 아직 생성되지 않았습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.EXPERIENCE_MAP_REQUEST_ID_REUSED]: {
+        message: '이미 사용된 요청 ID이며 내용이 일치하지 않습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.EXPERIENCE_MAP_REVERT_EXPIRED]: {
+        message: '되돌릴 수 없는 요청입니다. 최신 기록이 아니거나 유효 시간이 지났습니다.',
+        statusCode: HttpStatus.GONE,
+    },
+    [ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY]: {
+        message: '해당 레벨에서는 허용되지 않는 작업입니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.EXPERIENCE_MAP_INVALID_TARGET]: {
+        message: '대상 블록의 소유권 또는 수정 가능 여부가 유효하지 않습니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.EXPERIENCE_MAP_UNKNOWN_SLOT_ID]: {
+        message: '템플릿 카탈로그에 존재하지 않는 slotId입니다.',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
 };
