@@ -24,10 +24,12 @@ export class AiCommitLogService {
         await this.aiCommitLogRepository.deleteByUserId(userId);
     }
 
-    // 사용자당 최신 1건만 남기는 되돌리기 스냅샷. AI 커밋 시마다 덮어쓴다.
+    // 사용자당 최신 1건만 남기는 되돌리기 스냅샷. AI 커밋 시마다 교체한다.
+    // 기존 행을 update하면 created_at(@CreateDateColumn)이 갱신되지 않아 24시간 판정이
+    // 첫 커밋 기준이 되므로, 지우고 새로 insert한다.
     async recordCommit(userId: number, input: RecordCommitInput): Promise<void> {
-        const existing = await this.aiCommitLogRepository.findByUserId(userId);
-        const log = existing ?? new AiCommitLog();
+        await this.aiCommitLogRepository.deleteByUserId(userId);
+        const log = new AiCommitLog();
         log.userId = userId;
         log.requestId = input.requestId;
         log.previousVersion = input.previousVersion;
