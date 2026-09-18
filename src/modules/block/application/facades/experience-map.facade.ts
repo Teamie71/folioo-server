@@ -21,6 +21,9 @@ import { CommitReqDTO, CommitResDTO, CommitStatusResDTO } from '../dtos/experien
 import { RevertResDTO } from '../dtos/experience-map-revert.dto';
 import { BlockKind } from '../../domain/enums/block-kind.enum';
 
+const INITIAL_GROUP_CONTENT = '새로운 그룹 1';
+const INITIAL_EXPERIENCE_CONTENT = '새로운 활동 1';
+
 @Injectable()
 export class ExperienceMapFacade {
     constructor(
@@ -34,7 +37,7 @@ export class ExperienceMapFacade {
 
     @Transactional()
     async getMap(userId: number): Promise<ExperienceMapResDTO> {
-        await this.blockService.getOrCreateRootBlock(userId);
+        await this.ensureInitialData(userId);
         const experienceMap = await this.experienceMapService.getOrCreate(userId);
         const blocks = await this.blockService.getTreeByUserId(userId);
         const experienceBlockIds = blocks
@@ -184,6 +187,33 @@ export class ExperienceMapFacade {
         status.committed = entry !== null;
         status.result = entry ? (entry.result as unknown as CommitResDTO) : null;
         return status;
+    }
+
+    // 신규 사용자: 미분류 루트 + 그룹 1 + 활동 1(하위 SECTION 5·기본 CONTENT 슬롯 18개 자동 생성)
+    // = 총 26블록. 경험 맵 행이 없고 루트 외 블록도 없을 때만 만든다
+    // (기존 경험 정리를 이관받아 블록은 있지만 맵 행이 없는 사용자에게 중복 생성하지 않도록).
+    private async ensureInitialData(userId: number): Promise<void> {
+        const root = await this.blockService.getOrCreateRootBlock(userId);
+        if (await this.experienceMapService.tryFind(userId)) {
+            return;
+        }
+        const blocks = await this.blockService.getTreeByUserId(userId);
+        if (blocks.some((block) => block.id !== root.id)) {
+            return;
+        }
+
+        const group = await this.blockService.createBlock(
+            userId,
+            BlockKind.GROUP,
+            null,
+            INITIAL_GROUP_CONTENT
+        );
+        await this.blockService.createBlock(
+            userId,
+            BlockKind.EXPERIENCE,
+            group.id,
+            INITIAL_EXPERIENCE_CONTENT
+        );
     }
 
     // request_id 재사용 판정 근거. items 배열을 그대로 직렬화해 해시한다
