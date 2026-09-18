@@ -42,10 +42,7 @@ export class AiCommitLogService {
     // 되돌리기 대상 검증: 최신 기록과 request_id가 일치하고, 생성 후 24시간 이내여야 한다.
     async findRevertibleOrThrow(userId: number, requestId: string): Promise<AiCommitLog> {
         const log = await this.aiCommitLogRepository.findByUserId(userId);
-        if (!log || log.requestId !== requestId) {
-            throw new BusinessException(ErrorCode.EXPERIENCE_MAP_REVERT_EXPIRED);
-        }
-        if (this.isExpired(log)) {
+        if (!log || log.requestId !== requestId || this.isExpired(log)) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAP_REVERT_EXPIRED);
         }
         return log;
