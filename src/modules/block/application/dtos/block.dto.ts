@@ -97,7 +97,7 @@ export class MoveBlockReqDTO {
 }
 
 export class ExperienceMetaResDTO {
-    @ApiProperty({ required: false, nullable: true })
+    @ApiProperty({ type: Number, required: false, nullable: true })
     contributionRate: number | null;
 
     @ApiProperty({ enum: SourceType })
@@ -106,7 +106,7 @@ export class ExperienceMetaResDTO {
     @ApiProperty({ enum: PortfolioStatus })
     status: PortfolioStatus;
 
-    @ApiProperty({ required: false, nullable: true })
+    @ApiProperty({ type: Number, required: false, nullable: true })
     experienceId: number | null;
 
     static from(experienceMeta: ExperienceMeta): ExperienceMetaResDTO {
