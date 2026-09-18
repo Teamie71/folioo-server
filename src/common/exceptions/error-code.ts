@@ -369,6 +369,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '템플릿 카탈로그에 존재하지 않는 slotId입니다.',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
+    [ErrorCode.EXPERIENCE_MAP_DAILY_LIMIT_EXCEEDED]: {
+        message: '오늘 AI 에이전트 사용 횟수를 모두 사용했습니다.',
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+    },
     [ErrorCode.ASSESSMENT_NOT_FOUND]: {
         message: '해당 직무·기업형태 추천 분석 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,

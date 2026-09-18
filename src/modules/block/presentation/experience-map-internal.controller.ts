@@ -1,7 +1,11 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
-import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
+import {
+    ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
+    ApiCommonResponse,
+} from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import { TemplateCatalogService } from '../application/services/template-catalog.service';
@@ -12,6 +16,8 @@ import {
     CommitResDTO,
     CommitStatusResDTO,
 } from '../application/dtos/experience-map-commit.dto';
+import { MarkRequestFailedReqDTO } from '../application/dtos/experience-map-usage.dto';
+import { AiAgentUsageService } from '../application/services/ai-agent-usage.service';
 
 // 경로는 docs/development/INTERNAL_API_PATTERN.md의 `/internal/*` 규칙을 따르지 않고
 // AI 서버와 고정된 계약 경로(`/api/v1/experience-map/*`)를 그대로 쓴다.
@@ -21,7 +27,8 @@ import {
 export class ExperienceMapInternalController {
     constructor(
         private readonly templateCatalogService: TemplateCatalogService,
-        private readonly experienceMapFacade: ExperienceMapFacade
+        private readonly experienceMapFacade: ExperienceMapFacade,
+        private readonly aiAgentUsageService: AiAgentUsageService
     ) {}
 
     @Get('templates')
@@ -93,5 +100,26 @@ export class ExperienceMapInternalController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async getCommitStatus(@Param('requestId') requestId: string): Promise<CommitStatusResDTO> {
         return this.experienceMapFacade.getCommitStatus(requestId);
+    }
+
+    @Post('usage/failed')
+    @Public()
+    @UseGuards(InternalApiKeyGuard)
+    @ApiHeader({
+        name: 'X-API-Key',
+        required: true,
+        description: 'AI 서버 콜백용 내부 API 키 (MAIN_BACKEND_API_KEY)',
+    })
+    @ApiOperation({
+        summary: '실패한 턴을 일일 사용 횟수에서 제외 (AI 서버용)',
+        description:
+            '턴이 실패로 끝나면 호출한다. 해당 request_id는 사용 횟수에서 빠지고, ' +
+            '같은 request_id로 재시도하면 다시 차감된다. 멱등하며 없는 request_id는 무시한다.',
+    })
+    @ApiCommonMessageResponse('실패 처리되었습니다.')
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async markRequestFailed(@Body() body: MarkRequestFailedReqDTO): Promise<string> {
+        await this.aiAgentUsageService.markFailed(Number(body.user_id), body.request_id);
+        return '실패 처리되었습니다.';
     }
 }
