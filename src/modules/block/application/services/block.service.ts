@@ -58,19 +58,13 @@ export class BlockService {
     // 되돌리기: AI 커밋이 삭제한 블록을 원래 id 그대로 다시 넣고, 영향받은 부모의 자식 순서를
     // 삭제 직전 순서로 맞춘다. 트리거가 부모 존재를 검사하므로 상위 레벨부터 넣는다.
     async restoreDeleted(userId: number, snapshot: DeletedBlocksSnapshot): Promise<void> {
-        const levels = [...new Set(snapshot.blocks.map((row) => row.level))].sort((a, b) => a - b);
-        for (const level of levels) {
-            const blocks = snapshot.blocks
-                .filter((row) => row.level === level)
-                .map((row) =>
-                    Object.assign(new Block(), {
-                        ...row,
-                        userId,
-                        createdAt: new Date(row.createdAt),
-                    })
-                );
-            await this.blockRepository.insertAll(blocks);
-        }
+        const blocks = [...snapshot.blocks]
+            .sort((a, b) => a.level - b.level)
+            .map((row) =>
+                Object.assign(new Block(), { ...row, userId, createdAt: new Date(row.createdAt) })
+            );
+        // 한 INSERT 문 안에서도 앞선 행은 트리거에서 보이므로 레벨 순 정렬만으로 충분하다.
+        await this.blockRepository.insertAll(blocks);
 
         const orderByParentId = snapshot.siblingOrderByParentId;
         const children = await this.blockRepository.findAllByParentIds(
