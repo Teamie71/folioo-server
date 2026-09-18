@@ -34,9 +34,9 @@ describe('AiAgentUsageService', () => {
     const lateNight = new Date('2026-09-18T14:30:00.000Z');
     let service: AiAgentUsageService;
 
-    const useUp = async (count: number, now: Date, prefix = 'r') => {
+    const useUp = async (count: number, now: Date) => {
         for (let i = 0; i < count; i++) {
-            await service.consume(userId, `${prefix}${i}`, now);
+            await service.consume(userId, `r${i}`, now);
         }
     };
 
