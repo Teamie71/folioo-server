@@ -59,7 +59,12 @@ export class BlockCommitService {
             const block =
                 item.action === CommitItemAction.ADD
                     ? await this.processAdd(userId, item, blockById, blockByItemId, dirtyBlocks)
-                    : this.processUpdate(item, blockById, updatedBlocksPreviousContent);
+                    : this.processUpdate(
+                          item,
+                          blockById,
+                          updatedBlocksPreviousContent,
+                          dirtyBlocks
+                      );
 
             const experienceId = this.resolveExperienceRootId(block, blockById);
             sharedExperienceId ??= experienceId;
@@ -149,7 +154,8 @@ export class BlockCommitService {
     private processUpdate(
         item: CommitItemReqDTO,
         blockById: Map<string, Block>,
-        updatedBlocksPreviousContent: Record<string, string | null>
+        updatedBlocksPreviousContent: Record<string, string | null>,
+        dirtyBlocks: Set<Block>
     ): Block {
         if (!item.target_id) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_TARGET);
@@ -164,8 +170,12 @@ export class BlockCommitService {
         }
         this.assertContentValid(item.content);
 
-        updatedBlocksPreviousContent[target.id] = target.content;
+        // 같은 요청에서 여러 번 수정해도 되돌리기는 커밋 이전 값으로 돌아가야 한다.
+        if (!(target.id in updatedBlocksPreviousContent)) {
+            updatedBlocksPreviousContent[target.id] = target.content;
+        }
         target.content = item.content ?? null;
+        dirtyBlocks.add(target);
         return target;
     }
 
