@@ -45,9 +45,25 @@ export class AiCommitLogService {
         if (!log || log.requestId !== requestId) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAP_REVERT_EXPIRED);
         }
-        if (Date.now() - log.createdAt.getTime() > REVERT_WINDOW_MS) {
+        if (this.isExpired(log)) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAP_REVERT_EXPIRED);
         }
         return log;
+    }
+
+    // 지금 되돌릴 수 있는 AI 커밋의 request_id. revert가 409/410으로 거부할 조건이면 null.
+    async findRevertibleRequestId(
+        userId: number,
+        currentMapVersion: string
+    ): Promise<string | null> {
+        const log = await this.aiCommitLogRepository.findByUserId(userId);
+        if (!log || this.isExpired(log) || log.committedVersion !== currentMapVersion) {
+            return null;
+        }
+        return log.requestId;
+    }
+
+    private isExpired(log: AiCommitLog): boolean {
+        return Date.now() - log.createdAt.getTime() > REVERT_WINDOW_MS;
     }
 }

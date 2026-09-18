@@ -174,11 +174,21 @@ export class ExperienceMapResDTO {
     mapVersion: string;
     @ApiProperty({ type: () => [BlockResDTO] })
     roots: BlockResDTO[];
+    @ApiProperty({
+        type: String,
+        nullable: true,
+        example: '550e8400-e29b-41d4-a716-446655440000',
+        description:
+            '지금 되돌릴 수 있는 AI 작업의 request_id. 채팅의 request_id와 같을 때만 되돌리기 버튼을 노출한다. ' +
+            '최신 AI 작업이 아니거나, 24시간이 지났거나, 이후 맵 변경이 있으면 null.',
+    })
+    revertibleRequestId: string | null;
 
     static from(
         experienceMap: ExperienceMap,
         blocks: Block[],
-        experienceMetas: ExperienceMeta[]
+        experienceMetas: ExperienceMeta[],
+        revertibleRequestId: string | null
     ): ExperienceMapResDTO {
         const experienceMetaByBlockId = new Map(
             experienceMetas.map((meta) => [meta.blockId, meta])
@@ -202,6 +212,7 @@ export class ExperienceMapResDTO {
         const dto = new ExperienceMapResDTO();
         dto.mapVersion = experienceMap.mapVersion;
         dto.roots = childrenByParentId.get(null) ?? [];
+        dto.revertibleRequestId = revertibleRequestId;
         return dto;
     }
 }

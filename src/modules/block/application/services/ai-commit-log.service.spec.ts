@@ -49,4 +49,15 @@ describe('AiCommitLogService', () => {
         expect(saved).not.toBe(stale);
         expect(saved.createdAt).toBeUndefined();
     });
+
+    it('findRevertibleRequestId는 만료되었거나 이후 맵 변경이 있으면 null을 반환한다', async () => {
+        repository.findByUserId.mockResolvedValue(makeLog({ committedVersion: '2' }));
+        await expect(service.findRevertibleRequestId(1, '2')).resolves.toBe('req-old');
+        await expect(service.findRevertibleRequestId(1, '3')).resolves.toBeNull();
+
+        repository.findByUserId.mockResolvedValue(
+            makeLog({ createdAt: new Date(Date.now() - DAY_MS - 1000) })
+        );
+        await expect(service.findRevertibleRequestId(1, '2')).resolves.toBeNull();
+    });
 });
