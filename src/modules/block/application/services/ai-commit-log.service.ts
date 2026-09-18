@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiCommitLogRepository } from '../../infrastructure/repositories/ai-commit-log.repository';
-import { AiCommitLog } from '../../domain/ai-commit-log.entity';
+import { AiCommitLog, DeletedBlocksSnapshot } from '../../domain/ai-commit-log.entity';
 
 export interface RecordCommitInput {
     requestId: string;
@@ -10,6 +10,7 @@ export interface RecordCommitInput {
     committedVersion: string;
     createdBlockIds: string[];
     updatedBlocks: Record<string, string | null>;
+    deletedBlocks: DeletedBlocksSnapshot | null;
 }
 
 const REVERT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -36,6 +37,7 @@ export class AiCommitLogService {
         log.committedVersion = input.committedVersion;
         log.createdBlockIds = input.createdBlockIds;
         log.updatedBlocks = input.updatedBlocks;
+        log.deletedBlocks = input.deletedBlocks;
         await this.aiCommitLogRepository.save(log);
     }
 

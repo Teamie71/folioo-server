@@ -135,7 +135,7 @@ export class ExperienceMapFacade {
         }
 
         const allBlocks = await this.blockService.getTreeByUserId(userId);
-        const { applied, createdBlockIds, updatedBlocksPreviousContent } =
+        const { applied, createdBlockIds, updatedBlocksPreviousContent, deletedBlocks } =
             await this.blockCommitService.execute(userId, dto.items, allBlocks);
 
         const previousVersion = experienceMap.mapVersion;
@@ -153,6 +153,7 @@ export class ExperienceMapFacade {
             committedVersion: updatedMap.mapVersion,
             createdBlockIds,
             updatedBlocks: updatedBlocksPreviousContent,
+            deletedBlocks,
         });
 
         const ledgerEntry = new AiCommitRequest();
@@ -176,7 +177,11 @@ export class ExperienceMapFacade {
             });
         }
 
+        // 순서: 생성분 삭제 → 삭제분 복원 → 내용 복원 (삭제 전에 수정된 블록도 원래 내용으로 돌아가도록)
         await this.blockService.deleteByIds(log.createdBlockIds);
+        if (log.deletedBlocks) {
+            await this.blockService.restoreDeleted(userId, log.deletedBlocks);
+        }
         if (log.updatedBlocks) {
             await this.blockService.restoreContent(
                 userId,

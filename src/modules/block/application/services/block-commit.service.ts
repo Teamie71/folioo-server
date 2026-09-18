@@ -18,11 +18,13 @@ import {
     CommitItemAction,
     CommitItemReqDTO,
 } from '../dtos/experience-map-commit.dto';
+import { DeletedBlocksSnapshot } from '../../domain/ai-commit-log.entity';
 
 export interface BlockCommitResult {
     applied: CommitAppliedItemResDTO[];
     createdBlockIds: string[];
     updatedBlocksPreviousContent: Record<string, string | null>;
+    deletedBlocks: DeletedBlocksSnapshot | null;
 }
 
 const ADD_LEVEL_SECTION = 3;
@@ -53,33 +55,48 @@ export class BlockCommitService {
         const applied: CommitAppliedItemResDTO[] = [];
         const createdBlockIds: string[] = [];
         const updatedBlocksPreviousContent: Record<string, string | null> = {};
+        const deleted: DeletedBlocksSnapshot = { blocks: [], siblingOrderByParentId: {} };
         let sharedExperienceId: string | null = null;
 
         for (const item of items) {
             const block =
                 item.action === CommitItemAction.ADD
                     ? await this.processAdd(userId, item, blockById, blockByItemId, dirtyBlocks)
-                    : this.processUpdate(item, blockById, updatedBlocksPreviousContent);
+                    : this.resolveTarget(item, blockById);
 
             const experienceId = this.resolveExperienceRootId(block, blockById);
             sharedExperienceId ??= experienceId;
             if (experienceId !== sharedExperienceId) {
                 throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY);
             }
+            // 삭제하면 blockById에서 빠지므로 경로는 먼저 만든다.
+            const path = this.buildPath(block, blockById);
 
             if (item.action === CommitItemAction.ADD) {
                 createdBlockIds.push(block.id);
+            } else if (item.action === CommitItemAction.UPDATE) {
+                this.applyUpdate(item, block, updatedBlocksPreviousContent);
+                dirtyBlocks.add(block);
+            } else {
+                this.applyDelete(block, blockById, createdBlockIds, deleted);
             }
-            applied.push(
-                CommitAppliedItemResDTO.of(item.item_id, block.id, this.buildPath(block, blockById))
-            );
+            applied.push(CommitAppliedItemResDTO.of(item.item_id, item.action, block.id, path));
         }
 
-        if (dirtyBlocks.size > 0) {
-            await this.blockRepository.saveAll([...dirtyBlocks]);
+        const deletedIds = new Set(deleted.blocks.map((block) => block.id));
+        const blocksToSave = [...dirtyBlocks].filter((block) => !deletedIds.has(block.id));
+        if (blocksToSave.length > 0) {
+            await this.blockRepository.saveAll(blocksToSave);
         }
+        // parent_id CASCADE로 하위 트리도 함께 지워진다.
+        await this.blockRepository.deleteByIds([...deletedIds]);
 
-        return { applied, createdBlockIds, updatedBlocksPreviousContent };
+        return {
+            applied,
+            createdBlockIds,
+            updatedBlocksPreviousContent,
+            deletedBlocks: deleted.blocks.length > 0 ? deleted : null,
+        };
     }
 
     private assertTopologicalOrder(items: CommitItemReqDTO[]): void {
@@ -146,11 +163,7 @@ export class BlockCommitService {
         return savedBlock;
     }
 
-    private processUpdate(
-        item: CommitItemReqDTO,
-        blockById: Map<string, Block>,
-        updatedBlocksPreviousContent: Record<string, string | null>
-    ): Block {
+    private resolveTarget(item: CommitItemReqDTO, blockById: Map<string, Block>): Block {
         if (!item.target_id) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_TARGET);
         }
@@ -159,14 +172,71 @@ export class BlockCommitService {
         if (!target) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_TARGET);
         }
+        return target;
+    }
+
+    private applyUpdate(
+        item: CommitItemReqDTO,
+        target: Block,
+        updatedBlocksPreviousContent: Record<string, string | null>
+    ): void {
         if (target.level < UPDATE_LEVEL_MIN || target.level > UPDATE_LEVEL_MAX) {
             throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_HIERARCHY);
         }
         this.assertContentValid(item.content);
 
-        updatedBlocksPreviousContent[target.id] = target.content;
+        // 같은 요청에서 여러 번 수정돼도 되돌릴 값은 커밋 이전 값이어야 한다.
+        if (!(target.id in updatedBlocksPreviousContent)) {
+            updatedBlocksPreviousContent[target.id] = target.content;
+        }
         target.content = item.content ?? null;
-        return target;
+    }
+
+    // CONTENT(4·5단계)만 삭제할 수 있다. 상위 블록 삭제는 experience_meta·세션 등이 함께
+    // 사라져 되돌리기로 복원할 수 없기 때문이다. 같은 요청에서 추가한 블록이 하위에 있으면
+    // 되돌리기 스냅샷과 어긋나므로 거부한다.
+    private applyDelete(
+        target: Block,
+        blockById: Map<string, Block>,
+        createdBlockIds: string[],
+        deleted: DeletedBlocksSnapshot
+    ): void {
+        if (target.kind !== BlockKind.CONTENT || !target.parentId) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_TARGET);
+        }
+        const subtree = [target, ...this.collectDescendants(target.id, blockById)];
+        if (subtree.some((block) => createdBlockIds.includes(block.id))) {
+            throw new BusinessException(ErrorCode.EXPERIENCE_MAP_INVALID_TARGET);
+        }
+
+        deleted.siblingOrderByParentId[target.parentId] ??= this.getSiblings(
+            target.parentId,
+            blockById
+        )
+            .sort((a, b) => a.position - b.position)
+            .map((sibling) => sibling.id);
+
+        for (const block of subtree) {
+            deleted.blocks.push({
+                id: block.id,
+                parentId: block.parentId as string,
+                level: block.level,
+                kind: block.kind,
+                position: block.position,
+                content: block.content,
+                placeholder: block.placeholder,
+                createdAt: block.createdAt.toISOString(),
+            });
+            blockById.delete(block.id);
+        }
+    }
+
+    private collectDescendants(blockId: string, blockById: Map<string, Block>): Block[] {
+        const children = this.getSiblings(blockId, blockById);
+        return children.flatMap((child) => [
+            child,
+            ...this.collectDescendants(child.id, blockById),
+        ]);
     }
 
     private resolveParent(

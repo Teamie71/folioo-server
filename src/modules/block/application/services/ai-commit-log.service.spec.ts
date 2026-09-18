@@ -12,6 +12,7 @@ function makeLog(overrides: Partial<AiCommitLog>): AiCommitLog {
         committedVersion: '2',
         createdBlockIds: [],
         updatedBlocks: null,
+        deletedBlocks: null,
         createdAt: new Date(),
         ...overrides,
     });
@@ -42,6 +43,7 @@ describe('AiCommitLogService', () => {
             committedVersion: '3',
             createdBlockIds: [],
             updatedBlocks: {},
+            deletedBlocks: null,
         });
 
         expect(repository.deleteByUserId).toHaveBeenCalledWith(1);
