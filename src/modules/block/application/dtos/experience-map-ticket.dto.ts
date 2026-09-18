@@ -1,7 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsNumberString, IsOptional, IsUUID } from 'class-validator';
 
 export class IssueTicketReqDTO {
+    @IsNumberString({ no_symbols: true })
+    @ApiProperty({
+        type: 'string',
+        example: '12',
+        description: '대화할 활동(EXPERIENCE) 블록 id. bigint라 문자열로 주고받는다.',
+    })
+    block_id: string;
+
     @IsOptional()
     @IsUUID()
     @ApiProperty({
@@ -14,10 +22,10 @@ export class IssueTicketReqDTO {
 }
 
 export class IssueTicketResDTO {
-    @ApiProperty({ description: 'HS256으로 서명된 티켓. sub/sid/iat/exp를 담는다.' })
+    @ApiProperty({ description: 'HS256으로 서명된 티켓. sub/sid/bid/iat/exp를 담는다.' })
     ticket: string;
 
-    @ApiProperty({ description: '사용자의 AI 경험 정리 세션 id' })
+    @ApiProperty({ description: '활동(block_id)별 AI 경험 정리 세션 id' })
     session_id: string;
 
     @ApiProperty({ description: '이번 턴의 request_id. 커밋 시 그대로 사용된다.' })

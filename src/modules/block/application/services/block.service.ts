@@ -80,6 +80,15 @@ export class BlockService {
         return block;
     }
 
+    // AI 에이전트는 활동(EXPERIENCE) 블록 단위로 존재하므로 다른 종류는 없는 활동으로 취급한다.
+    async findExperienceOrThrow(blockId: string, userId: number): Promise<Block> {
+        const block = await this.findByIdOrThrow(blockId, userId);
+        if (block.kind !== BlockKind.EXPERIENCE) {
+            throw new BusinessException(ErrorCode.BLOCK_NOT_FOUND);
+        }
+        return block;
+    }
+
     private async findParentOrThrow(parentId: string, userId: number): Promise<Block> {
         const parent = await this.blockRepository.findByIdAndUserId(parentId, userId);
         if (!parent) {

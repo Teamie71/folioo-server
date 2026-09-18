@@ -79,3 +79,47 @@ describe('BlockService.moveBlock', () => {
         expect(moved.level).toBe(2);
     });
 });
+
+describe('BlockService.findExperienceOrThrow', () => {
+    let service: BlockService;
+    let blockRepository: jest.Mocked<BlockRepository>;
+
+    beforeEach(async () => {
+        const moduleRef = await Test.createTestingModule({
+            providers: [
+                BlockService,
+                { provide: BlockRepository, useValue: { findByIdAndUserId: jest.fn() } },
+                { provide: BlockKindRepository, useValue: {} },
+                { provide: ExperienceMetaRepository, useValue: {} },
+            ],
+        }).compile();
+
+        service = moduleRef.get(BlockService);
+        blockRepository = moduleRef.get(BlockRepository);
+    });
+
+    it('본인 소유 활동(EXPERIENCE) 블록을 반환한다', async () => {
+        const experience = makeBlock({ id: '30', level: 2, kind: BlockKind.EXPERIENCE });
+        blockRepository.findByIdAndUserId.mockResolvedValue(experience);
+
+        await expect(service.findExperienceOrThrow('30', 1)).resolves.toBe(experience);
+    });
+
+    it('활동이 아닌 블록은 BLOCK_NOT_FOUND', async () => {
+        blockRepository.findByIdAndUserId.mockResolvedValue(
+            makeBlock({ id: '10', kind: BlockKind.GROUP })
+        );
+
+        await expect(service.findExperienceOrThrow('10', 1)).rejects.toEqual(
+            new BusinessException(ErrorCode.BLOCK_NOT_FOUND)
+        );
+    });
+
+    it('다른 사용자의 블록(조회 결과 없음)은 BLOCK_NOT_FOUND', async () => {
+        blockRepository.findByIdAndUserId.mockResolvedValue(null);
+
+        await expect(service.findExperienceOrThrow('30', 2)).rejects.toEqual(
+            new BusinessException(ErrorCode.BLOCK_NOT_FOUND)
+        );
+    });
+});
