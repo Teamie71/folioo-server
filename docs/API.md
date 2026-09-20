@@ -295,3 +295,12 @@ Legend:
 - GET `/admin/api/users/search` -> IMPLEMENTED (사용자 검색, 이름/이메일)
 - GET `/admin/api/events/manual-reward-options` -> IMPLEMENTED (수동 보상 이벤트 목록, ?userId로 보상 수령 여부 포함)
 - POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급, CS 커스텀 보상 포함)
+
+### Assessment (직무·기업형태 추천 분석)
+
+- POST `/assessments/values-balance/next-question` -> IMPLEMENTED (Public, 가치관 밸런스게임 진행)
+- POST `/assessments` -> IMPLEMENTED (Public, 로그인 시 결과가 자동으로 계정에 연결됨)
+- GET `/assessments/status` -> IMPLEMENTED (로그인 계정 기준 완료 여부/uuid 조회)
+- GET `/assessments/{uuid}` -> IMPLEMENTED (Public, 비로그인 조회 시 상세 마스킹)
+- POST `/assessments/{uuid}/claim` -> IMPLEMENTED (익명 생성 결과를 로그인 계정에 등록)
+- 배점표/직무·기업형태 콘텐츠/헤드라인 문구는 전부 placeholder 상태 — `seeds/production/`에 실제 데이터 채우고 `pnpm seed --profile=production` 실행 필요

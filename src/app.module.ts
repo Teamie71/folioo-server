@@ -22,6 +22,7 @@ import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { BlockModule } from './modules/block/block.module';
+import { AssessmentModule } from './modules/assessment/assessment.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -57,6 +58,7 @@ import { DataSource } from 'typeorm';
         EventModule,
         FeedbackModule,
         BlockModule,
+        AssessmentModule,
         InterviewModule,
         InternalModule,
         AdminModule,
