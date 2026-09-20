@@ -309,26 +309,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '파일 접근 URL 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
-    [ErrorCode.CLOUD_TASKS_ENQUEUE_FAILED]: {
-        message: '작업 큐 등록에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-    },
-    [ErrorCode.VISUALIZATION_JOB_NOT_FOUND]: {
-        message: '시각화 작업을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.VISUALIZATION_SLIDE_NOT_FOUND]: {
-        message: '슬라이드를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.VISUALIZATION_TEMPLATE_ID_MISMATCH]: {
-        message: '요청한 templateId가 작업에 등록된 templateId와 일치하지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.VISUALIZATION_EXPORT_BLOCKED]: {
-        message: '모든 슬라이드가 완성된 후 내보낼 수 있습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
     [ErrorCode.BLOCK_NOT_FOUND]: {
         message: '블록을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
