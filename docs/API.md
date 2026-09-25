@@ -9,14 +9,14 @@ This document tracks:
 
 Notes:
 
-- In non-local environments, Swagger UI is mounted at `/api` and protected by Basic Auth.
+- In non-local environments, Swagger UI is mounted at `/docs` and protected by Basic Auth (`/docs-json` too).
 - Most API endpoints are protected by a global JWT guard and require `Authorization: Bearer <accessToken>`.
 
 ## Environments
 
 - Dev base URL: `https://dev-api.folioo.ai.kr`
-- Swagger UI: `https://dev-api.folioo.ai.kr/api`
-- OpenAPI JSON: `https://dev-api.folioo.ai.kr/api-json`
+- Swagger UI: `https://dev-api.folioo.ai.kr/docs`
+- OpenAPI JSON: `https://dev-api.folioo.ai.kr/docs-json`
 - Health check (public): `https://dev-api.folioo.ai.kr/health`
 
 ## Auth Model (How Requests Are Authorized)
@@ -31,7 +31,7 @@ Notes:
 
 Open:
 
-`https://dev-api.folioo.ai.kr/api`
+`https://dev-api.folioo.ai.kr/docs`
 
 This may prompt for Basic Auth credentials (configured by `SWAGGER_USER` / `SWAGGER_PASSWORD` in non-local).
 
@@ -64,7 +64,7 @@ Swagger will send `Authorization: Bearer <token>` for endpoints that require JWT
 
 ## Automated Smoke Tests (Dev)
 
-We use OpenAPI (`/api-json`) to enumerate endpoints and fire requests against the dev server.
+We use OpenAPI (`/docs-json`) to enumerate endpoints and fire requests against the dev server.
 
 Script:
 
