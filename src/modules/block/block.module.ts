@@ -13,16 +13,19 @@ import { AiExperienceSession } from './domain/ai-experience-session.entity';
 import { AiExperienceRequest } from './domain/ai-experience-request.entity';
 import { AiCommitLog } from './domain/ai-commit-log.entity';
 import { AiCommitRequest } from './domain/ai-commit-request.entity';
+import { AiAgentUsage } from './domain/ai-agent-usage.entity';
 import { BlockRepository } from './infrastructure/repositories/block.repository';
 import { BlockKindRepository } from './infrastructure/repositories/block-kind.repository';
 import { ExperienceMetaRepository } from './infrastructure/repositories/experience-meta.repository';
 import { ExperienceMapRepository } from './infrastructure/repositories/experience-map.repository';
 import { AiCommitRequestRepository } from './infrastructure/repositories/ai-commit-request.repository';
 import { AiCommitLogRepository } from './infrastructure/repositories/ai-commit-log.repository';
+import { AiAgentUsageRepository } from './infrastructure/repositories/ai-agent-usage.repository';
 import { BlockService } from './application/services/block.service';
 import { ExperienceMapService } from './application/services/experience-map.service';
 import { ExperienceMetaService } from './application/services/experience-meta.service';
 import { AiCommitLogService } from './application/services/ai-commit-log.service';
+import { AiAgentUsageService } from './application/services/ai-agent-usage.service';
 import { BlockCommitService } from './application/services/block-commit.service';
 import { AiExperienceSessionService } from './application/services/ai-experience-session.service';
 import { ExperienceMapTicketService } from './application/services/experience-map-ticket.service';
@@ -47,6 +50,7 @@ import { TemplateController } from './presentation/template.controller';
             AiExperienceRequest,
             AiCommitLog,
             AiCommitRequest,
+            AiAgentUsage,
         ]),
         AiRelayModule,
         // 티켓 서명 전용 시크릿(EXPMAP_TICKET_SECRET)을 쓰는 별도 JwtService.
@@ -76,11 +80,13 @@ import { TemplateController } from './presentation/template.controller';
         ExperienceMapRepository,
         AiCommitRequestRepository,
         AiCommitLogRepository,
+        AiAgentUsageRepository,
         AiExperienceSessionRepository,
         BlockService,
         ExperienceMapService,
         ExperienceMetaService,
         AiCommitLogService,
+        AiAgentUsageService,
         BlockCommitService,
         AiExperienceSessionService,
         ExperienceMapTicketService,

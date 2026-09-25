@@ -200,6 +200,15 @@ Legend:
 - POST `/corrections/{correctionId}/rag-data` -> IMPLEMENTED (Tavily RAG 검색 결과 저장)
 - GET `/corrections/{correctionId}/rag-data` -> IMPLEMENTED (저장된 RAG 검색 결과 조회, createdAt 오름차순)
 
+#### Experience Map (AI 에이전트)
+
+- POST `/api/v1/experience-map/usage/failed` -> IMPLEMENTED (실패한 턴을 일일 사용 횟수에서 제외, body: `user_id`, `request_id`, 멱등)
+
+### Experience Map - AI 에이전트 사용 한도
+
+- POST `/api/v1/experience-map/ticket` -> IMPLEMENTED (새 `request_id`면 일일 한도 1회 차감, 한도 초과 시 429 `EXPERIENCE_MAP429`)
+- GET `/api/v1/experience-map/usage` -> IMPLEMENTED (`used`/`limit`/`reset_at`, 모든 에이전트 합산 10회, KST 자정 초기화, 실패 턴 제외)
+
 ### Auth
 
 - GET `/auth/kakao` -> IMPLEMENTED (Public, OAuth redirect)
