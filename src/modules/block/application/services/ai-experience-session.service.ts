@@ -14,19 +14,23 @@ export class AiExperienceSessionService {
         private readonly aiRelayPort: AiRelayPort
     ) {}
 
-    async getOrCreate(userId: number): Promise<AiExperienceSession> {
-        const existing = await this.aiExperienceSessionRepository.findByUserId(userId);
+    async getOrCreate(userId: number, blockId: string): Promise<AiExperienceSession> {
+        const existing = await this.aiExperienceSessionRepository.findByUserIdAndBlockId(
+            userId,
+            blockId
+        );
         if (existing) {
             return existing;
         }
 
         const response = await this.aiRelayPort.postJson<CreateSessionAiResponse>({
             path: '/sessions',
-            body: { user_id: String(userId) },
+            body: { user_id: String(userId), block_id: blockId },
         });
 
         const session = new AiExperienceSession();
         session.userId = userId;
+        session.blockId = blockId;
         session.sessionId = response.data.session_id;
         return this.aiExperienceSessionRepository.save(session);
     }

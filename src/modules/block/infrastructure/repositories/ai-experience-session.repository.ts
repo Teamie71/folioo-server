@@ -10,8 +10,8 @@ export class AiExperienceSessionRepository {
         private readonly aiExperienceSessionRepository: Repository<AiExperienceSession>
     ) {}
 
-    findByUserId(userId: number): Promise<AiExperienceSession | null> {
-        return this.aiExperienceSessionRepository.findOne({ where: { userId } });
+    findByUserIdAndBlockId(userId: number, blockId: string): Promise<AiExperienceSession | null> {
+        return this.aiExperienceSessionRepository.findOne({ where: { userId, blockId } });
     }
 
     save(entity: AiExperienceSession): Promise<AiExperienceSession> {
