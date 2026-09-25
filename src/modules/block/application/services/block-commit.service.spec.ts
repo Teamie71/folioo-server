@@ -71,7 +71,7 @@ function createFakeRepository(initial: Block[]) {
     return { repository, childrenOf, snapshot };
 }
 
-describe('BlockCommitService delete + BlockService.restoreDeleted', () => {
+describe('BlockCommitService.execute + BlockService.restoreDeleted', () => {
     const experience = makeBlock({ id: '2', parentId: '1', level: 2, kind: BlockKind.EXPERIENCE });
     const section = makeBlock({ id: '3', parentId: '2', level: 3, kind: BlockKind.SECTION_TASK });
     const a = makeBlock({
@@ -158,6 +158,34 @@ describe('BlockCommitService delete + BlockService.restoreDeleted', () => {
         expect(fake.childrenOf('3')).toEqual(['10:A', '11:B수정', '12:C']);
         expect(fake.childrenOf('11')).toEqual(['20:B-1']);
         expect(result.updatedBlocksPreviousContent).toEqual({ '11': 'B' });
+    });
+
+    it('update만 있는 커밋도 수정된 블록을 저장한다', async () => {
+        const { fake, commitService } = setup();
+
+        await commitService.execute(
+            1,
+            [{ item_id: 'u1', action: CommitItemAction.UPDATE, target_id: '10', content: 'A수정' }],
+            fake.snapshot()
+        );
+
+        expect(fake.childrenOf('3')).toEqual(['10:A수정', '11:B', '12:C']);
+    });
+
+    it('같은 블록을 두 번 수정해도 되돌리기 기준은 커밋 이전 값이다', async () => {
+        const { fake, commitService } = setup();
+
+        const result = await commitService.execute(
+            1,
+            [
+                { item_id: 'u1', action: CommitItemAction.UPDATE, target_id: '10', content: 'A1' },
+                { item_id: 'u2', action: CommitItemAction.UPDATE, target_id: '10', content: 'A2' },
+            ],
+            fake.snapshot()
+        );
+
+        expect(result.updatedBlocksPreviousContent).toEqual({ '10': 'A' });
+        expect(fake.childrenOf('3')).toEqual(['10:A2', '11:B', '12:C']);
     });
 
     it('CONTENT가 아닌 블록 삭제는 거부한다', async () => {
