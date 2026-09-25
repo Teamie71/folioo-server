@@ -2,7 +2,7 @@
 /*
   Dev API smoke runner (v2)
 
-  Pulls the OpenAPI spec from /api-json, calls endpoints with an
+  Pulls the OpenAPI spec from /docs-json, calls endpoints with an
   access-token (Bearer), and writes a JSON report under /tmp.
 
   Result Classification
@@ -703,7 +703,7 @@ async function main() {
     const outPath = args.out || `/tmp/folioo_dev_smoke_${Date.now()}.json`;
 
     const specRes = await fetchJson(
-        `${args.base}/api-json`,
+        `${args.base}/docs-json`,
         { method: 'GET', headers: { accept: 'application/json' } },
         args.timeoutMs
     );
