@@ -45,7 +45,16 @@ export class ExperienceMapFacade {
             .map((block) => block.id);
         const experienceMetas =
             await this.experienceMetaService.findAllByBlockIds(experienceBlockIds);
-        return ExperienceMapResDTO.from(experienceMap, blocks, experienceMetas);
+        const revertibleRequestId = await this.aiCommitLogService.findRevertibleRequestId(
+            userId,
+            experienceMap.mapVersion
+        );
+        return ExperienceMapResDTO.from(
+            experienceMap,
+            blocks,
+            experienceMetas,
+            revertibleRequestId
+        );
     }
 
     @Transactional()
