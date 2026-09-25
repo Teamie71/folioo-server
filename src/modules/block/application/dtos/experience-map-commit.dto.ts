@@ -16,6 +16,7 @@ import { SectionKind } from '../../domain/enums/section-kind.enum';
 export enum CommitItemAction {
     ADD = 'add',
     UPDATE = 'update',
+    DELETE = 'delete',
 }
 
 export class CommitItemReqDTO {
@@ -23,7 +24,7 @@ export class CommitItemReqDTO {
     @ApiProperty({ example: 'it_1' })
     item_id: string;
 
-    @IsIn([CommitItemAction.ADD, CommitItemAction.UPDATE])
+    @IsIn([CommitItemAction.ADD, CommitItemAction.UPDATE, CommitItemAction.DELETE])
     @ApiProperty({ enum: CommitItemAction })
     action: CommitItemAction;
 
@@ -64,7 +65,11 @@ export class CommitItemReqDTO {
 
     @IsOptional()
     @IsString()
-    @ApiProperty({ required: false, description: 'update 시 필수' })
+    @ApiProperty({
+        required: false,
+        description:
+            'update/delete 시 필수. delete는 CONTENT(4·5단계) 블록만 가능하고 하위 블록도 함께 삭제된다.',
+    })
     target_id?: string;
 }
 
@@ -93,15 +98,24 @@ export class CommitAppliedItemResDTO {
     @ApiProperty({ example: 'it_1' })
     item_id: string;
 
+    @ApiProperty({ enum: CommitItemAction })
+    action: CommitItemAction;
+
     @ApiProperty({ example: '3701' })
     block_id: string;
 
     @ApiProperty({ example: '교내 커머스 리뉴얼 > 문제해결' })
     path: string;
 
-    static of(itemId: string, blockId: string, path: string): CommitAppliedItemResDTO {
+    static of(
+        itemId: string,
+        action: CommitItemAction,
+        blockId: string,
+        path: string
+    ): CommitAppliedItemResDTO {
         const dto = new CommitAppliedItemResDTO();
         dto.item_id = itemId;
+        dto.action = action;
         dto.block_id = blockId;
         dto.path = path;
         return dto;
