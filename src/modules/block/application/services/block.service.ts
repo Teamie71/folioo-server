@@ -12,6 +12,7 @@ import {
 } from '../../domain/block.entity';
 import { BlockKindEntity } from '../../domain/block-kind.entity';
 import { ExperienceMeta } from '../../domain/experience-meta.entity';
+import { DeletedBlocksSnapshot } from '../../domain/ai-commit-log.entity';
 import { BlockKind, EXPERIENCE_SECTION_KINDS } from '../../domain/enums/block-kind.enum';
 import { BLOCK_KIND_TO_SECTION_KIND, SectionKind } from '../../domain/enums/section-kind.enum';
 import {
@@ -52,6 +53,30 @@ export class BlockService {
             block.content = previousContentByBlockId[block.id];
         }
         await this.blockRepository.saveAll(blocks);
+    }
+
+    // 되돌리기: AI 커밋이 삭제한 블록을 원래 id 그대로 다시 넣고, 영향받은 부모의 자식 순서를
+    // 삭제 직전 순서로 맞춘다. 트리거가 부모 존재를 검사하므로 상위 레벨부터 넣는다.
+    async restoreDeleted(userId: number, snapshot: DeletedBlocksSnapshot): Promise<void> {
+        const blocks = [...snapshot.blocks]
+            .sort((a, b) => a.level - b.level)
+            .map((row) =>
+                Object.assign(new Block(), { ...row, userId, createdAt: new Date(row.createdAt) })
+            );
+        // 한 INSERT 문 안에서도 앞선 행은 트리거에서 보이므로 레벨 순 정렬만으로 충분하다.
+        await this.blockRepository.insertAll(blocks);
+
+        const orderByParentId = snapshot.siblingOrderByParentId;
+        const children = await this.blockRepository.findAllByParentIds(
+            Object.keys(orderByParentId)
+        );
+        for (const child of children) {
+            const order = orderByParentId[child.parentId as string];
+            const index = order.indexOf(child.id);
+            // 스냅샷 이후 생긴 자식은 없어야 하지만(버전 검사), 있으면 맨 뒤로 보낸다.
+            child.position = index === -1 ? order.length + child.position : index;
+        }
+        await this.blockRepository.saveAll(children);
     }
 
     async getOrCreateRootBlock(userId: number): Promise<Block> {
