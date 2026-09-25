@@ -21,7 +21,6 @@ import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
-import { VisualizationModule } from './modules/visualization/visualization.module';
 import { BlockModule } from './modules/block/block.module';
 import { AssessmentModule } from './modules/assessment/assessment.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
@@ -58,7 +57,6 @@ import { DataSource } from 'typeorm';
         PaymentModule,
         EventModule,
         FeedbackModule,
-        VisualizationModule,
         BlockModule,
         AssessmentModule,
         InterviewModule,
