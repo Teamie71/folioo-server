@@ -7,6 +7,7 @@ const DEFAULT_TICKET_TTL_SECONDS = 300;
 interface ExperienceMapTicketPayload {
     sub: string;
     sid: string;
+    bid: string;
 }
 
 export interface IssuedTicket {
@@ -21,12 +22,16 @@ export class ExperienceMapTicketService {
         private readonly configService: ConfigService
     ) {}
 
-    issueTicket(userId: number, sessionId: string): IssuedTicket {
+    issueTicket(userId: number, sessionId: string, blockId: string): IssuedTicket {
         const expiresIn = Number(
             this.configService.get<string>('EXPMAP_TICKET_TTL_SECONDS') ??
                 DEFAULT_TICKET_TTL_SECONDS
         );
-        const payload: ExperienceMapTicketPayload = { sub: String(userId), sid: sessionId };
+        const payload: ExperienceMapTicketPayload = {
+            sub: String(userId),
+            sid: sessionId,
+            bid: blockId,
+        };
         const ticket = this.jwtService.sign(payload, { expiresIn });
         return { ticket, expiresIn };
     }
