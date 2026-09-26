@@ -23,7 +23,8 @@ export class IssueTicketReqDTO {
 
 export class IssueTicketResDTO {
     @ApiProperty({
-        description: 'HS256으로 서명된 턴 실행용 티켓. sub/sid/bid/scope(turn)/iat/exp를 담는다.',
+        description:
+            'HS256으로 서명된 턴 실행용 티켓. sub/sid/bid/scope(turn)/rid(request_id)/iat/exp를 담는다.',
     })
     ticket: string;
 

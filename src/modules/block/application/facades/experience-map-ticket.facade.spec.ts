@@ -19,17 +19,19 @@ describe('ExperienceMapTicketFacade', () => {
         { consume } as unknown as AiAgentUsageService
     );
 
-    it('턴 티켓은 scope=turn을 담는다', () => {
-        const { ticket } = ticketService.issueTicket(1, 'session-1', '12', 'turn');
+    it('턴 티켓은 scope=turn과 rid를 담는다', () => {
+        const { ticket } = ticketService.issueTicket(1, 'session-1', '12', 'turn', 'req-1');
 
-        expect(jwtService.verify<{ scope: string }>(ticket).scope).toBe('turn');
+        expect(jwtService.verify(ticket)).toMatchObject({ scope: 'turn', rid: 'req-1' });
     });
 
     it('조회용 티켓은 한도를 차감하지 않고 scope=read를 담는다', async () => {
         const res = await facade.issueReadTicket(1, '12');
+        const payload = jwtService.verify<Record<string, unknown>>(res.ticket);
 
         expect(consume).not.toHaveBeenCalled();
-        expect(jwtService.verify<{ scope: string }>(res.ticket)).toMatchObject({
+        expect(payload).not.toHaveProperty('rid');
+        expect(payload).toMatchObject({
             sub: '1',
             sid: 'session-1',
             bid: '12',

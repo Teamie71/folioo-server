@@ -30,7 +30,8 @@ export class ExperienceMapTicketFacade {
             userId,
             session.sessionId,
             blockId,
-            'turn'
+            'turn',
+            requestId
         );
         return IssueTicketResDTO.from(ticket, session.sessionId, requestId, expiresIn);
     }

@@ -12,6 +12,7 @@ interface ExperienceMapTicketPayload {
     sid: string;
     bid: string;
     scope: ExperienceMapTicketScope;
+    rid?: string;
 }
 
 export interface IssuedTicket {
@@ -30,7 +31,8 @@ export class ExperienceMapTicketService {
         userId: number,
         sessionId: string,
         blockId: string,
-        scope: ExperienceMapTicketScope
+        scope: ExperienceMapTicketScope,
+        requestId?: string
     ): IssuedTicket {
         const expiresIn = Number(
             this.configService.get<string>('EXPMAP_TICKET_TTL_SECONDS') ??
@@ -41,6 +43,8 @@ export class ExperienceMapTicketService {
             sid: sessionId,
             bid: blockId,
             scope,
+            // 턴 티켓은 request_id에 묶어 티켓 1장으로 턴 1회만 실행되게 한다
+            ...(requestId && { rid: requestId }),
         };
         const ticket = this.jwtService.sign(payload, { expiresIn });
         return { ticket, expiresIn };
