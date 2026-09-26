@@ -6,6 +6,8 @@ import { User } from 'src/common/decorators/user.decorator';
 import { ExperienceMapTicketFacade } from '../application/facades/experience-map-ticket.facade';
 import { ExperienceMapFacade } from '../application/facades/experience-map.facade';
 import {
+    IssueReadTicketReqDTO,
+    IssueReadTicketResDTO,
     IssueTicketReqDTO,
     IssueTicketResDTO,
 } from '../application/dtos/experience-map-ticket.dto';
@@ -44,6 +46,23 @@ export class ExperienceMapAiController {
         @Body() body: IssueTicketReqDTO
     ): Promise<IssueTicketResDTO> {
         return this.experienceMapTicketFacade.issueTicket(userId, body.block_id, body.request_id);
+    }
+
+    @Post('ticket/read')
+    @ApiOperation({
+        summary: 'AI 경험 정리 대화 내역 조회용 티켓 발급',
+        description:
+            '프론트가 AI 서버에서 대화 내역을 조회할 때 쓰는 티켓을 발급합니다. ' +
+            '일일 사용 한도를 차감하지 않으며, scope=read라 AI 서버는 이 티켓으로 턴을 실행하지 않습니다. ' +
+            '해당 활동의 세션이 없으면 AI 서버 POST /sessions를 호출해 생성합니다.',
+    })
+    @ApiCommonResponse(IssueReadTicketResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.BLOCK_NOT_FOUND)
+    async issueReadTicket(
+        @User('sub') userId: number,
+        @Body() body: IssueReadTicketReqDTO
+    ): Promise<IssueReadTicketResDTO> {
+        return this.experienceMapTicketFacade.issueReadTicket(userId, body.block_id);
     }
 
     @Post('revert')
