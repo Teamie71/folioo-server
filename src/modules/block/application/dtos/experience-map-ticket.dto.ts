@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { IsNumberString, IsOptional, IsUUID } from 'class-validator';
 
 export class IssueTicketReqDTO {
@@ -52,15 +52,7 @@ export class IssueTicketResDTO {
     }
 }
 
-export class IssueReadTicketReqDTO {
-    @IsNumberString({ no_symbols: true })
-    @ApiProperty({
-        type: 'string',
-        example: '12',
-        description: '내역을 조회할 활동(EXPERIENCE) 블록 id. bigint라 문자열로 주고받는다.',
-    })
-    block_id: string;
-}
+export class IssueReadTicketReqDTO extends PickType(IssueTicketReqDTO, ['block_id']) {}
 
 export class IssueReadTicketResDTO {
     @ApiProperty({
