@@ -22,7 +22,9 @@ export class IssueTicketReqDTO {
 }
 
 export class IssueTicketResDTO {
-    @ApiProperty({ description: 'HS256으로 서명된 티켓. sub/sid/bid/iat/exp를 담는다.' })
+    @ApiProperty({
+        description: 'HS256으로 서명된 턴 실행용 티켓. sub/sid/bid/scope(turn)/iat/exp를 담는다.',
+    })
     ticket: string;
 
     @ApiProperty({ description: '활동(block_id)별 AI 경험 정리 세션 id' })
@@ -44,6 +46,38 @@ export class IssueTicketResDTO {
         dto.ticket = ticket;
         dto.session_id = sessionId;
         dto.request_id = requestId;
+        dto.expires_in = expiresIn;
+        return dto;
+    }
+}
+
+export class IssueReadTicketReqDTO {
+    @IsNumberString({ no_symbols: true })
+    @ApiProperty({
+        type: 'string',
+        example: '12',
+        description: '내역을 조회할 활동(EXPERIENCE) 블록 id. bigint라 문자열로 주고받는다.',
+    })
+    block_id: string;
+}
+
+export class IssueReadTicketResDTO {
+    @ApiProperty({
+        description:
+            'HS256으로 서명된 조회용 티켓. sub/sid/bid/scope(read)/iat/exp를 담는다. 턴 실행에는 쓸 수 없다.',
+    })
+    ticket: string;
+
+    @ApiProperty({ description: '활동(block_id)별 AI 경험 정리 세션 id' })
+    session_id: string;
+
+    @ApiProperty({ description: '티켓 만료까지 남은 초' })
+    expires_in: number;
+
+    static from(ticket: string, sessionId: string, expiresIn: number): IssueReadTicketResDTO {
+        const dto = new IssueReadTicketResDTO();
+        dto.ticket = ticket;
+        dto.session_id = sessionId;
         dto.expires_in = expiresIn;
         return dto;
     }
