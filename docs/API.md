@@ -206,7 +206,8 @@ Legend:
 
 ### Experience Map - AI 에이전트 사용 한도
 
-- POST `/api/v1/experience-map/ticket` -> IMPLEMENTED (새 `request_id`면 일일 한도 1회 차감, 한도 초과 시 429 `EXPERIENCE_MAP429`)
+- POST `/api/v1/experience-map/ticket` -> IMPLEMENTED (턴 실행용 `scope=turn` + `rid`(=request_id), 새 `request_id`면 일일 한도 1회 차감, 한도 초과 시 429 `EXPERIENCE_MAP429`)
+- POST `/api/v1/experience-map/ticket/read` -> IMPLEMENTED (대화 내역 조회용 `scope=read`, 한도 차감 없음)
 - GET `/api/v1/experience-map/usage` -> IMPLEMENTED (`used`/`limit`/`reset_at`, 모든 에이전트 합산 10회, KST 자정 초기화, 실패 턴 제외)
 
 ### Auth
