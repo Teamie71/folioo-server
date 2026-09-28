@@ -209,6 +209,8 @@ Legend:
 - POST `/api/v1/experience-map/ticket` -> IMPLEMENTED (턴 실행용 `scope=turn` + `rid`(=request_id), 새 `request_id`면 일일 한도 1회 차감, 한도 초과 시 429 `EXPERIENCE_MAP429`)
 - POST `/api/v1/experience-map/ticket/read` -> IMPLEMENTED (대화 내역 조회용 `scope=read`, 한도 차감 없음)
 - GET `/api/v1/experience-map/usage` -> IMPLEMENTED (`used`/`limit`/`reset_at`, 모든 에이전트 합산 10회, KST 자정 초기화, 실패 턴 제외)
+- GET `/api/v1/experience-map/activity-status` -> IMPLEMENTED (활동별 최신 요청의 `status`(running/completed/failed/cancelled)와 `seen`, `ai_experience_request` 직접 조회, lease 만료된 running은 failed)
+- POST `/api/v1/experience-map/activity-status/{blockId}/seen` -> IMPLEMENTED (최신 요청을 확인 처리, 처리 중이면 기록 안 함, 멱등)
 
 ### Auth
 
