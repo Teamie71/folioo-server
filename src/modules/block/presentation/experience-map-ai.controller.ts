@@ -1,6 +1,11 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
+import {
+    ApiCommonErrorResponse,
+    ApiCommonMessageResponse,
+    ApiCommonResponse,
+    ApiCommonResponseArray,
+} from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { User } from 'src/common/decorators/user.decorator';
 import { ExperienceMapTicketFacade } from '../application/facades/experience-map-ticket.facade';
@@ -14,6 +19,8 @@ import {
 import { RevertReqDTO, RevertResDTO } from '../application/dtos/experience-map-revert.dto';
 import { UsageResDTO } from '../application/dtos/experience-map-usage.dto';
 import { AiAgentUsageService } from '../application/services/ai-agent-usage.service';
+import { AiExperienceSessionService } from '../application/services/ai-experience-session.service';
+import { ActivityStatusResDTO } from '../application/dtos/experience-map-activity-status.dto';
 
 @ApiTags('ExperienceMap - AI Integration')
 @Controller('api/v1/experience-map')
@@ -21,7 +28,8 @@ export class ExperienceMapAiController {
     constructor(
         private readonly experienceMapTicketFacade: ExperienceMapTicketFacade,
         private readonly experienceMapFacade: ExperienceMapFacade,
-        private readonly aiAgentUsageService: AiAgentUsageService
+        private readonly aiAgentUsageService: AiAgentUsageService,
+        private readonly aiExperienceSessionService: AiExperienceSessionService
     ) {}
 
     @Post('ticket')
@@ -94,5 +102,36 @@ export class ExperienceMapAiController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
     async getUsage(@User('sub') userId: number): Promise<UsageResDTO> {
         return UsageResDTO.from(await this.aiAgentUsageService.getSummary(userId));
+    }
+
+    @Get('activity-status')
+    @ApiOperation({
+        summary: '활동별 AI 처리 상태 조회',
+        description:
+            '맵뷰의 활동 상태 아이콘(처리 중/완료/실패)용. 활동마다 가장 최근 요청 1건의 상태를 돌려준다. ' +
+            'AI 요청이 한 번도 없는 활동은 목록에 없다. 처리 중인 활동이 있을 때만 주기적으로 다시 조회하면 된다.',
+    })
+    @ApiCommonResponseArray(ActivityStatusResDTO)
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async getActivityStatuses(@User('sub') userId: number): Promise<ActivityStatusResDTO[]> {
+        const items = await this.aiExperienceSessionService.getActivityStatuses(userId);
+        return items.map((item) => ActivityStatusResDTO.from(item));
+    }
+
+    @Post('activity-status/:blockId/seen')
+    @ApiOperation({
+        summary: '활동 결과 확인 처리',
+        description:
+            '채팅을 열었을 때, 그리고 채팅을 연 상태에서 처리가 끝났을 때 호출한다. 해당 활동의 최신 요청을 확인한 것으로 기록한다. ' +
+            '최신 요청이 처리 중이면 기록하지 않는다(완료 후 다시 호출). 요청이 없는 활동이어도 성공으로 응답한다.',
+    })
+    @ApiCommonMessageResponse('확인 처리되었습니다.')
+    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    async markSeen(
+        @User('sub') userId: number,
+        @Param('blockId') blockId: string
+    ): Promise<string> {
+        await this.aiExperienceSessionService.markSeen(userId, blockId);
+        return '확인 처리되었습니다.';
     }
 }
