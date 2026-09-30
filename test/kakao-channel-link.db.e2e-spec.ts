@@ -4,6 +4,17 @@ import { BlockRepository } from '../src/modules/block/infrastructure/repositorie
 import { Block } from '../src/modules/block/domain/block.entity';
 import { join } from 'node:path';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import {
+    initializeTransactionalContext,
+    addTransactionalDataSource,
+    deleteDataSourceByName,
+} from 'typeorm-transactional';
+import { KakaoLinkFacade } from '../src/modules/kakao-channel/application/facades/kakao-link.facade';
+import { KakaoLinkTokenService } from '../src/modules/kakao-channel/application/services/kakao-link-token.service';
+import { KakaoOAuthClient } from '../src/modules/kakao-channel/infrastructure/clients/kakao-oauth.client';
+import { BusinessException } from '../src/common/exceptions/business.exception';
+import { ErrorCode } from '../src/common/exceptions/error-code.enum';
 import { DataSource } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { KakaoChannelLink } from '../src/modules/kakao-channel/domain/kakao-channel-link.entity';
@@ -22,6 +33,13 @@ const describeDatabase = databaseUrl ? describe : describe.skip;
 describeDatabase('Kakao channel link PostgreSQL contract', () => {
     let db: DataSource;
     let service: KakaoChannelLinkService;
+    const tokens = new KakaoLinkTokenService(new JwtService({ secret: 'db-link-test' }));
+    let linkFacade: KakaoLinkFacade;
+    const users = {
+        findByKakaoLoginId: jest.fn(),
+        findByIdOrThrow: jest.fn(),
+        findKakaoLoginIdByUserId: jest.fn(),
+    };
 
     beforeAll(async () => {
         const url = new URL(databaseUrl!);
@@ -31,13 +49,16 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
         ) {
             throw new Error('Only an isolated local kakao_skill_test database is allowed');
         }
-        db = new DataSource({
-            type: 'postgres',
-            url: databaseUrl,
-            entities: [KakaoChannelLink],
-            synchronize: false,
-            namingStrategy: new SnakeNamingStrategy(),
-        });
+        initializeTransactionalContext();
+        db = addTransactionalDataSource(
+            new DataSource({
+                type: 'postgres',
+                url: databaseUrl,
+                entities: [KakaoChannelLink],
+                synchronize: false,
+                namingStrategy: new SnakeNamingStrategy(),
+            })
+        );
         await db.initialize();
         // 전체 운영 스키마 대신 FK 대상의 실제 키 타입을 재현한다.
         await db.query('CREATE TABLE users (id INT PRIMARY KEY)');
@@ -56,18 +77,35 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
         service = new KakaoChannelLinkService(
             new KakaoChannelLinkRepository(db.getRepository(KakaoChannelLink))
         );
+        linkFacade = new KakaoLinkFacade(
+            users as unknown as UserService,
+            service,
+            tokens,
+            {} as KakaoOAuthClient,
+            new ConfigService({})
+        );
     });
 
     beforeEach(async () => {
         await db.query('TRUNCATE users, block CASCADE');
         await db.query('INSERT INTO users (id) VALUES (1), (2)');
         await db.query('INSERT INTO block (id) VALUES (9007199254740993), (12)');
+        users.findByKakaoLoginId.mockReset().mockResolvedValue(null);
+        users.findKakaoLoginIdByUserId.mockReset().mockResolvedValue(null);
+        users.findByIdOrThrow
+            .mockReset()
+            .mockImplementation((id: number) =>
+                Promise.resolve(
+                    Object.assign(new User(), { id, status: UserStatus.ACTIVE, isActive: true })
+                )
+            );
     });
 
     afterAll(async () => {
         if (db?.isInitialized) {
             await db.query('DROP TABLE kakao_channel_link, block, users');
             await db.destroy();
+            deleteDataSourceByName('default');
         }
     });
 
@@ -254,4 +292,89 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
             '1',
         ]);
     });
+
+    it('AC-3-15: 웹에서 연결한 네이버 사용자도 스킬에서 LINKED로 식별한다', async () => {
+        await linkFacade.link(1, tokens.signLinkToken(1, '123'));
+        const skill = new KakaoSkillFacade(
+            users as unknown as UserService,
+            service,
+            new ConfigService({}),
+            {} as BlockService
+        );
+        expect(await skill.resolveUser('123')).toMatchObject({ kind: 'LINKED', userId: 1 });
+        expect(users.findByKakaoLoginId).toHaveBeenCalledTimes(1); // 연결 확정에서만 조회, 스킬은 연결 행 사용
+    });
+
+    it('AC-3-10: 탈퇴자 연결을 실제로 교체하고 재연결 시 선택 활동을 보존한다', async () => {
+        await service.link(2, '123');
+        users.findByIdOrThrow.mockResolvedValue(
+            Object.assign(new User(), { id: 2, isActive: false })
+        );
+        await linkFacade.link(1, tokens.signLinkToken(1, '123'));
+        expect(await service.findByUserId(2)).toBeNull();
+        await service.selectBlock(1, '12');
+        await linkFacade.link(1, tokens.signLinkToken(1, '123'));
+        expect((await service.findByUserId(1))?.currentBlockId).toBe('12');
+    });
+
+    it('탈퇴 연결 삭제 후 새 연결 저장이 실패하면 이전 연결도 롤백한다', async () => {
+        await service.link(2, '123');
+        users.findByIdOrThrow.mockResolvedValue(
+            Object.assign(new User(), { id: 2, isActive: false })
+        );
+        const spy = jest
+            .spyOn(service, 'linkOrThrow')
+            .mockRejectedValue(new BusinessException(ErrorCode.KAKAO_ACCOUNT_ALREADY_LINKED));
+        try {
+            await expect(linkFacade.link(1, tokens.signLinkToken(1, '123'))).rejects.toThrow();
+            expect((await service.findByKakaoAppUserId('123'))?.userId).toBe(2);
+            expect(await service.findByUserId(1)).toBeNull();
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it.each(['same', 'different-users', 'different-kakao'])(
+        '동시 연결 %s는 멱등 처리하거나 명세 오류로 충돌을 반환한다',
+        async (kind) => {
+            let release!: () => void;
+            const ready = new Promise<void>((resolve) => {
+                release = resolve;
+            });
+            let calls = 0;
+            const original = service.linkOrThrow.bind(service) as (
+                uid: number,
+                kid: string
+            ) => Promise<void>;
+            const spy = jest.spyOn(service, 'linkOrThrow').mockImplementation(async (uid, kid) => {
+                calls += 1;
+                if (calls === 2) release();
+                await ready;
+                await original(uid, kid);
+            });
+            try {
+                const secondUid = kind === 'different-users' ? 2 : 1;
+                const secondKid = kind === 'different-kakao' ? '456' : '123';
+                const results = await Promise.allSettled([
+                    linkFacade.link(1, tokens.signLinkToken(1, '123')),
+                    linkFacade.link(secondUid, tokens.signLinkToken(secondUid, secondKid)),
+                ]);
+                expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(
+                    kind === 'same' ? 2 : 1
+                );
+                if (kind !== 'same') {
+                    const rejected = results.find(
+                        (result) => result.status === 'rejected'
+                    ) as PromiseRejectedResult;
+                    expect(rejected.reason).toBeInstanceOf(BusinessException);
+                    expect((rejected.reason as BusinessException).getResponse()).toMatchObject({
+                        errorCode: kind === 'different-users' ? 'KAKAO409' : 'KAKAO4091',
+                    });
+                }
+                expect(await db.getRepository(KakaoChannelLink).count()).toBe(1);
+            } finally {
+                spy.mockRestore();
+            }
+        }
+    );
 });
