@@ -19,6 +19,21 @@ export class BlockRepository {
         return this.blockRepository.save(blocks);
     }
 
+    // 되돌리기 복원용. save()와 달리 존재 여부 조회 없이 지정한 id 그대로 INSERT한다.
+    async insertAll(blocks: Block[]): Promise<void> {
+        if (blocks.length === 0) {
+            return;
+        }
+        await this.blockRepository.insert(blocks);
+    }
+
+    async findAllByParentIds(parentIds: string[]): Promise<Block[]> {
+        if (parentIds.length === 0) {
+            return [];
+        }
+        return this.blockRepository.find({ where: { parentId: In(parentIds) } });
+    }
+
     async findByIdAndUserId(id: string, userId: number): Promise<Block | null> {
         return this.blockRepository.findOne({ where: { id, userId } });
     }
