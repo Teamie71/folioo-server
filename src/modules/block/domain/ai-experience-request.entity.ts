@@ -24,7 +24,7 @@ export class AiExperienceRequest {
     @Column({ name: 'session_id', type: 'uuid' })
     sessionId: string;
 
-    @ManyToOne(() => AiExperienceSession)
+    @ManyToOne(() => AiExperienceSession, { onDelete: 'CASCADE' })
     @JoinColumn([
         { name: 'user_id', referencedColumnName: 'userId' },
         { name: 'session_id', referencedColumnName: 'sessionId' },
