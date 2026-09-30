@@ -5,7 +5,7 @@ import { getSeoulDateString } from 'src/common/utils/seoul-date.util';
 import { AiAgentUsageRepository } from '../../infrastructure/repositories/ai-agent-usage.repository';
 import { AiAgentUsage } from '../../domain/ai-agent-usage.entity';
 
-export const AI_AGENT_DAILY_LIMIT = 10;
+export const AI_AGENT_DAILY_LIMIT = 40;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface AiAgentUsageSummary {

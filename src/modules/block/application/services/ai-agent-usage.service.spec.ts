@@ -44,8 +44,9 @@ describe('AiAgentUsageService', () => {
         service = new AiAgentUsageService(makeInMemoryRepository());
     });
 
-    it('10번째까지 허용하고 11번째는 거부한다', async () => {
-        await useUp(AI_AGENT_DAILY_LIMIT, lateNight);
+    it('40번째까지 허용하고 41번째는 거부한다', async () => {
+        await useUp(40, lateNight);
+        expect(await service.getSummary(userId, lateNight)).toMatchObject({ used: 40, limit: 40 });
         await expect(service.consume(userId, 'over', lateNight)).rejects.toEqual(
             new BusinessException(ErrorCode.EXPERIENCE_MAP_DAILY_LIMIT_EXCEEDED)
         );
@@ -54,16 +55,16 @@ describe('AiAgentUsageService', () => {
     it('실패 처리된 턴은 세지 않고, 같은 request_id 재시도 시 다시 차감한다', async () => {
         await useUp(AI_AGENT_DAILY_LIMIT, lateNight);
         await service.markFailed(userId, 'r0');
-        expect((await service.getSummary(userId, lateNight)).used).toBe(9);
+        expect((await service.getSummary(userId, lateNight)).used).toBe(39);
 
         await service.consume(userId, 'r0', lateNight);
-        expect((await service.getSummary(userId, lateNight)).used).toBe(10);
+        expect((await service.getSummary(userId, lateNight)).used).toBe(40);
     });
 
     it('이미 차감된 request_id 재시도는 다시 차감하지 않는다', async () => {
         await useUp(AI_AGENT_DAILY_LIMIT, lateNight);
         await expect(service.consume(userId, 'r3', lateNight)).resolves.toBeUndefined();
-        expect((await service.getSummary(userId, lateNight)).used).toBe(10);
+        expect((await service.getSummary(userId, lateNight)).used).toBe(40);
     });
 
     it('KST 자정이 지나면 초기화된다', async () => {
