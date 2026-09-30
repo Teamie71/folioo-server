@@ -28,7 +28,7 @@ describe('AiCommitLogService', () => {
         repository = {
             findByUserId: jest.fn(),
             save: jest.fn((log: AiCommitLog) => Promise.resolve(log)),
-            deleteByUserId: jest.fn(() => Promise.resolve()),
+            deleteByUserId: jest.fn<Promise<void>, [number]>().mockResolvedValue(undefined),
         };
         service = new AiCommitLogService(repository as unknown as AiCommitLogRepository);
     });
