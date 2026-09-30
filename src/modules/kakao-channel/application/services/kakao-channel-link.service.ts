@@ -12,6 +12,22 @@ export class KakaoChannelLinkService {
         return this.kakaoChannelLinkRepository.findByKakaoAppUserId(kakaoAppUserId);
     }
 
+    findByUserId(userId: number): Promise<KakaoChannelLink | null> {
+        return this.kakaoChannelLinkRepository.findByUserId(userId);
+    }
+
+    // Facade에서 social_user·활성 상태를 확인한 뒤 저장한다. 동시 연결 충돌도 DB 제약으로 판정한다.
+    async linkOrThrow(userId: number, kakaoAppUserId: string): Promise<void> {
+        await this.kakaoChannelLinkRepository.insertIgnoringConflict(
+            KakaoChannelLink.create(userId, kakaoAppUserId)
+        );
+        const ownLink = await this.findByUserId(userId);
+        if (!ownLink) throw new BusinessException(ErrorCode.KAKAO_ACCOUNT_ALREADY_LINKED);
+        if (ownLink.kakaoAppUserId !== kakaoAppUserId) {
+            throw new BusinessException(ErrorCode.KAKAO_CHANNEL_ALREADY_LINKED);
+        }
+    }
+
     async link(userId: number, kakaoAppUserId: string): Promise<KakaoChannelLink> {
         await this.kakaoChannelLinkRepository.insertIgnoringConflict(
             KakaoChannelLink.create(userId, kakaoAppUserId)
