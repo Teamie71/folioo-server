@@ -22,11 +22,26 @@ export interface KakaoWebLinkButton {
     webLinkUrl: string;
 }
 
+export interface KakaoMessageButton {
+    action: 'message';
+    label: string;
+    messageText: string;
+}
+
+export type KakaoButton = KakaoWebLinkButton | KakaoMessageButton;
+
+export interface KakaoQuickReply {
+    label: string;
+    action: 'block';
+    blockId: string;
+    extra: { block_id: string };
+}
+
 export type KakaoOutput =
     | { simpleText: { text: string } }
-    | { basicCard: { title: string; description: string; buttons: KakaoWebLinkButton[] } };
+    | { textCard: { title?: string; description: string; buttons: KakaoButton[] } };
 
 export interface KakaoSkillResDTO {
     version: '2.0';
-    template: { outputs: KakaoOutput[] };
+    template: { outputs: KakaoOutput[]; quickReplies?: KakaoQuickReply[] };
 }

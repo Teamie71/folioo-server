@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { BlockService } from 'src/modules/block/application/services/block.service';
 import { UserService } from 'src/modules/user/application/services/user.service';
 import { UserStatus } from 'src/modules/user/domain/enums/user-status.enum';
 import { User } from 'src/modules/user/domain/user.entity';
@@ -23,7 +24,7 @@ describe('KakaoSkillFacade.resolveUser', () => {
         findByKakaoAppUserId: jest.fn((id: string) => Promise.resolve(links.get(id) ?? null)),
         link: jest.fn((userId: number, id: string) => {
             links.set(id, KakaoChannelLink.create(userId, id));
-            return Promise.resolve();
+            return Promise.resolve(links.get(id));
         }),
         unlink: jest.fn((userId: number) => {
             for (const [id, link] of links) if (link.userId === userId) links.delete(id);
@@ -36,7 +37,8 @@ describe('KakaoSkillFacade.resolveUser', () => {
             findByKakaoLoginId: (id: string) => Promise.resolve(kakaoLoginIds.get(id) ?? null),
         } as unknown as UserService,
         linkService as unknown as KakaoChannelLinkService,
-        new ConfigService()
+        new ConfigService(),
+        {} as BlockService
     );
 
     beforeEach(() => {
@@ -54,14 +56,18 @@ describe('KakaoSkillFacade.resolveUser', () => {
         users.set(1, makeUser(1, UserStatus.ACTIVE));
         links.set('k1', KakaoChannelLink.create(1, 'k1'));
 
-        await expect(facade.resolveUser('k1')).resolves.toEqual({ kind: 'LINKED', userId: 1 });
+        await expect(facade.resolveUser('k1')).resolves.toEqual(
+            expect.objectContaining({ kind: 'LINKED', userId: 1 })
+        );
         expect(linkService.link).not.toHaveBeenCalled();
     });
 
     it('카카오 가입자는 첫 메시지 때 연결 행을 만든다', async () => {
         kakaoLoginIds.set('k1', makeUser(1, UserStatus.ACTIVE));
 
-        await expect(facade.resolveUser('k1')).resolves.toEqual({ kind: 'LINKED', userId: 1 });
+        await expect(facade.resolveUser('k1')).resolves.toEqual(
+            expect.objectContaining({ kind: 'LINKED', userId: 1 })
+        );
         expect(links.get('k1')?.userId).toBe(1);
     });
 
@@ -80,7 +86,9 @@ describe('KakaoSkillFacade.resolveUser', () => {
         links.set('k1', KakaoChannelLink.create(1, 'k1'));
         kakaoLoginIds.set('k1', makeUser(2, UserStatus.ACTIVE));
 
-        await expect(facade.resolveUser('k1')).resolves.toEqual({ kind: 'LINKED', userId: 2 });
+        await expect(facade.resolveUser('k1')).resolves.toEqual(
+            expect.objectContaining({ kind: 'LINKED', userId: 2 })
+        );
         expect(links.get('k1')?.userId).toBe(2);
     });
 

@@ -20,12 +20,23 @@ import {
     textResponse,
 } from '../src/modules/kakao-channel/application/kakao-skill-response';
 import { KakaoSkillController } from '../src/modules/kakao-channel/presentation/kakao-skill.controller';
+import { BlockService } from '../src/modules/block/application/services/block.service';
+import { Block } from '../src/modules/block/domain/block.entity';
+import { BlockKind } from '../src/modules/block/domain/enums/block-kind.enum';
+import { KakaoChannelLink } from '../src/modules/kakao-channel/domain/kakao-channel-link.entity';
 
 describe('Kakao skill HTTP contract', () => {
     let app: INestApplication;
     let config: ConfigService;
     const users = { findByKakaoLoginId: jest.fn(), findByIdOrThrow: jest.fn() };
-    const links = { findByKakaoAppUserId: jest.fn(), link: jest.fn() };
+    const links = {
+        findByKakaoAppUserId: jest.fn(),
+        link: jest.fn(),
+        selectBlock: jest.fn(),
+        isTurnInProgress: (link: KakaoChannelLink) =>
+            KakaoChannelLinkService.prototype.isTurnInProgress(link),
+    };
+    const blocks = { findRecentExperiences: jest.fn(), findExperience: jest.fn() };
     let errorLog: jest.SpyInstance;
     const guideUrl = 'https://example.test/login';
     const payload = {
@@ -50,6 +61,7 @@ describe('Kakao skill HTTP contract', () => {
                 { provide: ConfigService, useValue: config },
                 { provide: UserService, useValue: users },
                 { provide: KakaoChannelLinkService, useValue: links },
+                { provide: BlockService, useValue: blocks },
                 { provide: AuthTokenStoreService, useValue: {} },
                 { provide: APP_GUARD, useClass: JwtAuthGuard },
             ],
@@ -68,8 +80,22 @@ describe('Kakao skill HTTP contract', () => {
         config.set('KAKAO_SKILL_SECRET', 'test-secret');
         config.set('KAKAO_BOT_ID', 'test-bot');
         config.set('KAKAO_WEB_GUIDE_URL', guideUrl);
+        config.set('KAKAO_WEB_ACTIVITY_LIST_URL', 'https://example.test/activities');
+        config.set('KAKAO_WEB_EXPERIENCE_URL', 'https://example.test/experience');
+        config.set('KAKAO_SELECT_ACTIVITY_BLOCK_ID', 'select-block');
         links.findByKakaoAppUserId.mockReset().mockResolvedValue(null);
-        links.link.mockReset().mockResolvedValue(undefined);
+        links.link.mockReset().mockResolvedValue(KakaoChannelLink.create(1, 'k1'));
+        links.selectBlock.mockReset().mockResolvedValue(undefined);
+        blocks.findRecentExperiences
+            .mockReset()
+            .mockResolvedValue([{ id: '12', name: '프로젝트' }]);
+        blocks.findExperience.mockReset().mockResolvedValue(
+            Object.assign(new Block(), {
+                id: '12',
+                kind: BlockKind.EXPERIENCE,
+                content: '프로젝트',
+            })
+        );
         users.findByKakaoLoginId.mockReset().mockResolvedValue(null);
         users.findByIdOrThrow.mockReset();
     });
@@ -132,6 +158,10 @@ describe('Kakao skill HTTP contract', () => {
             users.findByKakaoLoginId.mockResolvedValue(
                 Object.assign(new User(), { id: 1, status, isActive: true })
             );
+            const selected = KakaoChannelLink.create(1, 'k1');
+            selected.currentBlockId = '12';
+            selected.activitySelectedAt = new Date();
+            links.link.mockResolvedValue(selected);
             const response = await post().send(payload).expect(200);
             expect(response.body).toEqual(
                 status === UserStatus.PENDING
@@ -170,6 +200,127 @@ describe('Kakao skill HTTP contract', () => {
         (card) => {
             expect(card.title.length).toBeLessThanOrEqual(50);
             expect(card.description.length).toBeLessThanOrEqual(230);
+        }
+    );
+
+    it.each(['activities', 'select-activity'])('%s도 동일한 스킬 인증이 필요하다', async (path) => {
+        await request(app.getHttpServer() as App)
+            .post(`/kakao/skill/${path}`)
+            .send(payload)
+            .expect(401);
+    });
+
+    it.each(['activities', 'select-activity'])(
+        '미연결 사용자의 %s는 JWT 없이 안내 카드를 받는다',
+        async (path) => {
+            const response = await request(app.getHttpServer() as App)
+                .post(`/kakao/skill/${path}`)
+                .set('x-kakao-skill-secret', 'test-secret')
+                .send(payload)
+                .expect(200);
+            expect(response.body).toEqual(linkCardResponse(KAKAO_MESSAGES.UNLINKED, guideUrl));
+            expect(blocks.findRecentExperiences).not.toHaveBeenCalled();
+            expect(links.selectBlock).not.toHaveBeenCalled();
+        }
+    );
+
+    it('activities는 최근 활동 버튼과 웹 이동 버튼을 카카오 포맷으로 반환한다', async () => {
+        users.findByKakaoLoginId.mockResolvedValue(
+            Object.assign(new User(), { id: 1, status: UserStatus.ACTIVE, isActive: true })
+        );
+        const response = await request(app.getHttpServer() as App)
+            .post('/kakao/skill/activities')
+            .set('x-kakao-skill-secret', 'test-secret')
+            .send(payload)
+            .expect(200);
+        expect(response.body).toEqual({
+            version: '2.0',
+            template: {
+                outputs: [
+                    {
+                        textCard: {
+                            description: KAKAO_MESSAGES.SELECT_ACTIVITY,
+                            buttons: [
+                                {
+                                    action: 'webLink',
+                                    label: '웹에서 활동 보기',
+                                    webLinkUrl: 'https://example.test/experience',
+                                },
+                            ],
+                        },
+                    },
+                ],
+                quickReplies: [
+                    {
+                        label: '프로젝트',
+                        action: 'block',
+                        blockId: 'select-block',
+                        extra: { block_id: '12' },
+                    },
+                ],
+            },
+        });
+    });
+
+    it('select-activity는 clientExtra.block_id로 소유권을 확인하고 선택한다', async () => {
+        users.findByKakaoLoginId.mockResolvedValue(
+            Object.assign(new User(), { id: 1, status: UserStatus.ACTIVE, isActive: true })
+        );
+        const response = await request(app.getHttpServer() as App)
+            .post('/kakao/skill/select-activity')
+            .set('x-kakao-skill-secret', 'test-secret')
+            .send({ ...payload, action: { clientExtra: { block_id: '12' }, extra: true } })
+            .expect(200);
+        expect(response.body).toEqual(textResponse(KAKAO_MESSAGES.ACTIVITY_SELECTED('프로젝트')));
+        expect(blocks.findExperience).toHaveBeenCalledWith('12', 1);
+        expect(links.selectBlock).toHaveBeenCalledWith(1, '12');
+    });
+
+    it('삭제된 활동과 최초 미선택은 다른 안내를 응답한다', async () => {
+        const link = KakaoChannelLink.create(1, 'k1');
+        link.activitySelectedAt = new Date();
+        links.findByKakaoAppUserId.mockResolvedValue(link);
+        users.findByIdOrThrow.mockResolvedValue(
+            Object.assign(new User(), { id: 1, status: UserStatus.ACTIVE, isActive: true })
+        );
+        const response = await post().send(payload).expect(200);
+        expect(response.body).toEqual({
+            version: '2.0',
+            template: {
+                outputs: [
+                    {
+                        textCard: {
+                            description: KAKAO_MESSAGES.ACTIVITY_NOT_FOUND,
+                            buttons: [
+                                {
+                                    action: 'message',
+                                    label: '활동 다시 선택',
+                                    messageText: '/활동변경',
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        });
+    });
+
+    it.each(['chat', 'activities', 'select-activity'])(
+        '잠금 중 %s는 처리 중 문구를 반환한다',
+        async (path) => {
+            const link = KakaoChannelLink.create(1, 'k1');
+            link.turnLockedUntil = new Date(Date.now() + 60_000);
+            links.findByKakaoAppUserId.mockResolvedValue(link);
+            users.findByIdOrThrow.mockResolvedValue(
+                Object.assign(new User(), { id: 1, status: UserStatus.ACTIVE, isActive: true })
+            );
+            const response = await request(app.getHttpServer() as App)
+                .post(`/kakao/skill/${path}`)
+                .set('x-kakao-skill-secret', 'test-secret')
+                .send(payload)
+                .expect(200);
+            expect(response.body).toEqual(textResponse(KAKAO_MESSAGES.TURN_IN_PROGRESS));
+            expect(links.selectBlock).not.toHaveBeenCalled();
         }
     );
 });

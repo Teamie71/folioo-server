@@ -29,4 +29,18 @@ export class KakaoSkillController {
     chat(@Body() payload: KakaoSkillReqDTO): Promise<KakaoSkillResDTO> {
         return this.kakaoSkillFacade.chat(payload);
     }
+
+    @Post('activities')
+    @HttpCode(200)
+    @ApiOperation({ summary: '정리할 활동 목록 조회 및 활동 변경' })
+    activities(@Body() payload: KakaoSkillReqDTO): Promise<KakaoSkillResDTO> {
+        return this.kakaoSkillFacade.activities(payload);
+    }
+
+    @Post('select-activity')
+    @HttpCode(200)
+    @ApiOperation({ summary: '카카오톡에서 정리할 활동 선택' })
+    selectActivity(@Body() payload: KakaoSkillReqDTO): Promise<KakaoSkillResDTO> {
+        return this.kakaoSkillFacade.selectActivity(payload);
+    }
 }
