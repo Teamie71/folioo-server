@@ -23,6 +23,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { BlockModule } from './modules/block/block.module';
 import { AssessmentModule } from './modules/assessment/assessment.module';
+import { KakaoChannelModule } from './modules/kakao-channel/kakao-channel.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -62,6 +63,7 @@ import { DataSource } from 'typeorm';
         InterviewModule,
         InternalModule,
         AdminModule,
+        KakaoChannelModule,
     ],
     providers: [
         {
