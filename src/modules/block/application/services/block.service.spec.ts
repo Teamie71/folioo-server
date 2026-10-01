@@ -25,6 +25,50 @@ function makeBlock(overrides: Partial<Block>): Block {
     } as Block;
 }
 
+describe('BlockService kakao activities', () => {
+    const repository = { findRecentExperiences: jest.fn(), findByIdAndUserId: jest.fn() };
+    let service: BlockService;
+    beforeEach(async () => {
+        jest.clearAllMocks();
+        const module = await Test.createTestingModule({
+            providers: [
+                BlockService,
+                { provide: BlockRepository, useValue: repository },
+                { provide: BlockKindRepository, useValue: {} },
+                { provide: ExperienceMetaRepository, useValue: {} },
+            ],
+        }).compile();
+        service = module.get(BlockService);
+    });
+
+    it('활동은 10개를 요청하고 빈 이름은 기본 이름으로 표시한다', async () => {
+        repository.findRecentExperiences.mockResolvedValue([
+            { id: '1', name: null },
+            { id: '2', name: '' },
+            { id: '3', name: '   ' },
+            { id: '4', name: '프로젝트' },
+        ]);
+        await expect(service.findRecentExperiences(1)).resolves.toEqual([
+            { id: '1', name: '이름 없는 활동' },
+            { id: '2', name: '이름 없는 활동' },
+            { id: '3', name: '이름 없는 활동' },
+            { id: '4', name: '프로젝트' },
+        ]);
+        expect(repository.findRecentExperiences).toHaveBeenCalledWith(1, 10);
+    });
+
+    it('본인 소유 활동만 반환하며 다른 유형·없는 활동은 null이다', async () => {
+        const activity = makeBlock({ id: '12', kind: BlockKind.EXPERIENCE });
+        repository.findByIdAndUserId.mockResolvedValue(activity);
+        await expect(service.findExperience('12', 1)).resolves.toBe(activity);
+        expect(repository.findByIdAndUserId).toHaveBeenCalledWith('12', 1);
+        repository.findByIdAndUserId.mockResolvedValue(makeBlock({ kind: BlockKind.GROUP }));
+        await expect(service.findExperience('12', 1)).resolves.toBeNull();
+        repository.findByIdAndUserId.mockResolvedValue(null);
+        await expect(service.findExperience('12', 1)).resolves.toBeNull();
+    });
+});
+
 describe('BlockService.moveBlock', () => {
     let service: BlockService;
     let blockRepository: jest.Mocked<BlockRepository>;
