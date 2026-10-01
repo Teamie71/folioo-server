@@ -218,6 +218,14 @@ export class UserService {
         return socialUser?.user ?? null;
     }
 
+    async findKakaoLoginIdByUserId(userId: number): Promise<string | null> {
+        const socialUser = await this.socialUserRepository.findByUserIdAndLoginType(
+            userId,
+            LoginType.KAKAO
+        );
+        return socialUser?.loginId ?? null;
+    }
+
     async findByIdOrThrow(userId: number): Promise<User> {
         const user = await this.userRepository.findById(userId);
         if (!user) {

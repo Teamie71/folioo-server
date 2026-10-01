@@ -14,6 +14,10 @@ export class KakaoChannelLinkRepository {
         return this.kakaoChannelLinkRepository.findOne({ where: { kakaoAppUserId } });
     }
 
+    findByUserId(userId: number): Promise<KakaoChannelLink | null> {
+        return this.kakaoChannelLinkRepository.findOne({ where: { userId } });
+    }
+
     // 같은 사용자의 첫 메시지가 동시에 들어와도 한 행만 남도록 충돌은 무시한다.
     async insertIgnoringConflict(link: KakaoChannelLink): Promise<void> {
         await this.kakaoChannelLinkRepository
