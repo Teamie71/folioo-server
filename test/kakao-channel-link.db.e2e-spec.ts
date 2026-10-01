@@ -43,7 +43,7 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
             readFileSync(
                 join(
                     __dirname,
-                    '../supabase/migrations/20260930120000_create_kakao_channel_link.sql'
+                    '../supabase/migrations/20261001120000_create_kakao_channel_link.sql'
                 ),
                 'utf8'
             )
