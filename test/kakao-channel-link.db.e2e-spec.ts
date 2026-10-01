@@ -1,4 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { BlockService } from '../src/modules/block/application/services/block.service';
+import { BlockRepository } from '../src/modules/block/infrastructure/repositories/block.repository';
+import { Block } from '../src/modules/block/domain/block.entity';
 import { join } from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
@@ -10,7 +13,7 @@ import { KakaoSkillFacade } from '../src/modules/kakao-channel/application/facad
 import { UserService } from '../src/modules/user/application/services/user.service';
 import { User } from '../src/modules/user/domain/user.entity';
 import { UserStatus } from '../src/modules/user/domain/enums/user-status.enum';
-import { textResponse } from '../src/modules/kakao-channel/application/kakao-skill-response';
+import { textCardResponse } from '../src/modules/kakao-channel/application/kakao-skill-response';
 import { KAKAO_MESSAGES } from '../src/modules/kakao-channel/application/kakao-messages';
 
 const databaseUrl = process.env.KAKAO_TEST_DATABASE_URL;
@@ -38,7 +41,9 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
         await db.initialize();
         // 전체 운영 스키마 대신 FK 대상의 실제 키 타입을 재현한다.
         await db.query('CREATE TABLE users (id INT PRIMARY KEY)');
-        await db.query('CREATE TABLE block (id BIGINT PRIMARY KEY)');
+        await db.query(
+            `CREATE TABLE block (id BIGINT PRIMARY KEY, user_id INT, parent_id BIGINT REFERENCES block(id) ON DELETE CASCADE, kind TEXT, content TEXT, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`
+        );
         await db.query(
             readFileSync(
                 join(
@@ -117,7 +122,11 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
                 findByIdOrThrow: () => Promise.resolve(user),
             } as unknown as UserService,
             service,
-            new ConfigService({ KAKAO_WEB_GUIDE_URL: 'https://example.test/login' })
+            new ConfigService({
+                KAKAO_WEB_GUIDE_URL: 'https://example.test/login',
+                KAKAO_WEB_ACTIVITY_LIST_URL: 'https://example.test/activities',
+            }),
+            { findRecentExperiences: () => Promise.resolve([]) } as unknown as BlockService
         );
         // 두 요청 모두 미연결 조회를 마친 뒤 INSERT하도록 동시 충돌을 재현한다.
         const repository = new KakaoChannelLinkRepository(db.getRepository(KakaoChannelLink));
@@ -137,8 +146,20 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
             const payload = { userRequest: { user: { properties: { appUserId: 'k1' } } } };
             const responses = await Promise.all([facade.chat(payload), facade.chat(payload)]);
             expect(responses).toEqual([
-                textResponse(KAKAO_MESSAGES.NOT_READY),
-                textResponse(KAKAO_MESSAGES.NOT_READY),
+                textCardResponse(KAKAO_MESSAGES.NO_ACTIVITY, [
+                    {
+                        action: 'webLink',
+                        label: '웹에서 활동 만들기',
+                        webLinkUrl: 'https://example.test/activities',
+                    },
+                ]),
+                textCardResponse(KAKAO_MESSAGES.NO_ACTIVITY, [
+                    {
+                        action: 'webLink',
+                        label: '웹에서 활동 만들기',
+                        webLinkUrl: 'https://example.test/activities',
+                    },
+                ]),
             ]);
             expect(await db.getRepository(KakaoChannelLink).count()).toBe(1);
         } finally {
@@ -187,5 +208,50 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
         await service.link(1, 'k1');
         await db.query('DELETE FROM users WHERE id = 1');
         expect(await service.findByKakaoAppUserId('k1')).toBeNull();
+    });
+
+    it('AC-2-1: 소유 활동 12개에서 최근 10개만 반환하고 동률은 ID 내림차순이다', async () => {
+        await db.query('TRUNCATE block CASCADE');
+        await db.query(`INSERT INTO block (id, user_id, kind, content, updated_at)
+            SELECT i, 1, 'EXPERIENCE', '활동 ' || i, '2026-09-30T00:00:00Z'::timestamptz
+            FROM generate_series(1, 12) AS i`);
+        await db.query(`INSERT INTO block (id, user_id, kind, content, updated_at)
+            VALUES (20, 2, 'EXPERIENCE', '다른 사용자', '2026-10-01T00:00:00Z'),
+                   (21, 1, 'GROUP', '그룹', '2026-10-01T00:00:00Z')`);
+        const repository = new BlockRepository(db.getRepository(Block));
+        const activities = await repository.findRecentExperiences(1, 10);
+        expect(activities.map(({ id }) => id)).toEqual([
+            '12',
+            '11',
+            '10',
+            '9',
+            '8',
+            '7',
+            '6',
+            '5',
+            '4',
+            '3',
+        ]);
+        expect(activities[0].name).toBe('활동 12');
+    });
+
+    it('AC-2-2: 하위 트리 수정은 조상 활동의 최근 순서를 올리되 다른 사용자 수정은 제외한다', async () => {
+        await db.query('TRUNCATE block CASCADE');
+        await db.query(`INSERT INTO block (id, user_id, kind, parent_id, updated_at) VALUES
+            (1, 1, 'EXPERIENCE', NULL, '2026-09-01T00:00:00Z'),
+            (2, 1, 'EXPERIENCE', NULL, '2026-09-20T00:00:00Z'),
+            (3, 1, 'SECTION_TASK', 1, '2026-09-01T00:00:00Z'),
+            (4, 1, 'CONTENT', 3, '2026-09-30T00:00:00Z'),
+            (5, 2, 'CONTENT', 2, '2026-10-01T00:00:00Z')`);
+        const repository = new BlockRepository(db.getRepository(Block));
+        expect((await repository.findRecentExperiences(1, 10)).map(({ id }) => id)).toEqual([
+            '1',
+            '2',
+        ]);
+        await db.query("UPDATE block SET updated_at = '2026-10-02T00:00:00Z' WHERE id = 2");
+        expect((await repository.findRecentExperiences(1, 10)).map(({ id }) => id)).toEqual([
+            '2',
+            '1',
+        ]);
     });
 });

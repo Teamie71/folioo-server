@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { KakaoChannelLink } from '../../domain/kakao-channel-link.entity';
 import { KakaoChannelLinkRepository } from '../../infrastructure/repositories/kakao-channel-link.repository';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 @Injectable()
 export class KakaoChannelLinkService {
@@ -10,10 +12,19 @@ export class KakaoChannelLinkService {
         return this.kakaoChannelLinkRepository.findByKakaoAppUserId(kakaoAppUserId);
     }
 
-    async link(userId: number, kakaoAppUserId: string): Promise<void> {
+    async link(userId: number, kakaoAppUserId: string): Promise<KakaoChannelLink> {
         await this.kakaoChannelLinkRepository.insertIgnoringConflict(
             KakaoChannelLink.create(userId, kakaoAppUserId)
         );
+        const link = await this.findByKakaoAppUserId(kakaoAppUserId);
+        if (!link || link.userId !== userId) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        return link;
+    }
+
+    isTurnInProgress(link: KakaoChannelLink, now = new Date()): boolean {
+        return (link.turnLockedUntil?.getTime() ?? 0) > now.getTime();
     }
 
     async unlink(userId: number): Promise<void> {
