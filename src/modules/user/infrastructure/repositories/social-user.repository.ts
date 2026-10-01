@@ -64,6 +64,10 @@ export class SocialUserRepository {
         });
     }
 
+    findByUserIdAndLoginType(userId: number, loginType: LoginType): Promise<SocialUser | null> {
+        return this.socialUserRepository.findOne({ where: { userId, loginType } });
+    }
+
     async deleteByUserId(userId: number): Promise<void> {
         await this.socialUserRepository.delete({ userId });
     }
