@@ -29,4 +29,16 @@ Sentry.init({
 
     // PII(개인식별정보) 전송 여부
     sendDefaultPii: false,
+
+    // 스킬 본문의 callbackUrl은 일회용 토큰이다. 카카오 턴은 로그의 안전한 메타데이터로만 관측한다.
+    integrations: [
+        Sentry.httpIntegration({
+            ignoreIncomingRequests: (path) => path.startsWith('/kakao/skill/'),
+            ignoreOutgoingRequests: (url) =>
+                url.includes('/kakao/turns') || url.includes('/bot-api.kakao.com/'),
+        }),
+    ],
+    beforeSend: (event) => (event.request?.url?.includes('/kakao/skill/') ? null : event),
+    beforeSendTransaction: (event) =>
+        event.request?.url?.includes('/kakao/skill/') ? null : event,
 });

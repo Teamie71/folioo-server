@@ -1,3 +1,7 @@
+import { AiExperienceSessionService } from 'src/modules/block/application/services/ai-experience-session.service';
+import { AiAgentUsageService } from 'src/modules/block/application/services/ai-agent-usage.service';
+import { KakaoTurnService } from 'src/modules/kakao-channel/application/services/kakao-turn.service';
+jest.mock('typeorm-transactional', () => ({ Transactional: () => () => undefined }));
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { UserService } from 'src/modules/user/application/services/user.service';
@@ -17,7 +21,8 @@ describe('Kakao activity selection', () => {
     const users = { findByIdOrThrow: jest.fn().mockResolvedValue(user) };
     const links = {
         findByKakaoAppUserId: jest.fn().mockResolvedValue(link),
-        selectBlock: jest.fn().mockResolvedValue(undefined),
+        selectBlock: jest.fn().mockResolvedValue(true),
+        setQueryTimeout: jest.fn().mockResolvedValue(undefined),
         isTurnInProgress: (value: KakaoChannelLink) =>
             KakaoChannelLinkService.prototype.isTurnInProgress(value),
     };
@@ -31,12 +36,16 @@ describe('Kakao activity selection', () => {
         users as unknown as UserService,
         links as unknown as KakaoChannelLinkService,
         config,
-        blocks as unknown as BlockService
+        blocks as unknown as BlockService,
+        { getOrCreate: jest.fn() } as unknown as AiExperienceSessionService,
+        {} as AiAgentUsageService,
+        {} as KakaoTurnService
     );
     const payload = {
         userRequest: { user: { properties: { appUserId: 'k1' } }, utterance: '경험 내용' },
     };
     let errorLog: jest.SpyInstance;
+    let submit: jest.SpyInstance;
 
     beforeAll(() => {
         errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
@@ -46,6 +55,9 @@ describe('Kakao activity selection', () => {
     });
     beforeEach(() => {
         jest.clearAllMocks();
+        submit = jest
+            .spyOn(facade, 'submit')
+            .mockResolvedValue(textResponse(KAKAO_MESSAGES.ACCEPTED));
         link.currentBlockId = null;
         link.activitySelectedAt = null;
         link.turnLockedUntil = null;
@@ -55,7 +67,7 @@ describe('Kakao activity selection', () => {
         blocks.findExperience
             .mockReset()
             .mockResolvedValue(Object.assign(new Block(), { id: '12', content: '프로젝트' }));
-        links.selectBlock.mockReset().mockResolvedValue(undefined);
+        links.selectBlock.mockReset().mockResolvedValue(true);
     });
 
     it('AC-2-3: 활동이 없으면 생성 버튼과 확정 안내를 반환한다', async () => {
@@ -73,6 +85,7 @@ describe('Kakao activity selection', () => {
 
     it('AC-2-4: 미선택 발화는 선택 안내·버튼·퀵리플라이만 응답한다', async () => {
         const result = await facade.chat(payload);
+        if (!('template' in result)) throw new Error('Expected synchronous response');
         expect(result.template.outputs).toEqual([
             {
                 textCard: {
@@ -106,6 +119,7 @@ describe('Kakao activity selection', () => {
             ...payload,
             userRequest: { ...payload.userRequest, utterance: '/활동변경' },
         });
+        if (!('template' in result)) throw new Error('Expected synchronous response');
         expect(result.template.outputs).toEqual([
             {
                 textCard: {
@@ -193,6 +207,7 @@ describe('Kakao activity selection', () => {
     it('AC-2-8: 삭제 기록이 있으면 최초 미선택과 구별해 재선택을 안내한다', async () => {
         link.activitySelectedAt = new Date();
         const result = await facade.chat(payload);
+        if (!('template' in result)) throw new Error('Expected synchronous response');
         expect(result.template.outputs[0]).toEqual({
             textCard: {
                 description: KAKAO_MESSAGES.ACTIVITY_NOT_FOUND,
@@ -206,6 +221,7 @@ describe('Kakao activity selection', () => {
         link.currentBlockId = '12';
         blocks.findExperience.mockResolvedValue(null);
         const result = await facade.chat(payload);
+        if (!('template' in result)) throw new Error('Expected synchronous response');
         expect(result.template.outputs[0]).toMatchObject({
             textCard: { description: KAKAO_MESSAGES.ACTIVITY_NOT_FOUND },
         });
@@ -227,10 +243,11 @@ describe('Kakao activity selection', () => {
         ).toHaveLength(10);
     });
 
-    it('AC-2-10: 유효한 활동이 선택돼 있으면 PR4 전까지 준비 중을 반환한다', async () => {
+    it('AC-2-10: 유효한 활동이 선택돼 있으면 대화 턴 처리로 넘긴다', async () => {
         link.currentBlockId = '12';
-        await expect(facade.chat(payload)).resolves.toEqual(textResponse(KAKAO_MESSAGES.NOT_READY));
+        await expect(facade.chat(payload)).resolves.toEqual(textResponse(KAKAO_MESSAGES.ACCEPTED));
         expect(blocks.findExperience).toHaveBeenCalledWith('12', 1);
+        expect(submit).toHaveBeenCalledWith(1, '12', payload, expect.any(Number));
     });
 
     it.each(['activities', 'selectActivity'] as const)(

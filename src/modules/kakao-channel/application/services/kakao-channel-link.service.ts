@@ -48,8 +48,24 @@ export class KakaoChannelLinkService {
     }
 
     // 활동 소유권 검증은 이 메서드를 호출하기 전 Facade에서 수행한다.
-    selectBlock(userId: number, blockId: string): Promise<void> {
+    selectBlock(userId: number, blockId: string): Promise<boolean> {
         return this.kakaoChannelLinkRepository.selectBlock(userId, blockId);
+    }
+
+    setQueryTimeout(timeoutMs: number): Promise<void> {
+        return this.kakaoChannelLinkRepository.setQueryTimeout(timeoutMs);
+    }
+
+    acquireTurnLock(userId: number, blockId: string, requestId: string): Promise<boolean> {
+        return this.kakaoChannelLinkRepository.acquireTurnLock(userId, blockId, requestId);
+    }
+
+    releaseTurnLock(userId: number, requestId: string): Promise<void> {
+        return this.kakaoChannelLinkRepository.releaseTurnLock(userId, requestId);
+    }
+
+    findPendingTurns(afterUserId: number): Promise<KakaoChannelLink[]> {
+        return this.kakaoChannelLinkRepository.findPendingTurns(afterUserId);
     }
 
     resetSelection(userId: number): Promise<void> {

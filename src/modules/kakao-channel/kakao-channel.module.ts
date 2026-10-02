@@ -1,3 +1,6 @@
+import { AiRelayModule } from 'src/infra/ai-relay/ai-relay.module';
+import { KakaoTurnService } from './application/services/kakao-turn.service';
+import { KakaoInternalController } from './presentation/kakao-internal.controller';
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
@@ -20,6 +23,7 @@ import { KakaoLinkController } from './presentation/kakao-link.controller';
         TypeOrmModule.forFeature([KakaoChannelLink]),
         UserModule,
         BlockModule,
+        AiRelayModule,
         HttpModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
@@ -29,11 +33,12 @@ import { KakaoLinkController } from './presentation/kakao-link.controller';
             inject: [ConfigService],
         }),
     ],
-    controllers: [KakaoSkillController, KakaoLinkController],
+    controllers: [KakaoSkillController, KakaoLinkController, KakaoInternalController],
     providers: [
         KakaoChannelLinkRepository,
         KakaoChannelLinkService,
         KakaoSkillFacade,
+        KakaoTurnService,
         KakaoOAuthClient,
         KakaoLinkTokenService,
         KakaoLinkFacade,
