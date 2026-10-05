@@ -36,6 +36,19 @@ export class BlockService {
         return this.blockRepository.findAllByUserId(userId);
     }
 
+    async findRecentExperiences(userId: number): Promise<{ id: string; name: string }[]> {
+        const activities = await this.blockRepository.findRecentExperiences(userId, 10);
+        return activities.map(({ id, name }) => ({
+            id,
+            name: name?.trim() ? name : '이름 없는 활동',
+        }));
+    }
+
+    async findExperience(blockId: string, userId: number): Promise<Block | null> {
+        const block = await this.blockRepository.findByIdAndUserId(blockId, userId);
+        return block?.kind === BlockKind.EXPERIENCE ? block : null;
+    }
+
     // 되돌리기: AI 커밋이 새로 만든 블록을 삭제한다. parent_id CASCADE 덕분에
     // 목록에 조상 id만 있어도 하위 트리가 함께 지워진다.
     async deleteByIds(blockIds: string[]): Promise<void> {

@@ -8,6 +8,18 @@ interface ErrorDetail {
 }
 
 export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
+    [ErrorCode.KAKAO_LINK_TOKEN_INVALID]: {
+        message: '카카오 연결 정보가 유효하지 않습니다. 다시 시도해 주세요.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.KAKAO_ACCOUNT_ALREADY_LINKED]: {
+        message: '이미 다른 Folioo 계정에 연결된 카카오 계정입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.KAKAO_CHANNEL_ALREADY_LINKED]: {
+        message: '이미 다른 카카오 계정이 연결되어 있습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.BAD_REQUEST]: {
         message: '잘못된 요청입니다.',
         statusCode: HttpStatus.BAD_REQUEST,

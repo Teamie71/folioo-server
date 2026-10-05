@@ -17,6 +17,7 @@ import { AgreeTermsResDTO } from '../dtos/agree-terms.dto';
 import { SocialAccountUnlinkClient } from '../../infrastructure/clients/social-account-unlink.client';
 import { Transactional } from 'typeorm-transactional';
 import { UserStatus } from '../../domain/enums/user-status.enum';
+import { LoginType } from '../../domain/enums/login-type.enum';
 import { Term } from '../../domain/term.entity';
 import { WithdrawnUserRepository } from '../../infrastructure/repositories/withdrawn-user.repository';
 import { hashWithdrawalIdentifier } from '../../domain/transformers/withdrawal-identifier.transformer';
@@ -207,6 +208,22 @@ export class UserService {
         if (!allowPending && user.status === UserStatus.PENDING) {
             throw new BusinessException(ErrorCode.PENDING_USER);
         }
+    }
+
+    async findByKakaoLoginId(kakaoLoginId: string): Promise<User | null> {
+        const socialUser = await this.socialUserRepository.findByLoginTypeAndLoginId(
+            LoginType.KAKAO,
+            kakaoLoginId
+        );
+        return socialUser?.user ?? null;
+    }
+
+    async findKakaoLoginIdByUserId(userId: number): Promise<string | null> {
+        const socialUser = await this.socialUserRepository.findByUserIdAndLoginType(
+            userId,
+            LoginType.KAKAO
+        );
+        return socialUser?.loginId ?? null;
     }
 
     async findByIdOrThrow(userId: number): Promise<User> {
