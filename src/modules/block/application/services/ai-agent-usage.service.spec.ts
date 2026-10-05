@@ -1,3 +1,4 @@
+jest.mock('typeorm-transactional', () => ({ Transactional: () => () => undefined }));
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiAgentUsageService, AI_AGENT_DAILY_LIMIT } from './ai-agent-usage.service';
@@ -8,6 +9,8 @@ function makeInMemoryRepository(): AiAgentUsageRepository {
     const rows = new Map<string, AiAgentUsage>();
     const key = (userId: number, requestId: string) => `${userId}:${requestId}`;
     return {
+        lockUser: () => Promise.resolve(),
+        setQueryTimeout: () => Promise.resolve(),
         findByUserIdAndRequestId: (userId: number, requestId: string) =>
             Promise.resolve(rows.get(key(userId, requestId)) ?? null),
         countUsed: (userId: number, usageDate: string) =>

@@ -1,3 +1,6 @@
+import { AiExperienceSessionService } from 'src/modules/block/application/services/ai-experience-session.service';
+import { AiAgentUsageService } from 'src/modules/block/application/services/ai-agent-usage.service';
+import { KakaoTurnService } from 'src/modules/kakao-channel/application/services/kakao-turn.service';
 import { readFileSync } from 'node:fs';
 import { BlockService } from '../src/modules/block/application/services/block.service';
 import { BlockRepository } from '../src/modules/block/infrastructure/repositories/block.repository';
@@ -164,7 +167,10 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
                 KAKAO_WEB_GUIDE_URL: 'https://example.test/login',
                 KAKAO_WEB_ACTIVITY_LIST_URL: 'https://example.test/activities',
             }),
-            { findRecentExperiences: () => Promise.resolve([]) } as unknown as BlockService
+            { findRecentExperiences: () => Promise.resolve([]) } as unknown as BlockService,
+            {} as AiExperienceSessionService,
+            {} as AiAgentUsageService,
+            {} as KakaoTurnService
         );
         // 두 요청 모두 미연결 조회를 마친 뒤 INSERT하도록 동시 충돌을 재현한다.
         const repository = new KakaoChannelLinkRepository(db.getRepository(KakaoChannelLink));
@@ -299,7 +305,10 @@ describeDatabase('Kakao channel link PostgreSQL contract', () => {
             users as unknown as UserService,
             service,
             new ConfigService({}),
-            {} as BlockService
+            {} as BlockService,
+            {} as AiExperienceSessionService,
+            {} as AiAgentUsageService,
+            {} as KakaoTurnService
         );
         expect(await skill.resolveUser('123')).toMatchObject({ kind: 'LINKED', userId: 1 });
         expect(users.findByKakaoLoginId).toHaveBeenCalledTimes(1); // 연결 확정에서만 조회, 스킬은 연결 행 사용

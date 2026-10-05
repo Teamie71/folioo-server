@@ -16,7 +16,6 @@ export class ExperienceMapTicketFacade {
         private readonly aiAgentUsageService: AiAgentUsageService
     ) {}
 
-    @Transactional()
     async issueTicket(
         userId: number,
         blockId: string,
@@ -25,15 +24,25 @@ export class ExperienceMapTicketFacade {
         await this.blockService.findExperienceOrThrow(blockId, userId);
         const session = await this.aiExperienceSessionService.getOrCreate(userId, blockId);
         const requestId = retryRequestId ?? randomUUID();
+        return this.issueReservedTicket(userId, blockId, session.sessionId, requestId);
+    }
+
+    @Transactional()
+    private async issueReservedTicket(
+        userId: number,
+        blockId: string,
+        sessionId: string,
+        requestId: string
+    ): Promise<IssueTicketResDTO> {
         await this.aiAgentUsageService.consume(userId, requestId);
         const { ticket, expiresIn } = this.experienceMapTicketService.issueTicket(
             userId,
-            session.sessionId,
+            sessionId,
             blockId,
             'turn',
             requestId
         );
-        return IssueTicketResDTO.from(ticket, session.sessionId, requestId, expiresIn);
+        return IssueTicketResDTO.from(ticket, sessionId, requestId, expiresIn);
     }
 
     // 대화 내역 조회용. 한도를 차감하지 않으며, AI 서버는 이 티켓으로 턴을 실행하면 안 된다.

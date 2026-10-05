@@ -45,3 +45,11 @@ export interface KakaoSkillResDTO {
     version: '2.0';
     template: { outputs: KakaoOutput[]; quickReplies?: KakaoQuickReply[] };
 }
+
+export interface KakaoCallbackResDTO {
+    version: '2.0';
+    useCallback: true;
+    data: { text: string };
+}
+
+export type KakaoSkillResponse = KakaoSkillResDTO | KakaoCallbackResDTO;

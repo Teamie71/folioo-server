@@ -80,7 +80,10 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
                     ...request.headers,
                     'X-API-Key': apiKey,
                 },
-                timeout: 30_000,
+                timeout: request.timeoutMs ?? 30_000,
+                ...(request.returnHttpErrors
+                    ? { validateStatus: () => true, maxRedirects: 0 }
+                    : {}),
             });
 
             return {
@@ -92,9 +95,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
             if (axios.isAxiosError(error)) {
                 const status = error.response?.status;
                 this.logger.error('AI JSON request failed', {
-                    url: requestUrl,
                     status,
-                    error: error.message,
                 });
             } else {
                 this.logger.error('Unknown AI JSON request failure');
@@ -115,9 +116,13 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
                 {
                     headers: {
                         'Content-Type': 'application/json',
+                        ...request.headers,
                         'X-API-Key': apiKey,
                     },
-                    timeout: 30_000,
+                    timeout: request.timeoutMs ?? 30_000,
+                    ...(request.returnHttpErrors
+                        ? { validateStatus: () => true, maxRedirects: 0 }
+                        : {}),
                 }
             );
 
@@ -129,9 +134,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
                 this.logger.error('AI POST JSON request failed', {
-                    url: requestUrl,
                     status: error.response?.status,
-                    error: error.message,
                 });
             } else {
                 this.logger.error('Unknown AI POST JSON request failure');

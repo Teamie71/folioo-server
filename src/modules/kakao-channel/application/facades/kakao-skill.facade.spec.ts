@@ -1,3 +1,7 @@
+import { AiExperienceSessionService } from 'src/modules/block/application/services/ai-experience-session.service';
+import { AiAgentUsageService } from 'src/modules/block/application/services/ai-agent-usage.service';
+import { KakaoTurnService } from 'src/modules/kakao-channel/application/services/kakao-turn.service';
+jest.mock('typeorm-transactional', () => ({ Transactional: () => () => undefined }));
 import { ConfigService } from '@nestjs/config';
 import { BlockService } from 'src/modules/block/application/services/block.service';
 import { UserService } from 'src/modules/user/application/services/user.service';
@@ -38,7 +42,10 @@ describe('KakaoSkillFacade.resolveUser', () => {
         } as unknown as UserService,
         linkService as unknown as KakaoChannelLinkService,
         new ConfigService(),
-        {} as BlockService
+        {} as BlockService,
+        {} as AiExperienceSessionService,
+        {} as AiAgentUsageService,
+        {} as KakaoTurnService
     );
 
     beforeEach(() => {

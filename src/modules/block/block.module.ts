@@ -94,6 +94,6 @@ import { TemplateController } from './presentation/template.controller';
         ExperienceMapTicketFacade,
         TemplateCatalogService,
     ],
-    exports: [BlockService],
+    exports: [BlockService, AiExperienceSessionService, AiAgentUsageService],
 })
 export class BlockModule {}

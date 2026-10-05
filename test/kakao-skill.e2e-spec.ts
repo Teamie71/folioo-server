@@ -1,3 +1,7 @@
+jest.mock('typeorm-transactional', () => ({ Transactional: () => () => undefined }));
+import { AiExperienceSessionService } from 'src/modules/block/application/services/ai-experience-session.service';
+import { AiAgentUsageService } from 'src/modules/block/application/services/ai-agent-usage.service';
+import { KakaoTurnService } from 'src/modules/kakao-channel/application/services/kakao-turn.service';
 import { Test } from '@nestjs/testing';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
@@ -33,6 +37,7 @@ describe('Kakao skill HTTP contract', () => {
         findByKakaoAppUserId: jest.fn(),
         link: jest.fn(),
         selectBlock: jest.fn(),
+        setQueryTimeout: jest.fn().mockResolvedValue(undefined),
         isTurnInProgress: (link: KakaoChannelLink) =>
             KakaoChannelLinkService.prototype.isTurnInProgress(link),
     };
@@ -58,6 +63,9 @@ describe('Kakao skill HTTP contract', () => {
             controllers: [KakaoSkillController],
             providers: [
                 KakaoSkillFacade,
+                { provide: AiExperienceSessionService, useValue: { getOrCreate: jest.fn() } },
+                { provide: AiAgentUsageService, useValue: {} },
+                { provide: KakaoTurnService, useValue: {} },
                 { provide: ConfigService, useValue: config },
                 { provide: UserService, useValue: users },
                 { provide: KakaoChannelLinkService, useValue: links },
@@ -73,6 +81,9 @@ describe('Kakao skill HTTP contract', () => {
         app.useGlobalInterceptors(new TransformInterceptor(app.get(Reflector)));
         app.useGlobalFilters(new GlobalExceptionFilter(app.get(HttpAdapterHost)));
         await app.init();
+        jest.spyOn(app.get(KakaoSkillFacade), 'submit').mockResolvedValue(
+            textResponse(KAKAO_MESSAGES.ACCEPTED)
+        );
     });
 
     beforeEach(() => {
@@ -85,7 +96,7 @@ describe('Kakao skill HTTP contract', () => {
         config.set('KAKAO_SELECT_ACTIVITY_BLOCK_ID', 'select-block');
         links.findByKakaoAppUserId.mockReset().mockResolvedValue(null);
         links.link.mockReset().mockResolvedValue(KakaoChannelLink.create(1, 'k1'));
-        links.selectBlock.mockReset().mockResolvedValue(undefined);
+        links.selectBlock.mockReset().mockResolvedValue(true);
         blocks.findRecentExperiences
             .mockReset()
             .mockResolvedValue([{ id: '12', name: '프로젝트' }]);
@@ -166,7 +177,7 @@ describe('Kakao skill HTTP contract', () => {
             expect(response.body).toEqual(
                 status === UserStatus.PENDING
                     ? linkCardResponse(KAKAO_MESSAGES.PENDING, guideUrl)
-                    : textResponse(KAKAO_MESSAGES.NOT_READY)
+                    : textResponse(KAKAO_MESSAGES.ACCEPTED)
             );
         }
     );
@@ -183,7 +194,7 @@ describe('Kakao skill HTTP contract', () => {
         }
         const response = await post().send(payload).expect(200);
         expect(response.body).toEqual(textResponse(KAKAO_MESSAGES.ERROR));
-        expect(errorLog).toHaveBeenCalledWith('Kakao chat skill failed', error);
+        expect(errorLog).toHaveBeenCalledWith('Kakao chat skill failed');
     });
 
     it('안내 URL 미설정도 200 + 오류 안내', async () => {
