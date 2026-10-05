@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { isUUID } from 'class-validator';
+import { BusinessException } from 'src/common/exceptions/business.exception';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { AiRelayPort } from 'src/common/ports/ai-relay.port';
 import {
     AiExperienceSessionRepository,
@@ -41,10 +44,22 @@ export class AiExperienceSessionService {
         private readonly aiRelayPort: AiRelayPort
     ) {}
 
-    async getOrCreate(userId: number, blockId: string): Promise<AiExperienceSession> {
+    async getOrCreate(
+        userId: number,
+        blockId: string,
+        timeoutMs?: number
+    ): Promise<AiExperienceSession> {
+        const startedAt = Date.now();
+        const remaining = (): number | undefined => {
+            if (timeoutMs === undefined) return undefined;
+            const left = timeoutMs - (Date.now() - startedAt);
+            if (left <= 0) throw new BusinessException(ErrorCode.AI_RELAY_REQUEST_FAILED);
+            return left;
+        };
         const existing = await this.aiExperienceSessionRepository.findByUserIdAndBlockId(
             userId,
-            blockId
+            blockId,
+            remaining()
         );
         if (existing) {
             return existing;
@@ -53,13 +68,25 @@ export class AiExperienceSessionService {
         const response = await this.aiRelayPort.postJson<CreateSessionAiResponse>({
             path: '/sessions',
             body: { user_id: String(userId), block_id: blockId },
+            timeoutMs: remaining(),
         });
+
+        if (!isUUID(response.data?.session_id)) {
+            throw new BusinessException(ErrorCode.AI_RELAY_REQUEST_FAILED);
+        }
 
         const session = new AiExperienceSession();
         session.userId = userId;
         session.blockId = blockId;
         session.sessionId = response.data.session_id;
-        return this.aiExperienceSessionRepository.save(session);
+        await this.aiExperienceSessionRepository.insertIgnoringConflict(session, remaining());
+        const saved = await this.aiExperienceSessionRepository.findByUserIdAndBlockId(
+            userId,
+            blockId,
+            remaining()
+        );
+        if (!saved) throw new BusinessException(ErrorCode.AI_RELAY_REQUEST_FAILED);
+        return saved;
     }
 
     async getActivityStatuses(

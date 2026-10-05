@@ -1,3 +1,4 @@
+import { Transactional } from 'typeorm-transactional';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,8 +22,21 @@ export class AiExperienceSessionRepository {
         private readonly aiExperienceSessionRepository: Repository<AiExperienceSession>
     ) {}
 
-    findByUserIdAndBlockId(userId: number, blockId: string): Promise<AiExperienceSession | null> {
+    @Transactional()
+    async findByUserIdAndBlockId(
+        userId: number,
+        blockId: string,
+        timeoutMs?: number
+    ): Promise<AiExperienceSession | null> {
+        if (timeoutMs !== undefined) await this.setQueryTimeout(timeoutMs);
         return this.aiExperienceSessionRepository.findOne({ where: { userId, blockId } });
+    }
+
+    private async setQueryTimeout(timeoutMs: number): Promise<void> {
+        await this.aiExperienceSessionRepository.query(
+            "SELECT set_config('lock_timeout', $1, true), set_config('statement_timeout', $1, true)",
+            [String(timeoutMs)]
+        );
     }
 
     // 활동(세션)별 최신 요청 1건. 요청이 한 번도 없는 활동은 포함되지 않는다.
@@ -62,7 +76,18 @@ export class AiExperienceSessionRepository {
         );
     }
 
-    save(entity: AiExperienceSession): Promise<AiExperienceSession> {
-        return this.aiExperienceSessionRepository.save(entity);
+    @Transactional()
+    async insertIgnoringConflict(entity: AiExperienceSession, timeoutMs?: number): Promise<void> {
+        if (timeoutMs !== undefined) await this.setQueryTimeout(timeoutMs);
+        await this.aiExperienceSessionRepository
+            .createQueryBuilder()
+            .insert()
+            .values({
+                userId: entity.userId,
+                blockId: entity.blockId,
+                sessionId: entity.sessionId,
+            })
+            .orIgnore()
+            .execute();
     }
 }

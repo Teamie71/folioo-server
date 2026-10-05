@@ -4,12 +4,16 @@ export interface AiRelayRequest {
     path: string;
     body: unknown;
     headers?: Record<string, string>;
+    timeoutMs?: number;
+    returnHttpErrors?: boolean;
 }
 
 export interface AiRelayGetRequest {
     path: string;
     query?: Record<string, string | number | boolean | undefined>;
     headers?: Record<string, string>;
+    timeoutMs?: number;
+    returnHttpErrors?: boolean;
 }
 
 export interface AiRelayConnection {

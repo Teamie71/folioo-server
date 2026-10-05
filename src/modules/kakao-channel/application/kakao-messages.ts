@@ -1,3 +1,4 @@
+import { AI_AGENT_DAILY_LIMIT } from 'src/modules/block/application/services/ai-agent-usage.service';
 import { KakaoLinkCard } from './kakao-skill-response';
 
 // 카카오톡 챗봇 응답 문구. 회원 안내는 2026-09-30 확정 문구를 사용한다.
@@ -15,7 +16,10 @@ export const KAKAO_MESSAGES = {
             'Folioo 가입과 약관 동의를 아직 마치지 않았어요.\n웹에서 가입을 마친 뒤 이 채팅으로 돌아와 활동을 선택해 주세요.',
         buttonLabel: '웹에서 가입 마무리',
     },
-    NOT_READY: '카카오톡 경험 정리 기능을 준비하고 있어요. 조금만 기다려 주세요!',
+    INVALID_INPUT: '경험 내용은 500자 이내의 텍스트로 보내 주세요.',
+    ACCEPTED: 'AI 에이전트가 경험을 정리하고 있어요.\n잠시만 기다려 주세요.',
+    AI_FAILED: '앗, 작업 중 오류가 발생했어요.\n웹에서 다시 시도해주세요.',
+    DAILY_LIMIT: `오늘 사용 가능한 ${AI_AGENT_DAILY_LIMIT}회를 모두 사용했어요. 내일 다시 이어서 도와드릴게요.`,
     ERROR: '일시적인 오류가 발생했어요. 잠시 후 다시 시도해 주세요.',
     NO_ACTIVITY:
         '아직 등록된 활동이 없어요. 「웹에서 활동 만들기」를 눌러 Folioo에 로그인한 뒤 활동을 만들어 주세요.\n완료 후 이 채팅으로 돌아와 활동을 선택해 주세요.',

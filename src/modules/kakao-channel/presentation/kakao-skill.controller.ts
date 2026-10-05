@@ -3,7 +3,11 @@ import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
 import { KakaoSkillFacade } from '../application/facades/kakao-skill.facade';
-import type { KakaoSkillReqDTO, KakaoSkillResDTO } from '../application/dtos/kakao-skill.dto';
+import type {
+    KakaoSkillReqDTO,
+    KakaoSkillResDTO,
+    KakaoSkillResponse,
+} from '../application/dtos/kakao-skill.dto';
 import {
     KAKAO_SKILL_SECRET_HEADER,
     KakaoSkillGuard,
@@ -26,7 +30,7 @@ export class KakaoSkillController {
         description:
             'appUserId로 Folioo 사용자를 식별한다. 미연결이면 연결 안내 카드, 약관 미동의면 가입 마무리 카드를 응답한다.',
     })
-    chat(@Body() payload: KakaoSkillReqDTO): Promise<KakaoSkillResDTO> {
+    chat(@Body() payload: KakaoSkillReqDTO): Promise<KakaoSkillResponse> {
         return this.kakaoSkillFacade.chat(payload);
     }
 
