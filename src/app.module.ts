@@ -15,7 +15,6 @@ import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
 import { EventModule } from './modules/event/event.module';
-import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
@@ -57,7 +56,6 @@ import { DataSource } from 'typeorm';
         FeedbackModule,
         BlockModule,
         AssessmentModule,
-        InterviewModule,
         InternalModule,
         KakaoChannelModule,
     ],

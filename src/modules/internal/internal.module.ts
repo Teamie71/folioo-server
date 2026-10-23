@@ -5,7 +5,6 @@ import { InternalCorrectionResultController } from './presentation/internal-corr
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import { InsightModule } from '../insight/insight.module';
 import { PortfolioModule } from '../portfolio/portfolio.module';
-import { ExperienceModule } from '../experience/experience.module';
 import { InternalPortfolioFacade } from './application/facades/internal-portfolio.facade';
 import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-correction.module';
 import { AiClientExceptionFilter } from 'src/common/filters/ai-client-exception.filter';
@@ -13,7 +12,7 @@ import { InternalCorrectionResultFacade } from './application/facades/internal-c
 import { InternalPdfExtractionResultController } from './presentation/internal-pdf-extraction-result.controller';
 
 @Module({
-    imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule, ExperienceModule],
+    imports: [InsightModule, PortfolioModule, PortfolioCorrectionModule],
     controllers: [
         InternalController,
         InternalCorrectionController,

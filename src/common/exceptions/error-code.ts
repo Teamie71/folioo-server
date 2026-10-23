@@ -124,67 +124,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,
     },
-    [ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED]: {
-        message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_INVALID_CONTENT_TYPE]: {
-        message: 'multipart/form-data 요청 형식이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_FIELD_NAME_TOO_LONG]: {
-        message: '요청 필드 이름 길이가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_FIELD_VALUE_TOO_LARGE]: {
-        message: '요청 필드 값 크기가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MESSAGE_REQUIRED]: {
-        message: '메시지는 필수 입력값입니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_INSIGHT_ID_INVALID]: {
-        message: 'insightId 값이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_FIELD_INVALID]: {
-        message: '파일 필드 이름이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_MIME_INVALID]: {
-        message: '지원하지 않는 파일 형식입니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_SIZE_EXCEEDED]: {
-        message: '파일 크기가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_COUNT_EXCEEDED]: {
-        message: '첨부 파일 개수가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FIELD_COUNT_EXCEEDED]: {
-        message: '요청 필드 개수가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_PART_COUNT_EXCEEDED]: {
-        message: 'multipart 파트 개수가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_INVALID_PAYLOAD]: {
-        message: 'multipart 요청 본문이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_NOT_COMPLETED]: {
-        message:
-            '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변하거나 18턴 이상 진행한 후 포트폴리오를 생성할 수 있습니다.',
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    },
-    [ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED]: {
-        message: '인터뷰가 완료된 상태에서만 연장 모드를 시작할 수 있습니다.',
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    },
     [ErrorCode.INTERVIEW_AI_RELAY_FAILED]: {
         message: 'AI 인터뷰 세션 중계에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -212,18 +151,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
         message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
         statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS]: {
-        message: '해당 경험에는 이미 인터뷰 세션이 존재합니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_SESSION_NOT_READY]: {
-        message: '인터뷰 세션이 아직 생성되지 않은 경험입니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_INVALID_STATUS]: {
-        message: '현재 경험 상태에서는 포트폴리오를 생성할 수 없습니다.',
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
     [ErrorCode.EXPERIENCE_HAS_CORRECTIONS]: {
         message: '연결된 첨삭이 존재하여 경험을 삭제할 수 없습니다.',

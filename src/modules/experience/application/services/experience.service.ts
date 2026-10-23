@@ -3,7 +3,6 @@ import { ExperienceRepository } from '../../infrastructure/repositories/experien
 import { Experience, MAX_EXPERIENCES_PER_USER } from '../../domain/experience.entity';
 import { ExperienceResDTO, UpdateExperienceReqDTO } from '../dtos/experience.dto';
 import { JobCategory } from '../../domain/enums/job-category.enum';
-import { ExperienceStatus } from '../../domain/enums/experience-status.enum';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
@@ -13,58 +12,6 @@ export class ExperienceService {
 
     async findByIdOrThrow(id: number, userId: number): Promise<Experience> {
         const experience = await this.experienceRepository.findByIdAndUserId(id, userId);
-        if (!experience) {
-            throw new BusinessException(ErrorCode.EXPERIENCE_NOT_FOUND);
-        }
-        return experience;
-    }
-
-    async saveInterviewSessionId(
-        experienceId: number,
-        userId: number,
-        sessionId: string
-    ): Promise<void> {
-        const experience = await this.findByIdOrThrow(experienceId, userId);
-        experience.sessionId = sessionId;
-        await this.experienceRepository.save(experience);
-    }
-
-    async transitionToGenerate(experience: Experience): Promise<Experience> {
-        const allowedStatuses = [ExperienceStatus.ON_CHAT, ExperienceStatus.GENERATE_FAILED];
-        if (!allowedStatuses.includes(experience.status)) {
-            throw new BusinessException(ErrorCode.EXPERIENCE_INVALID_STATUS, {
-                currentStatus: experience.status,
-            });
-        }
-        if (!experience.sessionId) {
-            throw new BusinessException(ErrorCode.EXPERIENCE_SESSION_NOT_READY, {
-                experienceId: experience.id,
-            });
-        }
-        experience.status = ExperienceStatus.GENERATE;
-        return this.experienceRepository.save(experience);
-    }
-
-    async transitionToDone(experienceId: number): Promise<void> {
-        const experience = await this.findByIdInternalOrThrow(experienceId);
-        if (experience.status !== ExperienceStatus.GENERATE) {
-            return;
-        }
-        experience.status = ExperienceStatus.DONE;
-        await this.experienceRepository.save(experience);
-    }
-
-    async transitionToGenerateFailed(experienceId: number): Promise<void> {
-        const experience = await this.findByIdInternalOrThrow(experienceId);
-        if (experience.status !== ExperienceStatus.GENERATE) {
-            return;
-        }
-        experience.status = ExperienceStatus.GENERATE_FAILED;
-        await this.experienceRepository.save(experience);
-    }
-
-    private async findByIdInternalOrThrow(experienceId: number): Promise<Experience> {
-        const experience = await this.experienceRepository.findById(experienceId);
         if (!experience) {
             throw new BusinessException(ErrorCode.EXPERIENCE_NOT_FOUND);
         }
