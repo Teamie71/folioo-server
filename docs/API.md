@@ -289,10 +289,7 @@ Legend:
 
 ### Payment
 
-- POST `/payments` -> REMOVED (이용권 판매 로직 제거, 결제 재설계 예정)
-- GET `/payments/{paymentId}` -> IMPLEMENTED
-- POST `/payments/webhook` -> IMPLEMENTED (Public)
-- POST `/payments/{paymentId}/cancel` -> IMPLEMENTED (REQUESTED 상태에서도 취소 허용)
+결제 API 전체 제거. 과거 결제 데이터와 DB 이력은 보존합니다.
 
 ### Event
 

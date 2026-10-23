@@ -9,6 +9,5 @@
     "moduleNameMapper": {
         "^src/(.*)$": "<rootDir>/src/$1"
     },
-    "collectCoverageFrom": ["src/modules/payment/**/*.ts", "!src/modules/payment/**/*.spec.ts"],
     "coverageProvider": "v8"
 }

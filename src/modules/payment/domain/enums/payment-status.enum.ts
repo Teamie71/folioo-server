@@ -1,8 +1,0 @@
-export enum PaymentStatus {
-    REQUESTED = 'REQUESTED',
-    WAITING = 'WAITING',
-    PAID = 'PAID',
-    CANCELLED = 'CANCELLED',
-    REFUNDED = 'REFUNDED',
-    PARTIAL_REFUNDED = 'PARTIAL_REFUNDED',
-}
