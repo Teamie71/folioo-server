@@ -1,30 +1,17 @@
-import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { InternalHealthResDTO } from '../application/dtos/internal-health.dto';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
-import { InsightService } from 'src/modules/insight/application/services/insight.service';
-import { InternalInsightDetailResDTO } from '../application/dtos/internal-insight.dto';
-import {
-    InsightDetailPayload,
-    InsightSimilarityPayload,
-} from 'src/modules/insight/application/dtos/insight-internal.dto';
-import {
-    InternalInsightSearchQueryDTO,
-    InternalInsightSearchResDTO,
-} from '../application/dtos/internal-insight-search.dto';
 import { InternalPortfolioDetailResDTO } from '../application/dtos/internal-portfolio.dto';
 import { InternalPortfolioFacade } from '../application/facades/internal-portfolio.facade';
 
 @ApiTags('Internal')
 @Controller('internal')
 export class InternalController {
-    constructor(
-        private readonly insightService: InsightService,
-        private readonly internalPortfolioFacade: InternalPortfolioFacade
-    ) {}
+    constructor(private readonly internalPortfolioFacade: InternalPortfolioFacade) {}
 
     @Get('health')
     @Public()
@@ -42,58 +29,6 @@ export class InternalController {
     @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.INTERNAL_SERVER_ERROR)
     getHealth(): InternalHealthResDTO {
         return InternalHealthResDTO.ok();
-    }
-
-    @Get('insights/search')
-    @Public()
-    @UseGuards(InternalApiKeyGuard)
-    @ApiHeader({
-        name: 'X-API-Key',
-        required: true,
-        description: 'Internal API key for AI server callbacks',
-    })
-    @ApiOperation({
-        summary: '인사이트 로그 유사도 검색 (Internal)',
-        description: 'AI 서버가 키워드 기반으로 사용자 인사이트를 벡터 검색합니다.',
-    })
-    @ApiCommonResponse(InternalInsightSearchResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
-    async searchInternalInsights(
-        @Query() query: InternalInsightSearchQueryDTO
-    ): Promise<InternalInsightSearchResDTO> {
-        const similarityThreshold = query.threshold ?? 0.6;
-        const distanceThreshold = 1 - similarityThreshold;
-        const limit = query.topK;
-        const results: InsightSimilarityPayload[] =
-            await this.insightService.searchInsightWithSimilarity(
-                query.userId,
-                query.keyword,
-                distanceThreshold,
-                limit
-            );
-        const mapped = results.map((result) => InternalInsightDetailResDTO.fromSimilarity(result));
-        return InternalInsightSearchResDTO.from(mapped);
-    }
-
-    @Get('insights/:insightId')
-    @Public()
-    @UseGuards(InternalApiKeyGuard)
-    @ApiHeader({
-        name: 'X-API-Key',
-        required: true,
-        description: 'Internal API key for AI server callbacks',
-    })
-    @ApiOperation({
-        summary: '인사이트 로그 단건 조회 (Internal)',
-        description: 'AI 서버가 insightId별 인사이트 로그 내용을 가져갈 때 사용합니다.',
-    })
-    @ApiCommonResponse(InternalInsightDetailResDTO)
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.LOG_NOT_FOUND)
-    async getInternalInsight(
-        @Param('insightId', ParseIntPipe) insightId: number
-    ): Promise<InternalInsightDetailResDTO> {
-        const payload: InsightDetailPayload = await this.insightService.getInsightById(insightId);
-        return InternalInsightDetailResDTO.from(payload);
     }
 
     @Get('portfolios/:portfolioId')

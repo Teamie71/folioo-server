@@ -26,13 +26,11 @@
 | Interview            | Core       | AI 인터뷰 세션 관리 (SSE 스트림)        |
 | Portfolio            | Core       | 경험 정리의 결과물                      |
 | Portfolio-Correction | Core       | 포트폴리오 첨삭 서비스 (RAG, 기업 분석) |
-| Insight              | Core       | 인사이트/팁 정리 (벡터 유사도 검색)     |
 | Event                | Core       | 이벤트/챌린지 관리, 보상 수령           |
 | User                 | Generic    | 사용자 관리                             |
 | Auth                 | Generic    | 인증 (Kakao/Google/Naver OAuth)         |
 | Payment              | Generic    | 결제 (PayApp 연동, 웹훅, 취소)          |
 | Internal             | Supporting | AI 서버 연동 내부 API                   |
-| Embedding            | Infra      | 벡터 임베딩 (pgvector)                  |
 
 ## 로컬 개발 환경 설정
 

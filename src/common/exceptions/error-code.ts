@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 import { ErrorCode } from './error-code.enum';
-import { MAX_ACTIVITY_TAG_PER_USER } from 'src/modules/insight/domain/entities/activity.entity';
 
 interface ErrorDetail {
     message: string;
@@ -76,14 +75,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인증 번호가 일치하지 않습니다. 다시 확인해 주세요.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
-    [ErrorCode.NOT_LOG_OWNER]: {
-        message: '인사이트 로그에 접근할 권한이 없는 사용자입니다.',
-        statusCode: HttpStatus.FORBIDDEN,
-    },
-    [ErrorCode.NOT_ACTIVITY_TAG_OWNER]: {
-        message: '활동 분류 태그에 접근할 권한이 없는 사용자입니다.',
-        statusCode: HttpStatus.FORBIDDEN,
-    },
     [ErrorCode.SMS_CODE_NOT_FOUND]: {
         message: '인증 시간이 만료되었습니다. 재전송 버튼을 눌러주세요.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -102,14 +93,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     },
     [ErrorCode.TERM_NOT_FOUND]: {
         message: '해당하는 약관을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.LOG_NOT_FOUND]: {
-        message: '해당하는 인사이트 로그를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.ACTIVITY_NOT_FOUND]: {
-        message: '해당하는 활동 분류 태그를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
     [ErrorCode.EXPERIENCE_NOT_FOUND]: {
@@ -131,22 +114,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.DUPLICATE_LOG_NAME]: {
-        message: '인사이트 로그의 제목은 중복될 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.LOG_MAX_LIMIT]: {
-        message: '인사이트 로그는 최대 100개까지 가질 수 있습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.DUPLICATE_ACTIVITY_NAME]: {
-        message: '활동명은 중복될 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.FULL_ACTIVITY_TAG]: {
-        message: `활동 분류 태그는 최대 ${MAX_ACTIVITY_TAG_PER_USER}개까지 가질 수 있습니다.`,
-        statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
         message: '경험 정리는 최대 15개까지 가질 수 있습니다.',

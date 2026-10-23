@@ -180,11 +180,9 @@ Legend:
 
 > Internal API는 JWT 대신 `X-API-Key` 헤더로 인증합니다. `@Public()` + `InternalApiKeyGuard` 조합.
 
-#### Insight
+#### Health
 
 - GET `/internal/health` -> IMPLEMENTED (Internal API 헬스 체크)
-- GET `/internal/insights/{insightId}` -> IMPLEMENTED (AI 서버용 인사이트 단건 조회)
-- GET `/internal/insights/search` -> IMPLEMENTED (AI 서버용 인사이트 유사도 검색, 코사인 유사도 0~1 반환)
 
 #### Portfolio
 
@@ -273,14 +271,7 @@ Legend:
 
 ### Insight
 
-- PATCH `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
-- DELETE `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
-- GET `/insights` -> IMPLEMENTED
-- GET `/insights/summary` -> IMPLEMENTED
-- POST `/insights` -> IMPLEMENTED (생성 성공 시 `INSIGHT_LOG_CHALLENGE` 진행도 자동 반영)
-- GET `/insights/tags` -> IMPLEMENTED
-- POST `/insights/tags` -> IMPLEMENTED
-- DELETE `/insights/tags/{tagId}` -> IMPLEMENTED
+구형 인사이트 로그/태그/요약 및 내부 검색·조회 API 제거. 현재 첨삭 기업 분석 인사이트는 유지합니다.
 
 ### Payment
 

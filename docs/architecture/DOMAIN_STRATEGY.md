@@ -42,12 +42,10 @@
 | **Interview**            | Core       | AI 인터뷰 세션 관리 (SSE 스트림 기반 채팅, 연장 모드) |
 | **Portfolio**            | Core       | 경험 정리의 결과물, 첨삭의 소스로 사용                |
 | **Portfolio-Correction** | Core       | 포트폴리오 첨삭 서비스 (RAG 파이프라인, 기업 분석)    |
-| **Insight**              | Core       | 인사이트/팁 정리 (벡터 유사도 검색)                   |
 | **Event**                | Core       | 이벤트/챌린지 관리, 참여 추적, 보상 수령              |
 | **User**                 | Generic    | 사용자 도메인 (추후 userAuth-userProfile 분리 가능)   |
 | **Auth**                 | Generic    | 인증 (passport - kakao/google/naver)                  |
 | **Internal**             | Supporting | AI 서버 연동 내부 API (X-API-Key 인증, 콜백 수신)     |
-| **Embedding**            | Infra      | 벡터 임베딩 인프라 (pgvector, 코사인 유사도 검색)     |
 
 ---
 
