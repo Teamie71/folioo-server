@@ -95,10 +95,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 약관을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
-    [ErrorCode.EXPERIENCE_NOT_FOUND]: {
-        message: '해당하는 경험을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
     [ErrorCode.PORTFOLIO_NOT_FOUND]: {
         message: '해당하는 포트폴리오를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -114,14 +110,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
-        message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_HAS_CORRECTIONS]: {
-        message: '연결된 첨삭이 존재하여 경험을 삭제할 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.CORRECTION_MAX_LIMIT]: {
         message: '포트폴리오 첨삭은 최대 15개까지 가질 수 있습니다.',

@@ -22,7 +22,6 @@
 
 | 도메인               | 분류       | 설명                                    |
 | -------------------- | ---------- | --------------------------------------- |
-| Experience           | Core       | 경험 정리 (AI 채팅 포함)                |
 | Interview            | Core       | AI 인터뷰 세션 관리 (SSE 스트림)        |
 | Portfolio            | Core       | 경험 정리의 결과물                      |
 | Portfolio-Correction | Core       | 포트폴리오 첨삭 서비스 (RAG, 기업 분석) |
