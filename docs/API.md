@@ -189,7 +189,6 @@ Legend:
 #### Portfolio
 
 - GET `/internal/portfolios/{portfolioId}` -> IMPLEMENTED (포트폴리오 원문 조회, AI 첨삭 생성 시 원문 참조)
-- PATCH `/internal/portfolios/{portfolioId}` -> IMPLEMENTED (AI 생성 결과 저장 콜백)
 
 #### Correction
 
@@ -240,13 +239,9 @@ Legend:
 - PATCH `/experiences/{experienceId}` -> IMPLEMENTED
 - DELETE `/experiences/{experienceId}` -> IMPLEMENTED (연관 첨삭 있으면 `EXPERIENCE4221` 반환)
 
-### Interview (SSE 스트림)
+### Interview
 
-- POST `/interview/experiences/{experienceId}/session/stream` -> IMPLEMENTED (SSE, 인터뷰 세션 시작)
-- POST `/interview/experiences/{experienceId}/messages/stream` -> IMPLEMENTED (SSE, multipart/form-data: `message` + optional `insightId` + optional `files` PDF/image up to 3)
-- GET `/interview/experiences/{experienceId}/status` -> IMPLEMENTED (세션 상태 조회)
-- POST `/interview/experiences/{experienceId}/portfolio/generate` -> IMPLEMENTED (인터뷰 완료 후 포트폴리오 생성)
-- POST `/interview/experiences/{experienceId}/extend/stream` -> IMPLEMENTED (SSE, 연장 모드)
+구형 인터뷰 API 전체와 생성 결과 PATCH 콜백 제거. 첨삭 원문 GET은 유지합니다.
 
 ### Portfolio
 

@@ -26,28 +26,9 @@ export class PortfolioRepository {
         });
     }
 
-    async findInternalById(id: number): Promise<Portfolio | null> {
-        return this.portfolioRepository.findOne({
-            where: {
-                id,
-                sourceType: SourceType.INTERNAL,
-            },
-        });
-    }
-
     async findByIdWithExperience(id: number): Promise<Portfolio | null> {
         return this.portfolioRepository.findOne({
             where: { id },
-            relations: { experience: true, user: true },
-        });
-    }
-
-    async findInternalByIdWithExperience(id: number): Promise<Portfolio | null> {
-        return this.portfolioRepository.findOne({
-            where: {
-                id,
-                sourceType: SourceType.INTERNAL,
-            },
             relations: { experience: true, user: true },
         });
     }

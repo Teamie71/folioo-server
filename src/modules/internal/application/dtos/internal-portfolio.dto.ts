@@ -1,6 +1,5 @@
 import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 import { PortfolioStatus } from 'src/modules/portfolio/domain/enums/portfolio-status.enum';
-import { IsString, IsEnum, ValidateIf, IsNotEmpty } from 'class-validator';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
@@ -34,46 +33,4 @@ export class InternalPortfolioDetailResDTO {
         dto.contributionRate = portfolio.contributionRate ?? null;
         return dto;
     }
-}
-
-export enum PortfolioGenerationStatus {
-    COMPLETED = 'completed',
-    FAILED = 'failed',
-}
-
-export class UpdatePortfolioResultReqDTO {
-    @IsEnum(PortfolioGenerationStatus)
-    status: PortfolioGenerationStatus;
-
-    @ValidateIf(
-        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
-    )
-    @IsString()
-    @IsNotEmpty()
-    description?: string;
-
-    @ValidateIf(
-        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
-    )
-    @IsString()
-    @IsNotEmpty()
-    responsibilities?: string;
-
-    @ValidateIf(
-        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
-    )
-    @IsString()
-    @IsNotEmpty()
-    problemSolving?: string;
-
-    @ValidateIf(
-        (o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.COMPLETED
-    )
-    @IsString()
-    @IsNotEmpty()
-    learnings?: string;
-
-    @ValidateIf((o: UpdatePortfolioResultReqDTO) => o.status === PortfolioGenerationStatus.FAILED)
-    @IsString()
-    errorMessage?: string;
 }

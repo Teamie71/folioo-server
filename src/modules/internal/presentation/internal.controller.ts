@@ -1,20 +1,7 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    ParseIntPipe,
-    Patch,
-    Query,
-    UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
-import {
-    ApiCommonErrorResponse,
-    ApiCommonMessageResponse,
-    ApiCommonResponse,
-} from 'src/common/decorators/swagger.decorator';
+import { ApiCommonErrorResponse, ApiCommonResponse } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { InternalHealthResDTO } from '../application/dtos/internal-health.dto';
 import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
@@ -28,10 +15,7 @@ import {
     InternalInsightSearchQueryDTO,
     InternalInsightSearchResDTO,
 } from '../application/dtos/internal-insight-search.dto';
-import {
-    InternalPortfolioDetailResDTO,
-    UpdatePortfolioResultReqDTO,
-} from '../application/dtos/internal-portfolio.dto';
+import { InternalPortfolioDetailResDTO } from '../application/dtos/internal-portfolio.dto';
 import { InternalPortfolioFacade } from '../application/facades/internal-portfolio.facade';
 
 @ApiTags('Internal')
@@ -130,27 +114,5 @@ export class InternalController {
         @Param('portfolioId', ParseIntPipe) portfolioId: number
     ): Promise<InternalPortfolioDetailResDTO> {
         return this.internalPortfolioFacade.getPortfolioDetail(portfolioId);
-    }
-
-    @Patch('portfolios/:portfolioId')
-    @Public()
-    @UseGuards(InternalApiKeyGuard)
-    @ApiHeader({
-        name: 'X-API-Key',
-        required: true,
-        description: 'Internal API key for AI server callbacks',
-    })
-    @ApiOperation({
-        summary: '포트폴리오 AI 생성 결과 저장 (Internal)',
-        description: 'AI 서버의 생성 결과를 저장하기 위한 콜백 API',
-    })
-    @ApiCommonMessageResponse('portfolio generation result saved')
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED, ErrorCode.PORTFOLIO_NOT_FOUND)
-    async updateInternalPortfolio(
-        @Body() body: UpdatePortfolioResultReqDTO,
-        @Param('portfolioId', ParseIntPipe) portfolioId: number
-    ): Promise<string> {
-        await this.internalPortfolioFacade.savePortfolioResult(portfolioId, body);
-        return 'portfolio generation result saved';
     }
 }
