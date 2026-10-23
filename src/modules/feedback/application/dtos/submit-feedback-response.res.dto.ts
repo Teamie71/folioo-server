@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SubmitFeedbackResponseResDTO {
-    @ApiProperty({ example: true })
+    @ApiProperty({ example: false, description: '보상 지급 종료로 항상 false' })
     rewardGranted: boolean;
 
     static of(rewardGranted: boolean): SubmitFeedbackResponseResDTO {
