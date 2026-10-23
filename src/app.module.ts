@@ -14,7 +14,6 @@ import { InsightModule } from './modules/insight/insight.module';
 import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
-import { PaymentModule } from './modules/payment/payment.module';
 import { EventModule } from './modules/event/event.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
@@ -55,7 +54,6 @@ import { DataSource } from 'typeorm';
         ExperienceModule,
         PortfolioModule,
         PortfolioCorrectionModule,
-        PaymentModule,
         EventModule,
         FeedbackModule,
         BlockModule,
