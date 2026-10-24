@@ -65,11 +65,9 @@ src/
     │   └── presentation/        # 프레젠테이션 계층
     │       └── controllers/     # 컨트롤러
     ├── experience/              # 기존 Portfolio/경험맵 관계용 엔티티만 유지
-    ├── interview/               # AI 인터뷰 (Core, SSE 스트림)
     ├── portfolio/               # 포트폴리오 (Core)
     ├── portfolio-correction/    # 포트폴리오 첨삭 (Core)
-    ├── event/                   # 이벤트/챌린지 (Core)
-    ├── admin/                   # 관리자 대시보드 (Supporting)
+    ├── event/                   # 피드백 활성 기간·참여 FK (Legacy)
     └── internal/                # AI 서버 연동 내부 API (Supporting)
 ```
 

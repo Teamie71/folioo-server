@@ -36,16 +36,19 @@
 
 ## 도메인 분류
 
-| 도메인                   | 분류       | 설명                                                  |
-| ------------------------ | ---------- | ----------------------------------------------------- |
-| **Experience**           | Legacy     | 기존 Portfolio/경험맵 조회 관계용 엔티티만 유지       |
-| **Interview**            | Core       | AI 인터뷰 세션 관리 (SSE 스트림 기반 채팅, 연장 모드) |
-| **Portfolio**            | Core       | 경험 정리의 결과물, 첨삭의 소스로 사용                |
-| **Portfolio-Correction** | Core       | 포트폴리오 첨삭 서비스 (RAG 파이프라인, 기업 분석)    |
-| **Event**                | Core       | 이벤트/챌린지 관리, 참여 추적, 보상 수령              |
-| **User**                 | Generic    | 사용자 도메인 (추후 userAuth-userProfile 분리 가능)   |
-| **Auth**                 | Generic    | 인증 (passport - kakao/google/naver)                  |
-| **Internal**             | Supporting | AI 서버 연동 내부 API (X-API-Key 인증, 콜백 수신)     |
+| 도메인               | 분류       | 설명                                          |
+| -------------------- | ---------- | --------------------------------------------- |
+| Block                | Core       | 경험맵 구조·AI 티켓·사용량 관리               |
+| Assessment           | Core       | 직무 찾기                                     |
+| Portfolio            | Core       | 기존 포트폴리오 원문·외부 포트폴리오 관리     |
+| Portfolio-Correction | Core       | 포트폴리오 첨삭·기업 분석·PDF 추출            |
+| Kakao-Channel        | Supporting | 카카오 스킬·활동 선택·경험 대화               |
+| Feedback             | Supporting | 활성 폼 조회·피드백 저장 (보상 없음)          |
+| User                 | Generic    | 사용자·가입 약관·탈퇴 이력 관리               |
+| Auth                 | Generic    | Kakao/Google/Naver OAuth·JWT 인증             |
+| Internal             | Supporting | 현재 AI 기능의 내부 API·콜백                  |
+| Experience           | Legacy     | 기존 Portfolio/경험맵 FK·조회용 엔티티만 유지 |
+| Event                | Legacy     | 피드백 폼 활성 기간·참여 FK 연결만 유지       |
 
 ---
 
