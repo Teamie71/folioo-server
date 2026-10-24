@@ -55,7 +55,6 @@ export enum ErrorCode {
     FEEDBACK_FORM_EVENT_MISMATCH = 'FEEDBACK4001',
 
     //GCS
-    GCS_SIGNED_URL_FAILED = 'GCS500',
 
     //Block
     BLOCK_NOT_FOUND = 'BLOCK404',

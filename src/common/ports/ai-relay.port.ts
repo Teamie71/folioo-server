@@ -1,5 +1,3 @@
-import { Readable } from 'stream';
-
 export interface AiRelayRequest {
     path: string;
     body: unknown;
@@ -16,12 +14,6 @@ export interface AiRelayGetRequest {
     returnHttpErrors?: boolean;
 }
 
-export interface AiRelayConnection {
-    stream: Readable;
-    close: () => void;
-    responseHeaders?: Record<string, string>;
-}
-
 export interface AiRelayJsonResponse<T = unknown> {
     data: T;
     status: number;
@@ -29,7 +21,6 @@ export interface AiRelayJsonResponse<T = unknown> {
 }
 
 export abstract class AiRelayPort {
-    abstract openPostStream(request: AiRelayRequest): Promise<AiRelayConnection>;
     abstract getJson<T = unknown>(request: AiRelayGetRequest): Promise<AiRelayJsonResponse<T>>;
     abstract postJson<T = unknown>(request: AiRelayRequest): Promise<AiRelayJsonResponse<T>>;
 }
