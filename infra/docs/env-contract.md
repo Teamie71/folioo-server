@@ -56,7 +56,6 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `EXPMAP_TICKET_TTL_SECONDS` (선택, 기본 300)
 - `SWAGGER_USER`
 - `SWAGGER_PASSWORD`
-- `OPENROUTER_API_KEY`
 
 ## Optional Keys
 
@@ -132,8 +131,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "NAVER_CALLBACK_URL": "https://dev-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
-    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key",
-    "OPENROUTER_API_KEY": "openrouter-api-key"
+    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key"
 }
 ```
 
@@ -158,8 +156,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "NAVER_CALLBACK_URL": "https://prod-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
-    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key",
-    "OPENROUTER_API_KEY": "openrouter-api-key"
+    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key"
 }
 ```
 

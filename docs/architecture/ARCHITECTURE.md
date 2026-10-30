@@ -68,7 +68,6 @@ src/
     ├── interview/               # AI 인터뷰 (Core, SSE 스트림)
     ├── portfolio/               # 포트폴리오 (Core)
     ├── portfolio-correction/    # 포트폴리오 첨삭 (Core)
-    ├── insight/                 # 인사이트 (Core)
     ├── event/                   # 이벤트/챌린지 (Core)
     ├── admin/                   # 관리자 대시보드 (Supporting)
     └── internal/                # AI 서버 연동 내부 API (Supporting)
@@ -81,7 +80,6 @@ src/
 ├── infra/
 │   └── ai-relay/               # AI 서버 HTTP 릴레이 어댑터
 └── modules/
-    └── embedding/               # 벡터 임베딩 (pgvector, OpenRouter)
 ```
 
 ---
