@@ -8,7 +8,6 @@ import {
 } from '../dtos/portfolio.dto';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 import { SourceType } from '../../domain/enums/source-type.enum';
 
 @Injectable()
@@ -30,14 +29,6 @@ export class PortfolioService {
 
     async savePortfolio(portfolio: Portfolio): Promise<Portfolio> {
         return this.portfolioRepository.save(portfolio);
-    }
-
-    async findInternalByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
-        const portfolio = await this.portfolioRepository.findInternalByIdWithExperience(id);
-        if (!portfolio) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
-        }
-        return portfolio;
     }
 
     async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
@@ -74,40 +65,6 @@ export class PortfolioService {
         return this.portfolioRepository.findByExperienceId(experienceId);
     }
 
-    async completeGeneration(
-        portfolioId: number,
-        content: {
-            description: string;
-            responsibilities: string;
-            problemSolving: string;
-            learnings: string;
-        }
-    ): Promise<void> {
-        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
-        if (portfolio.status !== PortfolioStatus.GENERATING) {
-            return;
-        }
-        portfolio.complete(content);
-        await this.portfolioRepository.save(portfolio);
-    }
-
-    async failGeneration(portfolioId: number): Promise<void> {
-        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
-        if (portfolio.status !== PortfolioStatus.GENERATING) {
-            return;
-        }
-        portfolio.fail();
-        await this.portfolioRepository.save(portfolio);
-    }
-
-    async removeGeneratingPortfolio(portfolioId: number): Promise<void> {
-        const portfolio = await this.findByIdInternalOrThrow(portfolioId);
-        if (portfolio.status !== PortfolioStatus.GENERATING) {
-            return;
-        }
-        await this.portfolioRepository.deleteById(portfolio.id);
-    }
-
     async findByIdsAndUserIdOrThrow(portfolioIds: number[], userId: number): Promise<Portfolio[]> {
         const uniqueIds = [...new Set(portfolioIds)];
         const portfolios = await this.portfolioRepository.findByIdsAndUserId(uniqueIds, userId);
@@ -119,14 +76,6 @@ export class PortfolioService {
 
     async findByIds(portfolioIds: number[]): Promise<Portfolio[]> {
         return this.portfolioRepository.findByIds(portfolioIds);
-    }
-
-    private async findByIdInternalOrThrow(id: number): Promise<Portfolio> {
-        const portfolio = await this.portfolioRepository.findInternalById(id);
-        if (!portfolio) {
-            throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
-        }
-        return portfolio;
     }
 
     private validateInternalPortfolios(portfolios: Portfolio[]): void {
