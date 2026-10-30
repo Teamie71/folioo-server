@@ -24,7 +24,7 @@
   - Never hardcode tokens in this file.
   - OAuth redirects are excluded by default.
   - Multipart endpoints are skipped unless --file is given.
-  - Env-dependent endpoints (e.g. payments, auth/refresh) are auto-skipped
+  - Env-dependent endpoints (e.g. auth/refresh) are auto-skipped
     when prerequisite data is unavailable.
 
   Usage
@@ -399,7 +399,6 @@ async function preflightContext(base, token, timeoutMs) {
     const ctx = {
         correctionId: null,
         experienceId: null,
-        paymentId: null,
         pathParamValues: {},
     };
 
@@ -840,14 +839,6 @@ async function main() {
             // Capture returned IDs for later operations.
             if (
                 method === 'POST' &&
-                rawPath === '/payments' &&
-                typeof r.json?.result?.id === 'number'
-            ) {
-                ctx.paymentId = r.json.result.id;
-                ctx.pathParamValues.paymentId = ctx.paymentId;
-            }
-            if (
-                method === 'POST' &&
                 rawPath === '/experiences' &&
                 typeof r.json?.result?.id === 'number'
             ) {
@@ -932,7 +923,6 @@ async function main() {
         context: {
             correctionId: ctx.correctionId,
             experienceId: ctx.experienceId,
-            paymentId: ctx.paymentId,
         },
         classification: classificationBuckets,
         buckets,
