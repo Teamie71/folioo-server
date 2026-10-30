@@ -6,7 +6,6 @@ import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
 import { PortfolioModule } from '../portfolio/portfolio.module';
 import { InternalPortfolioFacade } from './application/facades/internal-portfolio.facade';
 import { PortfolioCorrectionModule } from '../portfolio-correction/portfolio-correction.module';
-import { AiClientExceptionFilter } from 'src/common/filters/ai-client-exception.filter';
 import { InternalCorrectionResultFacade } from './application/facades/internal-correction-result.facade';
 import { InternalPdfExtractionResultController } from './presentation/internal-pdf-extraction-result.controller';
 
@@ -18,11 +17,6 @@ import { InternalPdfExtractionResultController } from './presentation/internal-p
         InternalCorrectionResultController,
         InternalPdfExtractionResultController,
     ],
-    providers: [
-        InternalApiKeyGuard,
-        InternalPortfolioFacade,
-        AiClientExceptionFilter,
-        InternalCorrectionResultFacade,
-    ],
+    providers: [InternalApiKeyGuard, InternalPortfolioFacade, InternalCorrectionResultFacade],
 })
 export class InternalModule {}

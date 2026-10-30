@@ -6,11 +6,7 @@ import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
 import { CorrectionItem } from '../../domain/correction-item.entity';
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { JobDescriptionType } from '../../domain/enums/jobdescription-type.enum';
-import {
-    AiRelayConnection,
-    AiRelayGetRequest,
-    AiRelayRequest,
-} from 'src/common/ports/ai-relay.port';
+import { AiRelayGetRequest, AiRelayRequest } from 'src/common/ports/ai-relay.port';
 
 type CorrectionOverrides = Partial<
     Omit<PortfolioCorrection, 'companyInsight' | 'highlightPoint'>
@@ -49,11 +45,6 @@ const createCorrectionItem = (portfolioId: number): CorrectionItem => {
 
 class AiRelayPortStub extends AiRelayPort {
     readonly postJsonMock = jest.fn<Promise<AiRelayJsonResponse>, [AiRelayRequest]>();
-
-    openPostStream(request: AiRelayRequest): Promise<AiRelayConnection> {
-        void request;
-        throw new Error('Not implemented');
-    }
 
     getJson<T = unknown>(request: AiRelayGetRequest): Promise<AiRelayJsonResponse<T>> {
         void request;
