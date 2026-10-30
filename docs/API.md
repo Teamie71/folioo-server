@@ -296,14 +296,11 @@ Legend:
 - GET `/events/{eventCode}/feedback-modal` -> IMPLEMENTED (보상 수령 여부에 따라 피드백 모달 문구/CTA 반환)
 - GET `/events/{eventCode}/progress-card` -> IMPLEMENTED (진행도/남은 개수/동적 문구/CTA 반환)
 - POST `/events/{eventCode}/reward-claim` -> IMPLEMENTED (완료된 챌린지 보상 직접 수령)
-- POST `/events/admin/{eventCode}/feedback-rewards/grants` -> DEPRECATED (레거시 수동 지급 경로, 현재는 `/admin/api/events/{eventCode}/grants` 사용)
+- 수동 보상 지급용 관리자 API는 제거되었습니다.
 
 ### Admin
 
-- GET `/admin/dashboard` -> IMPLEMENTED (React SPA 대시보드 페이지)
-- GET `/admin/api/users/search` -> IMPLEMENTED (사용자 검색, 이름/이메일)
-- GET `/admin/api/events/manual-reward-options` -> IMPLEMENTED (수동 보상 이벤트 목록, ?userId로 보상 수령 여부 포함)
-- POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급, CS 커스텀 보상 포함)
+관리자 페이지·보상 지급 API·정적 자산 전체 제거.
 
 ### Assessment (직무·기업형태 추천 분석)
 

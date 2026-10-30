@@ -18,7 +18,6 @@ import { EventModule } from './modules/event/event.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
-import { AdminModule } from './modules/admin/admin.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { BlockModule } from './modules/block/block.module';
 import { AssessmentModule } from './modules/assessment/assessment.module';
@@ -60,7 +59,6 @@ import { DataSource } from 'typeorm';
         AssessmentModule,
         InterviewModule,
         InternalModule,
-        AdminModule,
         KakaoChannelModule,
     ],
     providers: [

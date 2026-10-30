@@ -31,7 +31,6 @@
 | User                 | Generic    | 사용자 관리                             |
 | Auth                 | Generic    | 인증 (Kakao/Google/Naver OAuth)         |
 | Payment              | Generic    | 결제 (PayApp 연동, 웹훅, 취소)          |
-| Admin                | Supporting | 관리자 대시보드                         |
 | Internal             | Supporting | AI 서버 연동 내부 API                   |
 | Embedding            | Infra      | 벡터 임베딩 (pgvector)                  |
 
