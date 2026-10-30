@@ -28,3 +28,6 @@ CREATE TABLE IF NOT EXISTS auth_token (
 );
 
 CREATE INDEX IF NOT EXISTS idx_auth_token_type_token ON auth_token (type, token);
+
+-- Supabase 공개 API 역할이 인증 토큰을 읽거나 조작하지 못하도록 한다.
+ALTER TABLE auth_token ENABLE ROW LEVEL SECURITY;

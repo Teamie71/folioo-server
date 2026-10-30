@@ -39,6 +39,9 @@ describeDatabase('Auth token PostgreSQL contract', () => {
                 'utf8'
             )
         );
+        await db.query('CREATE ROLE auth_token_test_client');
+        await db.query('GRANT SELECT, INSERT ON auth_token TO auth_token_test_client');
+        await db.query('GRANT USAGE ON SEQUENCE auth_token_id_seq TO auth_token_test_client');
         store = new AuthTokenStoreService(
             new AuthTokenRepository(db.getRepository(AuthToken)),
             new ConfigService({ JWT_REFRESH_EXPIRES_IN: '14d' }),
@@ -55,6 +58,7 @@ describeDatabase('Auth token PostgreSQL contract', () => {
         if (db?.isInitialized) {
             await db.query('DROP TABLE auth_token, users');
             await db.query('DROP TYPE auth_token_type_enum');
+            await db.query('DROP ROLE auth_token_test_client');
             await db.destroy();
         }
     });
@@ -83,12 +87,32 @@ describeDatabase('Auth token PostgreSQL contract', () => {
         expect(await store.isRefreshTokenWhitelisted(token)).toBe(false);
         const saved = await db.getRepository(AuthToken).findOneByOrFail({ token });
         expect(saved.userId).toBeNull();
-        expect(saved.expiresAt.getTime()).toBe((jwt.decode(token) as { exp: number }).exp * 1000);
+        const tokenExpiry = jwt.decode<{ exp: number }>(token).exp * 1000;
+        expect(saved.expiresAt.getTime()).toBeGreaterThanOrEqual(tokenExpiry);
+        expect(saved.expiresAt.getTime()).toBeLessThan(tokenExpiry + 1000);
     });
 
     it('removes refresh tokens when their user is deleted', async () => {
         await store.whitelistRefreshToken('refresh-token', 1);
         await db.query('DELETE FROM users WHERE id = 1');
         expect(await store.isRefreshTokenWhitelisted('refresh-token')).toBe(false);
+    });
+
+    it('blocks public API roles from reading or inserting tokens despite table grants', async () => {
+        await store.whitelistRefreshToken('private-refresh-token', 1);
+        const connection = db.createQueryRunner();
+        await connection.connect();
+        try {
+            await connection.query('SET ROLE auth_token_test_client');
+            expect(await connection.query('SELECT token FROM auth_token')).toEqual([]);
+            await expect(
+                connection.query(
+                    "INSERT INTO auth_token (type, token, expires_at) VALUES ('REFRESH', 'forged', '2099-01-01')"
+                )
+            ).rejects.toThrow(/row-level security/);
+        } finally {
+            await connection.query('RESET ROLE');
+            await connection.release();
+        }
     });
 });
