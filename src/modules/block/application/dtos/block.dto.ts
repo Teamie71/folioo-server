@@ -76,7 +76,8 @@ export class MoveBlockReqDTO {
         nullable: true,
         example: '12',
         description:
-            '새 부모 블록 id (bigint라 문자열로 주고받는다). 생략하면 같은 부모 내에서 순서만 변경한다. 1~2단계 블록은 위계(부모)를 변경할 수 없다.',
+            '새 부모 블록 id (bigint라 문자열로 주고받는다). 생략하면 같은 부모 내에서 순서만 변경한다. ' +
+            '1단계(그룹) 블록은 위계(부모)를 변경할 수 없다. 2단계(활동) 블록은 다른 그룹으로 이동할 수 있다.',
     })
     parentId?: string | null;
 
@@ -96,7 +97,7 @@ export class MoveBlockReqDTO {
 }
 
 export class ExperienceMetaResDTO {
-    @ApiProperty({ required: false, nullable: true })
+    @ApiProperty({ type: Number, required: false, nullable: true })
     contributionRate: number | null;
 
     @ApiProperty({ enum: SourceType })
@@ -105,7 +106,7 @@ export class ExperienceMetaResDTO {
     @ApiProperty({ enum: PortfolioStatus })
     status: PortfolioStatus;
 
-    @ApiProperty({ required: false, nullable: true })
+    @ApiProperty({ type: Number, required: false, nullable: true })
     experienceId: number | null;
 
     static from(experienceMeta: ExperienceMeta): ExperienceMetaResDTO {
@@ -173,11 +174,21 @@ export class ExperienceMapResDTO {
     mapVersion: string;
     @ApiProperty({ type: () => [BlockResDTO] })
     roots: BlockResDTO[];
+    @ApiProperty({
+        type: String,
+        nullable: true,
+        example: '550e8400-e29b-41d4-a716-446655440000',
+        description:
+            '지금 되돌릴 수 있는 AI 작업의 request_id. 채팅의 request_id와 같을 때만 되돌리기 버튼을 노출한다. ' +
+            '최신 AI 작업이 아니거나, 24시간이 지났거나, 이후 맵 변경이 있으면 null.',
+    })
+    revertibleRequestId: string | null;
 
     static from(
         experienceMap: ExperienceMap,
         blocks: Block[],
-        experienceMetas: ExperienceMeta[]
+        experienceMetas: ExperienceMeta[],
+        revertibleRequestId: string | null
     ): ExperienceMapResDTO {
         const experienceMetaByBlockId = new Map(
             experienceMetas.map((meta) => [meta.blockId, meta])
@@ -201,6 +212,7 @@ export class ExperienceMapResDTO {
         const dto = new ExperienceMapResDTO();
         dto.mapVersion = experienceMap.mapVersion;
         dto.roots = childrenByParentId.get(null) ?? [];
+        dto.revertibleRequestId = revertibleRequestId;
         return dto;
     }
 }

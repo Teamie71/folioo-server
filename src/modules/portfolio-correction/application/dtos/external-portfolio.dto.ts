@@ -68,27 +68,27 @@ export class UpdatePortfolioBlockReqDTO {
     @IsOptional()
     @IsString()
     @MinLength(1)
-    @MaxLength(400)
+    @MaxLength(300)
     description?: string;
 
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
     @MinLength(1)
-    @MaxLength(400)
+    @MaxLength(700)
     responsibilities?: string;
 
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
     @MinLength(1)
-    @MaxLength(400)
+    @MaxLength(700)
     problemSolving?: string;
 
     @Transform(({ value }: { value: string }) => value?.trim())
     @IsOptional()
     @IsString()
     @MinLength(1)
-    @MaxLength(400)
+    @MaxLength(300)
     learnings?: string;
 }

@@ -4,6 +4,11 @@ import { In, IsNull, Repository } from 'typeorm';
 import { Block } from '../../domain/block.entity';
 import { BlockKind } from '../../domain/enums/block-kind.enum';
 
+export interface RecentExperience {
+    id: string;
+    name: string | null;
+}
+
 @Injectable()
 export class BlockRepository {
     constructor(
@@ -19,8 +24,46 @@ export class BlockRepository {
         return this.blockRepository.save(blocks);
     }
 
+    // 되돌리기 복원용. save()와 달리 존재 여부 조회 없이 지정한 id 그대로 INSERT한다.
+    async insertAll(blocks: Block[]): Promise<void> {
+        if (blocks.length === 0) {
+            return;
+        }
+        await this.blockRepository.insert(blocks);
+    }
+
+    async findAllByParentIds(parentIds: string[]): Promise<Block[]> {
+        if (parentIds.length === 0) {
+            return [];
+        }
+        return this.blockRepository.find({ where: { parentId: In(parentIds) } });
+    }
+
     async findByIdAndUserId(id: string, userId: number): Promise<Block | null> {
         return this.blockRepository.findOne({ where: { id, userId } });
+    }
+
+    // 하위 블록을 포함한 마지막 수정 시각으로 정렬한다. 삭제된 하위 블록은 반영하지 않는다.
+    findRecentExperiences(userId: number, limit: number): Promise<RecentExperience[]> {
+        return this.blockRepository.query<RecentExperience[]>(
+            `WITH RECURSIVE tree AS (
+                SELECT id AS root_id, id, updated_at
+                FROM block
+                WHERE user_id = $1 AND kind = $2
+                UNION ALL
+                SELECT t.root_id, b.id, b.updated_at
+                FROM block b
+                JOIN tree t ON b.parent_id = t.id
+                WHERE b.user_id = $1
+            )
+            SELECT e.id, e.content AS name
+            FROM tree t
+            JOIN block e ON e.id = t.root_id
+            GROUP BY e.id, e.content
+            ORDER BY MAX(t.updated_at) DESC, e.id DESC
+            LIMIT $3`,
+            [userId, BlockKind.EXPERIENCE, limit]
+        );
     }
 
     async findRootByUserId(userId: number): Promise<Block | null> {
@@ -45,6 +88,10 @@ export class BlockRepository {
 
     async countChildren(userId: number, parentId: string | null): Promise<number> {
         return this.blockRepository.count({ where: { userId, parentId: parentId ?? IsNull() } });
+    }
+
+    async existsByParentIdAndKind(parentId: string, kind: BlockKind): Promise<boolean> {
+        return this.blockRepository.exists({ where: { parentId, kind } });
     }
 
     async deleteById(id: string): Promise<void> {

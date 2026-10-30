@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserProfileResDTO, UserSocialAccountResDTO } from '../dtos/user-profile.dto';
-import {
-    UserRepository,
-    UserWithSocialInfoProjection,
-} from '../../infrastructure/repositories/user.repository';
+import { UserRepository } from '../../infrastructure/repositories/user.repository';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { User } from '../../domain/user.entity';
@@ -17,6 +14,7 @@ import { AgreeTermsResDTO } from '../dtos/agree-terms.dto';
 import { SocialAccountUnlinkClient } from '../../infrastructure/clients/social-account-unlink.client';
 import { Transactional } from 'typeorm-transactional';
 import { UserStatus } from '../../domain/enums/user-status.enum';
+import { LoginType } from '../../domain/enums/login-type.enum';
 import { Term } from '../../domain/term.entity';
 import { WithdrawnUserRepository } from '../../infrastructure/repositories/withdrawn-user.repository';
 import { hashWithdrawalIdentifier } from '../../domain/transformers/withdrawal-identifier.transformer';
@@ -164,24 +162,6 @@ export class UserService {
         await this.socialUserRepository.deleteByUserId(user.id);
     }
 
-    async searchUsers(keyword?: string): Promise<UserWithSocialInfoProjection[]> {
-        return this.userRepository.searchUsersWithSocialInfo(keyword);
-    }
-
-    async checkIfWithdrawn(userId: number): Promise<boolean> {
-        const socialUser = await this.socialUserRepository.findByUserId(userId);
-        if (socialUser) {
-            const plainIdentifier = `${socialUser.loginType}:${socialUser.loginId}`;
-            const encryptedIdentifier = hashWithdrawalIdentifier(plainIdentifier);
-            const withdrawnUser =
-                await this.withdrawnUserRepository.findByWithdrawnIdentifier(encryptedIdentifier);
-            if (withdrawnUser) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     async findAllActiveUserIds(): Promise<number[]> {
         return this.userRepository.findAllActiveUserIds();
     }
@@ -207,6 +187,22 @@ export class UserService {
         if (!allowPending && user.status === UserStatus.PENDING) {
             throw new BusinessException(ErrorCode.PENDING_USER);
         }
+    }
+
+    async findByKakaoLoginId(kakaoLoginId: string): Promise<User | null> {
+        const socialUser = await this.socialUserRepository.findByLoginTypeAndLoginId(
+            LoginType.KAKAO,
+            kakaoLoginId
+        );
+        return socialUser?.user ?? null;
+    }
+
+    async findKakaoLoginIdByUserId(userId: number): Promise<string | null> {
+        const socialUser = await this.socialUserRepository.findByUserIdAndLoginType(
+            userId,
+            LoginType.KAKAO
+        );
+        return socialUser?.loginId ?? null;
     }
 
     async findByIdOrThrow(userId: number): Promise<User> {

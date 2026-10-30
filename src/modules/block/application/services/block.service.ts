@@ -12,6 +12,7 @@ import {
 } from '../../domain/block.entity';
 import { BlockKindEntity } from '../../domain/block-kind.entity';
 import { ExperienceMeta } from '../../domain/experience-meta.entity';
+import { DeletedBlocksSnapshot } from '../../domain/ai-commit-log.entity';
 import { BlockKind, EXPERIENCE_SECTION_KINDS } from '../../domain/enums/block-kind.enum';
 import { BLOCK_KIND_TO_SECTION_KIND, SectionKind } from '../../domain/enums/section-kind.enum';
 import {
@@ -19,6 +20,7 @@ import {
     getCategorySlotsForSection,
     getDefaultSubTemplate,
 } from '../../domain/templates/template-catalog';
+import { isUniqueViolation } from '../utils/typeorm-error.util';
 
 const NAME_LEVEL_KINDS: readonly BlockKind[] = [BlockKind.GROUP, BlockKind.EXPERIENCE];
 
@@ -32,6 +34,19 @@ export class BlockService {
 
     async getTreeByUserId(userId: number): Promise<Block[]> {
         return this.blockRepository.findAllByUserId(userId);
+    }
+
+    async findRecentExperiences(userId: number): Promise<{ id: string; name: string }[]> {
+        const activities = await this.blockRepository.findRecentExperiences(userId, 10);
+        return activities.map(({ id, name }) => ({
+            id,
+            name: name?.trim() ? name : '이름 없는 활동',
+        }));
+    }
+
+    async findExperience(blockId: string, userId: number): Promise<Block | null> {
+        const block = await this.blockRepository.findByIdAndUserId(blockId, userId);
+        return block?.kind === BlockKind.EXPERIENCE ? block : null;
     }
 
     // 되돌리기: AI 커밋이 새로 만든 블록을 삭제한다. parent_id CASCADE 덕분에
@@ -51,6 +66,30 @@ export class BlockService {
             block.content = previousContentByBlockId[block.id];
         }
         await this.blockRepository.saveAll(blocks);
+    }
+
+    // 되돌리기: AI 커밋이 삭제한 블록을 원래 id 그대로 다시 넣고, 영향받은 부모의 자식 순서를
+    // 삭제 직전 순서로 맞춘다. 트리거가 부모 존재를 검사하므로 상위 레벨부터 넣는다.
+    async restoreDeleted(userId: number, snapshot: DeletedBlocksSnapshot): Promise<void> {
+        const blocks = [...snapshot.blocks]
+            .sort((a, b) => a.level - b.level)
+            .map((row) =>
+                Object.assign(new Block(), { ...row, userId, createdAt: new Date(row.createdAt) })
+            );
+        // 한 INSERT 문 안에서도 앞선 행은 트리거에서 보이므로 레벨 순 정렬만으로 충분하다.
+        await this.blockRepository.insertAll(blocks);
+
+        const orderByParentId = snapshot.siblingOrderByParentId;
+        const children = await this.blockRepository.findAllByParentIds(
+            Object.keys(orderByParentId)
+        );
+        for (const child of children) {
+            const order = orderByParentId[child.parentId as string];
+            const index = order.indexOf(child.id);
+            // 스냅샷 이후 생긴 자식은 없어야 하지만(버전 검사), 있으면 맨 뒤로 보낸다.
+            child.position = index === -1 ? order.length + child.position : index;
+        }
+        await this.blockRepository.saveAll(children);
     }
 
     async getOrCreateRootBlock(userId: number): Promise<Block> {
@@ -79,6 +118,15 @@ export class BlockService {
         return block;
     }
 
+    // AI 에이전트는 활동(EXPERIENCE) 블록 단위로 존재하므로 다른 종류는 없는 활동으로 취급한다.
+    async findExperienceOrThrow(blockId: string, userId: number): Promise<Block> {
+        const block = await this.findByIdOrThrow(blockId, userId);
+        if (block.kind !== BlockKind.EXPERIENCE) {
+            throw new BusinessException(ErrorCode.BLOCK_NOT_FOUND);
+        }
+        return block;
+    }
+
     private async findParentOrThrow(parentId: string, userId: number): Promise<Block> {
         const parent = await this.blockRepository.findByIdAndUserId(parentId, userId);
         if (!parent) {
@@ -95,7 +143,12 @@ export class BlockService {
     ): Promise<Block> {
         const parent = parentId ? await this.findParentOrThrow(parentId, userId) : null;
         this.assertValidPlacement(kind, parent);
-        this.assertContentLength(kind, content);
+        const isSectionKind = EXPERIENCE_SECTION_KINDS.includes(kind);
+        if (isSectionKind && parent) {
+            await this.assertNoDuplicateSection(parent.id, kind);
+        }
+        const normalizedContent = isSectionKind ? null : content;
+        this.assertContentLength(kind, normalizedContent);
 
         const block = new Block();
         block.userId = userId;
@@ -104,9 +157,18 @@ export class BlockService {
         block.level = parent ? parent.level + 1 : 1;
         block.kind = kind;
         block.position = await this.blockRepository.countChildren(userId, parentId);
-        block.content = content;
+        block.content = normalizedContent;
         block.placeholder = this.resolveDefaultPlaceholder(kind, parent);
-        const savedBlock = await this.blockRepository.save(block);
+
+        let savedBlock: Block;
+        try {
+            savedBlock = await this.blockRepository.save(block);
+        } catch (error) {
+            if (isSectionKind && isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
 
         if (kind === BlockKind.EXPERIENCE) {
             await this.provisionExperienceScaffold(savedBlock);
@@ -162,8 +224,8 @@ export class BlockService {
             return block;
         }
 
-        // 1~2단계(그룹/활동)는 순서만 바꿀 수 있고, 다른 블록의 하위로 위계를 바꿀 수 없다.
-        if (block.level <= 2) {
+        // 1단계(그룹)는 항상 루트라 순서만 바꿀 수 있다. 2단계(활동)는 다른 그룹으로 이동할 수 있다.
+        if (block.level <= 1) {
             throw new BusinessException(ErrorCode.BLOCK_LEVEL_LOCKED);
         }
 
@@ -172,6 +234,9 @@ export class BlockService {
             throw new BusinessException(ErrorCode.BLOCK_PARENT_NOT_FOUND);
         }
         this.assertValidPlacement(block.kind, newParent);
+        if (EXPERIENCE_SECTION_KINDS.includes(block.kind) && newParent) {
+            await this.assertNoDuplicateSection(newParent.id, block.kind);
+        }
 
         const newLevel = newParent ? newParent.level + 1 : 1;
         const levelDelta = newLevel - block.level;
@@ -199,7 +264,19 @@ export class BlockService {
         this.reindexPositions(oldSiblings);
         this.insertAtPosition(newSiblings, block, targetPosition);
 
-        await this.blockRepository.saveAll([block, ...descendants, ...oldSiblings, ...newSiblings]);
+        try {
+            await this.blockRepository.saveAll([
+                block,
+                ...descendants,
+                ...oldSiblings,
+                ...newSiblings,
+            ]);
+        } catch (error) {
+            if (EXPERIENCE_SECTION_KINDS.includes(block.kind) && isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
         return block;
     }
 
@@ -270,7 +347,15 @@ export class BlockService {
             section.placeholder = null;
             return section;
         });
-        const savedSections = await this.blockRepository.saveAll(sections);
+        let savedSections: Block[];
+        try {
+            savedSections = await this.blockRepository.saveAll(sections);
+        } catch (error) {
+            if (isUniqueViolation(error)) {
+                throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+            }
+            throw error;
+        }
 
         const experienceMeta = new ExperienceMeta();
         experienceMeta.blockId = experienceBlock.id;
@@ -362,15 +447,32 @@ export class BlockService {
 
         if (kind === BlockKind.CONTENT) {
             const isSectionParent = parent && EXPERIENCE_SECTION_KINDS.includes(parent.kind);
+            const isExperienceParent = parent && parent.kind === BlockKind.EXPERIENCE;
             const isNestableContentParent =
                 parent && parent.kind === BlockKind.CONTENT && parent.level < BLOCK_MAX_LEVEL;
-            if (!isSectionParent && !isNestableContentParent) {
+            if (!isSectionParent && !isExperienceParent && !isNestableContentParent) {
+                throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
+            }
+            return;
+        }
+
+        if (EXPERIENCE_SECTION_KINDS.includes(kind)) {
+            if (!parent || parent.kind !== BlockKind.EXPERIENCE) {
                 throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
             }
             return;
         }
 
         throw new BusinessException(ErrorCode.BLOCK_INVALID_PLACEMENT);
+    }
+
+    // 기본 카테고리(SECTION_*)는 삭제 가능하지만, 삭제 후 같은 종류를 다시 만들 수 있어야
+    // 한 활동에 같은 카테고리가 중복 생성되지 않도록 막는다.
+    private async assertNoDuplicateSection(parentId: string, kind: BlockKind): Promise<void> {
+        const exists = await this.blockRepository.existsByParentIdAndKind(parentId, kind);
+        if (exists) {
+            throw new BusinessException(ErrorCode.BLOCK_SECTION_ALREADY_EXISTS);
+        }
     }
 
     private assertContentLength(kind: BlockKind, content: string | null): void {

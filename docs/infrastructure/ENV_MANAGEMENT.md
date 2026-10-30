@@ -13,7 +13,7 @@ This project manages runtime env values with GCP Secret Manager.
 
 | Secret                 | Purpose                                                                       |
 | ---------------------- | ----------------------------------------------------------------------------- |
-| `GCP_PROJECT_ID`       | GCP 프로젝트 ID (`folioo-488916`)                                             |
+| `GCP_PROJECT_ID`       | GCP 프로젝트 ID (`project-70c92536-0c79-44bb-ba0`)                            |
 | `WIF_PROVIDER`         | Workload Identity Federation provider 리소스명                                |
 | `WIF_SERVICE_ACCOUNT`  | GitHub Actions 서비스 계정 이메일                                             |
 | `TF_STATE_BUCKET`      | Terraform state / deploy-config GCS 버킷명                                    |

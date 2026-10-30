@@ -2,11 +2,9 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
-import { Readable } from 'stream';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import {
-    AiRelayConnection,
     AiRelayGetRequest,
     AiRelayJsonResponse,
     AiRelayPort,
@@ -24,50 +22,6 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
         super();
     }
 
-    async openPostStream(request: AiRelayRequest): Promise<AiRelayConnection> {
-        const { baseUrl, apiKey } = this.getAiServiceConfig();
-
-        const abortController = new AbortController();
-        const requestUrl = this.buildRequestUrl(baseUrl, request.path);
-        const requestHeaders: Record<string, string> = {
-            Accept: 'text/event-stream',
-            'X-API-Key': apiKey,
-            ...(request.headers ?? {}),
-        };
-
-        if (!(request.body instanceof FormData)) {
-            requestHeaders['Content-Type'] = 'application/json';
-        }
-
-        try {
-            const response = await this.httpService.axiosRef.post<Readable>(
-                requestUrl,
-                request.body,
-                {
-                    responseType: 'stream',
-                    signal: abortController.signal,
-                    timeout: 0,
-                    headers: requestHeaders,
-                }
-            );
-
-            return {
-                stream: response.data,
-                close: () => abortController.abort(),
-                responseHeaders: this.extractHeaders(response.headers as Record<string, unknown>),
-            };
-        } catch (error: unknown) {
-            if (axios.isCancel(error)) {
-                this.logger.warn('AI SSE relay request was canceled before being connected');
-                throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
-            }
-
-            const errorMessage = error instanceof Error ? error.message : 'Unknown relay error';
-            this.logger.error(`Failed to connect AI SSE stream: ${errorMessage}`);
-            throw new BusinessException(ErrorCode.INTERVIEW_AI_RELAY_FAILED);
-        }
-    }
-
     async getJson<T = unknown>(request: AiRelayGetRequest): Promise<AiRelayJsonResponse<T>> {
         const { baseUrl, apiKey } = this.getAiServiceConfig();
 
@@ -80,7 +34,10 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
                     ...request.headers,
                     'X-API-Key': apiKey,
                 },
-                timeout: 30_000,
+                timeout: request.timeoutMs ?? 30_000,
+                ...(request.returnHttpErrors
+                    ? { validateStatus: () => true, maxRedirects: 0 }
+                    : {}),
             });
 
             return {
@@ -92,9 +49,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
             if (axios.isAxiosError(error)) {
                 const status = error.response?.status;
                 this.logger.error('AI JSON request failed', {
-                    url: requestUrl,
                     status,
-                    error: error.message,
                 });
             } else {
                 this.logger.error('Unknown AI JSON request failure');
@@ -115,9 +70,13 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
                 {
                     headers: {
                         'Content-Type': 'application/json',
+                        ...request.headers,
                         'X-API-Key': apiKey,
                     },
-                    timeout: 30_000,
+                    timeout: request.timeoutMs ?? 30_000,
+                    ...(request.returnHttpErrors
+                        ? { validateStatus: () => true, maxRedirects: 0 }
+                        : {}),
                 }
             );
 
@@ -129,9 +88,7 @@ export class HttpAiSseRelayAdapter extends AiRelayPort {
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
                 this.logger.error('AI POST JSON request failed', {
-                    url: requestUrl,
                     status: error.response?.status,
-                    error: error.message,
                 });
             } else {
                 this.logger.error('Unknown AI POST JSON request failure');

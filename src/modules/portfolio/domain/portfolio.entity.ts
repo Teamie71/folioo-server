@@ -5,13 +5,6 @@ import { PortfolioStatus } from './enums/portfolio-status.enum';
 import { User } from '../../user/domain/user.entity';
 import { Experience } from '../../experience/domain/experience.entity';
 
-interface PortfolioContent {
-    description: string;
-    responsibilities: string;
-    problemSolving: string;
-    learnings: string;
-}
-
 export const PORTFOLIO_NAME_MAX_LENGTH = 20;
 export const PORTFOLIO_BLOCK_FIELD_MAX_LENGTH = 1000;
 
@@ -66,40 +59,5 @@ export class Portfolio extends BaseEntity {
         portfolio.sourceType = SourceType.EXTERNAL;
         portfolio.user = { id: userId } as User;
         return portfolio;
-    }
-
-    static createInternal(userId: number, experienceId: number, name: string): Portfolio {
-        const portfolio = new Portfolio();
-        portfolio.name = name;
-        portfolio.description = '';
-        portfolio.responsibilities = '';
-        portfolio.problemSolving = '';
-        portfolio.learnings = '';
-        portfolio.status = PortfolioStatus.GENERATING;
-        portfolio.sourceType = SourceType.INTERNAL;
-        portfolio.user = { id: userId } as User;
-        portfolio.experience = { id: experienceId } as Experience;
-        return portfolio;
-    }
-
-    update(updates: { name?: string; contributionRate?: number }): void {
-        if (updates.name !== undefined) {
-            this.name = updates.name;
-        }
-        if (updates.contributionRate !== undefined) {
-            this.contributionRate = updates.contributionRate;
-        }
-    }
-
-    complete(content: PortfolioContent): void {
-        this.description = content.description;
-        this.responsibilities = content.responsibilities;
-        this.problemSolving = content.problemSolving;
-        this.learnings = content.learnings;
-        this.status = PortfolioStatus.COMPLETED;
-    }
-
-    fail(): void {
-        this.status = PortfolioStatus.FAILED;
     }
 }

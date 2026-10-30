@@ -10,19 +10,15 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { AppController } from './app.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
-import { InsightModule } from './modules/insight/insight.module';
-import { ExperienceModule } from './modules/experience/experience.module';
 import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { PortfolioCorrectionModule } from './modules/portfolio-correction/portfolio-correction.module';
-import { PaymentModule } from './modules/payment/payment.module';
 import { EventModule } from './modules/event/event.module';
-import { InterviewModule } from './modules/interview/interview.module';
 import { RedisModule } from './common/redis';
 import { InternalModule } from './modules/internal/internal.module';
-import { AdminModule } from './modules/admin/admin.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
-import { VisualizationModule } from './modules/visualization/visualization.module';
 import { BlockModule } from './modules/block/block.module';
+import { AssessmentModule } from './modules/assessment/assessment.module';
+import { KakaoChannelModule } from './modules/kakao-channel/kakao-channel.module';
 import { addTransactionalDataSource, getDataSourceByName } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 
@@ -50,18 +46,14 @@ import { DataSource } from 'typeorm';
         RedisModule,
         AuthModule,
         UserModule,
-        InsightModule,
-        ExperienceModule,
         PortfolioModule,
         PortfolioCorrectionModule,
-        PaymentModule,
         EventModule,
         FeedbackModule,
-        VisualizationModule,
         BlockModule,
-        InterviewModule,
+        AssessmentModule,
         InternalModule,
-        AdminModule,
+        KakaoChannelModule,
     ],
     providers: [
         {

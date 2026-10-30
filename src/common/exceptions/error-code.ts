@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 import { ErrorCode } from './error-code.enum';
-import { MAX_ACTIVITY_TAG_PER_USER } from 'src/modules/insight/domain/entities/activity.entity';
 
 interface ErrorDetail {
     message: string;
@@ -8,6 +7,18 @@ interface ErrorDetail {
 }
 
 export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
+    [ErrorCode.KAKAO_LINK_TOKEN_INVALID]: {
+        message: '카카오 연결 정보가 유효하지 않습니다. 다시 시도해 주세요.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.KAKAO_ACCOUNT_ALREADY_LINKED]: {
+        message: '이미 다른 Folioo 계정에 연결된 카카오 계정입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.KAKAO_CHANNEL_ALREADY_LINKED]: {
+        message: '이미 다른 카카오 계정이 연결되어 있습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.BAD_REQUEST]: {
         message: '잘못된 요청입니다.',
         statusCode: HttpStatus.BAD_REQUEST,
@@ -64,14 +75,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '인증 번호가 일치하지 않습니다. 다시 확인해 주세요.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
-    [ErrorCode.NOT_LOG_OWNER]: {
-        message: '인사이트 로그에 접근할 권한이 없는 사용자입니다.',
-        statusCode: HttpStatus.FORBIDDEN,
-    },
-    [ErrorCode.NOT_ACTIVITY_TAG_OWNER]: {
-        message: '활동 분류 태그에 접근할 권한이 없는 사용자입니다.',
-        statusCode: HttpStatus.FORBIDDEN,
-    },
     [ErrorCode.SMS_CODE_NOT_FOUND]: {
         message: '인증 시간이 만료되었습니다. 재전송 버튼을 눌러주세요.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -92,18 +95,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당하는 약관을 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
     },
-    [ErrorCode.LOG_NOT_FOUND]: {
-        message: '해당하는 인사이트 로그를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.ACTIVITY_NOT_FOUND]: {
-        message: '해당하는 활동 분류 태그를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.EXPERIENCE_NOT_FOUND]: {
-        message: '해당하는 경험을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
     [ErrorCode.PORTFOLIO_NOT_FOUND]: {
         message: '해당하는 포트폴리오를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -112,67 +103,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: 'AI 서버 텍스트 추출에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.BAD_GATEWAY,
     },
-    [ErrorCode.INTERVIEW_SESSION_NOT_INITIALIZED]: {
-        message: '인터뷰 세션이 아직 초기화되지 않았습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_INVALID_CONTENT_TYPE]: {
-        message: 'multipart/form-data 요청 형식이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_FIELD_NAME_TOO_LONG]: {
-        message: '요청 필드 이름 길이가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_FIELD_VALUE_TOO_LARGE]: {
-        message: '요청 필드 값 크기가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MESSAGE_REQUIRED]: {
-        message: '메시지는 필수 입력값입니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_INSIGHT_ID_INVALID]: {
-        message: 'insightId 값이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_FIELD_INVALID]: {
-        message: '파일 필드 이름이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_MIME_INVALID]: {
-        message: '지원하지 않는 파일 형식입니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_SIZE_EXCEEDED]: {
-        message: '파일 크기가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FILE_COUNT_EXCEEDED]: {
-        message: '첨부 파일 개수가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_FIELD_COUNT_EXCEEDED]: {
-        message: '요청 필드 개수가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_PART_COUNT_EXCEEDED]: {
-        message: 'multipart 파트 개수가 허용 범위를 초과했습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_MULTIPART_INVALID_PAYLOAD]: {
-        message: 'multipart 요청 본문이 올바르지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.INTERVIEW_NOT_COMPLETED]: {
-        message:
-            '인터뷰가 아직 완료되지 않았습니다. 모든 질문에 답변하거나 18턴 이상 진행한 후 포트폴리오를 생성할 수 있습니다.',
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    },
-    [ErrorCode.INTERVIEW_EXTEND_NOT_ALLOWED]: {
-        message: '인터뷰가 완료된 상태에서만 연장 모드를 시작할 수 있습니다.',
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    },
     [ErrorCode.INTERVIEW_AI_RELAY_FAILED]: {
         message: 'AI 인터뷰 세션 중계에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -180,38 +110,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.CORRECTION_NOT_FOUND]: {
         message: '해당하는 첨삭 결과를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.DUPLICATE_LOG_NAME]: {
-        message: '인사이트 로그의 제목은 중복될 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.LOG_MAX_LIMIT]: {
-        message: '인사이트 로그는 최대 100개까지 가질 수 있습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.DUPLICATE_ACTIVITY_NAME]: {
-        message: '활동명은 중복될 수 없습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.FULL_ACTIVITY_TAG]: {
-        message: `활동 분류 태그는 최대 ${MAX_ACTIVITY_TAG_PER_USER}개까지 가질 수 있습니다.`,
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_MAX_LIMIT]: {
-        message: '경험 정리는 최대 15개까지 가질 수 있습니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_SESSION_ALREADY_EXISTS]: {
-        message: '해당 경험에는 이미 인터뷰 세션이 존재합니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_SESSION_NOT_READY]: {
-        message: '인터뷰 세션이 아직 생성되지 않은 경험입니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EXPERIENCE_INVALID_STATUS]: {
-        message: '현재 경험 상태에서는 포트폴리오를 생성할 수 없습니다.',
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     },
     [ErrorCode.CORRECTION_MAX_LIMIT]: {
         message: '포트폴리오 첨삭은 최대 15개까지 가질 수 있습니다.',
@@ -245,30 +143,6 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: 'AI 첨삭 생성 요청에 실패했습니다. 잠시 후 다시 시도해주세요.',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
-    [ErrorCode.PAYMENT_NOT_FOUND]: {
-        message: '해당하는 결제를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.PAYMENT_NOT_OWNER]: {
-        message: '결제에 접근할 권한이 없는 사용자입니다.',
-        statusCode: HttpStatus.FORBIDDEN,
-    },
-    [ErrorCode.PAYMENT_ALREADY_PAID]: {
-        message: '이미 결제 완료된 건입니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.PAYMENT_CANCEL_NOT_ALLOWED]: {
-        message: '취소할 수 없는 결제 상태입니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.PAYMENT_WEBHOOK_INVALID]: {
-        message: '유효하지 않은 결제 콜백 요청입니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.PAYMENT_EXTERNAL_API_FAILED]: {
-        message: '결제 서비스 일시적 오류입니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-    },
     [ErrorCode.EVENT_NOT_FOUND]: {
         message: '해당하는 이벤트를 찾을 수 없습니다.',
         statusCode: HttpStatus.NOT_FOUND,
@@ -281,49 +155,9 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '현재 활성화된 이벤트가 아닙니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
-    [ErrorCode.EVENT_REWARD_ALREADY_GRANTED]: {
-        message: '이미 보상이 지급된 이벤트 참여입니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EVENT_FEEDBACK_ALREADY_PROCESSED]: {
-        message: '이미 처리된 외부 피드백 제출건입니다.',
-        statusCode: HttpStatus.CONFLICT,
-    },
-    [ErrorCode.EVENT_MANUAL_REWARD_NOT_ALLOWED]: {
-        message: '수동 보상 지급이 허용되지 않은 이벤트입니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.EVENT_REWARD_NOT_CLAIMABLE]: {
-        message: '현재 보상 지급 조건을 충족하지 않았습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
     [ErrorCode.FEEDBACK_FORM_EVENT_MISMATCH]: {
         message: '요청한 질문지가 해당 이벤트와 일치하지 않습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.GCS_SIGNED_URL_FAILED]: {
-        message: '파일 접근 URL 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-    },
-    [ErrorCode.CLOUD_TASKS_ENQUEUE_FAILED]: {
-        message: '작업 큐 등록에 실패했습니다. 잠시 후 다시 시도해주세요.',
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-    },
-    [ErrorCode.VISUALIZATION_JOB_NOT_FOUND]: {
-        message: '시각화 작업을 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.VISUALIZATION_SLIDE_NOT_FOUND]: {
-        message: '슬라이드를 찾을 수 없습니다.',
-        statusCode: HttpStatus.NOT_FOUND,
-    },
-    [ErrorCode.VISUALIZATION_TEMPLATE_ID_MISMATCH]: {
-        message: '요청한 templateId가 작업에 등록된 templateId와 일치하지 않습니다.',
-        statusCode: HttpStatus.BAD_REQUEST,
-    },
-    [ErrorCode.VISUALIZATION_EXPORT_BLOCKED]: {
-        message: '모든 슬라이드가 완성된 후 내보낼 수 있습니다.',
-        statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.BLOCK_NOT_FOUND]: {
         message: '블록을 찾을 수 없습니다.',
@@ -353,6 +187,10 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         message: '해당 블록은 다른 블록의 하위로 이동할 수 없습니다.',
         statusCode: HttpStatus.BAD_REQUEST,
     },
+    [ErrorCode.BLOCK_SECTION_ALREADY_EXISTS]: {
+        message: '이미 존재하는 카테고리입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
     [ErrorCode.EXPERIENCE_MAP_VERSION_CONFLICT]: {
         message: '다른 곳에서 먼저 수정되었습니다. 최신 상태를 다시 불러와 주세요.',
         statusCode: HttpStatus.CONFLICT,
@@ -380,5 +218,41 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
     [ErrorCode.EXPERIENCE_MAP_UNKNOWN_SLOT_ID]: {
         message: '템플릿 카탈로그에 존재하지 않는 slotId입니다.',
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    [ErrorCode.EXPERIENCE_MAP_DAILY_LIMIT_EXCEEDED]: {
+        message: '오늘 AI 에이전트 사용 횟수를 모두 사용했습니다.',
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+    },
+    [ErrorCode.ASSESSMENT_NOT_FOUND]: {
+        message: '해당 직무·기업형태 추천 분석 결과를 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.ASSESSMENT_ALREADY_CLAIMED]: {
+        message: '이미 다른 계정에 등록된 결과입니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.ASSESSMENT_INVALID_INPUT]: {
+        message: '응답 데이터가 올바르지 않습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.ASSESSMENT_RULESET_NOT_READY]: {
+        message: '아직 배점 데이터가 준비되지 않았습니다.',
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+    },
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_NOT_FOUND]: {
+        message: '해당 가치관 밸런스게임 세션을 찾을 수 없습니다.',
+        statusCode: HttpStatus.NOT_FOUND,
+    },
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_ALREADY_COMPLETED]: {
+        message: '이미 완료된 가치관 밸런스게임은 응답을 수정할 수 없습니다.',
+        statusCode: HttpStatus.CONFLICT,
+    },
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_INVALID_SEQUENCE]: {
+        message: '아직 도달하지 않은 질문에는 응답할 수 없습니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    [ErrorCode.ASSESSMENT_VALUE_BALANCE_INVALID_ANSWER]: {
+        message: '해당 질문의 두 선택지 중 하나가 아닙니다.',
+        statusCode: HttpStatus.BAD_REQUEST,
     },
 };
