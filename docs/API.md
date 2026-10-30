@@ -273,10 +273,7 @@ Legend:
 
 ### Event
 
-- GET `/events/{eventCode}/feedback-modal` -> IMPLEMENTED (보상 수령 여부에 따라 피드백 모달 문구/CTA 반환)
-- GET `/events/{eventCode}/progress-card` -> IMPLEMENTED (진행도/남은 개수/동적 문구/CTA 반환)
-- POST `/events/{eventCode}/reward-claim` -> IMPLEMENTED (완료된 챌린지 보상 직접 수령)
-- 수동 보상 지급용 관리자 API는 제거되었습니다.
+공개 피드백 보상 모달/보상 수령 API 제거. 가입·피드백 보상 지급을 종료하며 피드백 저장은 유지합니다. 피드백 응답의 rewardGranted는 호환을 위해 항상 false로 반환합니다.
 
 ### Admin
 

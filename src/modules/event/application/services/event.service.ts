@@ -38,40 +38,4 @@ export class EventService {
         }
         return event;
     }
-
-    async findByCodeOrThrow(code: string): Promise<Event> {
-        const event = await this.eventRepository.findByCode(code);
-        if (!event) {
-            throw new BusinessException(ErrorCode.EVENT_NOT_FOUND);
-        }
-        return event;
-    }
-
-    async findActiveByCode(code: string): Promise<Event | null> {
-        const today = getSeoulDateString();
-        return this.eventRepository.findActiveByCode(code, today);
-    }
-
-    async findActiveByCodeOrThrow(code: string): Promise<Event> {
-        const event = await this.findActiveByCode(code);
-        if (!event) {
-            throw new BusinessException(ErrorCode.EVENT_NOT_ACTIVE);
-        }
-        return event;
-    }
-
-    async findSignUpEvent(): Promise<Event | null> {
-        const today = getSeoulDateString();
-        const event = await this.eventRepository.findActiveSignUpEvent(today);
-        return event;
-    }
-
-    async findActiveManualRewardEvents(): Promise<Event[]> {
-        const today = getSeoulDateString();
-        return this.eventRepository.findActiveManualRewardEvents(today);
-    }
-
-    async findAllManualRewardEvents(): Promise<Event[]> {
-        return this.eventRepository.findAllManualRewardEvents();
-    }
 }

@@ -6,31 +6,15 @@ import { EventRepository } from './infrastructure/repositories/event.repository'
 import { EventParticipationRepository } from './infrastructure/repositories/event-participation.repository';
 import { EventService } from './application/services/event.service';
 import { EventParticipationService } from './application/services/event-participation.service';
-import { EventController } from './presentation/event.controller';
-import { EventRewardFacade } from './application/facades/event-reward.facade';
-import { EventRewardLifecycleFacade } from './application/facades/event-reward-lifecycle.facade';
-import { InternalApiKeyGuard } from 'src/common/guards/internal-api-key.guard';
-import { EventRewardReadService } from './application/services/event-reward-read.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Event, EventParticipation])],
-    controllers: [EventController],
     providers: [
         EventRepository,
         EventParticipationRepository,
         EventService,
         EventParticipationService,
-        EventRewardReadService,
-        EventRewardLifecycleFacade,
-        EventRewardFacade,
-        InternalApiKeyGuard,
     ],
-    exports: [
-        EventService,
-        EventParticipationService,
-        EventRewardReadService,
-        EventRewardLifecycleFacade,
-        EventRewardFacade,
-    ],
+    exports: [EventService, EventParticipationService],
 })
 export class EventModule {}

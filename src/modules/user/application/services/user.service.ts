@@ -169,20 +169,6 @@ export class UserService {
         return this.userRepository.searchUsersWithSocialInfo(keyword);
     }
 
-    async checkIfWithdrawn(userId: number): Promise<boolean> {
-        const socialUser = await this.socialUserRepository.findByUserId(userId);
-        if (socialUser) {
-            const plainIdentifier = `${socialUser.loginType}:${socialUser.loginId}`;
-            const encryptedIdentifier = hashWithdrawalIdentifier(plainIdentifier);
-            const withdrawnUser =
-                await this.withdrawnUserRepository.findByWithdrawnIdentifier(encryptedIdentifier);
-            if (withdrawnUser) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     async findAllActiveUserIds(): Promise<number[]> {
         return this.userRepository.findAllActiveUserIds();
     }
