@@ -2,7 +2,7 @@
 /*
   Dev API smoke runner (v2)
 
-  Pulls the OpenAPI spec from /api-json, calls endpoints with an
+  Pulls the OpenAPI spec from /docs-json, calls endpoints with an
   access-token (Bearer), and writes a JSON report under /tmp.
 
   Result Classification
@@ -24,7 +24,7 @@
   - Never hardcode tokens in this file.
   - OAuth redirects are excluded by default.
   - Multipart endpoints are skipped unless --file is given.
-  - Env-dependent endpoints (e.g. payments, auth/refresh) are auto-skipped
+  - Env-dependent endpoints (e.g. auth/refresh) are auto-skipped
     when prerequisite data is unavailable.
 
   Usage
@@ -398,8 +398,6 @@ async function fetchJson(url, opts, timeoutMs) {
 async function preflightContext(base, token, timeoutMs) {
     const ctx = {
         correctionId: null,
-        experienceId: null,
-        paymentId: null,
         pathParamValues: {},
     };
 
@@ -421,25 +419,6 @@ async function preflightContext(base, token, timeoutMs) {
         console.error('[smoke][preflight] failed to get existing corrections:', e);
     }
 
-    // Existing experiences
-    try {
-        const r = await fetchJson(
-            `${base}/experiences`,
-            {
-                method: 'GET',
-                headers: { accept: 'application/json', authorization: `Bearer ${token}` },
-            },
-            timeoutMs
-        );
-        const list = r.json?.result;
-        if (Array.isArray(list) && list.length && typeof list[0]?.id === 'number') {
-            ctx.experienceId = list[0].id;
-        }
-    } catch (e) {
-        console.error('[smoke][preflight] failed to get existing experiences:', e);
-    }
-
-    if (ctx.experienceId != null) ctx.pathParamValues.experienceId = ctx.experienceId;
     if (ctx.correctionId != null) ctx.pathParamValues.correctionId = ctx.correctionId;
     return ctx;
 }
@@ -449,12 +428,6 @@ async function preflightContext(base, token, timeoutMs) {
 // describe, or where we need env-specific values.
 // ---------------------------------------------------------------------------
 function payloadOverrides(method, rawPath, ctx) {
-    if (method === 'POST' && rawPath === '/experiences') {
-        return { name: 'smoke', hopeJob: 'DEV' };
-    }
-    if (method === 'PATCH' && rawPath === '/experiences/{experienceId}') {
-        return { name: 'smoke-update', hopeJob: 'DEV' };
-    }
     if (method === 'POST' && rawPath === '/portfolio-corrections') {
         return {
             companyName: 'SmokeCo',
@@ -655,10 +628,7 @@ async function runInternalSmoke(args, apiKey) {
 // ---------------------------------------------------------------------------
 const INTERNAL_ENDPOINTS = [
     { method: 'GET', path: '/internal/health' },
-    { method: 'GET', path: '/internal/insights/search', query: { userId: '1', keyword: 'test' } },
-    { method: 'GET', path: '/internal/insights/1' },
     { method: 'GET', path: '/internal/portfolios/1' },
-    { method: 'PATCH', path: '/internal/portfolios/1', body: { status: 'failed', errorMessage: 'smoke-test' }, mutate: true },
     { method: 'GET', path: '/corrections/1', mutate: false },
     { method: 'PATCH', path: '/corrections/1/status', body: { status: 'FAILED' }, mutate: true },
     { method: 'PATCH', path: '/corrections/1/company-insight', body: { companyInsight: 'smoke-test' }, mutate: true },
@@ -703,7 +673,7 @@ async function main() {
     const outPath = args.out || `/tmp/folioo_dev_smoke_${Date.now()}.json`;
 
     const specRes = await fetchJson(
-        `${args.base}/api-json`,
+        `${args.base}/docs-json`,
         { method: 'GET', headers: { accept: 'application/json' } },
         args.timeoutMs
     );
@@ -837,23 +807,6 @@ async function main() {
                 errorReason = r.text.slice(0, 300);
             }
 
-            // Capture returned IDs for later operations.
-            if (
-                method === 'POST' &&
-                rawPath === '/payments' &&
-                typeof r.json?.result?.id === 'number'
-            ) {
-                ctx.paymentId = r.json.result.id;
-                ctx.pathParamValues.paymentId = ctx.paymentId;
-            }
-            if (
-                method === 'POST' &&
-                rawPath === '/experiences' &&
-                typeof r.json?.result?.id === 'number'
-            ) {
-                ctx.experienceId = r.json.result.id;
-                ctx.pathParamValues.experienceId = ctx.experienceId;
-            }
         } catch (e) {
             networkError = String(e?.message || e);
         }
@@ -931,8 +884,6 @@ async function main() {
         },
         context: {
             correctionId: ctx.correctionId,
-            experienceId: ctx.experienceId,
-            paymentId: ctx.paymentId,
         },
         classification: classificationBuckets,
         buckets,

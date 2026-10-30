@@ -4,8 +4,6 @@ import { JobCategory } from './enums/job-category.enum';
 import { ExperienceStatus } from './enums/experience-status.enum';
 import { User } from '../../user/domain/user.entity';
 
-export const MAX_EXPERIENCES_PER_USER = 15;
-
 @Entity()
 export class Experience extends BaseEntity {
     @Column({ length: 20 })
@@ -30,13 +28,4 @@ export class Experience extends BaseEntity {
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     user: User;
-
-    static create(name: string, hopeJob: JobCategory, userId: number): Experience {
-        const experience = new Experience();
-        experience.name = name;
-        experience.hopeJob = hopeJob;
-        experience.status = ExperienceStatus.ON_CHAT;
-        experience.user = { id: userId } as User;
-        return experience;
-    }
 }

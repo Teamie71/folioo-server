@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { timingSafeEqual } from 'node:crypto';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { safeEqual } from 'src/common/utils/safe-equal.util';
 
 type InternalRequest = {
     headers?: {
@@ -27,7 +27,7 @@ export class InternalApiKeyGuard implements CanActivate {
         const request = context.switchToHttp().getRequest<InternalRequest>();
         const providedApiKey = this.extractApiKey(request.headers?.['x-api-key']);
 
-        if (!providedApiKey || !this.isSameApiKey(providedApiKey, expectedApiKey)) {
+        if (!providedApiKey || !safeEqual(providedApiKey, expectedApiKey)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
@@ -43,16 +43,5 @@ export class InternalApiKeyGuard implements CanActivate {
         }
 
         return null;
-    }
-
-    private isSameApiKey(providedApiKey: string, expectedApiKey: string): boolean {
-        const providedBuffer = Buffer.from(providedApiKey);
-        const expectedBuffer = Buffer.from(expectedApiKey);
-
-        if (providedBuffer.length !== expectedBuffer.length) {
-            return false;
-        }
-
-        return timingSafeEqual(providedBuffer, expectedBuffer);
     }
 }

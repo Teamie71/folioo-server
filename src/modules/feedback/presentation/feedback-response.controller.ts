@@ -16,11 +16,11 @@ export class FeedbackResponseController {
     @ApiOperation({
         summary: '피드백 제출',
         description:
-            '참여 행이 없으면 생성 후 제출합니다. 제출은 항상 허용됩니다. 이벤트에 지급할 보상이 있는 경우, 쿨다운 기간 내에 재제출하면 보상은 지급되지 않고 rewardGranted: false로 응답합니다.',
+            '활성 이벤트와 연결된 폼을 검증한 뒤 피드백을 저장합니다. 보상 지급은 종료되어 rewardGranted는 항상 false입니다.',
     })
     @ApiCommonResponse(SubmitFeedbackResponseResDTO, {
         exampleResult: {
-            rewardGranted: true,
+            rewardGranted: false,
         },
     })
     @ApiCommonErrorResponse(

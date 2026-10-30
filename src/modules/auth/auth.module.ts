@@ -62,6 +62,6 @@ import { AuthTokenRepository } from './infrastructure/repositories/auth-token.re
         JwtRefreshGuard,
         JwtRefreshStrategy,
     ],
-    exports: [JwtAuthGuard, LogoutUsecase],
+    exports: [JwtAuthGuard, LogoutUsecase, JwtModule],
 })
 export class AuthModule {}

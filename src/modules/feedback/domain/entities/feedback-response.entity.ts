@@ -7,9 +7,6 @@ import { FeedbackForm } from './feedback-form.entity';
 @Index(['participationId'])
 @Index(['formId'])
 export class FeedbackResponse extends BaseEntity {
-    /** 피드백 제출 보상 재지급 최소 간격(일). */
-    static readonly REWARD_COOLDOWN_DAYS = 7;
-
     static createForSubmit(params: {
         participationId: number;
         formId: number;

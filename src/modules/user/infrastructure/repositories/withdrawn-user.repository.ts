@@ -13,12 +13,4 @@ export class WithdrawnUserRepository {
     async upsert(withdrawnUser: WithdrawnUser): Promise<void> {
         await this.withdrawnUserRepository.upsert(withdrawnUser, ['encryptedIdentifier']);
     }
-
-    async findByWithdrawnIdentifier(encryptedIdentifier: string): Promise<WithdrawnUser | null> {
-        return await this.withdrawnUserRepository.findOne({
-            where: {
-                encryptedIdentifier: encryptedIdentifier,
-            },
-        });
-    }
 }

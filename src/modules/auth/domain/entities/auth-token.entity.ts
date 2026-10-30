@@ -29,7 +29,7 @@ export class AuthToken extends BaseEntity {
     @Column({ type: 'text' })
     token: string;
 
-    @Column({ name: 'user_id', nullable: true })
+    @Column({ name: 'user_id', type: 'integer', nullable: true })
     userId: number | null;
 
     @Column({ name: 'expires_at', type: 'timestamp' })

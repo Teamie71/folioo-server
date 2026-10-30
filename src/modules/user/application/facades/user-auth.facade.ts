@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional } from 'typeorm-transactional';
 import { LogoutUsecase } from 'src/modules/auth/application/usecases/logout.usecase';
-import { EventRewardLifecycleFacade } from 'src/modules/event/application/facades/event-reward-lifecycle.facade';
 import { UserService } from '../services/user.service';
 import { AgreeTermsResDTO } from '../dtos/agree-terms.dto';
 
@@ -9,8 +8,7 @@ import { AgreeTermsResDTO } from '../dtos/agree-terms.dto';
 export class UserAuthFacade {
     constructor(
         private readonly userService: UserService,
-        private readonly logoutUsecase: LogoutUsecase,
-        private readonly eventRewardLifecycleFacade: EventRewardLifecycleFacade
+        private readonly logoutUsecase: LogoutUsecase
     ) {}
 
     async withdraw(
@@ -38,11 +36,6 @@ export class UserAuthFacade {
             isPrivacyAgreed,
             isMarketingAgreed
         );
-
-        const isRejoined = await this.userService.checkIfWithdrawn(userId);
-        if (!isRejoined) {
-            await this.eventRewardLifecycleFacade.grantSignUpReward(userId);
-        }
 
         return agreed;
     }

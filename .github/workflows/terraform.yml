@@ -5,12 +5,14 @@ on:
         types: [opened, synchronize, reopened, ready_for_review]
         paths:
             - 'infra/**'
+            - '!infra/**/*.md'
             - '.github/workflows/terraform.yml'
     push:
         branches:
             - dev
         paths:
             - 'infra/**'
+            - '!infra/**/*.md'
             - '.github/workflows/terraform.yml'
     workflow_dispatch:
 

@@ -9,14 +9,14 @@ This document tracks:
 
 Notes:
 
-- In non-local environments, Swagger UI is mounted at `/api` and protected by Basic Auth.
+- In non-local environments, Swagger UI is mounted at `/docs` and protected by Basic Auth (`/docs-json` too).
 - Most API endpoints are protected by a global JWT guard and require `Authorization: Bearer <accessToken>`.
 
 ## Environments
 
 - Dev base URL: `https://dev-api.folioo.ai.kr`
-- Swagger UI: `https://dev-api.folioo.ai.kr/api`
-- OpenAPI JSON: `https://dev-api.folioo.ai.kr/api-json`
+- Swagger UI: `https://dev-api.folioo.ai.kr/docs`
+- OpenAPI JSON: `https://dev-api.folioo.ai.kr/docs-json`
 - Health check (public): `https://dev-api.folioo.ai.kr/health`
 
 ## Auth Model (How Requests Are Authorized)
@@ -31,7 +31,7 @@ Notes:
 
 Open:
 
-`https://dev-api.folioo.ai.kr/api`
+`https://dev-api.folioo.ai.kr/docs`
 
 This may prompt for Basic Auth credentials (configured by `SWAGGER_USER` / `SWAGGER_PASSWORD` in non-local).
 
@@ -64,7 +64,7 @@ Swagger will send `Authorization: Bearer <token>` for endpoints that require JWT
 
 ## Automated Smoke Tests (Dev)
 
-We use OpenAPI (`/api-json`) to enumerate endpoints and fire requests against the dev server.
+We use OpenAPI (`/docs-json`) to enumerate endpoints and fire requests against the dev server.
 
 Script:
 
@@ -180,16 +180,13 @@ Legend:
 
 > Internal API는 JWT 대신 `X-API-Key` 헤더로 인증합니다. `@Public()` + `InternalApiKeyGuard` 조합.
 
-#### Insight
+#### Health
 
 - GET `/internal/health` -> IMPLEMENTED (Internal API 헬스 체크)
-- GET `/internal/insights/{insightId}` -> IMPLEMENTED (AI 서버용 인사이트 단건 조회)
-- GET `/internal/insights/search` -> IMPLEMENTED (AI 서버용 인사이트 유사도 검색, 코사인 유사도 0~1 반환)
 
 #### Portfolio
 
 - GET `/internal/portfolios/{portfolioId}` -> IMPLEMENTED (포트폴리오 원문 조회, AI 첨삭 생성 시 원문 참조)
-- PATCH `/internal/portfolios/{portfolioId}` -> IMPLEMENTED (AI 생성 결과 저장 콜백)
 
 #### Correction
 
@@ -199,6 +196,18 @@ Legend:
 - PATCH `/corrections/{correctionId}/result` -> IMPLEMENTED (첨삭 결과 저장 + 상태→DONE 전이)
 - POST `/corrections/{correctionId}/rag-data` -> IMPLEMENTED (Tavily RAG 검색 결과 저장)
 - GET `/corrections/{correctionId}/rag-data` -> IMPLEMENTED (저장된 RAG 검색 결과 조회, createdAt 오름차순)
+
+#### Experience Map (AI 에이전트)
+
+- POST `/api/v1/experience-map/usage/failed` -> IMPLEMENTED (실패한 턴을 일일 사용 횟수에서 제외, body: `user_id`, `request_id`, 멱등)
+
+### Experience Map - AI 에이전트 사용 한도
+
+- POST `/api/v1/experience-map/ticket` -> IMPLEMENTED (턴 실행용 `scope=turn` + `rid`(=request_id), 새 `request_id`면 일일 한도 1회 차감, 한도 초과 시 429 `EXPERIENCE_MAP429`)
+- POST `/api/v1/experience-map/ticket/read` -> IMPLEMENTED (대화 내역 조회용 `scope=read`, 한도 차감 없음)
+- GET `/api/v1/experience-map/usage` -> IMPLEMENTED (`used`/`limit`/`reset_at`, 모든 에이전트 합산 10회, KST 자정 초기화, 실패 턴 제외)
+- GET `/api/v1/experience-map/activity-status` -> IMPLEMENTED (활동별 최신 요청의 `status`(running/completed/failed/cancelled)와 `seen`, `ai_experience_request` 직접 조회, lease 만료된 running은 failed)
+- POST `/api/v1/experience-map/activity-status/{blockId}/seen` -> IMPLEMENTED (최신 요청을 확인 처리, 처리 중이면 기록 안 함, 멱등)
 
 ### Auth
 
@@ -222,25 +231,15 @@ Legend:
 
 ### Experience
 
-- POST `/experiences` -> IMPLEMENTED
-- GET `/experiences` -> IMPLEMENTED
-- GET `/experiences/{experienceId}` -> IMPLEMENTED
-- PATCH `/experiences/{experienceId}` -> IMPLEMENTED
-- DELETE `/experiences/{experienceId}` -> IMPLEMENTED (연관 첨삭 있으면 `EXPERIENCE4221` 반환)
+구형 경험 정리 CRUD 제거. 현재 경험맵은 유지합니다.
 
-### Interview (SSE 스트림)
+### Interview
 
-- POST `/interview/experiences/{experienceId}/session/stream` -> IMPLEMENTED (SSE, 인터뷰 세션 시작)
-- POST `/interview/experiences/{experienceId}/messages/stream` -> IMPLEMENTED (SSE, multipart/form-data: `message` + optional `insightId` + optional `files` PDF/image up to 3)
-- GET `/interview/experiences/{experienceId}/status` -> IMPLEMENTED (세션 상태 조회)
-- POST `/interview/experiences/{experienceId}/portfolio/generate` -> IMPLEMENTED (인터뷰 완료 후 포트폴리오 생성)
-- POST `/interview/experiences/{experienceId}/extend/stream` -> IMPLEMENTED (SSE, 연장 모드)
+구형 인터뷰 API 전체와 생성 결과 PATCH 콜백 제거. 첨삭 원문 GET은 유지합니다.
 
 ### Portfolio
 
-- GET `/portfolios` -> IMPLEMENTED (사용자의 포트폴리오 목록 조회)
 - GET `/portfolios/{portfolioId}` -> IMPLEMENTED
-- PATCH `/portfolios/{portfolioId}` -> IMPLEMENTED
 
 ### Portfolio-Correction
 
@@ -266,32 +265,25 @@ Legend:
 
 ### Insight
 
-- PATCH `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
-- DELETE `/insights/{insightId}` -> IMPLEMENTED (requires existing insightId)
-- GET `/insights` -> IMPLEMENTED
-- GET `/insights/summary` -> IMPLEMENTED
-- POST `/insights` -> IMPLEMENTED (생성 성공 시 `INSIGHT_LOG_CHALLENGE` 진행도 자동 반영)
-- GET `/insights/tags` -> IMPLEMENTED
-- POST `/insights/tags` -> IMPLEMENTED
-- DELETE `/insights/tags/{tagId}` -> IMPLEMENTED
+구형 인사이트 로그/태그/요약 및 내부 검색·조회 API 제거. 현재 첨삭 기업 분석 인사이트는 유지합니다.
 
 ### Payment
 
-- POST `/payments` -> REMOVED (이용권 판매 로직 제거, 결제 재설계 예정)
-- GET `/payments/{paymentId}` -> IMPLEMENTED
-- POST `/payments/webhook` -> IMPLEMENTED (Public)
-- POST `/payments/{paymentId}/cancel` -> IMPLEMENTED (REQUESTED 상태에서도 취소 허용)
+결제 API 전체 제거. 과거 결제 데이터와 DB 이력은 보존합니다.
 
 ### Event
 
-- GET `/events/{eventCode}/feedback-modal` -> IMPLEMENTED (보상 수령 여부에 따라 피드백 모달 문구/CTA 반환)
-- GET `/events/{eventCode}/progress-card` -> IMPLEMENTED (진행도/남은 개수/동적 문구/CTA 반환)
-- POST `/events/{eventCode}/reward-claim` -> IMPLEMENTED (완료된 챌린지 보상 직접 수령)
-- POST `/events/admin/{eventCode}/feedback-rewards/grants` -> DEPRECATED (레거시 수동 지급 경로, 현재는 `/admin/api/events/{eventCode}/grants` 사용)
+공개 피드백 보상 모달/보상 수령 API 제거. 가입·피드백 보상 지급을 종료하며 피드백 저장은 유지합니다. 피드백 응답의 rewardGranted는 호환을 위해 항상 false로 반환합니다.
 
 ### Admin
 
-- GET `/admin/dashboard` -> IMPLEMENTED (React SPA 대시보드 페이지)
-- GET `/admin/api/users/search` -> IMPLEMENTED (사용자 검색, 이름/이메일)
-- GET `/admin/api/events/manual-reward-options` -> IMPLEMENTED (수동 보상 이벤트 목록, ?userId로 보상 수령 여부 포함)
-- POST `/admin/api/events/{eventCode}/grants` -> IMPLEMENTED (이벤트 보상 수동 지급, CS 커스텀 보상 포함)
+관리자 페이지·보상 지급 API·정적 자산 전체 제거.
+
+### Assessment (직무·기업형태 추천 분석)
+
+- POST `/assessments/values-balance/next-question` -> IMPLEMENTED (Public, 가치관 밸런스게임 진행)
+- POST `/assessments` -> IMPLEMENTED (Public, 로그인 시 결과가 자동으로 계정에 연결됨)
+- GET `/assessments/status` -> IMPLEMENTED (로그인 계정 기준 완료 여부/uuid 조회)
+- GET `/assessments/{uuid}` -> IMPLEMENTED (Public, 비로그인 조회 시 상세 마스킹)
+- POST `/assessments/{uuid}/claim` -> IMPLEMENTED (익명 생성 결과를 로그인 계정에 등록)
+- 배점표/직무·기업형태 콘텐츠/헤드라인 문구는 전부 placeholder 상태 — `seeds/production/`에 실제 데이터 채우고 `pnpm seed --profile=production` 실행 필요

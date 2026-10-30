@@ -51,7 +51,6 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `EXPMAP_TICKET_TTL_SECONDS` (선택, 기본 300)
 - `SWAGGER_USER`
 - `SWAGGER_PASSWORD`
-- `OPENROUTER_API_KEY`
 
 ## Optional Keys
 
@@ -60,23 +59,12 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `PAYAPP_USER_ID`
 - `PAYAPP_LINK_KEY`
 - `PAYAPP_LINK_VALUE`
-- `CLOUD_TASKS_SERVICE_ACCOUNT_KEY` (로컬 개발 전용. dev/prod GCE에서는 ADC 사용)
-
-## Cloud Tasks Keys (Visualization)
-
-| Key                                       | Required      | Description                                                                                  |
-| ----------------------------------------- | ------------- | -------------------------------------------------------------------------------------------- |
-| `CLOUD_TASKS_PROJECT_ID`                  | dev/prod 필수 | GCP 프로젝트 ID                                                                              |
-| `CLOUD_TASKS_LOCATION`                    | dev/prod 필수 | Cloud Tasks 리전 (예: `asia-northeast3`)                                                     |
-| `CLOUD_TASKS_VIZ_QUEUE`                   | dev/prod 필수 | 시각화 작업 큐 이름. 큐는 `maxAttempts=2` 로 설정 (1회 재시도)                               |
-| `CLOUD_TASKS_WORKER_BASE_URL`             | dev/prod 필수 | AI 워커 base URL (예: `https://worker.a.run.app`). path는 서비스 코드에서 task 종류별로 부여 |
-| `CLOUD_TASKS_WORKER_OIDC_SERVICE_ACCOUNT` | dev/prod 필수 | OIDC 토큰 발급용 서비스 계정 이메일                                                          |
-| `CLOUD_TASKS_WORKER_OIDC_AUDIENCE`        | dev/prod 필수 | OIDC audience (워커 URL과 동일하게 설정 권장)                                                |
-| `VISUALIZATION_CALLBACK_BASE_URL`         | dev/prod 필수 | AI 워커가 콜백을 보낼 서버 base URL (예: `https://api.folioo.kr`)                            |
 
 ## Environment Routing Rules
 
-- Supabase is external and fixed. Only connection values change per env; provider and ownership do not change.
+- local (`.env`): local Docker PostgreSQL을 사용합니다.
+- dev/prod (`.env.dev`, `.env.prod`): `SUPABASE_DB_URL`로 Supabase PostgreSQL에 연결합니다.
+- 인증 토큰은 PostgreSQL의 `auth_token` 테이블에 저장합니다. Redis/Upstash 설정은 사용하지 않습니다.
 
 ## Input Values You Must Provide
 
@@ -102,8 +90,6 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
 - `DB_PASSWORD`
 - `DB_SCHEMA`
 
-## Secret JSON Examples
-
 ### folioo-dev-config
 
 ```json
@@ -120,8 +106,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "NAVER_CALLBACK_URL": "https://dev-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
-    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key",
-    "OPENROUTER_API_KEY": "openrouter-api-key"
+    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key"
 }
 ```
 
@@ -141,8 +126,7 @@ Both secret payloads must keep the same key names used by Finders-style runtime 
     "NAVER_CALLBACK_URL": "https://prod-api.folioo.ai.kr/auth/naver/callback",
     "JWT_SECRET_TOKEN": "jwt-access-secret",
     "JWT_REFRESH_TOKEN": "jwt-refresh-secret",
-    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key",
-    "OPENROUTER_API_KEY": "openrouter-api-key"
+    "OAUTH_REFRESH_TOKEN_ENCRYPTION_KEY": "strong-oauth-token-encryption-key"
 }
 ```
 
