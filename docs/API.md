@@ -191,6 +191,7 @@ Legend:
 #### Correction
 
 - GET `/corrections/{correctionId}` -> IMPLEMENTED (첨삭 데이터 조회, RAG/생성 시 company_name 등 참조)
+- GET `/corrections/{correctionId}/materials` -> IMPLEMENTED (Internal API key 인증, 첨삭 재료 원문 목록 조회)
 - PATCH `/corrections/{correctionId}/status` -> IMPLEMENTED (첨삭 상태 전이: NOT_STARTED→DOING_RAG, COMPANY_INSIGHT→GENERATING 등)
 - PATCH `/corrections/{correctionId}/company-insight` -> IMPLEMENTED (기업 분석 저장 + 상태→COMPANY_INSIGHT 전이)
 - PATCH `/corrections/{correctionId}/result` -> IMPLEMENTED (첨삭 결과 저장 + 상태→DONE 전이)
@@ -250,12 +251,13 @@ Legend:
 - GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED (응답: `CorrectionResultResDTO`, `status: CorrectionStatus` 포함)
 - POST `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - PATCH `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
-- POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택 포트폴리오를 매핑 테이블에 활성화 상태로 저장)
-- POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (요청 본문 없이 활성화된 매핑 기준으로 생성 준비 수행)
+- POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (해당 첨삭의 전체 CorrectionMaterial을 재료로 사용하며 포트폴리오 선택 body는 받지 않음)
 - PATCH `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 - DELETE `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 
 ### External Portfolios
+
+> external-portfolios의 저장소는 첨삭 전용 `CorrectionMaterial`이며, 응답의 `portfolioId`는 해당 재료 ID입니다. 기존 Portfolio 원문 GET은 유지합니다.
 
 - GET `/external-portfolios?correctionId=...` -> IMPLEMENTED (응답: `ExternalPortfolioListResDTO` = `{ status: PdfExtractionStatus, originalFileName: string \| null, portfolios: StructuredPortfolioResDTO[] }`)
 - POST `/external-portfolios` -> IMPLEMENTED

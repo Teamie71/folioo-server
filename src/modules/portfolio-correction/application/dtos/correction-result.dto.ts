@@ -3,7 +3,6 @@ import { SourceType } from 'src/modules/portfolio/domain/enums/source-type.enum'
 import { PortfolioCorrection } from '../../domain/portfolio-correction.entity';
 import { CorrectionItem } from '../../domain/correction-item.entity';
 import { CorrectionStatus } from '../../domain/enums/correction-status.enum';
-import { resolveCorrectionPortfolioSource } from '../../common/utils/correction-portfolio-source.util';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
@@ -20,7 +19,7 @@ export class CorrectionResultResDTO {
     @ApiProperty({
         enum: SourceType,
         description:
-            '첨삭 포트폴리오 출처. NONE→INTERNAL, GENERATING/GENERATED→EXTERNAL. FAILED는 서버 추론 로직에 따라 correction/items 데이터를 기준으로 결정됩니다.',
+            '첨삭 재료 출처. internal portfolio 선택 경로가 제거되어 항상 EXTERNAL로 고정됩니다.',
     })
     portfolioSource: SourceType;
 
@@ -35,7 +34,7 @@ export class CorrectionResultResDTO {
 
     static from(correction: PortfolioCorrection, items: CorrectionItem[]): CorrectionResultResDTO {
         const dto = new CorrectionResultResDTO();
-        dto.portfolioSource = resolveCorrectionPortfolioSource(correction, items);
+        dto.portfolioSource = SourceType.EXTERNAL;
         dto.status = correction.status;
         dto.companyName = correction.companyName;
         dto.positionName = correction.positionName;
@@ -57,7 +56,7 @@ export class CorrectionItemResDTO {
 
     static from(item: CorrectionItem): CorrectionItemResDTO {
         const dto = new CorrectionItemResDTO();
-        dto.portfolioId = item.portfolio.id;
+        dto.portfolioId = item.correctionMaterial.id;
         dto.description = item.description as DescriptionPayload;
         dto.responsibilities = item.responsibilities as ResponsibilitiesPayload;
         dto.problemSolving = item.problemSolving as ProblemSolvingPayload;

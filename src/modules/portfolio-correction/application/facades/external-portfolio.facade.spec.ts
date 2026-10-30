@@ -6,67 +6,76 @@ jest.mock('typeorm-transactional', () => ({
 }));
 
 import { ExternalPortfolioFacade } from './external-portfolio.facade';
-import { ExternalPortfolioService } from 'src/modules/portfolio/application/services/external-portfolio.service';
-import { PortfolioService } from 'src/modules/portfolio/application/services/portfolio.service';
 import { PortfolioCorrectionService } from '../services/portfolio-correction.service';
-import { CorrectionPortfolioSelectionService } from '../services/correction-portfolio-selection.service';
+import { CorrectionMaterialService } from '../services/correction-material.service';
 import { CorrectionItemService } from '../services/correction-item.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
+import { CorrectionMaterial } from '../../domain/correction-material.entity';
 import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
-
-class ExternalPortfolioServiceStub {
-    readonly deleteExternalPortfolio = jest.fn<Promise<void>, [number, number]>();
-}
-
-class PortfolioServiceStub {
-    readonly findByIdsAndUserIdOrThrow = jest.fn<Promise<unknown[]>, [number[], number]>();
-    readonly findByIds = jest.fn<Promise<unknown[]>, [number[]]>();
-}
+import { BusinessException } from 'src/common/exceptions/business.exception';
 
 class PortfolioCorrectionServiceStub {
     readonly findByIdAndUserIdOrThrow = jest.fn<
-        Promise<{ pdfExtractionStatus: PdfExtractionStatus; originalFileName: string | null }>,
+        Promise<{
+            pdfExtractionStatus: PdfExtractionStatus;
+            originalFileName: string | null;
+        }>,
         [number, number]
     >();
     readonly updatePdfExtractionStatus = jest.fn<Promise<void>, [number, PdfExtractionStatus]>();
     readonly updateOriginalFileName = jest.fn<Promise<void>, [number, string]>();
 }
 
-class CorrectionPortfolioSelectionServiceStub {
-    readonly deleteByPortfolioId = jest.fn<Promise<void>, [number]>();
-    readonly findActivePortfolioIdsByCorrectionId = jest.fn<Promise<number[]>, [number]>();
+class CorrectionMaterialServiceStub {
+    readonly findByCorrectionId = jest.fn<Promise<CorrectionMaterial[]>, [number]>();
+    readonly countByCorrectionId = jest.fn<Promise<number>, [number]>();
+    readonly createEmptyMaterial = jest.fn<Promise<CorrectionMaterial>, [number]>();
+    readonly updateMaterial = jest.fn<
+        Promise<CorrectionMaterial>,
+        [number, number, Partial<CorrectionMaterial>]
+    >();
+    readonly deleteMaterial = jest.fn<Promise<void>, [number, number]>();
+    readonly findByIdAndUserIdOrThrow = jest.fn<Promise<CorrectionMaterial>, [number, number]>();
 }
 
 class CorrectionItemServiceStub {
-    readonly deleteByPortfolioId = jest.fn<Promise<void>, [number]>();
+    readonly deleteByMaterialId = jest.fn<Promise<void>, [number]>();
 }
 
 class PdfExtractServiceStub {
     readonly extractText = jest.fn<Promise<{ message: string }>, [number, Buffer, string]>();
 }
 
+const createMaterial = (
+    id: number,
+    overrides: Partial<CorrectionMaterial> = {}
+): CorrectionMaterial => {
+    const material = new CorrectionMaterial();
+    material.id = id;
+    material.name = overrides.name ?? 'A';
+    material.description = overrides.description ?? 'D';
+    material.responsibilities = overrides.responsibilities ?? 'R';
+    material.problemSolving = overrides.problemSolving ?? 'P';
+    material.learnings = overrides.learnings ?? 'L';
+    return material;
+};
+
 describe('ExternalPortfolioFacade', () => {
     let externalPortfolioFacade: ExternalPortfolioFacade;
-    let externalPortfolioServiceStub: ExternalPortfolioServiceStub;
-    let portfolioServiceStub: PortfolioServiceStub;
     let portfolioCorrectionServiceStub: PortfolioCorrectionServiceStub;
-    let correctionPortfolioSelectionServiceStub: CorrectionPortfolioSelectionServiceStub;
+    let correctionMaterialServiceStub: CorrectionMaterialServiceStub;
     let correctionItemServiceStub: CorrectionItemServiceStub;
     let pdfExtractServiceStub: PdfExtractServiceStub;
 
     beforeEach(() => {
-        externalPortfolioServiceStub = new ExternalPortfolioServiceStub();
-        portfolioServiceStub = new PortfolioServiceStub();
         portfolioCorrectionServiceStub = new PortfolioCorrectionServiceStub();
-        correctionPortfolioSelectionServiceStub = new CorrectionPortfolioSelectionServiceStub();
+        correctionMaterialServiceStub = new CorrectionMaterialServiceStub();
         correctionItemServiceStub = new CorrectionItemServiceStub();
         pdfExtractServiceStub = new PdfExtractServiceStub();
 
         externalPortfolioFacade = new ExternalPortfolioFacade(
-            externalPortfolioServiceStub as unknown as ExternalPortfolioService,
-            portfolioServiceStub as unknown as PortfolioService,
             portfolioCorrectionServiceStub as unknown as PortfolioCorrectionService,
-            correctionPortfolioSelectionServiceStub as unknown as CorrectionPortfolioSelectionService,
+            correctionMaterialServiceStub as unknown as CorrectionMaterialService,
             correctionItemServiceStub as unknown as CorrectionItemService,
             pdfExtractServiceStub as unknown as PdfExtractService
         );
@@ -99,31 +108,26 @@ describe('ExternalPortfolioFacade', () => {
         );
     });
 
-    it('returns top-level pdf extraction status with portfolios list', async () => {
+    it('returns top-level pdf extraction status with materials list', async () => {
         portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
             pdfExtractionStatus: PdfExtractionStatus.GENERATING,
             originalFileName: 'portfolio.pdf',
         });
-        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
-            [10, 20]
-        );
-        portfolioServiceStub.findByIds.mockResolvedValue([
-            {
-                id: 10,
+        correctionMaterialServiceStub.findByCorrectionId.mockResolvedValue([
+            createMaterial(10, {
                 name: 'A',
                 description: 'D1',
                 responsibilities: 'R1',
                 problemSolving: 'P1',
                 learnings: 'L1',
-            },
-            {
-                id: 20,
+            }),
+            createMaterial(20, {
                 name: 'B',
                 description: 'D2',
                 responsibilities: 'R2',
                 problemSolving: 'P2',
                 learnings: 'L2',
-            },
+            }),
         ]);
 
         const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
@@ -155,9 +159,7 @@ describe('ExternalPortfolioFacade', () => {
             pdfExtractionStatus: PdfExtractionStatus.GENERATING,
             originalFileName: 'Ã¬Â²Â¨Ã¬ÂÂ­_Ã¬ÂÂ´Ã«Â Â¥Ã¬ÂÂ.pdf',
         });
-        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
-            []
-        );
+        correctionMaterialServiceStub.findByCorrectionId.mockResolvedValue([]);
 
         const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
 
@@ -172,9 +174,7 @@ describe('ExternalPortfolioFacade', () => {
             pdfExtractionStatus: PdfExtractionStatus.GENERATING,
             originalFileName: nfdName,
         });
-        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
-            []
-        );
+        correctionMaterialServiceStub.findByCorrectionId.mockResolvedValue([]);
 
         const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
 
@@ -188,55 +188,69 @@ describe('ExternalPortfolioFacade', () => {
             pdfExtractionStatus: PdfExtractionStatus.GENERATING,
             originalFileName: 'C:\\fakepath\\folioo\u0000-report.pdf',
         });
-        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
-            []
-        );
+        correctionMaterialServiceStub.findByCorrectionId.mockResolvedValue([]);
 
         const result = await externalPortfolioFacade.getSelectedPortfolios(1, 9);
 
         expect(result.originalFileName).toBe('folioo-report.pdf');
     });
 
-    it('validates ownership first, then deletes related links and portfolio', async () => {
-        portfolioServiceStub.findByIdsAndUserIdOrThrow.mockResolvedValue([{}]);
-        correctionItemServiceStub.deleteByPortfolioId.mockResolvedValue();
-        correctionPortfolioSelectionServiceStub.deleteByPortfolioId.mockResolvedValue();
-        externalPortfolioServiceStub.deleteExternalPortfolio.mockResolvedValue();
+    it('creates a new empty material block when under the limit', async () => {
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.NONE,
+            originalFileName: null,
+        });
+        correctionMaterialServiceStub.countByCorrectionId.mockResolvedValue(1);
+        correctionMaterialServiceStub.createEmptyMaterial.mockResolvedValue(createMaterial(30));
+
+        const result = await externalPortfolioFacade.createExternalPortfolioBlock(1, 9);
+
+        expect(correctionMaterialServiceStub.createEmptyMaterial).toHaveBeenCalledWith(1);
+        expect(result.portfolioId).toBe(30);
+    });
+
+    it('rejects creating a new material block once the limit is reached', async () => {
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.NONE,
+            originalFileName: null,
+        });
+        correctionMaterialServiceStub.countByCorrectionId.mockResolvedValue(5);
+
+        await expect(externalPortfolioFacade.createExternalPortfolioBlock(1, 9)).rejects.toThrow(
+            BusinessException
+        );
+        expect(correctionMaterialServiceStub.createEmptyMaterial).not.toHaveBeenCalled();
+    });
+
+    it('deletes related correction items before deleting the material', async () => {
+        correctionMaterialServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue(
+            createMaterial(55)
+        );
+        correctionItemServiceStub.deleteByMaterialId.mockResolvedValue();
+        correctionMaterialServiceStub.deleteMaterial.mockResolvedValue();
 
         await externalPortfolioFacade.deleteExternalPortfolio(55, 9);
 
-        expect(portfolioServiceStub.findByIdsAndUserIdOrThrow).toHaveBeenCalledWith([55], 9);
-        expect(correctionItemServiceStub.deleteByPortfolioId).toHaveBeenCalledWith(55);
-        expect(correctionPortfolioSelectionServiceStub.deleteByPortfolioId).toHaveBeenCalledWith(
-            55
-        );
-        expect(externalPortfolioServiceStub.deleteExternalPortfolio).toHaveBeenCalledWith(55, 9);
+        expect(correctionMaterialServiceStub.findByIdAndUserIdOrThrow).toHaveBeenCalledWith(55, 9);
+        expect(correctionItemServiceStub.deleteByMaterialId).toHaveBeenCalledWith(55);
+        expect(correctionMaterialServiceStub.deleteMaterial).toHaveBeenCalledWith(55, 9);
 
-        const validateOrder =
-            portfolioServiceStub.findByIdsAndUserIdOrThrow.mock.invocationCallOrder[0];
         const itemDeleteOrder =
-            correctionItemServiceStub.deleteByPortfolioId.mock.invocationCallOrder[0];
-        const selectionDeleteOrder =
-            correctionPortfolioSelectionServiceStub.deleteByPortfolioId.mock.invocationCallOrder[0];
-        const portfolioDeleteOrder =
-            externalPortfolioServiceStub.deleteExternalPortfolio.mock.invocationCallOrder[0];
-
-        expect(validateOrder).toBeLessThan(itemDeleteOrder);
-        expect(validateOrder).toBeLessThan(selectionDeleteOrder);
-        expect(selectionDeleteOrder).toBeLessThan(portfolioDeleteOrder);
-        expect(itemDeleteOrder).toBeLessThan(portfolioDeleteOrder);
+            correctionItemServiceStub.deleteByMaterialId.mock.invocationCallOrder[0];
+        const materialDeleteOrder =
+            correctionMaterialServiceStub.deleteMaterial.mock.invocationCallOrder[0];
+        expect(itemDeleteOrder).toBeLessThan(materialDeleteOrder);
     });
 
     it('does not delete related data when ownership validation fails', async () => {
         const validationError = new Error('validation failed');
-        portfolioServiceStub.findByIdsAndUserIdOrThrow.mockRejectedValue(validationError);
+        correctionMaterialServiceStub.findByIdAndUserIdOrThrow.mockRejectedValue(validationError);
 
         await expect(externalPortfolioFacade.deleteExternalPortfolio(55, 9)).rejects.toThrow(
             validationError
         );
 
-        expect(correctionItemServiceStub.deleteByPortfolioId).not.toHaveBeenCalled();
-        expect(correctionPortfolioSelectionServiceStub.deleteByPortfolioId).not.toHaveBeenCalled();
-        expect(externalPortfolioServiceStub.deleteExternalPortfolio).not.toHaveBeenCalled();
+        expect(correctionItemServiceStub.deleteByMaterialId).not.toHaveBeenCalled();
+        expect(correctionMaterialServiceStub.deleteMaterial).not.toHaveBeenCalled();
     });
 });

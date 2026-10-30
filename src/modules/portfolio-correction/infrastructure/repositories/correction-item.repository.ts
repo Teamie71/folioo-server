@@ -18,19 +18,10 @@ export class CorrectionItemRepository {
         return this.correctionItemRepository.save(correctionItems);
     }
 
-    async findPortfolioIdsByCorrectionId(correctionId: number): Promise<number[]> {
-        const results = await this.correctionItemRepository
-            .createQueryBuilder('ci')
-            .select('ci.portfolio', 'portfolioId')
-            .where('ci.portfolioCorrection = :correctionId', { correctionId })
-            .getRawMany<{ portfolioId: number }>();
-        return results.map((r) => r.portfolioId);
-    }
-
     findByCorrectionId(correctionId: number): Promise<CorrectionItem[]> {
         return this.correctionItemRepository.find({
             where: { portfolioCorrection: { id: correctionId } },
-            relations: ['portfolio'],
+            relations: ['correctionMaterial'],
             order: { createdAt: 'ASC' },
         });
     }
@@ -48,9 +39,9 @@ export class CorrectionItemRepository {
         return result.affected ?? 0;
     }
 
-    async deleteByPortfolioId(portfolioId: number): Promise<number> {
+    async deleteByMaterialId(materialId: number): Promise<number> {
         const result = await this.correctionItemRepository.delete({
-            portfolio: { id: portfolioId },
+            correctionMaterial: { id: materialId },
         });
         return result.affected ?? 0;
     }

@@ -1,7 +1,7 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Portfolio } from 'src/modules/portfolio/domain/portfolio.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { PortfolioCorrection } from './portfolio-correction.entity';
+import { CorrectionMaterial } from './correction-material.entity';
 
 @Entity()
 export class CorrectionItem extends BaseEntity {
@@ -32,12 +32,16 @@ export class CorrectionItem extends BaseEntity {
     @ManyToOne(() => PortfolioCorrection, { onDelete: 'CASCADE' })
     portfolioCorrection: PortfolioCorrection;
 
-    @ManyToOne(() => Portfolio, { onDelete: 'RESTRICT' })
-    portfolio: Portfolio;
+    // 실제 DB 제약은 CASCADE (correction_material_id FK). 내부 재료가 지워지면 결과도 함께 지운다.
+    @ManyToOne(() => CorrectionMaterial, { onDelete: 'CASCADE' })
+    correctionMaterial: CorrectionMaterial;
 
-    static create(portfolio: Portfolio, portfolioCorrection: PortfolioCorrection): CorrectionItem {
+    static create(
+        correctionMaterial: CorrectionMaterial,
+        portfolioCorrection: PortfolioCorrection
+    ): CorrectionItem {
         const item = new CorrectionItem();
-        item.portfolio = portfolio;
+        item.correctionMaterial = correctionMaterial;
         item.portfolioCorrection = portfolioCorrection;
         return item;
     }
