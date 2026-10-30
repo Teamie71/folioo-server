@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
     ApiCommonErrorResponse,
     ApiCommonMessageResponse,
@@ -7,6 +7,7 @@ import {
     ApiCommonResponseArray,
 } from 'src/common/decorators/swagger.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { BusinessException } from 'src/common/exceptions/business.exception';
 import { User } from 'src/common/decorators/user.decorator';
 import { ExperienceMapTicketFacade } from '../application/facades/experience-map-ticket.facade';
 import { ExperienceMapFacade } from '../application/facades/experience-map.facade';
@@ -123,14 +124,24 @@ export class ExperienceMapAiController {
         summary: '활동 결과 확인 처리',
         description:
             '채팅을 열었을 때, 그리고 채팅을 연 상태에서 처리가 끝났을 때 호출한다. 해당 활동의 최신 요청을 확인한 것으로 기록한다. ' +
-            '최신 요청이 처리 중이면 기록하지 않는다(완료 후 다시 호출). 요청이 없는 활동이어도 성공으로 응답한다.',
+            '최신 요청이 처리 중이면 기록하지 않는다(완료 후 다시 호출). 요청이 없는 활동이어도 성공으로 응답한다. ' +
+            '저장 완료된 활동의 ID를 전달해야 하며, 임시 ID나 유효하지 않은 ID는 400으로 거절한다.',
+    })
+    @ApiParam({
+        name: 'blockId',
+        type: String,
+        example: '12',
+        description: '저장된 활동 블록 ID. 1~9223372036854775807 범위의 정수 문자열.',
     })
     @ApiCommonMessageResponse('확인 처리되었습니다.')
-    @ApiCommonErrorResponse(ErrorCode.UNAUTHORIZED)
+    @ApiCommonErrorResponse(ErrorCode.BAD_REQUEST, ErrorCode.UNAUTHORIZED)
     async markSeen(
         @User('sub') userId: number,
         @Param('blockId') blockId: string
     ): Promise<string> {
+        if (!/^[1-9]\d{0,18}$/.test(blockId) || BigInt(blockId) > 9223372036854775807n) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
         await this.aiExperienceSessionService.markSeen(userId, blockId);
         return '확인 처리되었습니다.';
     }
