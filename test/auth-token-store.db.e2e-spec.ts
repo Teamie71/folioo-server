@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -66,15 +67,21 @@ describeDatabase('Auth token PostgreSQL contract', () => {
     it('persists and removes refresh tokens', async () => {
         await store.whitelistRefreshToken('refresh-token', 1);
         expect(await store.isRefreshTokenWhitelisted('refresh-token')).toBe(true);
+        const saved = await db
+            .getRepository(AuthToken)
+            .findOneByOrFail({ type: AuthTokenType.REFRESH });
+        expect(saved.token).toMatch(/^[a-f0-9]{64}$/);
+        expect(saved.token).not.toBe('refresh-token');
         await store.removeRefreshToken('refresh-token');
         expect(await store.isRefreshTokenWhitelisted('refresh-token')).toBe(false);
     });
 
     it('excludes expired tokens from both whitelist and blacklist checks', async () => {
         const repository = db.getRepository(AuthToken);
+        const digest = createHash('sha256').update('expired').digest('hex');
         await repository.save([
-            AuthToken.create(AuthTokenType.REFRESH, 'expired', new Date(0), 1),
-            AuthToken.create(AuthTokenType.ACCESS_BLACKLIST, 'expired', new Date(0)),
+            AuthToken.create(AuthTokenType.REFRESH, digest, new Date(0), 1),
+            AuthToken.create(AuthTokenType.ACCESS_BLACKLIST, digest, new Date(0)),
         ]);
         expect(await store.isRefreshTokenWhitelisted('expired')).toBe(false);
         expect(await store.isAccessTokenBlacklisted('expired')).toBe(false);
@@ -85,7 +92,11 @@ describeDatabase('Auth token PostgreSQL contract', () => {
         await store.blacklistAccessToken(token);
         expect(await store.isAccessTokenBlacklisted(token)).toBe(true);
         expect(await store.isRefreshTokenWhitelisted(token)).toBe(false);
-        const saved = await db.getRepository(AuthToken).findOneByOrFail({ token });
+        const saved = await db
+            .getRepository(AuthToken)
+            .findOneByOrFail({ type: AuthTokenType.ACCESS_BLACKLIST });
+        expect(saved.token).toMatch(/^[a-f0-9]{64}$/);
+        expect(saved.token).not.toBe(token);
         expect(saved.userId).toBeNull();
         const tokenExpiry = jwt.decode<{ exp: number }>(token).exp * 1000;
         expect(saved.expiresAt.getTime()).toBeGreaterThanOrEqual(tokenExpiry);

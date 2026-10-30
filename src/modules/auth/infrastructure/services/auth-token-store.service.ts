@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -23,16 +24,22 @@ export class AuthTokenStoreService {
 
         const expiresAt = this.toExpiresAt(ttlSeconds);
         await this.authTokenRepository.save(
-            AuthToken.create(AuthTokenType.REFRESH, refreshToken, expiresAt, userId)
+            AuthToken.create(AuthTokenType.REFRESH, this.hashToken(refreshToken), expiresAt, userId)
         );
     }
 
     async removeRefreshToken(refreshToken: string): Promise<void> {
-        await this.authTokenRepository.deleteByToken(AuthTokenType.REFRESH, refreshToken);
+        await this.authTokenRepository.deleteByToken(
+            AuthTokenType.REFRESH,
+            this.hashToken(refreshToken)
+        );
     }
 
     async isRefreshTokenWhitelisted(refreshToken: string): Promise<boolean> {
-        return this.authTokenRepository.existsValid(AuthTokenType.REFRESH, refreshToken);
+        return this.authTokenRepository.existsValid(
+            AuthTokenType.REFRESH,
+            this.hashToken(refreshToken)
+        );
     }
 
     async blacklistAccessToken(accessToken: string): Promise<void> {
@@ -43,12 +50,20 @@ export class AuthTokenStoreService {
 
         const expiresAt = this.toExpiresAt(ttlSeconds);
         await this.authTokenRepository.save(
-            AuthToken.create(AuthTokenType.ACCESS_BLACKLIST, accessToken, expiresAt)
+            AuthToken.create(AuthTokenType.ACCESS_BLACKLIST, this.hashToken(accessToken), expiresAt)
         );
     }
 
     async isAccessTokenBlacklisted(accessToken: string): Promise<boolean> {
-        return this.authTokenRepository.existsValid(AuthTokenType.ACCESS_BLACKLIST, accessToken);
+        return this.authTokenRepository.existsValid(
+            AuthTokenType.ACCESS_BLACKLIST,
+            this.hashToken(accessToken)
+        );
+    }
+
+    private hashToken(token: string): string {
+        // Bearer 토큰 원문이 DB와 SQL 파라미터 로그에 남지 않도록 한다.
+        return createHash('sha256').update(token).digest('hex');
     }
 
     private toExpiresAt(ttlSeconds: number): Date {

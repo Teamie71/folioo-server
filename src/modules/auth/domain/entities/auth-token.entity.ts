@@ -26,6 +26,7 @@ export class AuthToken extends BaseEntity {
     @Column({ type: 'enum', enum: AuthTokenType })
     type: AuthTokenType;
 
+    /** 토큰 원문 대신 SHA-256 digest를 저장한다. */
     @Column({ type: 'text' })
     token: string;
 

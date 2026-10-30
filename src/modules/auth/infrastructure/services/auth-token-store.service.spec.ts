@@ -31,9 +31,25 @@ describe('AuthTokenStoreService', () => {
         expect(authTokenRepository.save).toHaveBeenCalledTimes(1);
         const saved = authTokenRepository.save.mock.calls[0][0];
         expect(saved.type).toBe(AuthTokenType.REFRESH);
-        expect(saved.token).toBe('refresh-token');
+        expect(saved.token).toMatch(/^[a-f0-9]{64}$/);
+        expect(saved.token).not.toBe('refresh-token');
         expect(saved.userId).toBe(42);
         expect(saved.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('uses the stored digest for refresh-token lookup and deletion', async () => {
+        const service = buildService();
+        await service.whitelistRefreshToken('refresh-token', 42);
+        const digest = authTokenRepository.save.mock.calls[0][0].token;
+
+        await service.isRefreshTokenWhitelisted('refresh-token');
+        await service.removeRefreshToken('refresh-token');
+
+        expect(authTokenRepository.existsValid).toHaveBeenCalledWith(AuthTokenType.REFRESH, digest);
+        expect(authTokenRepository.deleteByToken).toHaveBeenCalledWith(
+            AuthTokenType.REFRESH,
+            digest
+        );
     });
 
     it('skips storing an access-token blacklist entry when the token is already expired', async () => {
@@ -53,7 +69,14 @@ describe('AuthTokenStoreService', () => {
         expect(authTokenRepository.save).toHaveBeenCalledTimes(1);
         const saved = authTokenRepository.save.mock.calls[0][0];
         expect(saved.type).toBe(AuthTokenType.ACCESS_BLACKLIST);
-        expect(saved.token).toBe('access-token');
+        expect(saved.token).toMatch(/^[a-f0-9]{64}$/);
+        expect(saved.token).not.toBe('access-token');
         expect(Math.abs(saved.expiresAt.getTime() - expSeconds * 1000)).toBeLessThan(2000);
+
+        await service.isAccessTokenBlacklisted('access-token');
+        expect(authTokenRepository.existsValid).toHaveBeenCalledWith(
+            AuthTokenType.ACCESS_BLACKLIST,
+            saved.token
+        );
     });
 });
