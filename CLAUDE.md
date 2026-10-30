@@ -12,7 +12,6 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 - **Framework**: NestJS 11.x
 - **ORM**: TypeORM
 - **Database**: PostgreSQL (로컬: Docker, dev/prod: Supabase 외부 연결)
-- **Cache**: Upstash Redis REST API (dev/prod) / ioredis Docker (로컬)
 - **Package Manager**: pnpm
 - **Language**: TypeScript (Strict Mode)
 - **배포**: GCE Blue-Green (docker-compose.infra.yml + dev/prod overlay)
@@ -38,7 +37,6 @@ Folioo는 포트폴리오 관리 및 첨삭 플랫폼입니다. NestJS + TypeORM
 | Dev DB Reset       | `docs/development/DEV_DB_RESET.md`          |
 | API 현황           | `docs/API.md`                               |
 | 환경변수 관리      | `docs/infrastructure/ENV_MANAGEMENT.md`     |
-| Redis/Cache        | `docs/infrastructure/REDIS.md`              |
 | 비용 추정          | `docs/infrastructure/COST_ESTIMATE.md`      |
 | 인프라(Terraform)  | `infra/README.md`                           |
 | Terraform 인수인계 | `infra/docs/TERRAFORM_HANDOVER.md`          |

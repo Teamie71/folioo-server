@@ -11,7 +11,6 @@
 | Language        | TypeScript (Strict Mode)                               |
 | ORM             | TypeORM                                                |
 | Database        | PostgreSQL (로컬: Docker pgvector, dev/prod: Supabase) |
-| Cache           | Upstash Redis REST (dev/prod) / ioredis Docker (로컬)  |
 | Package Manager | pnpm                                                   |
 | CI/CD           | GitHub Actions                                         |
 | Infra           | GCP (GCE, Artifact Registry, Cloud NAT, WIF)           |
@@ -48,7 +47,7 @@
 # 1. 의존성 설치
 pnpm install
 
-# 2. PostgreSQL + Redis 실행 (Docker)
+# 2. PostgreSQL 실행 (Docker)
 docker compose up -d
 
 # 3. 환경변수 설정
@@ -58,7 +57,7 @@ cp .env.example .env  # 필요 시 값 수정
 pnpm run start:dev
 ```
 
-### 전체 Docker 실행 (PostgreSQL + Redis + NestJS)
+### 전체 Docker 실행 (PostgreSQL + NestJS)
 
 ```bash
 docker compose --profile full up -d

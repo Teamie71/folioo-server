@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './presentation/auth.controller';
 import { LoginUsecase } from './application/usecases/login.usecase';
 import { KakaoStrategy } from './infrastructure/strategies/kakao.strategy';
@@ -20,9 +21,12 @@ import { LogoutUsecase } from './application/usecases/logout.usecase';
 import { KakaoAuthGuard } from './infrastructure/guards/kakao-auth.guard';
 import { GoogleAuthGuard } from './infrastructure/guards/google-auth.guard';
 import { NaverAuthGuard } from './infrastructure/guards/naver-auth.guard';
+import { AuthToken } from './domain/entities/auth-token.entity';
+import { AuthTokenRepository } from './infrastructure/repositories/auth-token.repository';
 
 @Module({
     imports: [
+        TypeOrmModule.forFeature([AuthToken]),
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
@@ -48,6 +52,7 @@ import { NaverAuthGuard } from './infrastructure/guards/naver-auth.guard';
         NaverStrategy,
         TokenService,
         AuthTokenStoreService,
+        AuthTokenRepository,
         JwtAuthGuard,
         {
             provide: APP_GUARD,

@@ -1,18 +1,17 @@
+import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
-import { RedisService } from 'src/common/redis/redis.service';
 import { TimeUtil } from 'src/common/utils/time.util';
+import { AuthToken, AuthTokenType } from '../../domain/entities/auth-token.entity';
+import { AuthTokenRepository } from '../repositories/auth-token.repository';
 
 @Injectable()
 export class AuthTokenStoreService {
-    private readonly refreshTokenPrefix = 'auth:refresh:';
-    private readonly accessTokenBlacklistPrefix = 'auth:access:blacklist:';
-
     constructor(
-        private readonly redisService: RedisService,
+        private readonly authTokenRepository: AuthTokenRepository,
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService
     ) {}
@@ -23,15 +22,24 @@ export class AuthTokenStoreService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, '비정상적인 토큰입니다.');
         }
 
-        await this.redisService.set(this.refreshTokenKey(refreshToken), String(userId), ttlSeconds);
+        const expiresAt = this.toExpiresAt(ttlSeconds);
+        await this.authTokenRepository.save(
+            AuthToken.create(AuthTokenType.REFRESH, this.hashToken(refreshToken), expiresAt, userId)
+        );
     }
 
     async removeRefreshToken(refreshToken: string): Promise<void> {
-        await this.redisService.del(this.refreshTokenKey(refreshToken));
+        await this.authTokenRepository.deleteByToken(
+            AuthTokenType.REFRESH,
+            this.hashToken(refreshToken)
+        );
     }
 
     async isRefreshTokenWhitelisted(refreshToken: string): Promise<boolean> {
-        return this.redisService.exists(this.refreshTokenKey(refreshToken));
+        return this.authTokenRepository.existsValid(
+            AuthTokenType.REFRESH,
+            this.hashToken(refreshToken)
+        );
     }
 
     async blacklistAccessToken(accessToken: string): Promise<void> {
@@ -40,19 +48,26 @@ export class AuthTokenStoreService {
             return;
         }
 
-        await this.redisService.set(this.accessTokenBlacklistKey(accessToken), '1', ttlSeconds);
+        const expiresAt = this.toExpiresAt(ttlSeconds);
+        await this.authTokenRepository.save(
+            AuthToken.create(AuthTokenType.ACCESS_BLACKLIST, this.hashToken(accessToken), expiresAt)
+        );
     }
 
     async isAccessTokenBlacklisted(accessToken: string): Promise<boolean> {
-        return this.redisService.exists(this.accessTokenBlacklistKey(accessToken));
+        return this.authTokenRepository.existsValid(
+            AuthTokenType.ACCESS_BLACKLIST,
+            this.hashToken(accessToken)
+        );
     }
 
-    private refreshTokenKey(token: string): string {
-        return `${this.refreshTokenPrefix}${token}`;
+    private hashToken(token: string): string {
+        // Bearer 토큰 원문이 DB와 SQL 파라미터 로그에 남지 않도록 한다.
+        return createHash('sha256').update(token).digest('hex');
     }
 
-    private accessTokenBlacklistKey(token: string): string {
-        return `${this.accessTokenBlacklistPrefix}${token}`;
+    private toExpiresAt(ttlSeconds: number): Date {
+        return new Date(Date.now() + ttlSeconds * 1000);
     }
 
     private getRefreshTokenTtlSeconds(): number {

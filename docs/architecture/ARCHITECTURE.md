@@ -41,11 +41,9 @@ src/
 │   ├── guards/                  # 가드 (InternalApiKeyGuard)
 │   ├── interceptors/            # 인터셉터 (TransformInterceptor)
 │   ├── ports/                   # 포트 인터페이스 (AI 릴레이)
-│   ├── redis/                   # Redis 캐시 모듈 (ioredis/upstash DIP)
 │   └── utils/                   # 공통 유틸
 │
 ├── config/                      # 설정
-│   ├── redis-config.ts          # Redis 설정
 │   ├── swagger.config.ts        # Swagger 설정
 │   └── typeorm-config.ts        # TypeORM 설정
 │
