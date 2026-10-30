@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PortfolioRepository } from '../../infrastructure/repositories/portfolio.repository';
 import { Portfolio } from '../../domain/portfolio.entity';
-import {
-    PortfolioDetailResDTO,
-    PortfolioListResDTO,
-    UpdatePortfolioReqDTO,
-} from '../dtos/portfolio.dto';
+import { PortfolioDetailResDTO } from '../dtos/portfolio.dto';
 import { BusinessException } from 'src/common/exceptions/business.exception';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 import { SourceType } from '../../domain/enums/source-type.enum';
@@ -14,21 +10,12 @@ import { SourceType } from '../../domain/enums/source-type.enum';
 export class PortfolioService {
     constructor(private readonly portfolioRepository: PortfolioRepository) {}
 
-    async getPortfolios(userId: number): Promise<PortfolioListResDTO[]> {
-        const portfolios = await this.portfolioRepository.findAllCompletedByUserId(userId);
-        return portfolios.map((portfolio) => PortfolioListResDTO.from(portfolio));
-    }
-
     async findByIdOrThrow(id: number, userId: number): Promise<Portfolio> {
         const portfolio = await this.portfolioRepository.findInternalByIdAndUserId(id, userId);
         if (!portfolio) {
             throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
         }
         return portfolio;
-    }
-
-    async savePortfolio(portfolio: Portfolio): Promise<Portfolio> {
-        return this.portfolioRepository.save(portfolio);
     }
 
     async findByIdWithExperienceOrThrow(id: number): Promise<Portfolio> {
@@ -42,27 +29,6 @@ export class PortfolioService {
     async getPortfolio(portfolioId: number, userId: number): Promise<PortfolioDetailResDTO> {
         const portfolio = await this.findByIdOrThrow(portfolioId, userId);
         return PortfolioDetailResDTO.from(portfolio);
-    }
-
-    async updatePortfolio(
-        portfolioId: number,
-        userId: number,
-        body: UpdatePortfolioReqDTO
-    ): Promise<PortfolioDetailResDTO> {
-        const portfolio = await this.findByIdOrThrow(portfolioId, userId);
-        portfolio.update(body);
-        await this.portfolioRepository.save(portfolio);
-        const savedPortfolio = await this.findByIdOrThrow(portfolio.id, userId);
-        return PortfolioDetailResDTO.from(savedPortfolio);
-    }
-
-    async deletePortfolio(portfolioId: number, userId: number): Promise<void> {
-        const portfolio = await this.findByIdOrThrow(portfolioId, userId);
-        await this.portfolioRepository.deleteById(portfolio.id);
-    }
-
-    async findByExperienceId(experienceId: number): Promise<Portfolio | null> {
-        return this.portfolioRepository.findByExperienceId(experienceId);
     }
 
     async findByIdsAndUserIdOrThrow(portfolioIds: number[], userId: number): Promise<Portfolio[]> {

@@ -64,7 +64,7 @@ src/
     │   │   └── repositories/    # TypeORM 리포지토리 구현체
     │   └── presentation/        # 프레젠테이션 계층
     │       └── controllers/     # 컨트롤러
-    ├── experience/              # 경험 정리 (Core)
+    ├── experience/              # 기존 Portfolio/경험맵 관계용 엔티티만 유지
     ├── interview/               # AI 인터뷰 (Core, SSE 스트림)
     ├── portfolio/               # 포트폴리오 (Core)
     ├── portfolio-correction/    # 포트폴리오 첨삭 (Core)

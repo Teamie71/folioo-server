@@ -231,11 +231,7 @@ Legend:
 
 ### Experience
 
-- POST `/experiences` -> IMPLEMENTED
-- GET `/experiences` -> IMPLEMENTED
-- GET `/experiences/{experienceId}` -> IMPLEMENTED
-- PATCH `/experiences/{experienceId}` -> IMPLEMENTED
-- DELETE `/experiences/{experienceId}` -> IMPLEMENTED (연관 첨삭 있으면 `EXPERIENCE4221` 반환)
+구형 경험 정리 CRUD 제거. 현재 경험맵은 유지합니다.
 
 ### Interview
 
@@ -243,9 +239,7 @@ Legend:
 
 ### Portfolio
 
-- GET `/portfolios` -> IMPLEMENTED (사용자의 포트폴리오 목록 조회)
 - GET `/portfolios/{portfolioId}` -> IMPLEMENTED
-- PATCH `/portfolios/{portfolioId}` -> IMPLEMENTED
 
 ### Portfolio-Correction
 

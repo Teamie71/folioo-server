@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Portfolio } from '../../domain/portfolio.entity';
-import { PortfolioStatus } from '../../domain/enums/portfolio-status.enum';
 import { SourceType } from '../../domain/enums/source-type.enum';
 
 @Injectable()
@@ -20,23 +19,10 @@ export class PortfolioRepository {
         return this.portfolioRepository.save(portfolios);
     }
 
-    async findById(id: number): Promise<Portfolio | null> {
-        return this.portfolioRepository.findOne({
-            where: { id },
-        });
-    }
-
     async findByIdWithExperience(id: number): Promise<Portfolio | null> {
         return this.portfolioRepository.findOne({
             where: { id },
             relations: { experience: true, user: true },
-        });
-    }
-
-    async findByIdAndUserId(id: number, userId: number): Promise<Portfolio | null> {
-        return this.portfolioRepository.findOne({
-            where: { id, user: { id: userId } },
-            relations: { experience: true },
         });
     }
 
@@ -92,25 +78,7 @@ export class PortfolioRepository {
         });
     }
 
-    async findAllCompletedByUserId(userId: number): Promise<Portfolio[]> {
-        return this.portfolioRepository.find({
-            where: {
-                user: { id: userId },
-                status: PortfolioStatus.COMPLETED,
-                sourceType: SourceType.INTERNAL,
-            },
-            relations: { experience: true },
-            order: { createdAt: 'DESC' },
-        });
-    }
-
     async deleteById(portfolioId: number): Promise<void> {
         await this.portfolioRepository.delete(portfolioId);
-    }
-
-    async findByExperienceId(experienceId: number): Promise<Portfolio | null> {
-        return this.portfolioRepository.findOne({
-            where: { experience: { id: experienceId } },
-        });
     }
 }
