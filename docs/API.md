@@ -250,15 +250,15 @@ Legend:
 - GET `/portfolio-corrections/{correctionId}` -> IMPLEMENTED (응답: `CorrectionResultResDTO`, `status: CorrectionStatus` 포함)
 - POST `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
 - PATCH `/portfolio-corrections/{correctionId}/company-insight` -> IMPLEMENTED
-- POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택 포트폴리오를 매핑 테이블에 활성화 상태로 저장)
-- POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (요청 본문 없이 활성화된 매핑 기준으로 생성 준비 수행)
+- POST `/portfolio-corrections/{correctionId}/select` -> IMPLEMENTED (선택 포트폴리오를 매핑 테이블에 활성화 상태로 저장, 최대 4개 초과 시 `CORRECTION4092`)
+- POST `/portfolio-corrections/{correctionId}/generate` -> IMPLEMENTED (요청 본문 없이 활성화된 매핑 기준으로 생성 준비 수행, 활성 블록 4개 초과 시 `CORRECTION4092`)
 - PATCH `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 - DELETE `/portfolio-corrections/{correctionId}` -> IMPLEMENTED
 
 ### External Portfolios
 
 - GET `/external-portfolios?correctionId=...` -> IMPLEMENTED (응답: `ExternalPortfolioListResDTO` = `{ status: PdfExtractionStatus, originalFileName: string \| null, portfolios: StructuredPortfolioResDTO[] }`)
-- POST `/external-portfolios` -> IMPLEMENTED
+- POST `/external-portfolios` -> IMPLEMENTED (활동 블록은 첨삭당 최대 4개, AI PDF 추출 상한과 동일. 4개일 때 추가 요청 시 `CORRECTION4092`)
 - POST `/external-portfolios/extract` -> IMPLEMENTED (multipart PDF + `correctionId`, busboy 파싱, AI 추출 후 DB 저장)
 - PATCH `/external-portfolios/{portfolioId}` -> IMPLEMENTED
 - DELETE `/external-portfolios/{portfolioId}` -> IMPLEMENTED
