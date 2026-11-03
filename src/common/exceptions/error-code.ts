@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { ErrorCode } from './error-code.enum';
+import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 
 interface ErrorDetail {
     message: string;
@@ -116,7 +117,7 @@ export const ErrorMap: Record<ErrorCode, ErrorDetail> = {
         statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED]: {
-        message: '포트폴리오 첨삭은 최대 5개의 활동블록(포트폴리오)을 가질 수 있습니다.',
+        message: `포트폴리오 첨삭은 최대 ${MAX_EXTERNAL_PORTFOLIO_BLOCKS}개의 활동블록(포트폴리오)을 가질 수 있습니다.`,
         statusCode: HttpStatus.CONFLICT,
     },
     [ErrorCode.COMPANY_INSIGHT_ALREADY_EXISTS]: {

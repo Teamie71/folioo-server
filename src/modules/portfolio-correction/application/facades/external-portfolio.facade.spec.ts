@@ -13,9 +13,11 @@ import { CorrectionPortfolioSelectionService } from '../services/correction-port
 import { CorrectionItemService } from '../services/correction-item.service';
 import { PdfExtractService } from '../services/pdf-extract.service';
 import { PdfExtractionStatus } from '../../domain/enums/pdf-extraction-status.enum';
+import { ErrorCode } from 'src/common/exceptions/error-code.enum';
 
 class ExternalPortfolioServiceStub {
     readonly deleteExternalPortfolio = jest.fn<Promise<void>, [number, number]>();
+    readonly createEmptyPortfolio = jest.fn<Promise<unknown>, [number]>();
 }
 
 class PortfolioServiceStub {
@@ -35,6 +37,7 @@ class PortfolioCorrectionServiceStub {
 class CorrectionPortfolioSelectionServiceStub {
     readonly deleteByPortfolioId = jest.fn<Promise<void>, [number]>();
     readonly findActivePortfolioIdsByCorrectionId = jest.fn<Promise<number[]>, [number]>();
+    readonly activateSelections = jest.fn<Promise<unknown[]>, [unknown, unknown[]]>();
 }
 
 class CorrectionItemServiceStub {
@@ -69,6 +72,56 @@ describe('ExternalPortfolioFacade', () => {
             correctionPortfolioSelectionServiceStub as unknown as CorrectionPortfolioSelectionService,
             correctionItemServiceStub as unknown as CorrectionItemService,
             pdfExtractServiceStub as unknown as PdfExtractService
+        );
+    });
+
+    it('rejects adding a block when the correction already has 4 active blocks', async () => {
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue({
+            pdfExtractionStatus: PdfExtractionStatus.GENERATED,
+            originalFileName: 'portfolio.pdf',
+        });
+        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
+            [10, 20, 30, 40]
+        );
+
+        await expect(
+            externalPortfolioFacade.createExternalPortfolioBlock(1, 9)
+        ).rejects.toMatchObject({
+            response: { errorCode: ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED },
+        });
+
+        expect(externalPortfolioServiceStub.createEmptyPortfolio).not.toHaveBeenCalled();
+        expect(correctionPortfolioSelectionServiceStub.activateSelections).not.toHaveBeenCalled();
+    });
+
+    it('adds a block when the correction has 3 active blocks', async () => {
+        const correction = {
+            pdfExtractionStatus: PdfExtractionStatus.GENERATED,
+            originalFileName: 'portfolio.pdf',
+        };
+        const activePortfolios = [{ id: 10 }, { id: 20 }, { id: 30 }];
+        const savedPortfolio = {
+            id: 40,
+            name: '',
+            description: '',
+            responsibilities: '',
+            problemSolving: '',
+            learnings: '',
+        };
+        portfolioCorrectionServiceStub.findByIdAndUserIdOrThrow.mockResolvedValue(correction);
+        correctionPortfolioSelectionServiceStub.findActivePortfolioIdsByCorrectionId.mockResolvedValue(
+            [10, 20, 30]
+        );
+        portfolioServiceStub.findByIdsAndUserIdOrThrow.mockResolvedValue(activePortfolios);
+        externalPortfolioServiceStub.createEmptyPortfolio.mockResolvedValue(savedPortfolio);
+        correctionPortfolioSelectionServiceStub.activateSelections.mockResolvedValue([]);
+
+        const result = await externalPortfolioFacade.createExternalPortfolioBlock(1, 9);
+
+        expect(result.portfolioId).toBe(40);
+        expect(correctionPortfolioSelectionServiceStub.activateSelections).toHaveBeenCalledWith(
+            correction,
+            [...activePortfolios, savedPortfolio]
         );
     });
 
