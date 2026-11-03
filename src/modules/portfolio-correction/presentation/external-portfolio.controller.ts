@@ -19,6 +19,7 @@ import {
 } from 'src/common/decorators/swagger.decorator';
 import { User } from 'src/common/decorators/user.decorator';
 import { ErrorCode } from 'src/common/exceptions/error-code.enum';
+import { MAX_EXTERNAL_PORTFOLIO_BLOCKS } from 'src/modules/portfolio/domain/portfolio.entity';
 import {
     CreateExternalPortfolioReqDTO,
     ExternalPortfolioListResDTO,
@@ -62,8 +63,7 @@ export class ExternalPortfolioController {
     @Post()
     @ApiOperation({
         summary: 'PDF 포트폴리오 활동 블록 추가',
-        description:
-            '텍스트 정리 블록의 활동 블록을 추가합니다. 활동 블록은 최대 5개까지 존재 가능합니다.',
+        description: `텍스트 정리 블록의 활동 블록을 추가합니다. 활동 블록은 최대 ${MAX_EXTERNAL_PORTFOLIO_BLOCKS}개까지 존재 가능합니다.`,
     })
     @ApiBody({ type: CreateExternalPortfolioReqDTO })
     @ApiCommonResponse(StructuredPortfolioResDTO)

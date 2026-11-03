@@ -81,6 +81,10 @@ export class PortfolioCorrectionFacade {
             });
         }
 
+        if (activePortfolioIds.length > MAX_EXTERNAL_PORTFOLIO_BLOCKS) {
+            throw new BusinessException(ErrorCode.CORRECTION_BLOCK_LIMIT_EXCEEDED);
+        }
+
         const portfolios = await this.portfolioService.findByIdsAndUserIdOrThrow(
             activePortfolioIds,
             userId
